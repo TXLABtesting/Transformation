@@ -3,7 +3,6 @@ import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
 
 const BASKET_ICON = 'M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z M3 6h18 M16 10a4 4 0 0 1-8 0';
-const USERS_ICON = 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75';
 const CHECK_ICON = 'M20 6 9 17l-5-5';
 
 export function FundBar({ vm }: { vm: VM }) {
@@ -223,43 +222,12 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                         >
                           {it.typeLabel}
                         </span>
-                        <span
-                          style={{
-                            width: 30,
-                            height: 30,
-                            flex: 'none',
-                            borderRadius: 9,
-                            background: it.scoreColor,
-                            color: '#fff',
-                            fontWeight: 900,
-                            fontSize: 12.5,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          {it.scoreV}
-                        </span>
                       </div>
                       <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', lineHeight: 1.4, marginTop: 10 }}>
                         {it.title}
                       </div>
                       <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
                         {it.entity} · {it.pathName}
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          fontSize: 11.5,
-                          color: '#0E7C86',
-                          fontWeight: 700,
-                          marginTop: 8,
-                        }}
-                      >
-                        <Icon d={USERS_ICON} size={15} color="#0E7C86" />
-                        رشّحه: {it.nomBy}
                       </div>
                     </div>
                     {b.isCommittee ? (
@@ -394,6 +362,9 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                   <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
                     {it.entity} · {it.pathName}
                   </div>
+                  <div style={{ fontSize: 11.5, color: '#54627B', fontWeight: 600, marginTop: 4 }}>
+                    {it.fundedText}
+                  </div>
                   <div
                     style={{
                       fontSize: 11.5,
@@ -427,6 +398,24 @@ export function BasketDrawer({ vm }: { vm: VM }) {
               <div style={{ fontSize: 13, fontWeight: 700 }}>لا توجد عناصر معتمدة بعد</div>
             </div>
           )}
+        </div>
+
+        {/* Sticky total footer */}
+        <div
+          style={{
+            background: '#fff',
+            borderTop: '1px solid #E7ECF4',
+            padding: '14px 18px',
+            display: 'flex',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span style={{ color: '#54627B', fontSize: 12.5, fontWeight: 700 }}>
+            إجمالي تكلفة التمويل المعتمد
+          </span>
+          <span style={{ color: '#0B8A4B', fontSize: 15, fontWeight: 800 }}>
+            {vm.basket.fundedTotalLabel}
+          </span>
         </div>
       </div>
     </div>

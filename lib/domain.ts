@@ -224,7 +224,7 @@ export type Phase = {
   period?: string;
   desc?: string;
   fixed?: boolean;
-  subs?: { name: string; date: string }[];
+  subs?: { name: string; start?: string; end?: string; date?: string }[];
 };
 export type Launch = {
   title: string;
@@ -342,6 +342,20 @@ export const WFMETA: Record<string, WfMeta> = {
 };
 export const wfMeta = (i: Item): WfMeta => WFMETA[wfOf(i)] || WFMETA.draft;
 export const stepIndexOf = (i: Item): number => wfMeta(i).step;
+
+// Funding / nomination is only allowed once the item has passed the entity gate.
+export const isEntityApproved = (i: Item): boolean =>
+  ['exec', 'launch', 'done'].includes(wfOf(i));
+
+// Stage-weighted completion (for the "نسبة الإنجاز" KPI).
+export function stageWeight(i: Item): number {
+  return (
+    { draft: 0, ent1: 25, exec: 60, launch: 85, done: 100 } as Record<string, number>
+  )[wfOf(i)] ?? 0;
+}
+
+// A returned item (has `ret`) surfaces a distinct amber status instead of "مسودة".
+export const RETURNED_STATUS = 'بحاجة إلى تعديل';
 
 // exec / launch completion gates
 export function execAllDone(it: Item): boolean {
@@ -468,7 +482,7 @@ export function execMilestones(): Phase[] {
       end: '2026-07-31',
       status: 'لم تبدأ',
       fixed: true,
-      subs: [],
+      subs: [{ name: '', start: '', end: '' }],
     },
     {
       name: 'إطلاق الدفعة الأولى',
@@ -478,7 +492,7 @@ export function execMilestones(): Phase[] {
       end: '2026-11-30',
       status: 'لم تبدأ',
       fixed: true,
-      subs: [],
+      subs: [{ name: '', start: '', end: '' }],
     },
     {
       name: 'إطلاق الدفعة الثانية',
@@ -488,7 +502,7 @@ export function execMilestones(): Phase[] {
       end: '2027-02-28',
       status: 'لم تبدأ',
       fixed: true,
-      subs: [],
+      subs: [{ name: '', start: '', end: '' }],
     },
     {
       name: 'إطلاق الدفعة الثالثة',
@@ -498,7 +512,7 @@ export function execMilestones(): Phase[] {
       end: '2027-05-31',
       status: 'لم تبدأ',
       fixed: true,
-      subs: [],
+      subs: [{ name: '', start: '', end: '' }],
     },
     {
       name: 'إطلاق الدفعة الرابعة',
@@ -508,7 +522,7 @@ export function execMilestones(): Phase[] {
       end: '2027-08-31',
       status: 'لم تبدأ',
       fixed: true,
-      subs: [],
+      subs: [{ name: '', start: '', end: '' }],
     },
   ];
 }
@@ -669,7 +683,7 @@ export function blankItem(type: ItemType, path: string): Item {
   return base;
 }
 
-export const SEED_V = 'wf6';
+export const SEED_V = 'wf8';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 

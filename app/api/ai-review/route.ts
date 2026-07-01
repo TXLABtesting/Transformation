@@ -8,6 +8,10 @@ export const dynamic = 'force-dynamic';
 // is unset or the call fails, we return 503 so the client uses its built-in
 // deterministic Arabic heuristic (identical to the prototype's fallback).
 export async function POST(req: NextRequest) {
+  // Reject oversized bodies before parsing (defense against abuse).
+  const len = Number(req.headers.get('content-length') || 0);
+  if (len > 64_000) return NextResponse.json({ error: 'payload-too-large' }, { status: 413 });
+
   let prompt = '';
   try {
     const body = await req.json();
@@ -16,6 +20,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'bad-request' }, { status: 400 });
   }
   if (!prompt) return NextResponse.json({ error: 'empty-prompt' }, { status: 400 });
+  if (prompt.length > 20_000)
+    return NextResponse.json({ error: 'prompt-too-long' }, { status: 413 });
 
   const base = process.env.AI_API_BASE_URL;
   if (!base) {

@@ -8,6 +8,17 @@ export function Login({ vm }: { vm: VM }) {
   const [hover, setHover] = useState(false);
   void vm;
 
+  // Presentation default is a MOCK login that jumps straight into the flow.
+  // Set NEXT_PUBLIC_UAEPASS_MODE=live to start the real UAE PASS OIDC flow.
+  const onLogin = () => {
+    if (process.env.NEXT_PUBLIC_UAEPASS_MODE === 'live') {
+      const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      window.location.href = `${base}/api/auth/uaepass/login`;
+      return;
+    }
+    loginUaePass();
+  };
+
   return (
     <div
       data-screen-label="Login"
@@ -93,7 +104,7 @@ export function Login({ vm }: { vm: VM }) {
             تسجيل الدخول
           </h1>
           <button
-            onClick={loginUaePass}
+            onClick={onLogin}
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
             style={{

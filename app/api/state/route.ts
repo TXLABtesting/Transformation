@@ -18,10 +18,22 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  // Optional shared-secret guard: when STATE_API_TOKEN is set, writes must
+  // present it as a Bearer token. (The demo runs single-tenant without it.)
+  const required = process.env.STATE_API_TOKEN;
+  if (required && req.headers.get('authorization') !== `Bearer ${required}`) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  const len = Number(req.headers.get('content-length') || 0);
+  if (len > 2_000_000) return NextResponse.json({ error: 'payload-too-large' }, { status: 413 });
+
   let data: unknown;
   try {
     data = await req.json();
   } catch {
+    return NextResponse.json({ error: 'bad-request' }, { status: 400 });
+  }
+  if (data === null || typeof data !== 'object') {
     return NextResponse.json({ error: 'bad-request' }, { status: 400 });
   }
   try {

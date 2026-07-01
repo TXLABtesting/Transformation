@@ -24,6 +24,7 @@ import {
   execAllDone,
   launchAllDone,
   entOf,
+  isEntityApproved,
   LAUNCH_TYPES,
 } from './domain';
 import { seedItems } from './seed';
@@ -151,6 +152,7 @@ type Actions = {
   setDraftField: (k: keyof Item, v: unknown) => void;
   fNext: () => void;
   fPrev: () => void;
+  setFStep: (n: number) => void;
   saveDraftOnly: () => void;
   addSub: (phaseIdx: number) => void;
   updSub: (phaseIdx: number, subIdx: number, k: string, v: string) => void;
@@ -316,7 +318,8 @@ export const actorName = (s: State): string => {
   if (s.role === 'ai') return 'اللجنة الوطنية';
   const owner = s.setup.owners[s.myPath];
   if (owner?.name) return owner.name;
-  return s.role === 'coord' ? 'منسق المسار في الجهة' : 'ممثل المسار';
+  // ممثل المسار has a display name used on nomination attributions
+  return s.role === 'coord' ? 'منسق المسار في الجهة' : 'خليفة السويدي';
 };
 export const actorRole = (s: State): string => {
   if (s.role === 'entity') return 'ممثل الجهة';
@@ -597,6 +600,12 @@ export const useStore = create<Store>((set, get) => {
       set((s) => (s.ui.draft ? { ui: { ...s.ui, draft: { ...s.ui.draft, [k]: v } } } : {})),
     fNext: () => {
       const s = get();
+      const d = s.ui.draft;
+      // scope + budget are required before an item can be submitted for approval
+      if (s.ui.fStep >= 4 && d && (!(d.scopeOfWork || '').trim() || !(d.budget || '').trim())) {
+        setUi({ fStep: 4 });
+        return toast('الرجاء إدخال نطاق العمل والميزانية قبل المتابعة');
+      }
       if (s.ui.fStep >= 5) {
         get().runAiReview();
       } else {
@@ -608,6 +617,11 @@ export const useStore = create<Store>((set, get) => {
       if (s.ui.fStep <= 1) return get().mBack();
       setUi({ fStep: s.ui.fStep - 1 });
     },
+    setFStep: (n: number) => {
+      // only allow jumping back to an already-completed step
+      const s = get();
+      if (n >= 1 && n < s.ui.fStep) setUi({ fStep: n });
+    },
     saveDraftOnly: () => {
       if (!get().ui.draft) return;
       commitDraft(get, set, persist, toast, 'مسودة', true);
@@ -617,7 +631,7 @@ export const useStore = create<Store>((set, get) => {
       set((s) => {
         if (!s.ui.draft) return {};
         const phases = (s.ui.draft.phases || []).map((p, i) =>
-          i === pi ? { ...p, subs: [...(p.subs || []), { name: '', date: '' }] } : p
+          i === pi ? { ...p, subs: [...(p.subs || []), { name: '', start: '', end: '' }] } : p
         );
         return { ui: { ...s.ui, draft: { ...s.ui.draft, phases } } };
       }),
@@ -863,6 +877,8 @@ export const useStore = create<Store>((set, get) => {
     },
     fundItem: (id, direct) => {
       const s = get();
+      const target = findItem(id);
+      if (!target || !isEntityApproved(target)) return; // only entity-approved items
       patchItem(id, (it) => ({
         funded: { by: 'اللجنة الوطنية', at: Date.now(), direct: !!direct },
         nom: it.nom || { by: 'اللجنة الوطنية', role: 'اللجنة الوطنية', path: it.path, at: Date.now(), direct: true },
@@ -921,11 +937,28 @@ export const useStore = create<Store>((set, get) => {
     },
     closeCancelFund: () => setUi({ cancelFund: null }),
 
-    // ---- exports ----
-    exportExcel: () => toast('يتم تجهيز ملف Excel للتنزيل…'),
-    exportPpt: () => toast('يتم تجهيز عرض PowerPoint للتنزيل…'),
+    // ---- exports (real client-side file generation) ----
+    exportExcel: () => {
+      const list = exportScope(get());
+      toast('يتم تجهيز ملف Excel للتنزيل…');
+      import('./export').then((m) => m.exportExcel(list, get().entityName)).catch(() => toast('تعذّر إنشاء ملف Excel'));
+    },
+    exportPpt: () => {
+      const list = exportScope(get());
+      toast('يتم تجهيز عرض PowerPoint للتنزيل…');
+      import('./export').then((m) => m.exportPpt(list, get().entityName)).catch(() => toast('تعذّر إنشاء عرض PowerPoint'));
+    },
   };
 });
+
+// Items in scope for the current role (mirrors the dashboard's base scope).
+function exportScope(s: State): Item[] {
+  const raw = s.role;
+  if (raw === 'coord') return s.items.filter((i) => i.path === s.myPath && entOf(i, s.entityName) === s.entityName);
+  if (raw === 'path') return s.items.filter((i) => i.path === s.myPath && wfOf(i) !== 'draft' && wfOf(i) !== 'ent1');
+  if (raw === 'ai') return s.items.filter((i) => wfOf(i) !== 'draft' && wfOf(i) !== 'ent1');
+  return s.items.filter((i) => wfOf(i) !== 'draft'); // entity
+}
 
 // ---- draft commit (shared by submit / save-as-draft / edit) ----
 function commitDraft(
@@ -981,7 +1014,7 @@ function fundSelected(
   let n = 0;
   set((st) => ({
     items: st.items.map((it) => {
-      if (!ids.includes(it.id) || it.funded) return it;
+      if (!ids.includes(it.id) || it.funded || !isEntityApproved(it)) return it;
       n++;
       return {
         ...it,
@@ -1007,7 +1040,7 @@ function nominateSelected(
   let n = 0;
   set((st) => ({
     items: st.items.map((it) => {
-      if (!ids.includes(it.id) || it.nom || it.funded) return it;
+      if (!ids.includes(it.id) || it.nom || it.funded || !isEntityApproved(it)) return it;
       n++;
       return {
         ...it,

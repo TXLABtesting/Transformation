@@ -1058,6 +1058,42 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <KpiCard value={vm.kpis.operations} label="العمليات" iconD="M3 6h18M3 12h18M3 18h18" />
               )}
               {vm.showSvcKpi && <KpiCard value={vm.kpis.services} label="الخدمات" grid />}
+              {(vm.role === 'entity' || vm.role === 'coord') && (
+                <div
+                  style={{
+                    background: '#fff',
+                    border: '1px solid #E7ECF4',
+                    borderRadius: 16,
+                    padding: '15px 17px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 25, fontWeight: 800, color: '#13213C' }}>
+                      {vm.kpis.completion}%
+                    </div>
+                    <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginTop: 5 }}>
+                      نسبة الإنجاز
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 11,
+                      background: '#E3F6EC',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flex: 'none',
+                    }}
+                  >
+                    <Icon d="M4 20V10M10 20V4M16 20v-8M21 20H3" size={19} color="#0B8A4B" />
+                  </span>
+                </div>
+              )}
             </div>
           )}
 

@@ -11,6 +11,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -334,13 +336,11 @@ input,textarea,select{font-family:inherit}
               <sc-for list="{{ basketSelItems }}" as="b" hint-placeholder-count="2">
                 <div style="background:#fff;border:1px solid #E7ECF4;border-radius:14px;padding:14px">
                   <div onClick="{{ b.onOpen }}" style="cursor:pointer">
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <div style="display:flex;align-items:center;gap:8px">
                       <span style="font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;background:#EEF3FA;color:#42506B">{{ b.typeLabel }}</span>
-                      <span style="width:30px;height:30px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:900;color:#fff;background:{{ b.scoreColor }}">{{ b.scoreV }}</span>
                     </div>
                     <div style="font-size:13.5px;font-weight:800;color:#13213C;line-height:1.4;margin-top:9px">{{ b.title }}</div>
                     <div style="font-size:11px;color:#9AA6BC;font-weight:600;margin-top:5px">{{ b.entity }} · {{ b.pathName }}</div>
-                    <div style="display:flex;align-items:center;gap:7px;margin-top:9px;background:#F5F8FD;border:1px solid #EBEFF6;border-radius:9px;padding:7px 10px"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#0E7C86;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8"></path></svg><span style="font-size:11px;font-weight:700;color:#42506B">رشّحه: {{ b.nomBy }}</span></div>
                   </div>
                   <sc-if value="{{ isCommitteeBasket }}" hint-placeholder-val="{{ true }}">
                   <div style="display:flex;gap:7px;margin-top:12px;border-top:1px solid #F0F3F8;padding-top:12px">
@@ -373,7 +373,7 @@ input,textarea,select{font-family:inherit}
                   </div>
                   <div style="font-size:13.5px;font-weight:800;color:#13213C;line-height:1.4;margin-top:9px">{{ b.title }}</div>
                   <div style="font-size:11px;color:#9AA6BC;font-weight:600;margin-top:5px">{{ b.entity }} · {{ b.pathName }}</div>
-                  <div style="font-size:11px;color:#0B7C57;font-weight:700;margin-top:9px;background:#EDF9F1;border:1px solid #D5EEE0;border-radius:9px;padding:8px 10px;line-height:1.55">تُغطّى تكلفة التحويل من اللجنة الوطنية · يبقى التنفيذ من مسؤولية الجهة</div>
+                  <div style="font-size:11px;color:#54627B;font-weight:700;margin-top:9px;background:#F5F8FD;border:1px solid #EBEFF6;border-radius:9px;padding:8px 10px;line-height:1.55">{{ b.fundSource }}</div>
                 </div>
               </sc-for>
             </div>
@@ -383,6 +383,12 @@ input,textarea,select{font-family:inherit}
             </sc-if>
           </sc-if>
         </div>
+        <sc-if value="{{ hasFundedTotal }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:none;background:#fff;border-top:1px solid #E7ECF4;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div><div style="font-size:11.5px;font-weight:700;color:#54627B">إجمالي تكلفة التمويل المعتمد</div><div style="font-size:10.5px;color:#9AA6BC;font-weight:600;margin-top:2px">{{ basketAppCount }} عنصر مموّل</div></div>
+          <div style="font-size:18px;font-weight:900;color:#13213C" dir="ltr">{{ basketFundedTotal }}</div>
+        </div>
+        </sc-if>
       </div>
     </div>
     </sc-if>
@@ -428,6 +434,7 @@ input,textarea,select{font-family:inherit}
         <!-- KPI strip -->
         <sc-if value="{{ notAiRole }}" hint-placeholder-val="{{ true }}">
         <div data-r="kpi" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:13px">
+          <div style="background:#fff;border:1px solid #E7ECF4;border-radius:16px;padding:15px 17px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:25px;font-weight:800;color:#13213C">{{ completionPct }}<span style="font-size:15px;color:#9AA6BC">%</span></div><div style="font-size:12px;color:#8A97AD;font-weight:600;margin-top:5px">نسبة الإنجاز</div></div><span style="width:38px;height:38px;border-radius:11px;background:#E5EEFF;display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" style="width:19px;height:19px;stroke:#2563EB;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"></path></svg></span></div>
           <div style="background:#fff;border:1px solid #E7ECF4;border-radius:16px;padding:15px 17px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:25px;font-weight:800;color:#13213C">{{ kpis.projects }}</div><div style="font-size:12px;color:#8A97AD;font-weight:600;margin-top:5px">المشاريع</div></div><span style="width:38px;height:38px;border-radius:11px;background:#E5EEFF;display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" style="width:19px;height:19px;stroke:#2563EB;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"></path></svg></span></div>
           <div style="background:#fff;border:1px solid #E7ECF4;border-radius:16px;padding:15px 17px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:25px;font-weight:800;color:#13213C">{{ kpis.initiatives }}</div><div style="font-size:12px;color:#8A97AD;font-weight:600;margin-top:5px">المبادرات</div></div><span style="width:38px;height:38px;border-radius:11px;background:#E5EEFF;display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" style="width:19px;height:19px;stroke:#2563EB;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"></path></svg></span></div>
           <sc-if value="{{ showOpsKpi }}" hint-placeholder-val="{{ true }}"><div style="background:#fff;border:1px solid #E7ECF4;border-radius:16px;padding:15px 17px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:25px;font-weight:800;color:#13213C">{{ kpis.operations }}</div><div style="font-size:12px;color:#8A97AD;font-weight:600;margin-top:5px">العمليات</div></div><span style="width:38px;height:38px;border-radius:11px;background:#E5EEFF;display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" style="width:19px;height:19px;stroke:#2563EB;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 6h18M3 12h18M3 18h18"></path></svg></span></div></sc-if>
@@ -476,7 +483,7 @@ input,textarea,select{font-family:inherit}
               <div style="font-size:12px;color:#7A879E;line-height:1.6;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ c.desc }}</div>
               <sc-if value="{{ c.isReturned }}" hint-placeholder-val="{{ false }}">
               <div style="background:#FFF4F4;border:1px solid #F6D6D9;border-radius:11px;padding:10px 12px">
-                <div style="font-size:11px;font-weight:800;color:#C0303B;margin-bottom:3px">أُعيد من {{ c.retFrom }}</div>
+                <div style="font-size:11px;font-weight:800;color:#C0303B;margin-bottom:3px">ملاحظات ممثل الجهة</div>
                 <div style="font-size:11.5px;color:#7A4A4E;font-weight:600;line-height:1.6">{{ c.retNote }}</div>
               </div>
               </sc-if>
@@ -509,7 +516,7 @@ input,textarea,select{font-family:inherit}
               </sc-if>
               <sc-if value="{{ c.isNominated }}" hint-placeholder-val="{{ false }}">
               <div style="border-top:1px solid #F0F3F8;padding-top:11px;display:flex;align-items:center;justify-content:space-between;gap:8px">
-                <span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#0E7C86;background:#DCF3F5;border-radius:999px;padding:5px 11px"><span style="width:6px;height:6px;border-radius:50%;background:#0E7C86"></span>مُرشّح · {{ c.nomBy }}</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#0E7C86;background:#DCF3F5;border-radius:999px;padding:5px 11px"><span style="width:6px;height:6px;border-radius:50%;background:#0E7C86"></span>مُرشّح · {{ c.nomBy }} · {{ c.nomStream }}</span>
                 <sc-if value="{{ c.canWithdrawNom }}" hint-placeholder-val="{{ false }}"><button onClick="{{ c.onWithdrawNom }}" style="background:#fff;border:1px solid #E7ECF4;color:#54627B;border-radius:8px;padding:6px 11px;font-weight:800;font-size:11px;cursor:pointer">سحب</button></sc-if>
                 <sc-if value="{{ c.canDeclineNom }}" hint-placeholder-val="{{ false }}"><button onClick="{{ c.onDeclineNom }}" style="background:#fff;border:1px solid #F1D4D7;color:#C0303B;border-radius:8px;padding:6px 11px;font-weight:800;font-size:11px;cursor:pointer">رفض الترشيح</button></sc-if>
               </div>
@@ -600,13 +607,12 @@ input,textarea,select{font-family:inherit}
         <!-- STEP: TYPE -->
         <sc-if value="{{ mStepType }}" hint-placeholder-val="{{ false }}">
         <div style="animation:fadeIn .25s ease both">
-
-          
-          
+          <div style="font-size:16px;font-weight:800;color:#13213C;margin-bottom:4px">اختر نوع العنصر</div>
+          <div style="font-size:12.5px;color:#8A97AD;font-weight:500;margin-bottom:18px">حدّد نوع العنصر الذي تريد إضافته في {{ mPathName }}.</div>
           <div style="display:flex;flex-direction:column;gap:11px">
             <sc-for list="{{ modalTypeCards }}" as="t" hint-placeholder-count="2">
               <div onClick="{{ t.onClick }}" style="display:flex;align-items:center;gap:13px;padding:15px;border:1px solid #E7ECF4;background:#fff;border-radius:14px;cursor:pointer" style-hover="border-color:#B9CEF5;box-shadow:0 10px 22px -16px rgba(15,31,61,.5)">
-                
+                <span style="width:42px;height:42px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;background:#EAF0FE;color:#2563EB"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 5v14M5 12h14"></path></svg></span>
                 <div style="flex:1;font-size:14.5px;font-weight:800;color:#13213C">إضافة {{ t.label }}</div>
                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#C2CCDC;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="m15 18-6-6 6-6"></path></svg>
               </div>
@@ -619,9 +625,8 @@ input,textarea,select{font-family:inherit}
         <!-- STEP: METHOD -->
         <sc-if value="{{ mStepMethod }}" hint-placeholder-val="{{ false }}">
         <div style="animation:fadeIn .25s ease both">
-
-          
-          
+          <div style="font-size:16px;font-weight:800;color:#13213C;margin-bottom:4px">طريقة الإضافة</div>
+          <div style="font-size:12.5px;color:#8A97AD;font-weight:500;margin-bottom:18px">اختر كيف تريد إدخال البيانات.</div>
           <div style="display:flex;flex-direction:column;gap:13px">
             <div onClick="{{ chooseManual }}" style="padding:18px;border:1px solid #E7ECF4;background:#fff;border-radius:16px;cursor:pointer" style-hover="border-color:#B9CEF5;box-shadow:0 10px 22px -16px rgba(15,31,61,.5)">
               <span style="width:44px;height:44px;border-radius:12px;background:#EAF0FE;color:#2563EB;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg></span>
@@ -644,12 +649,24 @@ input,textarea,select{font-family:inherit}
 
 
           <!-- sub stepper -->
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:18px">
-            <div style="flex:1;text-align:center"><div style="height:4px;border-radius:99px;background:#2563EB"></div><div style="font-size:10.5px;font-weight:700;color:#2563EB;margin-top:6px">{{ f1Label }}</div></div>
-            <div style="flex:1;text-align:center"><div style="height:4px;border-radius:99px;background:{{ fc2 }}"></div><div style="font-size:10.5px;font-weight:700;color:#54627B;margin-top:6px">{{ f2Label }}</div></div>
-            <div style="flex:1;text-align:center"><div style="height:4px;border-radius:99px;background:{{ fc3 }}"></div><div style="font-size:10.5px;font-weight:700;color:#54627B;margin-top:6px">النتائج المتوقعة</div></div>
-            <div style="flex:1;text-align:center"><div style="height:4px;border-radius:99px;background:{{ fc4 }}"></div><div style="font-size:10.5px;font-weight:700;color:#54627B;margin-top:6px">نطاق العمل والميزانية</div></div>
-            <div style="flex:1;text-align:center"><div style="height:4px;border-radius:99px;background:{{ fc5 }}"></div><div style="font-size:10.5px;font-weight:700;color:#54627B;margin-top:6px">خطة التنفيذ والإطلاق</div></div>
+          <div style="display:flex;align-items:flex-start;margin-bottom:16px">
+            <sc-for list="{{ fSteps }}" as="s" hint-placeholder-count="5">
+              <div onClick="{{ s.onGo }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;cursor:{{ s.cursor }}">
+                <div style="display:flex;align-items:center;width:100%">
+                  <span style="flex:1;height:2px;border-radius:2px;background:{{ s.lineA }}"></span>
+                  <span style="width:26px;height:26px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;background:{{ s.circleBg }};color:{{ s.circleColor }};border:{{ s.circleBorder }};box-shadow:{{ s.circleGlow }}">
+                    <sc-if value="{{ s.isDone }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>
+                    <sc-if value="{{ s.notDone }}" hint-placeholder-val="{{ true }}">{{ s.num }}</sc-if>
+                  </span>
+                  <span style="flex:1;height:2px;border-radius:2px;background:{{ s.lineB }}"></span>
+                </div>
+                <div style="font-size:9.5px;font-weight:800;color:{{ s.labelColor }};text-align:center;line-height:1.35;padding:0 2px">{{ s.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-size:16px;font-weight:800;color:#13213C">{{ fStepTitle }}</div>
+            <div style="font-size:12px;color:#9AA6BC;font-weight:500;margin-top:3px">{{ fStepHint }}</div>
           </div>
 
           <!-- F1: GENERAL -->
@@ -770,11 +787,21 @@ input,textarea,select{font-family:inherit}
               <label style="font-size:12px;font-weight:700;color:#54627B;display:block;margin-bottom:6px">الميزانية التقديرية <span style="color:#D23B45">*</span></label>
               <input value="{{ dv.budget }}" onInput="{{ df.budget }}" placeholder="مثال: 1,200,000 درهم" style="width:100%;border:1px solid #DCE3EE;background:#fff;border-radius:11px;padding:11px 13px;font-size:13.5px;outline:none;margin-bottom:13px">
               <label style="font-size:12px;font-weight:700;color:#54627B;display:block;margin-bottom:6px">المستند المرفق</label>
+              <sc-if value="{{ notScopeFileCreate }}" hint-placeholder-val="{{ true }}">
               <label style="display:flex;align-items:center;gap:10px;border:1.5px dashed #CDD8EA;background:#FAFCFF;border-radius:11px;padding:13px 15px;cursor:pointer" style-hover="border-color:#2563EB">
                 <span style="width:34px;height:34px;flex:none;border-radius:9px;background:#EAF0FE;color:#2563EB;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21.44 11.05 12 20.5a5 5 0 0 1-7-7l9.5-9.5a3.3 3.3 0 0 1 4.7 4.7L9.4 18.1a1.6 1.6 0 0 1-2.3-2.3l8.5-8.5"></path></svg></span>
-                <span style="font-size:12.5px;font-weight:700;color:#54627B">{{ scopeFileLabelCreate }}</span>
+                <span style="font-size:12.5px;font-weight:700;color:#54627B">أرفق مستند نطاق العمل والميزانية (PDF)</span>
                 <input type="file" onChange="{{ onScopeFileCreate }}" style="display:none">
               </label>
+              </sc-if>
+              <sc-if value="{{ hasScopeFileCreate }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:10px;border:1px solid #DCE3EE;background:#fff;border-radius:11px;padding:11px 13px">
+                <span style="width:34px;height:34px;flex:none;border-radius:9px;background:#E3F6EC;color:#0B8A4B;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg></span>
+                <span style="flex:1;min-width:0;font-size:12.5px;font-weight:700;color:#33405A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ scopeFileLabelCreate }}</span>
+                <label style="flex:none;font-size:11.5px;font-weight:800;color:#2563EB;cursor:pointer;padding:5px 9px;border-radius:8px" style-hover="background:#EAF0FE">تغيير<input type="file" onChange="{{ onScopeFileCreate }}" style="display:none"></label>
+                <button onClick="{{ onRemoveScopeFileCreate }}" style="flex:none;width:30px;height:30px;border-radius:8px;border:1px solid #F1D4D7;background:#FCEEEF;color:#C0303B;cursor:pointer">✕</button>
+              </div>
+              </sc-if>
             </div>
           </div>
           </sc-if>
@@ -782,40 +809,42 @@ input,textarea,select{font-family:inherit}
           <!-- F3: EXECUTION PLAN (predefined phases) -->
           <sc-if value="{{ fPhases }}" hint-placeholder-val="{{ false }}">
           <div style="animation:fadeIn .2s ease both">
-            <div style="margin-bottom:12px"><div style="font-size:14px;font-weight:800;color:#13213C">خطة التنفيذ — خطة ربعية (كل 3 أشهر)</div><div style="font-size:11.5px;color:#9AA6BC;font-weight:500">مراحل معتمدة كل ~3 أشهر، تُحدّد فيها ميلات رئيسية. يمكن إضافة مراحل فرعية داخل أي مرحلة.</div></div>#9AA6BC;font-weight:500">مراحل التحول الذكي ثابتة ومعتمدة. حدّد التواريخ المتوقعة لكل مرحلة.</div></div>
+            <div style="margin-bottom:12px"><div style="font-size:14px;font-weight:800;color:#13213C">خطة التنفيذ — خطة ربعية (كل 3 أشهر)</div><div style="font-size:11.5px;color:#9AA6BC;font-weight:500">مراحل معتمدة كل ~3 أشهر، تُحدّد فيها ميلات رئيسية. يمكن إضافة مراحل فرعية داخل أي مرحلة.</div></div>
             <div style="display:flex;flex-direction:column;gap:10px">
               <sc-for list="{{ phaseRows }}" as="ph" hint-placeholder-count="5">
-                <div style="background:#fff;border:1px solid #E7ECF4;border-radius:13px;padding:14px">
-                  <div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:11px">
-                    <span style="width:24px;height:24px;border-radius:7px;background:#EAF0FE;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none;margin-top:1px">{{ ph.num }}</span>
-                    <div style="min-width:0">
-                      <div style="font-size:13.5px;font-weight:800;color:#13213C">{{ ph.name }}</div>
-                      <div style="display:flex;align-items:center;gap:7px;margin-top:3px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;color:#2563EB;background:#EAF0FE;border-radius:999px;padding:3px 9px"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>{{ ph.period }}</span></div>
-                      <div style="font-size:11.5px;color:#8A97AD;font-weight:600;line-height:1.5;margin-top:5px">{{ ph.desc }}</div>
+                <div style="background:#fff;border:1px solid #E7ECF4;border-radius:14px;padding:16px">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px">
+                    <div style="display:flex;align-items:flex-start;gap:10px;min-width:0">
+                      <span style="width:26px;height:26px;border-radius:8px;background:#EAF0FE;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;flex:none;margin-top:1px">{{ ph.num }}</span>
+                      <div style="min-width:0">
+                        <div style="font-size:14px;font-weight:800;color:#13213C;line-height:1.35">{{ ph.name }}</div>
+                        <div style="font-size:11.5px;color:#8A97AD;font-weight:600;line-height:1.55;margin-top:4px">{{ ph.desc }}</div>
+                      </div>
                     </div>
+                    <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;color:#8A97AD;background:#F1F4F9;border-radius:999px;padding:4px 10px;flex:none;white-space:nowrap"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>{{ ph.period }}</span>
                   </div>
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                    <div><label style="font-size:11px;font-weight:700;color:#8A97AD;display:block;margin-bottom:5px">تاريخ البدء</label><input value="{{ ph.start }}" onInput="{{ ph.onStart }}" type="date" style="width:100%;border:1px solid #DCE3EE;background:#fff;border-radius:10px;padding:9px 11px;font-size:12.5px;outline:none"></div>
-                    <div><label style="font-size:11px;font-weight:700;color:#8A97AD;display:block;margin-bottom:5px">تاريخ الانتهاء</label><input value="{{ ph.end }}" onInput="{{ ph.onEnd }}" type="date" style="width:100%;border:1px solid #DCE3EE;background:#fff;border-radius:10px;padding:9px 11px;font-size:12.5px;outline:none"></div>
-                  </div>
-                  <div style="margin-top:12px;padding-top:12px;border-top:1px dashed #E7ECF4">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+                  <div style="margin-top:1px;padding-top:13px;border-top:1px dashed #E7ECF4">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
                       <span style="font-size:11.5px;font-weight:800;color:#54627B">المراحل الفرعية</span>
                       <button onClick="{{ ph.onAddSub }}" style="display:inline-flex;align-items:center;gap:5px;background:#EAF0FE;border:1px solid #D9E4FD;color:#2563EB;border-radius:9px;padding:6px 11px;font-family:'Cairo';font-weight:700;font-size:11.5px;cursor:pointer"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"><path d="M12 5v14M5 12h14"></path></svg> إضافة مرحلة فرعية</button>
                     </div>
                     <sc-if value="{{ ph.hasSubs }}" hint-placeholder-val="{{ false }}">
-                    <div style="display:flex;flex-direction:column;gap:8px">
+                    <div style="display:flex;flex-direction:column;gap:9px">
                       <sc-for list="{{ ph.subs }}" as="sub" hint-placeholder-count="0">
-                        <div style="display:flex;align-items:center;gap:8px">
-                          <span style="width:6px;height:6px;border-radius:50%;background:#B9CEF5;flex:none"></span>
-                          <input value="{{ sub.name }}" onInput="{{ sub.onName }}" placeholder="اسم المرحلة الفرعية" style="flex:1;min-width:0;border:1px solid #DCE3EE;background:#fff;border-radius:9px;padding:8px 11px;font-size:12px;outline:none">
-                          <input value="{{ sub.date }}" onInput="{{ sub.onDate }}" type="date" style="width:150px;flex:none;border:1px solid #DCE3EE;background:#fff;border-radius:9px;padding:8px 10px;font-size:12px;outline:none">
-                          <button onClick="{{ sub.onRemove }}" style="width:30px;height:30px;flex:none;border-radius:8px;border:1px solid #F6D6D9;background:#FCEEEF;color:#D23B45;cursor:pointer">✕</button>
+                        <div style="border:1px solid #EBEFF6;background:#FBFCFE;border-radius:11px;padding:10px 11px">
+                          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                            <span style="width:6px;height:6px;border-radius:50%;background:#B9CEF5;flex:none"></span>
+                            <input value="{{ sub.name }}" onInput="{{ sub.onName }}" placeholder="اسم المرحلة الفرعية" style="flex:1;min-width:0;border:1px solid #DCE3EE;background:#fff;border-radius:9px;padding:8px 11px;font-size:12px;outline:none">
+                            <button onClick="{{ sub.onRemove }}" style="width:34px;align-self:stretch;flex:none;border-radius:8px;border:1px solid #F6D6D9;background:#FCEEEF;color:#D23B45;cursor:pointer">✕</button>
+                          </div>
+                          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                            <div><label style="font-size:10px;font-weight:700;color:#9AA6BC;display:block;margin-bottom:4px">تاريخ البدء</label><input value="{{ sub.start }}" onInput="{{ sub.onStart }}" type="date" style="width:100%;border:1px solid #DCE3EE;background:#fff;border-radius:9px;padding:7px 10px;font-size:11.5px;outline:none"></div>
+                            <div><label style="font-size:10px;font-weight:700;color:#9AA6BC;display:block;margin-bottom:4px">تاريخ الانتهاء</label><input value="{{ sub.end }}" onInput="{{ sub.onEnd }}" type="date" style="width:100%;border:1px solid #DCE3EE;background:#fff;border-radius:9px;padding:7px 10px;font-size:11.5px;outline:none"></div>
+                          </div>
                         </div>
                       </sc-for>
                     </div>
                     </sc-if>
-                    <sc-if value="{{ ph.hasSubs }}" hint-placeholder-val="{{ true }}"></sc-if>
                   </div>
                 </div>
               </sc-for>
@@ -835,7 +864,7 @@ input,textarea,select{font-family:inherit}
               <sc-for list="{{ launchRows }}" as="lc" hint-placeholder-count="0">
                 <div style="background:#fff;border:1px solid #E7ECF4;border-radius:13px;padding:14px">
                   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
-                    <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:#0B8A4B"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5-5 5 5M12 5v12"></path></svg> إطلاق</span>
+                    <span style="display:inline-flex;align-items:center;font-size:12.5px;font-weight:800;color:#13213C">{{ lc.numLabel }}</span>
                     <button onClick="{{ lc.onRemove }}" style="width:28px;height:28px;border-radius:8px;border:1px solid #F6D6D9;background:#FCEEEF;color:#D23B45;cursor:pointer">✕</button>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
@@ -1014,8 +1043,15 @@ input,textarea,select{font-family:inherit}
 
         <sc-if value="{{ dIsReturned }}" hint-placeholder-val="{{ false }}">
         <div style="background:#FFF4F4;border:1px solid #F6D6D9;border-radius:14px;padding:14px 16px">
-          <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:#C0303B;margin-bottom:5px"><svg viewBox="0 0 24 24" style="width:16px;height:16px;flex:none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6M21 12A9 9 0 0 0 6 5.3L3 8"></path></svg>أُعيد من {{ d.retFrom }} — يتطلب إجراءً</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:#C0303B;margin-bottom:5px"><svg viewBox="0 0 24 24" style="width:16px;height:16px;flex:none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>ملاحظات ممثل الجهة — يتطلب إجراءً</div>
           <div style="font-size:12.5px;color:#7A4A4E;font-weight:600;line-height:1.7">{{ d.retNote }}</div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ dFunded }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#F1F6F3;border:1px solid #D8E7DE;border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:11px">
+          <span style="width:34px;height:34px;border-radius:10px;background:#fff;color:#0B8A4B;display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+          <div style="min-width:0"><div style="font-size:12.5px;font-weight:800;color:#0B7C4A">معتمد للتمويل من اللجنة الوطنية</div><div style="font-size:11.5px;color:#54627B;font-weight:600;line-height:1.6;margin-top:2px">{{ dFundedText }}</div></div>
         </div>
         </sc-if>
 
@@ -1318,7 +1354,7 @@ input,textarea,select{font-family:inherit}
         <button onClick="{{ d.onApprove }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(180deg,#0EA371,#0B8A4B);color:#fff;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 10px 22px -10px rgba(11,138,75,.5)"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg> اعتماد</button>
         </sc-if>
         <sc-if value="{{ dCannotApprove }}" hint-placeholder-val="{{ true }}">
-        <button onClick="{{ d.onEdit }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:9px;background:linear-gradient(180deg,#2E74EE,#1F5FE0);color:#fff;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 10px 22px -10px rgba(37,99,235,.55)"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg> تعديل</button>
+        <button onClick="{{ d.onEdit }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:9px;background:linear-gradient(180deg,#2E74EE,#1F5FE0);color:#fff;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 10px 22px -10px rgba(37,99,235,.55)"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg> {{ dEditLabel }}</button>
         </sc-if>
       </div>
     </div>
@@ -1496,7 +1532,7 @@ class Component extends DCLogic {
         launches:[{title:'الإطلاق الرسمي للمنصة',ltype:'إطلاق منتج / خدمة',date:'2026-12-20',desc:'الإطلاق العام للمنصة الموحّدة',phase:'الإطلاق الرسمي والمتابعة',status:'مخطط',notes:''}], links:['s1','o1'] },
       { id:'s1', wf:'launch', scopeOfWork:'أتمتة كاملة لإصدار الشهادات عبر القنوات الرقمية مع التوثيق الإلكتروني.', budget:'1,200,000 درهم', scopeApproval:'معتمد', execChecklist:[{key:'agents',label:'بناء النظام الوكيلي',status:'مكتمل',newDate:'',reason:''},{key:'testing',label:'الاختبار وضمان الجودة',status:'مكتمل',newDate:'',reason:''},{key:'pilot',label:'الإطلاق',status:'مكتمل',newDate:'',reason:''}], type:'service', title:'إصدار الشهادات الرقمية', desc:'إصدار فوري للشهادات الرسمية موثّقة رقمياً عبر القنوات الذكية.', path:'services', status:'قائم', approval:'معتمد', priority:'عالية', rank:2, complexity:'متوسط', impact:'مرتفع', transformability:'قابل كلياً', readiness:'الجاهزية للتحول بنسبة بين 50% إلى 80%', usageIntensity:'متوسطة', transformPriority:'متوسطة', automationPct:60, progress:80, serviceOwner:'إدارة الخدمات الرقمية', targetUsers:'الأفراد والمؤسسات', currentJourney:'تقديم الطلب، التدقيق، الإصدار اليدوي', painPoints:'بطء الإصدار وتعدد الزيارات', expectedImprovement:'إصدار فوري آلي يقلّص زمن المعالجة بنسبة 90% ويلغي الزيارات الميدانية', endDate:'2026-09-30',
         phases:[{name:'التقييم والتهيئة',start:'2026-07-01',end:'2026-07-20',owner:'إدارة الخدمات',status:'مكتملة',approval:'معتمد',outcome:'',notes:''}], milestones:[], launches:[{title:'الإطلاق الرسمي للخدمة',ltype:'إطلاق منتج / خدمة',date:'2026-09-25',desc:'تفعيل الإصدار الفوري للجمهور',phase:'',status:'مخطط',done:true},{title:'حملة توعية المتعاملين',ltype:'حملة',date:'2026-09-28',desc:'',phase:'',status:'مخطط',done:false}], links:['p1'] },
-      { id:'o1', wf:'ent1', type:'operation', title:'أتمتة معالجة طلبات التراخيص', desc:'معالجة آلية لطلبات التراخيص التجارية مع مراجعة استثناءات يدوية محدودة.', path:'ops', approval:'تم الإرسال', priority:'عالية', rank:1, complexity:'متوسط', impact:'مرتفع', progress:40, opType:'العمليات التخصصية', subActivities:'استلام، تدقيق، إصدار', fedEntity:'وزارة الاقتصاد', sector:'الاقتصادي', dept:'إدارة التراخيص', section:'قسم التدقيق', automationLevel:'جزئياً', automationPct:40, automationSystem:'نظام التراخيص الموحّد', usageIntensity:'عالية', complexityLevel:'متوسط', transformability:'قابل كلياً', readiness:'الجاهزية للتحول بنسبة 80% فأكثر', transformPriority:'عالية',
+      { id:'o1', wf:'ent1', scopeOfWork:'أتمتة معالجة طلبات التراخيص التجارية من الاستلام حتى الإصدار مع تكامل نظام التراخيص والبوابة الذكية، باستثناء الطلبات ذات الطبيعة القانونية الخاصة.', budget:'850,000 درهم', type:'operation', title:'أتمتة معالجة طلبات التراخيص', desc:'معالجة آلية لطلبات التراخيص التجارية مع مراجعة استثناءات يدوية محدودة.', path:'ops', approval:'تم الإرسال', priority:'عالية', rank:1, complexity:'متوسط', impact:'مرتفع', progress:40, opType:'العمليات التخصصية', subActivities:'استلام، تدقيق، إصدار', fedEntity:'وزارة الاقتصاد', sector:'الاقتصادي', dept:'إدارة التراخيص', section:'قسم التدقيق', automationLevel:'جزئياً', automationPct:40, automationSystem:'نظام التراخيص الموحّد', usageIntensity:'عالية', complexityLevel:'متوسط', transformability:'قابل كلياً', readiness:'الجاهزية للتحول بنسبة 80% فأكثر', transformPriority:'عالية',
         steps:[{name:'استلام الطلب',owner:'مركز خدمة المتعاملين',input:'طلب المتعامل',output:'طلب مسجّل',system:'نظام التراخيص',painPoint:'إدخال يدوي',opportunity:'استخراج تلقائي للبيانات',notes:''},{name:'التدقيق والمطابقة',owner:'إدارة التراخيص',input:'مستندات الطلب',output:'نتيجة التدقيق',system:'نظام التدقيق',painPoint:'بطء المراجعة',opportunity:'تدقيق آلي بالذكاء الاصطناعي',notes:''}],
         phases:[], milestones:[], launches:[], links:['p1'] },
       { id:'i1', wf:'pm1', type:'initiative', title:'تأهيل كوادر الذكاء الاصطناعي', desc:'برنامج تدريبي لبناء قدرات وطنية متخصصة في تقنيات الذكاء الاصطناعي.', path:'capacity', status:'قيد التنفيذ', approval:'معتمد', priority:'متوسطة', rank:1, complexity:'منخفض', impact:'متوسط', transformability:'قابل جزئياً', readiness:'الجاهزية للتحول بنسبة 30% فأقل', usageIntensity:'منخفضة', transformPriority:'منخفضة', automationPct:0, progress:70, expectedOutputs:'منهج تدريبي، شهادات معتمدة', expectedOutcomes:'تأهيل 200 موظف وبناء قدرة وطنية تنفّذ مشاريع الذكاء الاصطناعي داخلياً دون الاعتماد على جهات خارجية.', expectedImpact:'رفع إنتاجية الفرق بنسبة 25% عبر أدوات الذكاء الاصطناعي', aiModels:0, targetPct:0, endDate:'2026-11-30',
@@ -1508,7 +1544,7 @@ class Component extends DCLogic {
       { id:'o3', wf:'draft', type:'operation', title:'أرشفة وتصنيف الوثائق آلياً', endDate:'2027-03-15',  desc:'رقمنة وأرشفة الوثائق الورقية وتصنيفها تلقائياً باستخدام الرؤية الحاسوبية.', path:'ops', approval:'مسودة', priority:'متوسطة', rank:3, complexity:'منخفض', impact:'متوسط', progress:0, opType:'عمليات الدعم المؤسسي', subActivities:'مسح، تصنيف، فهرسة', fedEntity:'—', sector:'الإداري', dept:'إدارة الوثائق', section:'قسم الأرشيف', automationLevel:'لا', automationPct:0, automationSystem:'', usageIntensity:'متوسطة', complexityLevel:'منخفض', transformability:'قابل كلياً', readiness:'الجاهزية للتحول بنسبة بين 50% إلى 80%', transformPriority:'متوسطة', steps:[], phases:[], milestones:[], launches:[], links:[], execChecklist:[{key:'agents',label:'بناء النظام الوكيلي',status:'لم تبدأ',newDate:'',reason:''},{key:'testing',label:'الاختبار وضمان الجودة',status:'لم تبدأ',newDate:'',reason:''},{key:'pilot',label:'الإطلاق',status:'لم تبدأ',newDate:'',reason:''}] },
       { id:'o4', wf:'exec', type:'operation', title:'توجيه مكالمات مركز الاتصال', endDate:'2026-12-25',  desc:'توجيه ذكي لمكالمات مركز الاتصال وتحويلها للجهة المختصة آلياً.', path:'ops', approval:'معتمد', priority:'عالية', rank:2, complexity:'متوسط', impact:'مرتفع', progress:55, opType:'العمليات التخصصية', subActivities:'استقبال، تصنيف، تحويل', fedEntity:'—', sector:'الخدمي', dept:'مركز الاتصال', section:'قسم التشغيل', automationLevel:'جزئياً', automationPct:50, automationSystem:'نظام مركز الاتصال', usageIntensity:'عالية', complexityLevel:'متوسط', transformability:'قابل كلياً', readiness:'الجاهزية للتحول بنسبة 80% فأكثر', transformPriority:'عالية', scopeOfWork:'بناء محرك توجيه ذكي متكامل مع نظام مركز الاتصال الحالي.', budget:'900,000 درهم', scopeApproval:'معتمد', steps:[], phases:[], milestones:[], launches:[{title:'تشغيل التوجيه الذكي',ltype:'إطلاق منتج / خدمة',date:'2026-12-10',desc:'',phase:'',status:'مخطط',done:false}], execChecklist:[{key:'agents',label:'بناء النظام الوكيلي',status:'مكتمل',newDate:'',reason:''},{key:'testing',label:'الاختبار وضمان الجودة',status:'لم تبدأ',newDate:'',reason:''},{key:'pilot',label:'الإطلاق',status:'لم تبدأ',newDate:'',reason:''}] },
       { id:'st1', wf:'pm1', type:'project', title:'منصة دعم القرار الاستراتيجي', desc:'لوحة ذكية لدعم صنع القرار الحكومي بتحليلات تنبؤية.', path:'strategy', approval:'قيد المراجعة', priority:'عالية', rank:1, complexity:'عالٍ', impact:'مرتفع', transformability:'قابل كلياً', readiness:'الجاهزية للتحول بنسبة 70%', transformPriority:'عالية', expectedOutputs:'لوحة قرار موحّدة', expectedOutcomes:'تسريع القرارات الاستراتيجية 40%', targetPct:60, aiModels:3, endDate:'2027-02-01', status:'مشروع جديد', phases:[], launches:[], execChecklist:[], links:[] },
-      { id:'st2', wf:'ent1', type:'initiative', title:'مؤشر جاهزية التحول الحكومي', desc:'مبادرة لقياس جاهزية الجهات للتحول الذكي.', path:'strategy', approval:'تم الإرسال', priority:'متوسطة', rank:2, complexity:'متوسط', impact:'متوسط', transformability:'قابل جزئياً', readiness:'الجاهزية للتحول بنسبة 45%', transformPriority:'متوسطة', expectedOutputs:'مؤشر ولوحة قياس', expectedOutcomes:'رصد الجاهزية سنوياً', targetPct:40, aiModels:1, endDate:'2027-04-01', status:'مبادرة جديدة', phases:[], launches:[], execChecklist:[], links:[] },
+      { id:'st2', wf:'ent1', scopeOfWork:'بناء مؤشر موحّد لقياس جاهزية الجهات للتحول الذكي عبر تجميع البيانات وتحليلها وإصدار لوحة نتائج دورية.', budget:'1,100,000 درهم', type:'initiative', title:'مؤشر جاهزية التحول الحكومي', desc:'مبادرة لقياس جاهزية الجهات للتحول الذكي.', path:'strategy', approval:'تم الإرسال', priority:'متوسطة', rank:2, complexity:'متوسط', impact:'متوسط', transformability:'قابل جزئياً', readiness:'الجاهزية للتحول بنسبة 45%', transformPriority:'متوسطة', expectedOutputs:'مؤشر ولوحة قياس', expectedOutcomes:'رصد الجاهزية سنوياً', targetPct:40, aiModels:1, endDate:'2027-04-01', status:'مبادرة جديدة', phases:[], launches:[], execChecklist:[], links:[] },
       { id:'cp1', wf:'exec', type:'project', title:'أكاديمية الذكاء الاصطناعي الحكومية', desc:'برنامج تأهيل وطني لبناء قدرات الكوادر في الذكاء الاصطناعي.', path:'capacity', approval:'تم الإرسال', priority:'عالية', rank:1, complexity:'متوسط', impact:'مرتفع', transformability:'قابل كلياً', readiness:'الجاهزية للتحول بنسبة 80% فأكثر', transformPriority:'عالية', expectedOutputs:'منصة تدريب + 500 متدرب', expectedOutcomes:'رفع الكفاءة الرقمية 30%', targetPct:55, aiModels:2, endDate:'2027-01-15', status:'قيد التنفيذ', scopeOfWork:'بناء منصة تعلّم تكيّفية ومحتوى تدريبي.', budget:'1,800,000 درهم', phases:[], launches:[], execChecklist:[], links:[] },
       { id:'cp2', wf:'draft', type:'initiative', title:'معسكرات تدريب المطورين الحكوميين', desc:'مبادرة تدريب مكثّف على بناء الوكلاء الأذكياء.', path:'capacity', approval:'مسودة', priority:'متوسطة', rank:2, complexity:'منخفض', impact:'متوسط', transformability:'قابل جزئياً', readiness:'الجاهزية للتحول بنسبة 55%', transformPriority:'متوسطة', expectedOutputs:'برنامج معسكرات', expectedOutcomes:'تأهيل 200 مطوّر', targetPct:35, aiModels:1, endDate:'2027-05-01', status:'مسودة', phases:[], launches:[], execChecklist:[], links:[] },
       { id:'tc1', wf:'launch', type:'project', title:'بحيرة البيانات الحكومية الموحّدة', desc:'بنية بيانات مركزية لتمكين نماذج الذكاء الاصطناعي عبر الجهات.', path:'tech', approval:'معتمد', priority:'عالية', rank:1, complexity:'عالٍ', impact:'مرتفع', transformability:'قابل كلياً', readiness:'الجاهزية للتحول بنسبة 80% فأكثر', transformPriority:'عالية', expectedOutputs:'بحيرة بيانات + واجهات برمجية', expectedOutcomes:'توحيد 200+ مصدر بيانات', targetPct:75, aiModels:5, endDate:'2026-12-30', status:'قيد الإطلاق', scopeOfWork:'إنشاء بحيرة بيانات وطبقة حوكمة.', budget:'6,500,000 درهم', scopeApproval:'معتمد', phases:[], launches:[{title:'الإطلاق التجريبي لبحيرة البيانات',ltype:'إطلاق منتج / خدمة',date:'2026-12-05',desc:'',phase:'',status:'قيد الإعداد',done:false}], execChecklist:[{key:'agents',label:'بناء النظام الوكيلي',status:'مكتمل',newDate:'',reason:''},{key:'testing',label:'الاختبار وضمان الجودة',status:'مكتمل',newDate:'',reason:''},{key:'pilot',label:'الإطلاق',status:'لم تبدأ',newDate:'',reason:''}], links:[] },
@@ -1543,7 +1579,7 @@ class Component extends DCLogic {
   componentDidMount() {
     try {
       const saved = JSON.parse(localStorage.getItem('aitp_state') || '{}');
-      const SEED_V = 'wf6';
+      const SEED_V = 'wf8';
       if (saved && saved.view) { if (saved.seedV !== SEED_V) { saved.items = this.seed(); saved.seedV = SEED_V; } this.setState(saved, ()=>this.save()); }
       else { this.setState({ seedV: SEED_V }); }
     } catch (e) {}
@@ -1632,13 +1668,22 @@ class Component extends DCLogic {
     // اللجنة الوطنية لم تعد تعتمد بوابات سير العمل — دورها الآن عبر السلة (التمويل)
     return false;
   }
+  exportRows() { const tl={project:'مشروع',initiative:'مبادرة',operation:'عملية',service:'خدمة'}; return this.state.items.map(i=>({ 'النوع':tl[i.type]||i.type, 'العنوان':i.title||'', 'المسار':this.pathById(i.path).name, 'الجهة':i.entity||this.state.entityName, 'الحالة':this.wfMeta(i).label, 'الأولوية':i.priority||'', 'الميزانية':i.budget||'', 'نطاق العمل':i.scopeOfWork||'', 'نسبة الإنجاز':(i.progress||0)+'%', 'ممول من اللجنة':i.funded?'نعم':'لا' })); }
+  doExportExcel() { const XLSX=window.XLSX; if(!XLSX){ this.toast('جارٍ تحميل أداة التصدير، حاول بعد لحظات'); return; } const ws=XLSX.utils.json_to_sheet(this.exportRows()); ws['!cols']=[{wch:10},{wch:34},{wch:22},{wch:24},{wch:16},{wch:10},{wch:16},{wch:44},{wch:12},{wch:14}]; const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'عناصر التحول'); XLSX.writeFile(wb,'عناصر_التحول_الذكي.xlsx'); this.toast('تم إنشاء ملف Excel'); }
+  doExportPpt() { const P=window.PptxGenJS; if(!P){ this.toast('جارٍ تحميل أداة التصدير، حاول بعد لحظات'); return; } const tl={project:'مشروع',initiative:'مبادرة',operation:'عملية',service:'خدمة'}; const pptx=new P(); pptx.defineLayout({name:'W',width:10,height:5.63}); pptx.layout='W'; pptx.rtlMode=true;
+    let s=pptx.addSlide(); s.background={color:'0F1F3D'}; s.addText('عناصر التحول الذكي', {x:0.5,y:2,w:9,h:1,fontSize:34,bold:true,color:'FFFFFF',align:'center',fontFace:'Cairo',rtlMode:true}); s.addText((this.state.entityName||'')+' · '+this.state.items.length+' عنصر', {x:0.5,y:3,w:9,h:0.6,fontSize:15,color:'9FC4F2',align:'center',fontFace:'Cairo',rtlMode:true});
+    this.state.items.forEach(i=>{ const sl=pptx.addSlide(); sl.addText(i.title||'', {x:0.4,y:0.35,w:9.2,h:0.7,fontSize:22,bold:true,color:'13213C',align:'right',fontFace:'Cairo',rtlMode:true}); sl.addText((tl[i.type]||'')+' · '+this.pathById(i.path).name+' · '+(i.entity||this.state.entityName), {x:0.4,y:1.05,w:9.2,h:0.4,fontSize:12,color:'2563EB',align:'right',fontFace:'Cairo',rtlMode:true});
+      const rows=[['الحالة',this.wfMeta(i).label],['الأولوية',i.priority||'—'],['الميزانية',i.budget||'—'],['نسبة الإنجاز',(i.progress||0)+'%'],['التمويل',i.funded?'معتمد من اللجنة الوطنية':'—']];
+      sl.addTable(rows.map(r=>[{text:String(r[1]),options:{align:'right',color:'13213C',fontFace:'Cairo'}},{text:r[0],options:{bold:true,color:'54627B',align:'right',fill:'F5F8FD',fontFace:'Cairo'}}]), {x:0.4,y:1.6,w:9.2,colW:[6.2,3],fontSize:13,rowH:0.4,border:{type:'solid',color:'E7ECF4',pt:1},rtlMode:true});
+      if((i.scopeOfWork||'').trim()){ sl.addText('نطاق العمل: '+i.scopeOfWork, {x:0.4,y:4.2,w:9.2,h:1.2,fontSize:11,color:'42506B',align:'right',fontFace:'Cairo',rtlMode:true,valign:'top'}); } });
+    pptx.writeFile({fileName:'عرض_عناصر_التحول.pptx'}); this.toast('تم إنشاء ملف PowerPoint'); }
   wfReturned(i) { return !!(i.ret); }
   wfSubmit(id) { this.updateItem(id, { wf:'ent1', ret:null }); this.toast('تم الإرسال لاعتماد ممثل الجهة'); }
   actorName() {
     const r=this.state.role, su=this.state.setup||{};
     if(r==='entity') return (su.rep&&su.rep.name)||'ممثل الجهة';
     if(r==='ai') return 'اللجنة الوطنية';
-    const o=((su.owners||{})[this.state.myPath])||{}; return o.name||(r==='coord'?'منسق المسار في الجهة':'ممثل المسار');
+    const o=((su.owners||{})[this.state.myPath])||{}; return o.name||(r==='coord'?'منسق المسار في الجهة':'خليفة السويدي');
   }
   actorRole() { const r=this.state.role; return r==='entity'?'ممثل الجهة':(r==='ai'?'اللجنة الوطنية':(r==='coord'?'منسق المسار في الجهة':'ممثل المسار')); }
   withLog(it, action, note) { const e={ action, by:this.actorName(), role:this.actorRole(), at:Date.now(), note:note||'' }; return [...(it.log||[]), e]; }
@@ -1651,14 +1696,15 @@ class Component extends DCLogic {
   // ===== السلة: الترشيح والتمويل من اللجنة الوطنية =====
   nominateItem(id){ const it=this.state.items.find(i=>i.id===id); if(!it)return; const nom={by:this.actorName(),role:this.actorRole(),path:it.path,at:Date.now()}; this.updateItem(id,{nom, log:this.withLog(it,'nominate')}); this.toast('تمت إضافة العنصر إلى سلة الترشيح — بانتظار اللجنة الوطنية'); }
   withdrawNom(id){ const it=this.state.items.find(i=>i.id===id); if(!it)return; this.updateItem(id,{nom:null}); this.toast('تم سحب الترشيح'); }
-  fundItem(id, direct){ const it=this.state.items.find(i=>i.id===id); if(!it)return; const funded={by:'اللجنة الوطنية',at:Date.now(),direct:!!direct}; const nom = it.nom || {by:'اللجنة الوطنية',role:'اللجنة الوطنية',path:it.path,at:Date.now(),direct:true}; this.updateItem(id,{funded, nom, log:this.withLog(it,'fund')}); this.toast('تمت الموافقة على التمويل — أُضيف إلى السلة المعتمدة وأُشعرت الجهة'); }
+  isEntityApproved(it){ const w=this.wfOf(it); return w==='exec'||w==='launch'||w==='done'; }
+  fundItem(id, direct){ const it=this.state.items.find(i=>i.id===id); if(!it)return; if(!this.isEntityApproved(it)){ this.toast('لا يمكن تمويل العنصر قبل اعتماد ممثل الجهة'); return; } const funded={by:'اللجنة الوطنية',at:Date.now(),direct:!!direct}; const nom = it.nom || {by:'اللجنة الوطنية',role:'اللجنة الوطنية',path:it.path,at:Date.now(),direct:true}; this.updateItem(id,{funded, nom, log:this.withLog(it,'fund')}); this.toast('تمت الموافقة على التمويل — أُضيف إلى السلة المعتمدة وأُشعرت الجهة'); }
   declineNom(id){ const it=this.state.items.find(i=>i.id===id); if(!it)return; this.updateItem(id,{nom:null, log:this.withLog(it,'declineNom')}); this.toast('تم رفض الترشيح'); }
   toggleFund(id){ const it=this.state.items.find(i=>i.id===id); if(!it)return; if(it.funded){ const clearNom=!!(it.funded&&it.funded.direct); this.updateItem(id,{funded:null, nom: clearNom?null:it.nom, log:this.withLog(it,'unfund')}); this.toast('تم إلغاء التمويل'); } else { this.fundItem(id, !it.nom); } }
   // اختيار متعدد للتمويل من اللجنة (checkbox على البطاقة + شريط سفلي)
   toggleFundSel(id){ const cur=this.state.ui.fundSel||[]; const next = cur.includes(id) ? cur.filter(x=>x!==id) : [...cur, id]; this.setUi({fundSel:next}); }
   clearFundSel(){ this.setUi({fundSel:[]}); }
   fundSelected(){ const ids=this.state.ui.fundSel||[]; if(!ids.length)return; let items=this.state.items;
-    ids.forEach(id=>{ const it=items.find(x=>x.id===id); if(it&&!it.funded){ const funded={by:'اللجنة الوطنية',at:Date.now(),direct:!it.nom}; const nom=it.nom||{by:'اللجنة الوطنية',role:'اللجنة الوطنية',path:it.path,at:Date.now(),direct:true}; items=items.map(x=>x.id===id?{...x,funded,nom,log:this.withLog(x,'fund')}:x); } });
+    ids.forEach(id=>{ const it=items.find(x=>x.id===id); if(it&&!it.funded&&this.isEntityApproved(it)){ const funded={by:'اللجنة الوطنية',at:Date.now(),direct:!it.nom}; const nom=it.nom||{by:'اللجنة الوطنية',role:'اللجنة الوطنية',path:it.path,at:Date.now(),direct:true}; items=items.map(x=>x.id===id?{...x,funded,nom,log:this.withLog(x,'fund')}:x); } });
     this.setState({items, ui:{...this.state.ui, fundSel:[]}}, ()=>this.save()); this.toast('تم اعتماد تمويل '+ids.length+' عنصر — أُشعرت الجهات'); }
   nominateSelected(){ const ids=this.state.ui.fundSel||[]; if(!ids.length)return; let items=this.state.items;
     ids.forEach(id=>{ const it=items.find(x=>x.id===id); if(it&&!it.nom&&!it.funded){ const nom={by:this.actorName(),role:this.actorRole(),path:it.path,at:Date.now()}; items=items.map(x=>x.id===id?{...x,nom,log:this.withLog(x,'nominate')}:x); } });
@@ -1697,8 +1743,8 @@ class Component extends DCLogic {
   }
   doSubmitScope(id) {
     const it = this.state.items.find(i=>i.id===id);
-    this.updateItem(id, { wf:'exec', ret:null, log: it?this.withLog(it,'budget'):undefined });
-    this.toast('تم إرسال الميزانية ونطاق العمل لاعتماد ممثل الجهة');
+    this.updateItem(id, { wf:'ent1', ret:null, log: it?this.withLog(it,'submit'):undefined });
+    this.toast('تم إرسال العنصر لاعتماد ممثل الجهة');
   }
   // ===== AI pre-submission review =====
   startSubReview(id, phase) {
@@ -1805,13 +1851,13 @@ class Component extends DCLogic {
   draftArr(key) { return (this.state.ui.draft && this.state.ui.draft[key]) || []; }
   // خطة التنفيذ الربعية — 5 مراحل معتمدة (كل ~3 أشهر) مع إمكانية إضافة مراحل فرعية داخل كل مرحلة
   execMilestones() { return [
-    {name:'التقييم والتهيئة',      period:'يونيو – يوليو 2026',      desc:'تقييم الوضع الحالي وتحديد الأولويات',        start:'2026-06-01', end:'2026-07-31', status:'لم تبدأ', fixed:true, subs:[]},
-    {name:'إطلاق الدفعة الأولى',   period:'يوليو – نوفمبر 2026',     desc:'تطوير وإطلاق أول 3 نماذج',                   start:'2026-07-15', end:'2026-11-30', status:'لم تبدأ', fixed:true, subs:[]},
-    {name:'إطلاق الدفعة الثانية',  period:'ديسمبر 2026 – فبراير 2027', desc:'تطوير 4 نماذج إضافية',                       start:'2026-12-01', end:'2027-02-28', status:'لم تبدأ', fixed:true, subs:[]},
-    {name:'إطلاق الدفعة الثالثة',  period:'مارس – مايو 2027',        desc:'توسيع التطبيق ليشمل 5 خدمات جديدة',          start:'2027-03-01', end:'2027-05-31', status:'لم تبدأ', fixed:true, subs:[]},
-    {name:'إطلاق الدفعة الرابعة',  period:'يونيو – أغسطس 2027',      desc:'إطلاق خدمات الذكاء الاصطناعي للمتعاملين',    start:'2027-06-01', end:'2027-08-31', status:'لم تبدأ', fixed:true, subs:[]},
+    {name:'التقييم والتهيئة',      period:'يونيو – يوليو 2026',      desc:'تقييم الوضع الحالي وتحديد الأولويات',        start:'2026-06-01', end:'2026-07-31', status:'لم تبدأ', fixed:true, subs:[{name:'',start:'',end:''}]},
+    {name:'إطلاق الدفعة الأولى',   period:'يوليو – نوفمبر 2026',     desc:'تطوير وإطلاق أول 3 نماذج',                   start:'2026-07-15', end:'2026-11-30', status:'لم تبدأ', fixed:true, subs:[{name:'',start:'',end:''}]},
+    {name:'إطلاق الدفعة الثانية',  period:'ديسمبر 2026 – فبراير 2027', desc:'تطوير 4 نماذج إضافية',                       start:'2026-12-01', end:'2027-02-28', status:'لم تبدأ', fixed:true, subs:[{name:'',start:'',end:''}]},
+    {name:'إطلاق الدفعة الثالثة',  period:'مارس – مايو 2027',        desc:'توسيع التطبيق ليشمل 5 خدمات جديدة',          start:'2027-03-01', end:'2027-05-31', status:'لم تبدأ', fixed:true, subs:[{name:'',start:'',end:''}]},
+    {name:'إطلاق الدفعة الرابعة',  period:'يونيو – أغسطس 2027',      desc:'إطلاق خدمات الذكاء الاصطناعي للمتعاملين',    start:'2027-06-01', end:'2027-08-31', status:'لم تبدأ', fixed:true, subs:[{name:'',start:'',end:''}]},
   ]; }
-  addSub(i){ const a=this.draftArr('phases').map((p,k)=> k===i ? {...p, subs:[...(p.subs||[]), {name:'',date:''}]} : p); this.draftField('phases', a); }
+  addSub(i){ const a=this.draftArr('phases').map((p,k)=> k===i ? {...p, subs:[...(p.subs||[]), {name:'',start:'',end:''}]} : p); this.draftField('phases', a); }
   updSub(i,j,f,v){ const a=this.draftArr('phases').map((p,k)=> k===i ? {...p, subs:(p.subs||[]).map((s,m)=> m===j?{...s,[f]:v}:s)} : p); this.draftField('phases', a); }
   removeSub(i,j){ const a=this.draftArr('phases').map((p,k)=> k===i ? {...p, subs:(p.subs||[]).filter((_,m)=>m!==j)} : p); this.draftField('phases', a); }
   addPhase() { this.draftField('phases', [...this.draftArr('phases'), {name:'',desc:'',start:'',end:'',owner:'',status:'لم تبدأ',approval:'مسودة',outcome:'',notes:'',subs:[]}]); }
@@ -1847,6 +1893,8 @@ class Component extends DCLogic {
   }
   submitDraft(approval) {
     const isDraft = approval==='مسودة';
+    const dft = this.state.ui.draft||{};
+    if (!isDraft && (!(dft.scopeOfWork||'').trim() || !(dft.budget||'').trim())) { this.toast('يجب إدخال نطاق العمل والميزانية قبل الإرسال للاعتماد'); this.setUi({ mStep:'form', fStep:4 }); return; }
     const existing = this.state.items.find(i=>i.id===this.state.ui.draft.id);
     const baseLog = existing ? (existing.log||[]) : [];
     const ec = this.state.ui.editCtx;
@@ -1995,7 +2043,7 @@ class Component extends DCLogic {
       return {
         id:i.id, title:i.title, desc:i.desc, typeLabel:t.label, typeColor:t.color, typeBg:t.bg,
         pathName:p.name, pathColor:p.color, approval:i.approval, apprBg:ap.bg, apprColor:ap.c,
-        wfLabel: wm.label, wfChip: wm.chip, wfBg: wm.bg,
+        wfLabel: (ret?'بحاجة إلى تعديل':wm.label), wfChip: (ret?'#B45309':wm.chip), wfBg: (ret?'#FFF3DE':wm.bg),
         isReturned: rawRole==='coord' && !!ret, retNote: ret ? (ret.note || (ret.type==='info'?'طُلبت معلومات إضافية':'تمت الإعادة للتعديل')) : '', retFrom: ret?ret.from:'', retIsInfo: ret&&ret.type==='info',
         stepBadge: 'المرحلة '+this.stepIndexOf(i),
         stepLabel: ((this.state.programPhases||[])[this.stepIndexOf(i)-1]||{}).n||'—',
@@ -2019,7 +2067,7 @@ class Component extends DCLogic {
         onOpen: () => this.openDetail(i.id), onApprove: (e) => { if(e&&e.stopPropagation)e.stopPropagation(); this.approveItem(i.id); },
         // basket: nominate (stream rep) + fund (committee)
         canNominate: false,
-        isNominated: !!i.nom && !i.funded, nomBy: i.nom?i.nom.by:'',
+        isNominated: !!i.nom && !i.funded, nomBy: i.nom?i.nom.by:'', nomStream: i.nom?this.pathById(i.nom.path||i.path).name:'',
         canWithdrawNom: rawRole==='path' && !!i.nom && !i.funded && i.nom.by===this.actorName(),
         isFunded: !!i.funded,
         showSelectCheck: (wf==='exec'||wf==='launch'||wf==='done') && ((rawRole==='ai' && !i.funded) || (rawRole==='path' && !i.nom && !i.funded)),
@@ -2044,11 +2092,15 @@ class Component extends DCLogic {
     const mkBasketRow = (i)=>({ id:i.id, title:i.title, typeLabel:tlBasket[i.type]||'', entity:entOf(i), pathName:this.pathById(i.path).name,
       nomBy: (i.nom&&i.nom.by)||'', nomByCommittee: !!(i.nom&&i.nom.direct), scoreV:this.transformScore(i).v, scoreColor:this.transformScore(i).color,
       funded:!!i.funded, fundedDirect: !!(i.funded&&i.funded.direct),
+      fundSource: (i.funded&&i.funded.direct) ? 'اعتُمد مباشرة من اللجنة الوطنية' : ('بترشيح من '+((i.nom&&i.nom.by)||'ممثل المسار')+' · '+this.pathById(i.path).name),
       onOpen:()=>{ this.setUi({basketOpen:false}); this.openDetail(i.id); },
       onApprove:()=>this.fundItem(i.id,false), onDecline:()=>this.declineNom(i.id), onWithdraw:()=>this.withdrawNom(i.id) });
     const basketSelSrc = isCom ? items.filter(i=>i.nom && !i.funded) : items.filter(i=>i.nom && !i.funded && i.nom.by===myName);
     const basketAppSrc = isCom ? items.filter(i=>i.funded) : items.filter(i=>i.funded && i.nom && i.nom.by===myName);
     const basketSelItems = basketSelSrc.map(mkBasketRow), basketAppItems = basketAppSrc.map(mkBasketRow);
+    const parseBudget = (s)=> parseInt(String(s||'').replace(/[^\d]/g,''))||0;
+    const basketFundedTotal = basketAppSrc.reduce((a,i)=>a+parseBudget(i.budget),0);
+    const basketSelTotal = basketSelSrc.reduce((a,i)=>a+parseBudget(i.budget),0);
     const aiTree = (role!=='ai') ? [] : (()=>{
       const byEnt = {}; base.filter(i=>this.wfOf(i)!=='draft').forEach(i=>{ const e=entOf(i); (byEnt[e]=byEnt[e]||[]).push(i); });
       return Object.keys(byEnt).map(ename=>{
@@ -2102,6 +2154,9 @@ class Component extends DCLogic {
     const phaseProg = base.length ? Math.round(submitted/base.length*100) : 0;
     // ---- leadership view ----
     const avgProg = scope.length ? Math.round(scope.reduce((a,i)=>a+(i.progress||0),0)/scope.length) : 0;
+    const stageW = {draft:0,ent1:25,exec:60,launch:85,done:100};
+    const completionPct = scope.length ? Math.round(scope.reduce((a,i)=>a+(stageW[this.wfOf(i)]||0),0)/scope.length) : 0;
+    const doneCount = scope.filter(i=>this.wfOf(i)==='done').length;
     const ring = 207, ringOff = Math.round(ring*(1-avgProg/100));
     const delayed = scope.filter(i=>(i.approval==='بحاجة إلى تحديث')||(i.priority==='عالية'&&(i.progress||0)<25)).length;
     const pending = scope.filter(i=>i.approval==='تم الإرسال'||i.approval==='قيد المراجعة').length;
@@ -2129,12 +2184,12 @@ class Component extends DCLogic {
       titleVal: draft.title||'',
     };
     const fStep = m.fStep || 1;
-    const phaseRows = (draft.phases||[]).map((p,idx)=>({ idx, num:String(idx+1), name:p.name||'', desc:p.desc||'', period:p.period||'', start:p.start||'', end:p.end||'', owner:p.owner||'', status:p.status||'لم تبدأ', outcome:p.outcome||'', fixed:!!p.fixed, notFixed:!p.fixed,
+    const phaseRows = (draft.phases||[]).map((p,idx)=>({ idx, num:String(idx+1), name:p.name||'', desc:p.desc||'', period:p.period||'', start:p.start||'', end:p.end||'', startFmt:this.fmtDate(p.start), endFmt:this.fmtDate(p.end), owner:p.owner||'', status:p.status||'لم تبدأ', outcome:p.outcome||'', fixed:!!p.fixed, notFixed:!p.fixed,
       onName:(e)=>this.updPhase(idx,'name',e.target.value), onDesc:(e)=>this.updPhase(idx,'desc',e.target.value), onStart:(e)=>this.updPhase(idx,'start',e.target.value), onEnd:(e)=>this.updPhase(idx,'end',e.target.value), onOwner:(e)=>this.updPhase(idx,'owner',e.target.value), onStatus:(e)=>this.updPhase(idx,'status',e.target.value), onOutcome:(e)=>this.updPhase(idx,'outcome',e.target.value),
       onRemove:()=>this.removePhase(idx), onUp:()=>this.movePhase(idx,-1), onDown:()=>this.movePhase(idx,1),
-      subs:(p.subs||[]).map((s,j)=>({ j, name:s.name||'', date:s.date||'', onName:(e)=>this.updSub(idx,j,'name',e.target.value), onDate:(e)=>this.updSub(idx,j,'date',e.target.value), onRemove:()=>this.removeSub(idx,j) })),
+      subs:(p.subs||[]).map((s,j)=>({ j, name:s.name||'', start:s.start||'', end:s.end||'', onName:(e)=>this.updSub(idx,j,'name',e.target.value), onStart:(e)=>this.updSub(idx,j,'start',e.target.value), onEnd:(e)=>this.updSub(idx,j,'end',e.target.value), onRemove:()=>this.removeSub(idx,j) })),
       hasSubs:(p.subs||[]).length>0, onAddSub:()=>this.addSub(idx) }));
-    const launchRows = (draft.launches||[]).map((p,idx)=>({ idx, title:p.title||'', ltype:p.ltype||'', date:p.date||'', desc:p.desc||'', phase:p.phase||'', status:p.status||'مخطط',
+    const launchRows = (draft.launches||[]).map((p,idx)=>({ idx, numLabel: (['الإطلاق الأول','الإطلاق الثاني','الإطلاق الثالث','الإطلاق الرابع','الإطلاق الخامس','الإطلاق السادس','الإطلاق السابع','الإطلاق الثامن'][idx]||('الإطلاق '+(idx+1))), title:p.title||'', ltype:p.ltype||'', date:p.date||'', desc:p.desc||'', phase:p.phase||'', status:p.status||'مخطط',
       onTitle:(e)=>this.updLaunch(idx,'title',e.target.value), onType:(e)=>this.updLaunch(idx,'ltype',e.target.value), onDate:(e)=>this.updLaunch(idx,'date',e.target.value), onDesc:(e)=>this.updLaunch(idx,'desc',e.target.value), onStatus:(e)=>this.updLaunch(idx,'status',e.target.value), onPhase:(e)=>this.updLaunch(idx,'phase',e.target.value),
       onRemove:()=>this.removeLaunch(idx) }));
     // ---- detail panel ----
@@ -2144,16 +2199,17 @@ class Component extends DCLogic {
       const t = TYPE[dItem.type], pth = this.pathById(dItem.path);
       const ap = APPR[dItem.approval] || APPR['مسودة'];
       const wf = this.wfOf(dItem), wm = this.wfMeta(dItem), step = wm.step, ret = dItem.ret;
-      const stg = step>=5 ? 'tracking' : (step>=3 ? 'scope' : 'build');
-      const stageNum = step>=5?3:(step>=3?2:1);
+      const inTracking = (wf==='exec'||wf==='launch'||wf==='done');
+      const stg = inTracking ? 'tracking' : (wf==='ent1' ? 'scope' : 'build');
+      const stageNum = inTracking?3:(wf==='ent1'?2:1);
       const vStep = Math.min(this.state.ui.dViewStep || step, step);
       const v1=vStep===1, v2=vStep===2, v3=vStep===3, v4=vStep===4, v5=vStep===5, v6=vStep===6;
       const sc0 = this.transformScore(dItem);
       const isOp = dItem.type==='operation', isSvc = dItem.type==='service', isProj = dItem.type==='project'||dItem.type==='initiative';
       const canApproveGate = this.canActOn(dItem);
       const gateActor = (wf==='ent1'||wf==='ent2') ? 'ممثل الجهة' : 'اللجنة الوطنية';
-      const canEditScope = (rawRole==='coord' && wf==='draft');
-      const trackingOn = step>=5;
+      const canEditScope = false; // صفحة التفاصيل للعرض فقط — التعديل يتم عبر نموذج الإضافة
+      const trackingOn = inTracking;
       // execution checklist rows
       const SC = {'لم تبدأ':{bg:'#F1F4F9',c:'#64748B'},'مكتمل':{bg:'#F1F4F9',c:'#0B8A4B'},'متأخر':{bg:'#F1F4F9',c:'#C0303B'}};
       const execEditable = (rawRole==='coord' && wf==='exec');
@@ -2224,12 +2280,13 @@ class Component extends DCLogic {
         // returned-to-stream banner
         isReturned: rawRole==='coord' && !!ret, retNote: ret ? (ret.note || (ret.type==='info'?'طُلبت معلومات إضافية':'تمت الإعادة للتعديل')) : '', retFrom: ret?ret.from:'', retIsInfo: ret&&ret.type==='info',
         // execution + launch
-        showExec: step>=5, execRows, execEditable, execAllDone, showGoLaunch: rawRole==='coord' && wf==='exec',
-        showLaunch: step>=6, launchChk, hasLaunchChk:launchChk.length>0, launchEditable, launchAllDone, showFinishLaunch: rawRole==='coord' && wf==='launch',
+        showExec: inTracking, execRows, execEditable, execAllDone, showGoLaunch: rawRole==='coord' && wf==='exec',
+        showLaunch: (wf==='launch'||wf==='done'), launchChk, hasLaunchChk:launchChk.length>0, launchEditable, launchAllDone, showFinishLaunch: rawRole==='coord' && wf==='launch',
         onGoLaunch:()=>this.goToLaunch(dItem.id), onFinishLaunch:()=>this.finishLaunch(dItem.id),
         trackingOn, trackingLocked: !trackingOn,
         canApproveGate, canApproveGateView: (canApproveGate && vStep===step), gateActor, gateActionLabel:'إجراء '+gateActor,
-        showBudgetSubmit: rawRole==='coord' && wf==='budget',
+        showBudgetSubmit: false, isDraftView: (wf==='draft' && rawRole==='coord'),
+        funded: !!dItem.funded, fundedText: dItem.funded ? ((dItem.funded.direct?'مموّل مباشرة من اللجنة الوطنية':('مموّل من اللجنة الوطنية · بترشيح من '+((dItem.nom&&dItem.nom.by)||'ممثل المسار')))+' · يبقى التنفيذ من مسؤولية الجهة') : '',
         linkedItems, hasLinked:linkedItems.length>0, phaseList, hasPhases:phaseList.length>0, launchList, hasLaunches:launchList.length>0,
         onClose:()=>this.closeDetail(), onEdit:()=>this.editItem(dItem.id),
         onApprove:()=>this.approveItem(dItem.id), onReject:()=>this.rejectItem(dItem.id), onReqInfo:()=>this.reqInfoItem(dItem.id),
@@ -2321,7 +2378,7 @@ class Component extends DCLogic {
       streamSummary: 'إجمالي '+(['all','ops'].includes(effActivePath) && ['all','services'].includes(effActivePath) ? 'المشاريع والمبادرات والعمليات والخدمات' : (effActivePath==='ops' ? 'المشاريع والمبادرات والعمليات' : (effActivePath==='services' ? 'المشاريع والمبادرات والخدمات' : 'المشاريع والمبادرات'))),
       filterValue: ui.filter, onFilterChange:(e)=>this.setUi({filter:e.target.value}),
       statusFilterValue: ui.statusFilter||'all', onStatusFilter:(e)=>this.setUi({statusFilter:e.target.value}),
-      statusOptions: [{v:'all',label:'كل الحالات'},{v:'mine',label:'بحاجة لإجرائي'},{v:'pending',label:'بانتظار الاعتماد'},{v:'exec',label:'قيد التنفيذ'},{v:'launch',label:'قيد الإطلاق'},{v:'done',label:'مكتمل'},{v:'draft',label:'مسودة'}],
+      statusOptions: [{v:'all',label:'كل الحالات'}, ...((rawRole==='ai'||rawRole==='path')?[]:[{v:'mine',label:'بحاجة لإجرائي'},{v:'pending',label:'بانتظار الاعتماد'}]), {v:'exec',label:'قيد التنفيذ'},{v:'launch',label:'قيد الإطلاق'},{v:'done',label:'مكتمل'},{v:'draft',label:'مسودة'}],
       showEntFilter: rawRole==='ai'||rawRole==='path',
       entOptions: (rawRole==='ai'||rawRole==='path') ? [{v:'all',label:'كل الجهات'}, ...[...new Set(this.state.items.map(entOf))].map(e=>({v:e,label:e}))] : [], entFilterValue: ui.entFilter||'all', onEntFilter:(e)=>this.setUi({entFilter:e.target.value}),
       pathOptions: (role==='ai') ? [{v:'all',label:'كل المسارات'}, ...this.PATHS.map(p=>({v:p.id,label:p.name}))] : [], pathFilterValue: effActivePath, onPathFilter:(e)=>this.setUi({activePath:e.target.value}),
@@ -2330,6 +2387,7 @@ class Component extends DCLogic {
       aiTree, notAiRole: role!=='ai',
       aiStats: (role!=='ai') ? {} : (()=>{ const ents=[...new Set(base.map(entOf))]; const sc=base.map(i=>this.transformScore(i).v); const avg= sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length*10)/10:0; const pend=base.filter(i=>i.approval==='تم الإرسال'||i.approval==='قيد المراجعة').length; const now=base.filter(i=>this.transformScore(i).v>=4.2).length; const wait=base.filter(i=>{const v=this.transformScore(i).v;return v>=2.0&&v<4.2;}).length; const low=base.filter(i=>this.transformScore(i).v<2.0).length; return { entCount:ents.length, total:base.length, pending:pend, avg, avgPct: sc.length?Math.round((sc.reduce((a,b)=>a+b,0)/sc.length)/5*100):0, now, wait, low, funded: base.filter(i=>i.funded).length }; })(),
       avgProg, ringOff, delayed, pending, matrix,
+      completionPct, completionW: completionPct+'%', doneCount, scopeTotal: scope.length, completionColor: completionPct>=75?'#0B8A4B':(completionPct>=40?'#2563EB':'#B45309'),
       upLaunchRows, hasUpLaunch:upLaunchRows.length>0, needApproval, hasNeedApproval:needApproval.length>0,
       setWorkView:()=>this.setUi({view:'work'}), setLeaderView:()=>this.setUi({view:'leadership'}),
       openCreate:()=>this.openCreate(), showAddBtn: rawRole==='coord',
@@ -2350,12 +2408,13 @@ class Component extends DCLogic {
       setBasketSelected:()=>this.setUi({basketTab:'selected'}), setBasketApproved:()=>this.setUi({basketTab:'approved'}),
       basketSelItems, basketAppItems, hasBasketSel: basketSelItems.length>0, hasBasketApp: basketAppItems.length>0,
       basketSelCount: basketSelItems.length, basketAppCount: basketAppItems.length,
+      basketFundedTotal: basketFundedTotal.toLocaleString('en-US')+' درهم', basketSelTotal: basketSelTotal.toLocaleString('en-US')+' درهم', hasFundedTotal: basketFundedTotal>0, hasSelTotal: basketSelTotal>0,
       basketBadge: basketSelItems.length, hasBasketBadge: basketSelItems.length>0, basketBadgeLabel: String(basketSelItems.length),
       basketSelStyle: (ui.basketTab||'selected')==='selected'?'background:#0F1F3D;color:#fff':'background:#F4F7FC;color:#54627B',
       basketAppStyle: (ui.basketTab||'selected')==='approved'?'background:#0F1F3D;color:#fff':'background:#F4F7FC;color:#54627B',
       cardsGridStyle: (ui.itemView==='list') ? 'display:flex;flex-direction:column;gap:10px' : 'display:grid;grid-template-columns:repeat(3,1fr);gap:14px', isCardView: (ui.itemView||'card')==='card', isListView: ui.itemView==='list', setCardView:()=>this.setUi({itemView:'card'}), setListView:()=>this.setUi({itemView:'list'}),
       cardViewStyle: (ui.itemView||'card')==='card'?'background:#0F1F3D;color:#fff':'background:transparent;color:#8A97AD', listViewStyle: ui.itemView==='list'?'background:#0F1F3D;color:#fff':'background:transparent;color:#8A97AD',
-      exportExcel:()=>this.toast('سيتم تفعيل تصدير Excel قريباً'), exportPpt:()=>this.toast('سيتم تفعيل تصدير PowerPoint قريباً'), printView:()=>{ try{window.print();}catch(e){} },
+      exportExcel:()=>this.doExportExcel(), exportPpt:()=>this.doExportPpt(), printView:()=>{ try{window.print();}catch(e){} },
       // modal
       modalOpen:modal.open, mStepPath:modal.stepPath, mStepType:modal.stepType, mStepMethod:modal.stepMethod,
       mStepForm:modal.stepForm, mStepBulk:modal.stepBulk, mStepReview:modal.stepReview, mStepDone:modal.stepDone,
@@ -2381,10 +2440,24 @@ class Component extends DCLogic {
       fStep, f1:fStep===1, f2:fStep===2, fOutcome:fStep===3, fBudget:fStep===4, fPhases:fStep===5, fLaunch:fStep===5,
       fc2: fStep>=2?'#2563EB':'#D7DEEA', fc3: fStep>=3?'#2563EB':'#D7DEEA', fc4: fStep>=4?'#2563EB':'#D7DEEA', fc5: fStep>=5?'#2563EB':'#D7DEEA',
       scopeFileLabelCreate: draft.scopeFile ? draft.scopeFile : 'أرفق مستند نطاق العمل والميزانية (PDF)',
+      hasScopeFileCreate: !!draft.scopeFile, notScopeFileCreate: !draft.scopeFile,
       onScopeFileCreate:(e)=>{ const f=e.target.files&&e.target.files[0]; if(f) this.draftField('scopeFile', f.name); },
+      onRemoveScopeFileCreate:()=>this.draftField('scopeFile', ''),
       fNextLabel: fStep<5?'التالي':'مراجعة ذكية',
-      fNext:()=>{ const s=this.state.ui.fStep||1; if(s<5) this.fGoto(s+1); else this.runAiReview(); },
+      fNext:()=>{ const s=this.state.ui.fStep||1; if(s<5){ this.fGoto(s+1); return; } const d=this.state.ui.draft||{}; if(!(d.scopeOfWork||'').trim()||!(d.budget||'').trim()){ this.toast('يجب إدخال نطاق العمل والميزانية قبل الإرسال للاعتماد'); this.fGoto(4); return; } this.runAiReview(); },
       fPrev:()=>{ const s=this.state.ui.fStep||1; if(s>1) this.fGoto(s-1); else this.mBack(); },
+      fStepTitle: ([({project:'بيانات المشروع',initiative:'بيانات المبادرة',operation:'بيانات العملية',service:'بيانات الخدمة'}[m.mType]||'البيانات العامة'),({project:'تقييم المشروع',initiative:'تقييم المبادرة',operation:'تقييم العملية',service:'تقييم الخدمة'}[m.mType]||'التقييم والأولوية'),'النتائج المتوقعة','نطاق العمل والميزانية','خطة التنفيذ والإطلاق'][fStep-1])||'',
+      fStepHint: (['ابدأ بالمعلومات الأساسية للعنصر','حدّد الأولوية وقابلية التحول','النتائج والأثر المستهدف','نطاق العمل والميزانية والمرفقات','المراحل الربعية وخطة الإطلاق'][fStep-1])||'',
+      fSteps: [
+        {num:1, label:({project:'بيانات المشروع',initiative:'بيانات المبادرة',operation:'بيانات العملية',service:'بيانات الخدمة'}[m.mType]||'البيانات')},
+        {num:2, label:({project:'تقييم المشروع',initiative:'تقييم المبادرة',operation:'تقييم العملية',service:'تقييم الخدمة'}[m.mType]||'التقييم')},
+        {num:3, label:'النتائج المتوقعة'}, {num:4, label:'نطاق العمل والميزانية'}, {num:5, label:'خطة التنفيذ والإطلاق'},
+      ].map(s=>{ const done=s.num<fStep, active=s.num===fStep; return { num:String(s.num), label:s.label, isDone:done, notDone:!done, isActive:active,
+        circleBg: (active||done)?'#2563EB':'#fff', circleColor:(active||done)?'#fff':'#9AA6BC', circleBorder:(active||done)?'none':'1.5px solid #DCE3EE', circleGlow: active?'0 0 0 4px rgba(37,99,235,.14)':'none',
+        labelColor: active?'#13213C':(done?'#42506B':'#9AA6BC'),
+        lineA: s.num>1 ? (s.num<=fStep?'#2563EB':'#E1E7F1') : 'transparent',
+        lineB: s.num<5 ? (s.num<fStep?'#2563EB':'#E1E7F1') : 'transparent',
+        cursor: done?'pointer':'default', onGo: done ? (()=>this.fGoto(s.num)) : (()=>{}) }; }),
       isOpType: m.mType==='operation', notOpType: m.mType!=='operation',
       phaseRows, launchRows, addPhase:()=>this.addPhase(), addLaunch:()=>this.addLaunch(),
       noPhases: phaseRows.length===0, noLaunches: launchRows.length===0,
@@ -2415,8 +2488,9 @@ class Component extends DCLogic {
       dIsOp: detail?detail.isOp:false, dIsSvc: detail?detail.isSvc:false, dIsProj: detail?detail.isProj:false,
       dShowScope: detail?detail.showScopeSection:false, dCanEditScope: detail?detail.canEditScope:false, dScopeLocked: detail?detail.scopeLocked:true,
       dTrackingOn: detail?detail.trackingOn:false, dTrackingLocked: detail?detail.trackingLocked:true,
-      dCanApproveGate: detail?detail.canApproveGateView:false, dCannotApprove: detail?(!detail.canApproveGateView && !detail.onApprovalStep && !detail.editLocked && !detail.fillActive):true, dHideEdit: detail?detail.onApprovalStep:false, dShowMenuEdit: detail?(!detail.onApprovalStep && !detail.editLocked):true,
+      dCanApproveGate: detail?detail.canApproveGateView:false, dCannotApprove: detail?(!detail.canApproveGateView && !detail.onApprovalStep && !detail.editLocked && !detail.fillActive):true, dEditLabel: (detail && detail.isDraftView) ? 'متابعة وإكمال البيانات وإرسالها' : 'تعديل', dHideEdit: detail?detail.onApprovalStep:false, dShowMenuEdit: detail?(!detail.onApprovalStep && !detail.editLocked):true,
       dActionMenuOpen: !!ui.dActionMenu, onToggleDActionMenu:()=>this.setUi({dActionMenu:!ui.dActionMenu}), dHasLinked: detail?detail.hasLinked:false, dHasPhases: detail?detail.hasPhases:false, dHasLaunches: detail?detail.hasLaunches:false,
+      dFunded: !!(detail&&detail.funded), dFundedText: detail?detail.fundedText:'',
       dScopeSubmitted: detail?detail.scopeSubmitted:false, dScopeApproved: detail?detail.scopeApproved:false, dScopeReadOnly: detail?(!detail.canEditScope && !detail.scopePendingInput):true, dScopePendingInput: detail?detail.scopePendingInput:false,
       dScopeStatusLabel: detail?(detail.scopeApproved?'معتمد من اللجنة الوطنية':(detail.scopeSubmitted?'بانتظار الاعتماد':(detail.canEditScope?'قيد الإدخال':'مقفل'))):'',
       dScopeStatusBg: detail?(detail.scopeApproved?'#E3F6EC':(detail.scopeSubmitted?'#FFF3DE':(detail.canEditScope?'#EAF0FE':'#F1F4F9'))):'#F1F4F9',

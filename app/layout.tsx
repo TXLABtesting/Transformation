@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   title: 'المنصة الحكومية لتخطيط ومتابعة مشروع الذكاء الاصطناعي المساعد',
   description:
     'منصة حكومية لحصر ومراجعة ومتابعة أعمال التحول بالذكاء الاصطناعي عبر الجهات الاتحادية.',
+  robots: { index: false, follow: false },
+  referrer: 'strict-origin-when-cross-origin',
 };
 
 export default function RootLayout({

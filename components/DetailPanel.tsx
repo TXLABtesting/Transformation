@@ -6,6 +6,8 @@ import { SC, EXEC_STATUS_OPTS } from '@/lib/domain';
 const CHECK = 'M20 6 9 17l-5-5';
 const CLOCK = 'M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z';
 const DOWNLOAD = 'M12 3v12M7 10l5 5 5-5M5 21h14';
+const WALLET = 'M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2 2 0 0 0 0 4h4v-4z';
+const SPEECH = 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z';
 
 const labelStyle: React.CSSProperties = {
   fontSize: 11,
@@ -275,6 +277,36 @@ export function DetailPanel({ vm }: { vm: VM }) {
             </div>
           </div>
 
+          {/* Funded banner */}
+          {d.dFunded && (
+            <div
+              style={{
+                background: '#EDF9F1',
+                border: '1px solid #D5EEE0',
+                borderRadius: 12,
+                padding: '12px 14px',
+                display: 'flex',
+                gap: 11,
+                alignItems: 'flex-start',
+              }}
+            >
+              <div style={{ flex: 'none', marginTop: 1 }}>
+                <Icon d={WALLET} size={20} color="#0B8A4B" />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ color: '#0B8A4B', fontWeight: 800, fontSize: 13 }}>
+                  معتمد للتمويل من اللجنة الوطنية
+                </div>
+                <div style={{ color: '#0B7C57', fontSize: 12, fontWeight: 600, marginTop: 4 }}>
+                  {d.dFundedText}
+                </div>
+                <div style={{ color: '#8A97AD', fontSize: 12, marginTop: 4 }}>
+                  يبقى التنفيذ من مسؤولية الجهة
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Returned banner */}
           {d.isReturned && (
             <div
@@ -285,8 +317,18 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 padding: '11px 13px',
               }}
             >
-              <div style={{ color: '#C0303B', fontWeight: 800, fontSize: 13 }}>
-                أُعيد من {d.retFrom} — يتطلب إجراءً
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  color: '#C0303B',
+                  fontWeight: 800,
+                  fontSize: 13,
+                }}
+              >
+                <Icon d={SPEECH} size={16} color="#C0303B" />
+                {d.retBannerLabel}
               </div>
               {d.retNote && (
                 <div style={{ color: '#7A4A4E', fontSize: 12, marginTop: 4 }}>{d.retNote}</div>
@@ -1180,7 +1222,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 }}
               >
                 <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" size={16} color="#fff" />
-                تعديل
+                {d.editLabel}
               </button>
             )}
           </div>

@@ -22,6 +22,9 @@ import {
   wfMeta,
   stepIndexOf,
   transformScore,
+  stageWeight,
+  isEntityApproved,
+  RETURNED_STATUS,
   entOf,
   fmtDate,
   daysLeft,
@@ -86,11 +89,15 @@ function build(s: Store) {
   // ---- KPI scope ----
   const scope = effActivePath === 'all' ? base : base.filter((i) => i.path === effActivePath);
   const cnt = (f: (i: Item) => boolean) => scope.filter(f).length;
+  const completion = scope.length
+    ? Math.round(scope.reduce((a, i) => a + stageWeight(i), 0) / scope.length)
+    : 0;
   const kpis = {
     projects: cnt((i) => i.type === 'project'),
     initiatives: cnt((i) => i.type === 'initiative'),
     operations: cnt((i) => i.type === 'operation'),
     services: cnt((i) => i.type === 'service'),
+    completion,
   };
 
   // ---- role flags ----
@@ -129,11 +136,16 @@ function build(s: Store) {
   // ---- type filter tabs ----
   const tabs = tabDefs(effActivePath, scope);
 
-  // status filter options
+  // status filter options — ai/path (oversight roles) drop the action/pending
+  // options they can't act on
   const statusOptions = [
     { v: 'all', label: 'كل الحالات' },
-    { v: 'mine', label: 'بحاجة لإجرائي' },
-    { v: 'pending', label: 'بانتظار الاعتماد' },
+    ...(rawRole === 'ai' || role === 'path'
+      ? []
+      : [
+          { v: 'mine', label: 'بحاجة لإجرائي' },
+          { v: 'pending', label: 'بانتظار الاعتماد' },
+        ]),
     { v: 'exec', label: 'قيد التنفيذ' },
     { v: 'launch', label: 'قيد الإطلاق' },
     { v: 'done', label: 'مكتمل' },
@@ -364,6 +376,11 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const step = stepIndexOf(i);
   const canApprove = rawRole === 'entity' && w === 'ent1';
   const isFunded = !!i.funded;
+  // a returned item surfaces an amber "بحاجة إلى تعديل" chip instead of "مسودة"
+  const isReturned = !!i.ret;
+  const wfLabel = isReturned ? RETURNED_STATUS : wm.label;
+  const wfChip = isReturned ? '#B45309' : wm.chip;
+  const wfBg = isReturned ? '#FFF3DE' : wm.bg;
   const showSelectCheck =
     ['exec', 'launch', 'done'].includes(w) && ((rawRole === 'ai' && !i.funded) || (role === 'path' && !i.nom && !i.funded));
 
@@ -379,10 +396,11 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     approval: i.approval,
     apprBg: appr.bg,
     apprColor: appr.c,
-    wfLabel: wm.label,
-    wfChip: wm.chip,
-    wfBg: wm.bg,
+    wfLabel,
+    wfChip,
+    wfBg,
     isReturned: rawRole === 'coord' && !!i.ret,
+    retBannerLabel: 'ملاحظات ممثل الجهة',
     retNote: i.ret?.note || '',
     retFrom: i.ret?.from || '',
     stepBadge: 'المرحلة ' + step,
@@ -537,6 +555,10 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
     : s.items.filter((i) => i.funded && i.nom && i.nom.by === myName);
   const mk = (i: Item) => {
     const score = transformScore(i);
+    // funding-source line for approved rows
+    const fundedText = i.nom?.direct
+      ? 'اعتُمد مباشرة من اللجنة الوطنية'
+      : 'بترشيح من ' + (i.nom?.by || '') + ' · ' + pathById(i.path).name;
     return {
       id: i.id,
       title: i.title,
@@ -544,6 +566,7 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
       entity: ent(i),
       pathName: pathById(i.path).name,
       nomBy: i.nom?.by || '',
+      fundedText,
       scoreV: score.v,
       scoreColor: score.color,
       onOpen: () => s.openDetail(i.id),
@@ -552,6 +575,13 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
       onWithdraw: () => s.withdrawNom(i.id),
     };
   };
+  // total approved-funding cost (parse the free-text budget strings)
+  const parseBudget = (b?: string) => {
+    const n = parseInt((b || '').replace(/[^\d]/g, ''), 10);
+    return isNaN(n) ? 0 : n;
+  };
+  const fundedTotal = appSrc.reduce((a, i) => a + parseBudget(i.budget), 0);
+  const fundedTotalLabel = fundedTotal.toLocaleString('en-US') + ' درهم';
   return {
     isCommittee: isCom,
     title: isCom ? 'سلة اللجنة الوطنية' : 'سلة الترشيحات',
@@ -566,6 +596,8 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
     selCount: selSrc.length,
     appCount: appSrc.length,
     pendingCount: selSrc.length,
+    fundedTotal,
+    fundedTotalLabel,
   };
 }
 
@@ -579,7 +611,9 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
   const step = wm.step;
   const score = transformScore(i);
   const canApproveGate = rawRole === 'entity' && w === 'ent1';
-  const canEditScope = rawRole === 'coord' && w === 'draft';
+  // detail view is VIEW-ONLY for item data; scope/budget are never edited here
+  const canEditScope = false;
+  const isDraftForCoord = rawRole === 'coord' && w === 'draft';
   const twoStep = rawRole === 'ai' || rawRole === 'path';
   const cur = twoStep ? (step >= 3 ? 2 : 1) : step;
   const stepLabels = twoStep
@@ -628,8 +662,15 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     complexity: i.complexity,
     endDateFmt: fmtDate(i.endDate),
     isReturned: rawRole === 'coord' && !!i.ret,
+    retBannerLabel: 'ملاحظات ممثل الجهة',
     retFrom: i.ret?.from || '',
     retNote: i.ret?.note || '',
+    // funded banner (shown inside the detail body)
+    dFunded: !!i.funded,
+    dFundedText:
+      i.funded?.direct || i.nom?.direct
+        ? 'اعتُمد مباشرة من اللجنة الوطنية'
+        : 'بترشيح من ' + (i.nom?.by || ''),
     isProj: i.type === 'project' || i.type === 'initiative',
     isOp: i.type === 'operation',
     isSvc: i.type === 'service',
@@ -669,7 +710,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     canEditScope,
     scopeReadOnly: !canEditScope && !!(i.scopeOfWork || i.budget),
     scopePendingInput: !canEditScope && !i.scopeOfWork && !i.budget,
-    showBudgetSubmit: rawRole === 'coord' && w === 'draft',
+    showBudgetSubmit: false, // scope is submitted via the wizard, not the detail
     hasScopeFile: !!i.scopeFile,
     scopeFile: i.scopeFile || '',
     // exec / launch
@@ -688,7 +729,8 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     canApproveGate,
     gateActor: w === 'ent1' ? 'ممثل الجهة' : 'اللجنة الوطنية',
     dActionMenuOpen: s.ui.dActionMenuOpen,
-    canEdit: rawRole === 'ai' || rawRole === 'entity' || (rawRole === 'coord' && ['draft'].includes(w)),
+    canEdit: isDraftForCoord,
+    editLabel: isDraftForCoord ? 'متابعة وإكمال البيانات وإرسالها' : 'تعديل',
     // handlers
     onClose: () => s.closeDetail(),
     onApprove: () => s.approveItem(i.id),
@@ -732,6 +774,13 @@ function buildModal(s: Store) {
   const mTypeLabel = typeLabel(type);
   const path = draft?.path || s.myPath;
   const fLabels = ['بيانات', 'التصنيف والأولوية', 'النتائج المتوقعة', 'نطاق العمل والميزانية', 'خطة التنفيذ والإطلاق'];
+  const fHints = [
+    'أدخل المعلومات العامة للعنصر',
+    'حدّد التصنيف والأولوية وتقييم التحول',
+    'صف المخرجات والنتائج والأثر المتوقع',
+    'حدّد نطاق العمل والميزانية وأرفق المستند الداعم',
+    'المراحل الربعية للتنفيذ وخطة الإطلاق',
+  ];
   return {
     mStep: ui.mStep,
     createTitle: ui.editingId ? 'تعديل عنصر' : 'إضافة عنصر جديد',
@@ -751,6 +800,9 @@ function buildModal(s: Store) {
     mIsProjectish: type === 'project' || type === 'initiative',
     mTypeLabel,
     fLabels,
+    fHints,
+    fStepTitle: fLabels[ui.fStep - 1] || '',
+    fStepHint: fHints[ui.fStep - 1] || '',
     fNextLabel: ui.fStep >= 5 ? 'مراجعة ذكية' : 'التالي',
     // ai review
     aiLoading: ui.aiLoading,
