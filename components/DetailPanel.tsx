@@ -871,17 +871,17 @@ export function DetailPanel({ vm }: { vm: VM }) {
                                 key={opt}
                                 onClick={() => x.onStatus(opt)}
                                 style={{
-                                  flex: 1,
-                                  border: active ? `1.5px solid ${sc.c}` : '1px solid #E1E7F1',
-                                  borderRadius: 10,
-                                  padding: '8px 10px',
-                                  fontSize: 12,
-                                  fontWeight: 800,
+                                  border: 'none',
+                                  borderRadius: 7,
+                                  padding: '6px 11px',
+                                  fontSize: 11.5,
+                                  fontWeight: 700,
                                   cursor: 'pointer',
-                                  background: active ? sc.bg : '#fff',
-                                  color: active ? sc.c : '#9AA6BC',
+                                  whiteSpace: 'nowrap',
+                                  background: active ? '#fff' : '#F1F4F9',
+                                  color: active ? sc.c : '#8A97AD',
                                   boxShadow: active
-                                    ? '0 6px 16px -10px rgba(15,31,61,.4)'
+                                    ? '0 2px 6px -2px rgba(15,31,61,.15)'
                                     : 'none',
                                 }}
                               >
@@ -995,6 +995,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               {d.showGoLaunch && (
                 <button
                   onClick={d.onGoLaunch}
+                  disabled={d.execBlocked}
                   style={{
                     width: '100%',
                     marginTop: 14,
@@ -1005,7 +1006,8 @@ export function DetailPanel({ vm }: { vm: VM }) {
                     padding: '13px 20px',
                     fontWeight: 800,
                     fontSize: 14,
-                    cursor: 'pointer',
+                    cursor: d.execBlocked ? 'not-allowed' : 'pointer',
+                    opacity: d.execOpacity,
                     boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
                   }}
                 >
@@ -1133,8 +1135,8 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <button
                     onClick={d.onToggleMenu}
                     style={{
-                      width: 44,
-                      height: 44,
+                      width: 48,
+                      height: 48,
                       borderRadius: 12,
                       border: '1px solid #E7ECF4',
                       background: '#fff',
@@ -1142,9 +1144,12 @@ export function DetailPanel({ vm }: { vm: VM }) {
                       fontSize: 18,
                       fontWeight: 800,
                       cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    ⋯
+                    <Icon d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={2.5} />
                   </button>
                   {d.dActionMenuOpen && (
                     <div
@@ -1166,18 +1171,21 @@ export function DetailPanel({ vm }: { vm: VM }) {
                         onClick={d.onEdit}
                         style={menuItemStyle('#33405A')}
                       >
+                        <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={15} />
                         تعديل البيانات
                       </button>
                       <button
                         onClick={d.onReqInfo}
                         style={{ ...menuItemStyle('#33405A'), borderTop: '1px solid #F0F3F8' }}
                       >
+                        <Icon d="M12 8h.01M11 12h1v4h1M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" size={15} />
                         طلب معلومات إضافية
                       </button>
                       <button
                         onClick={d.onReject}
                         style={{ ...menuItemStyle('#D23B45'), borderTop: '1px solid #F0F3F8' }}
                       >
+                        <Icon d="M18 6 6 18M6 6l12 12" size={15} color="#D23B45" />
                         رفض
                       </button>
                     </div>
@@ -1234,7 +1242,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
 
 function menuItemStyle(color: string): React.CSSProperties {
   return {
-    display: 'block',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 9,
     width: '100%',
     textAlign: 'right',
     background: '#fff',

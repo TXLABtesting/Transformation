@@ -122,11 +122,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   fontSize: 11.5,
                   cursor: 'pointer',
                   ...(p.active
-                    ? {
-                        background: '#fff',
-                        color: '#13213C',
-                        boxShadow: '0 2px 6px -2px rgba(15,31,61,.25)',
-                      }
+                    ? { background: '#0F1F3D', color: '#fff' }
                     : { background: 'transparent', color: '#54627B' }),
                 }}
               >

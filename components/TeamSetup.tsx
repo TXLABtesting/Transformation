@@ -280,7 +280,6 @@ export function TeamSetup({ vm }: { vm: VM }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {PATHS.map((path) => {
                 const owner = s.setup.owners[path.id];
-                const self = !!owner?.self;
                 return (
                   <div
                     key={path.id}
@@ -324,59 +323,9 @@ export function TeamSetup({ vm }: { vm: VM }) {
                           </div>
                         </div>
                       </div>
-
-                      {/* Visible toggle: أنا المسؤول عن المسار */}
-                      <label
-                        onClick={() => s.toggleSelf(path.id)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 9,
-                          cursor: 'pointer',
-                          flex: 'none',
-                          userSelect: 'none',
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: self ? '#2563EB' : '#54627B',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          أنا المسؤول عن المسار
-                        </span>
-                        <span
-                          style={{
-                            position: 'relative',
-                            width: 40,
-                            height: 22,
-                            borderRadius: 999,
-                            background: self ? '#2563EB' : '#DCE3EE',
-                            transition: 'background .2s',
-                            flex: 'none',
-                          }}
-                        >
-                          <span
-                            style={{
-                              position: 'absolute',
-                              top: 2,
-                              right: self ? 2 : 20,
-                              width: 18,
-                              height: 18,
-                              borderRadius: '50%',
-                              background: '#fff',
-                              boxShadow: '0 1px 3px rgba(15,31,61,.3)',
-                              transition: 'right .2s',
-                            }}
-                          />
-                        </span>
-                      </label>
                     </div>
 
-                    {!self && (
-                      <div
+                    <div
                         style={{
                           display: 'grid',
                           gridTemplateColumns: '1fr 1fr',
@@ -447,8 +396,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                           value={owner?.email || ''}
                           onChange={(e) => s.updOwner(path.id, 'email', e.target.value)}
                         />
-                      </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}

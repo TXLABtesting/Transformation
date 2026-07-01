@@ -435,7 +435,8 @@ function FormStep({
           margin: '10px -24px -24px',
           padding: '20px 24px 24px',
           display: 'flex',
-          gap: 10,
+          justifyContent: 'space-between',
+          alignItems: 'center',
           background: 'linear-gradient(180deg,rgba(247,249,253,0),#F7F9FD 30%)',
         }}
       >
@@ -455,45 +456,46 @@ function FormStep({
         >
           السابق
         </button>
-        <button
-          onClick={() => s.saveDraftOnly()}
-          style={{
-            background: '#EEF1F7',
-            border: 'none',
-            borderRadius: 12,
-            padding: '12px 18px',
-            color: '#54627B',
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-          }}
-        >
-          حفظ كمسودة
-        </button>
-        <button
-          onClick={() => s.fNext()}
-          style={{
-            flex: 1,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
-            border: 'none',
-            borderRadius: 12,
-            padding: '12px 20px',
-            color: '#fff',
-            fontWeight: 800,
-            fontSize: 14,
-            cursor: 'pointer',
-            boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
-            fontFamily: 'inherit',
-          }}
-        >
-          {m.fNextLabel}
-          <Icon d={IC.chevronLeft} size={16} color="#fff" />
-        </button>
+        <div style={{ display: 'flex', gap: 9 }}>
+          <button
+            onClick={() => s.saveDraftOnly()}
+            style={{
+              background: '#EEF1F7',
+              border: 'none',
+              borderRadius: 12,
+              padding: '12px 18px',
+              color: '#54627B',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            حفظ كمسودة
+          </button>
+          <button
+            onClick={() => s.fNext()}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
+              border: 'none',
+              borderRadius: 11,
+              padding: '11px 18px',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: 14,
+              cursor: 'pointer',
+              boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
+              fontFamily: 'inherit',
+            }}
+          >
+            {m.fNextLabel}
+            <Icon d={IC.chevronLeft} size={16} color="#fff" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1053,11 +1055,11 @@ function FPhases({ vm }: { vm: VM }) {
                   gap: 5,
                   background: '#EAF0FE',
                   color: '#2563EB',
-                  border: 'none',
-                  borderRadius: 9,
+                  border: '1px solid #D9E4FD',
+                  borderRadius: 11,
                   padding: '6px 10px',
                   fontSize: 11.5,
-                  fontWeight: 800,
+                  fontWeight: 700,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                 }}
@@ -1125,19 +1127,19 @@ function FPhases({ vm }: { vm: VM }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: 5,
-              background: '#E3F6EC',
-              color: '#0B8A4B',
-              border: 'none',
-              borderRadius: 9,
+              background: '#EAF0FE',
+              color: '#2563EB',
+              border: '1px solid #D9E4FD',
+              borderRadius: 11,
               padding: '8px 12px',
               fontSize: 12,
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
               flex: 'none',
               fontFamily: 'inherit',
             }}
           >
-            <Icon d={IC.plus} size={14} color="#0B8A4B" />
+            <Icon d={IC.plus} size={14} color="#2563EB" />
             إضافة إطلاق
           </button>
         </div>
@@ -1325,7 +1327,7 @@ function ReviewStep({ vm }: { vm: VM }) {
             لا يتم الإرسال تلقائياً — يمكنك قبول الاقتراحات أو التعديل يدوياً أو تجاهل الملاحظات غير الحرجة.
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <button
               onClick={() => s.backToForm()}
               style={{
@@ -1345,19 +1347,19 @@ function ReviewStep({ vm }: { vm: VM }) {
             <button
               onClick={() => s.submitItem()}
               style={{
-                flex: 1,
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
                 background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
                 border: 'none',
-                borderRadius: 12,
+                borderRadius: 11,
                 padding: '12px 20px',
                 color: '#fff',
                 fontWeight: 800,
                 fontSize: 14,
                 cursor: 'pointer',
+                boxShadow: '0 10px 22px -10px rgba(11,138,75,.6)',
                 fontFamily: 'inherit',
               }}
             >
@@ -1601,10 +1603,9 @@ function BulkReviewStep({ vm }: { vm: VM }) {
             <button
               onClick={() => s.submitBulk()}
               style={{
-                flex: 1,
                 background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
                 border: 'none',
-                borderRadius: 12,
+                borderRadius: 11,
                 padding: '12px 20px',
                 color: '#fff',
                 fontWeight: 800,
@@ -1651,8 +1652,8 @@ function DoneStep({ vm }: { vm: VM }) {
           onClick={() => s.openCreate()}
           style={{
             background: '#EAF0FE',
-            border: 'none',
-            borderRadius: 12,
+            border: '1px solid #D9E4FD',
+            borderRadius: 11,
             padding: '12px 20px',
             color: '#2563EB',
             fontWeight: 800,
@@ -1668,13 +1669,12 @@ function DoneStep({ vm }: { vm: VM }) {
           style={{
             background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
             border: 'none',
-            borderRadius: 12,
+            borderRadius: 11,
             padding: '12px 20px',
             color: '#fff',
             fontWeight: 800,
             fontSize: 13,
             cursor: 'pointer',
-            boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
             fontFamily: 'inherit',
           }}
         >

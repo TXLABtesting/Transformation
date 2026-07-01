@@ -42,9 +42,9 @@ export function FundBar({ vm }: { vm: VM }) {
             border: '1px solid rgba(255,255,255,.28)',
             color: '#fff',
             borderRadius: 11,
-            padding: '9px 16px',
-            fontSize: 13,
-            fontWeight: 700,
+            padding: '10px 20px',
+            fontSize: 12.5,
+            fontWeight: 800,
             cursor: 'pointer',
           }}
         >
@@ -57,8 +57,8 @@ export function FundBar({ vm }: { vm: VM }) {
             color: '#0F1F3D',
             border: 'none',
             borderRadius: 11,
-            padding: '9px 18px',
-            fontSize: 13,
+            padding: '10px 22px',
+            fontSize: 12.5,
             fontWeight: 800,
             cursor: 'pointer',
           }}
@@ -73,14 +73,21 @@ export function FundBar({ vm }: { vm: VM }) {
 export function BasketDrawer({ vm }: { vm: VM }) {
   if (!vm.basketOpen) return null;
   const b = vm.basket;
+  const tabBase = {
+    border: 'none',
+    borderRadius: 10,
+    padding: '9px 0',
+    flex: 1,
+    textAlign: 'center' as const,
+    fontWeight: 800,
+    cursor: 'pointer',
+  };
   const activeTab = {
-    background: '#fff',
-    border: '1px solid #E7ECF4',
-    color: '#13213C',
+    background: '#0F1F3D',
+    color: '#fff',
   };
   const inactiveTab = {
-    background: 'transparent',
-    border: '1px solid transparent',
+    background: '#F4F7FC',
     color: '#54627B',
   };
 
@@ -165,12 +172,8 @@ export function BasketDrawer({ vm }: { vm: VM }) {
             <button
               onClick={() => vm.store.setBasketTab('sel')}
               style={{
-                flex: 1,
-                borderRadius: 11,
-                padding: '9px 12px',
+                ...tabBase,
                 fontSize: 12.5,
-                fontWeight: 800,
-                cursor: 'pointer',
                 ...(b.tab === 'sel' ? activeTab : inactiveTab),
               }}
             >
@@ -179,12 +182,8 @@ export function BasketDrawer({ vm }: { vm: VM }) {
             <button
               onClick={() => vm.store.setBasketTab('app')}
               style={{
-                flex: 1,
-                borderRadius: 11,
-                padding: '9px 12px',
+                ...tabBase,
                 fontSize: 12.5,
-                fontWeight: 800,
-                cursor: 'pointer',
                 ...(b.tab === 'app' ? activeTab : inactiveTab),
               }}
             >
