@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#EEF1F7;font-family:'Cairo',system-ui,sans-serif;direction:rtl;color:#0F1F3D}
+/* ---- options chrome ---- */
+.dv-turn{padding:38px 40px 30px;border-bottom:1px solid rgba(15,31,61,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px;direction:rtl}
+.dv-tid{font:700 11px ui-monospace,Menlo,monospace;padding:3px 8px;background:#0F1F3D;color:#fff;border-radius:5px;text-decoration:none}
+.dv-tname{font:700 14px/1.3 'Cairo',sans-serif;color:#0F1F3D}
+.dv-opts{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:11px;scroll-margin-top:16px}
+.dv-oid{font:700 11px ui-monospace,Menlo,monospace;padding:3px 8px;background:rgba(15,31,61,.09);color:#0F1F3D;border-radius:6px;text-decoration:none}
+.dv-olabel{display:flex;align-items:center;gap:9px;font:600 12.5px/1.3 'Cairo',sans-serif;color:#54627B}
+.dv-olabel small{font-weight:500;color:#8A97AD}
+.dv-card{max-width:100%;background:#F4F6FB;border:1px solid rgba(15,31,61,.09);border-radius:16px;box-shadow:0 12px 34px -18px rgba(15,31,61,.35);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2563EB;color:#fff}
+.dv-next{margin:24px 0 0;font:13px/1.6 'Cairo',sans-serif;color:#54627B}
+.dv-next a{color:#2563EB;font-weight:700;text-decoration:none}
+
+/* ---- shared app chrome ---- */
+.fr{width:1240px}
+.appbg{background:linear-gradient(180deg,#F7F9FD 0%,#EEF2F9 100%)}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 26px;background:#fff;border-bottom:1px solid #E7ECF4}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{font-weight:800;font-size:30px;letter-spacing:.5px;background:linear-gradient(180deg,#27C2F0,#1666E6 70%);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1}
+.brandtx b{display:block;font-size:13px;font-weight:800;color:#0F1F3D;line-height:1.25}
+.brandtx span{display:block;font-size:10px;color:#8A97AD;font-weight:600;letter-spacing:.3px}
+.hdr-r{display:flex;align-items:center;gap:10px}
+.icon-btn{width:38px;height:38px;border-radius:11px;border:1px solid #E7ECF4;background:#fff;display:flex;align-items:center;justify-content:center;color:#54627B;cursor:pointer}
+.ghost{display:inline-flex;align-items:center;gap:7px;font-family:'Cairo';font-weight:700;font-size:13px;color:#2563EB;background:#EAF0FE;border:1px solid #D9E4FD;border-radius:11px;padding:9px 14px;cursor:pointer}
+.prim{display:inline-flex;align-items:center;gap:8px;font-family:'Cairo';font-weight:700;font-size:13.5px;color:#fff;background:linear-gradient(180deg,#2E74EE,#1F5FE0);border:none;border-radius:12px;padding:11px 18px;cursor:pointer;box-shadow:0 8px 18px -8px rgba(37,99,235,.7)}
+.avatar{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#2E74EE,#27C2F0);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+.entity-pill{display:flex;align-items:center;gap:9px;background:#F4F7FC;border:1px solid #E7ECF4;border-radius:12px;padding:7px 14px;font-size:12.5px;font-weight:700;color:#33405A}
+.entity-pill small{color:#8A97AD;font-weight:600}
+
+/* badges */
+.bdg{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;line-height:1.4;white-space:nowrap}
+.s-draft{background:#EEF1F6;color:#64748B}.s-sent{background:#E5EEFF;color:#2563EB}
+.s-review{background:#FFF3DE;color:#B45309}.s-approved{background:#E3F6EC;color:#0B8A4B}
+.s-update{background:#F0E9FF;color:#6D28D9}.s-rejected{background:#FCE8E8;color:#DC2B38}
+.p-high{background:#FDEBEC;color:#D23B45}.p-med{background:#FFF3DE;color:#B45309}.p-low{background:#EAF4EE;color:#0B8A4B}
+.t-proj{background:#E5EEFF;color:#2563EB}.t-init{background:#EFEAFE;color:#6D28D9}
+.t-op{background:#E0F2FE;color:#0369A1}.t-svc{background:#E3F6EC;color:#0B8A4B}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+/* kpi */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:14px}
+.kpi{background:#fff;border:1px solid #E7ECF4;border-radius:16px;padding:15px 16px}
+.kpi .n{font-size:26px;font-weight:800;color:#0F1F3D;line-height:1}
+.kpi .l{font-size:12px;color:#8A97AD;font-weight:600;margin-top:7px}
+.kpi .t{font-size:11px;font-weight:700;margin-top:8px}
+
+/* progress */
+.prog{height:7px;border-radius:99px;background:#EAEEF6;overflow:hidden}
+.prog > i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#27C2F0,#2563EB)}
+
+/* work card base */
+.wc{background:#fff;border:1px solid #E7ECF4;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:11px}
+.wc-h{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.wc-ic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.wc-t{font-size:15px;font-weight:800;color:#13213C;line-height:1.4}
+.wc-d{font-size:12px;color:#7A879E;line-height:1.6;font-weight:500}
+.wc-meta{display:flex;flex-wrap:wrap;gap:7px}
+.wc-foot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #F0F3F8;padding-top:11px;margin-top:1px}
+.path-tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:#54627B}
+.linkcount{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:#8A97AD}
+
+/* tabs */
+.tabs{display:flex;gap:7px;flex-wrap:wrap}
+.tab{font-family:'Cairo';font-size:13px;font-weight:700;padding:9px 16px;border-radius:11px;border:1px solid #E7ECF4;background:#fff;color:#54627B;cursor:pointer}
+.tab.on{background:#0F1F3D;color:#fff;border-color:#0F1F3D}
+.search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #E7ECF4;border-radius:12px;padding:9px 14px;color:#9AA6BC;font-size:13px;min-width:220px}
+
+/* lane */
+.lane{background:#fff;border:1px solid #E7ECF4;border-radius:18px;overflow:hidden}
+.lane-h{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #F0F3F8}
+.lane-h .L{display:flex;align-items:center;gap:11px}
+.lane-ic{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none}
+.lane-body{display:flex;gap:13px;padding:16px;overflow-x:auto}
+.lane-card{flex:none;width:240px;background:#FBFCFE;border:1px solid #EBEFF6;border-radius:14px;padding:13px;display:flex;flex-direction:column;gap:9px}
+.mini-stat{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:#54627B}
+
+/* ring */
+.ring{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#13213C}
+.matrix{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mcell{border-radius:9px;padding:9px 6px;text-align:center;font-size:11px;font-weight:700}
+.timeline-rail{display:flex;flex-direction:column;gap:11px}
+.tl-item{display:flex;gap:11px;align-items:flex-start}
+.tl-dot{width:11px;height:11px;border-radius:50%;margin-top:4px;flex:none;border:3px solid #DCE6FA}
+.side{background:#fff;border:1px solid #E7ECF4;border-radius:16px;padding:16px}
+.side-h{font-size:13.5px;font-weight:800;color:#13213C;margin:0 0 13px;display:flex;align-items:center;justify-content:space-between}
+.row-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid #F2F5FA;font-size:12.5px;font-weight:600;color:#42506B}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+svg.i18{width:18px;height:18px}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1" dir="rtl">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">ثلاثة اتجاهات للوحة التحكم وتصميم البطاقات — اختر اتجاهاً (أو امزج)</span></div>
+  <div class="dv-opts">
+
+    <!-- ============ OPTION 1A : PATH LANES ============ -->
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a> مسارات أفقية <small>· التنظيم حسب المسار · لكل مسار صفّ بطاقات قابل للتمرير</small></div>
+      <div class="dv-card fr appbg">
+        <div class="hdr">
+          <div class="brand"><div class="logo">AI</div><div class="brandtx"><b>المساعد</b><span>AGENTIC AI · UAE GOV</span></div></div>
+          <div class="entity-pill"><svg class="i" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg> وزارة شؤون مجلس الوزراء <small>· الجهة</small></div>
+          <div class="hdr-r">
+            <button class="ghost"><svg class="i" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> فريق العمل</button>
+            <div class="icon-btn" style="font-weight:800;font-size:12px;color:#2563EB">EN</div>
+            <div class="avatar">أ.م</div>
+          </div>
+        </div>
+        <div style="padding:20px 22px;display:flex;flex-direction:column;gap:18px">
+          <!-- top bar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+            <div><div style="font-size:20px;font-weight:800">لوحة التحول المؤسسي</div><div style="font-size:12.5px;color:#8A97AD;font-weight:600;margin-top:3px">٤٨ عنصر عمل موزّع على ٥ مسارات</div></div>
+            <div style="display:flex;gap:9px"><button class="ghost">تصدير</button><button class="prim"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> إضافة جديد</button></div>
+          </div>
+          <!-- kpi compact -->
+          <div class="kpi-row" style="grid-template-columns:repeat(6,1fr)">
+            <div class="kpi"><div class="n">8</div><div class="l">المشاريع</div></div>
+            <div class="kpi"><div class="n">5</div><div class="l">المبادرات</div></div>
+            <div class="kpi"><div class="n">23</div><div class="l">العمليات</div></div>
+            <div class="kpi"><div class="n">12</div><div class="l">الخدمات</div></div>
+            <div class="kpi"><div class="n" style="color:#D23B45">9</div><div class="l">عالية الأولوية</div></div>
+            <div class="kpi"><div class="n" style="color:#B45309">5</div><div class="l">اعتمادات معلّقة</div></div>
+          </div>
+          <!-- lane 1 -->
+          <div class="lane">
+            <div class="lane-h">
+              <div class="L"><div class="lane-ic" style="background:#E3F6EC;color:#0B8A4B"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+              <div><div style="font-weight:800;font-size:14px">الخدمات</div><div style="font-size:11.5px;color:#8A97AD;font-weight:600">٦ عناصر · ٢ قيد المراجعة</div></div></div>
+              <span class="bdg" style="background:#EAF4EE;color:#0B8A4B">62% تقدّم</span>
+            </div>
+            <div class="lane-body">
+              <div class="lane-card"><div style="display:flex;justify-content:space-between"><span class="bdg t-proj">مشروع</span><span class="bdg s-review">قيد المراجعة</span></div><div style="font-weight:800;font-size:13.5px;line-height:1.45">منصة الخدمات الذكية الموحّدة</div><div class="wc-meta"><span class="bdg p-high">أولوية عالية</span><span class="bdg" style="background:#F1F4F9;color:#54627B">تعقيد عالٍ</span></div><div class="prog"><i style="width:45%"></i></div><div class="mini-stat">الأثر: مرتفع · ٤ نماذج ذكاء</div></div>
+              <div class="lane-card"><div style="display:flex;justify-content:space-between"><span class="bdg t-svc">خدمة</span><span class="bdg s-approved">معتمد</span></div><div style="font-weight:800;font-size:13.5px;line-height:1.45">إصدار الشهادات الرقمية</div><div class="wc-meta"><span class="bdg p-high">أولوية عالية</span></div><div class="prog"><i style="width:80%"></i></div><div class="mini-stat">٣ عمليات مرتبطة</div></div>
+              <div class="lane-card"><div style="display:flex;justify-content:space-between"><span class="bdg t-svc">خدمة</span><span class="bdg s-sent">تم الإرسال</span></div><div style="font-weight:800;font-size:13.5px;line-height:1.45">حجز المواعيد الذكي</div><div class="wc-meta"><span class="bdg p-med">متوسطة</span></div><div class="prog"><i style="width:30%"></i></div><div class="mini-stat">إطلاق خلال شهرين</div></div>
+            </div>
+          </div>
+          <!-- lane 2 -->
+          <div class="lane">
+            <div class="lane-h">
+              <div class="L"><div class="lane-ic" style="background:#E5EEFF;color:#2563EB"><svg class="i" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></div>
+              <div><div style="font-weight:800;font-size:14px">العمليات والدعم المؤسسي</div><div style="font-size:11.5px;color:#8A97AD;font-weight:600">٢٣ عملية · ١٤ قابلة للتحول</div></div></div>
+              <span class="bdg" style="background:#E5EEFF;color:#2563EB">38% تقدّم</span>
+            </div>
+            <div class="lane-body">
+              <div class="lane-card"><div style="display:flex;justify-content:space-between"><span class="bdg t-op">عملية</span><span class="bdg s-sent">تم الإرسال</span></div><div style="font-weight:800;font-size:13.5px;line-height:1.45">أتمتة معالجة طلبات التراخيص</div><div class="wc-meta"><span class="bdg" style="background:#EAF4EE;color:#0B8A4B">قابل كلياً</span><span class="bdg p-high">عالية</span></div><div class="prog"><i style="width:40%"></i></div><div class="mini-stat">أتمتة جزئية ٤٠٪ · جاهزية 80%+</div></div>
+              <div class="lane-card"><div style="display:flex;justify-content:space-between"><span class="bdg t-op">عملية</span><span class="bdg s-review">قيد المراجعة</span></div><div style="font-weight:800;font-size:13.5px;line-height:1.45">تحليل المراسلات الحكومية</div><div class="wc-meta"><span class="bdg" style="background:#FFF3DE;color:#B45309">قابل جزئياً</span></div><div class="prog"><i style="width:20%"></i></div><div class="mini-stat">مرتبطة بمشروع</div></div>
+              <div class="lane-card" style="align-items:center;justify-content:center;border-style:dashed;color:#2563EB;font-weight:700;cursor:pointer"><svg class="i" viewBox="0 0 24 24" style="width:24px;height:24px"><path d="M12 5v14M5 12h14"/></svg>إضافة عملية</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap">
+            <span class="tab">بناء القدرات والتدريب · ٤</span>
+            <span class="tab">تقنيات الذكاء الاصطناعي والبيانات · ٧</span>
+            <span class="tab">العمل الحكومي الاستراتيجي · ٣</span>
+            <span class="tab" style="background:#FBFCFE;color:#9AA6BC;border-style:dashed">عناصر غير مرتبطة · ٦</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ OPTION 1B : FILTER + CARD GRID ============ -->
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a> تبويبات + شبكة بطاقات غنية <small>· تشغيلي · فلترة سريعة · بطاقات تفصيلية قابلة للمسح</small></div>
+      <div class="dv-card fr appbg">
+        <div class="hdr">
+          <div class="brand"><div class="logo">AI</div><div class="brandtx"><b>المساعد</b><span>AGENTIC AI · UAE GOV</span></div></div>
+          <div class="entity-pill"><svg class="i" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg> وزارة شؤون مجلس الوزراء <small>· الجهة</small></div>
+          <div class="hdr-r"><button class="ghost"><svg class="i" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8"/></svg> فريق العمل</button><div class="icon-btn" style="font-weight:800;font-size:12px;color:#2563EB">EN</div><div class="avatar">أ.م</div></div>
+        </div>
+        <div style="padding:20px 22px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+            <div><div style="font-size:20px;font-weight:800">عناصر العمل</div><div style="font-size:12.5px;color:#8A97AD;font-weight:600;margin-top:3px">جميع المشاريع والمبادرات والعمليات والخدمات</div></div>
+            <button class="prim"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> إضافة جديد</button>
+          </div>
+          <!-- summary cards -->
+          <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+            <div class="kpi" style="border-right:4px solid #2563EB"><div class="n">8</div><div class="l">إجمالي المشاريع</div><div class="t" style="color:#0B8A4B">▲ ٢ قيد التنفيذ</div></div>
+            <div class="kpi" style="border-right:4px solid #6D28D9"><div class="n">5</div><div class="l">إجمالي المبادرات</div><div class="t" style="color:#8A97AD">١ مسودة</div></div>
+            <div class="kpi" style="border-right:4px solid #0369A1"><div class="n">23</div><div class="l">إجمالي العمليات</div><div class="t" style="color:#0B8A4B">١٤ قابلة للتحول</div></div>
+            <div class="kpi" style="border-right:4px solid #0B8A4B"><div class="n">12</div><div class="l">إجمالي الخدمات</div><div class="t" style="color:#B45309">٣ بحاجة لتحديث</div></div>
+          </div>
+          <!-- tabs + search -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div class="tabs"><span class="tab on">الكل ٤٨</span><span class="tab">المشاريع</span><span class="tab">المبادرات</span><span class="tab">العمليات</span><span class="tab">الخدمات</span></div>
+            <div style="display:flex;gap:9px">
+              <div class="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> بحث في العناصر…</div>
+              <div class="icon-btn"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg></div>
+            </div>
+          </div>
+          <!-- card grid -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+            <!-- card -->
+            <div class="wc">
+              <div class="wc-h"><div style="display:flex;gap:11px"><div class="wc-ic" style="background:#E5EEFF;color:#2563EB"><svg class="i" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"/></svg></div><div><span class="bdg t-proj">مشروع</span><div class="wc-t" style="margin-top:7px">منصة الخدمات الذكية الموحّدة</div></div></div><span class="bdg s-review">قيد المراجعة</span></div>
+              <div class="wc-d">توحيد الخدمات الرقمية في منصة واحدة مدعومة بالذكاء الاصطناعي لتحسين تجربة المتعاملين.</div>
+              <div class="wc-meta"><span class="bdg p-high">أولوية عالية</span><span class="bdg" style="background:#F1F4F9;color:#54627B">تعقيد عالٍ</span><span class="bdg" style="background:#EAF4EE;color:#0B8A4B">أثر مرتفع</span></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:11px;color:#8A97AD;font-weight:700;margin-bottom:5px"><span>التقدّم</span><span>45%</span></div><div class="prog"><i style="width:45%"></i></div></div>
+              <div class="wc-foot"><span class="path-tag"><span class="dot" style="background:#0B8A4B"></span> الخدمات</span><span class="linkcount"><svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg> ٣ مرتبطة</span></div>
+            </div>
+            <!-- card -->
+            <div class="wc">
+              <div class="wc-h"><div style="display:flex;gap:11px"><div class="wc-ic" style="background:#E0F2FE;color:#0369A1"><svg class="i" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></div><div><span class="bdg t-op">عملية</span><div class="wc-t" style="margin-top:7px">أتمتة معالجة طلبات التراخيص</div></div></div><span class="bdg s-sent">تم الإرسال</span></div>
+              <div class="wc-d">معالجة آلية لطلبات التراخيص التجارية مع مراجعة استثناءات يدوية محدودة.</div>
+              <div class="wc-meta"><span class="bdg" style="background:#EAF4EE;color:#0B8A4B">قابل كلياً</span><span class="bdg p-high">عالية</span><span class="bdg" style="background:#FFF3DE;color:#B45309">أتمتة ٤٠٪</span></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:11px;color:#8A97AD;font-weight:700;margin-bottom:5px"><span>جاهزية التحول</span><span>80%+</span></div><div class="prog"><i style="width:82%"></i></div></div>
+              <div class="wc-foot"><span class="path-tag"><span class="dot" style="background:#2563EB"></span> العمليات</span><span class="linkcount">مرتبطة بمشروع</span></div>
+            </div>
+            <!-- card -->
+            <div class="wc">
+              <div class="wc-h"><div style="display:flex;gap:11px"><div class="wc-ic" style="background:#EFEAFE;color:#6D28D9"><svg class="i" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div><div><span class="bdg t-init">مبادرة</span><div class="wc-t" style="margin-top:7px">تأهيل كوادر الذكاء الاصطناعي</div></div></div><span class="bdg s-approved">معتمد</span></div>
+              <div class="wc-d">برنامج تدريبي لبناء قدرات وطنية متخصصة في تقنيات الذكاء الاصطناعي.</div>
+              <div class="wc-meta"><span class="bdg p-med">متوسطة</span><span class="bdg" style="background:#EAF4EE;color:#0B8A4B">تعقيد منخفض</span></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:11px;color:#8A97AD;font-weight:700;margin-bottom:5px"><span>التقدّم</span><span>70%</span></div><div class="prog"><i style="width:70%"></i></div></div>
+              <div class="wc-foot"><span class="path-tag"><span class="dot" style="background:#0D9488"></span> بناء القدرات</span><span class="linkcount">إطلاق رسمي قريباً</span></div>
+            </div>
+            <!-- card -->
+            <div class="wc">
+              <div class="wc-h"><div style="display:flex;gap:11px"><div class="wc-ic" style="background:#E3F6EC;color:#0B8A4B"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><div><span class="bdg t-svc">خدمة</span><div class="wc-t" style="margin-top:7px">إصدار الشهادات الرقمية</div></div></div><span class="bdg s-approved">معتمد</span></div>
+              <div class="wc-d">إصدار فوري للشهادات الرسمية موثّقة رقمياً عبر القنوات الذكية.</div>
+              <div class="wc-meta"><span class="bdg p-high">أولوية عالية</span><span class="bdg" style="background:#EAF4EE;color:#0B8A4B">أثر مرتفع</span></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:11px;color:#8A97AD;font-weight:700;margin-bottom:5px"><span>التقدّم</span><span>80%</span></div><div class="prog"><i style="width:80%"></i></div></div>
+              <div class="wc-foot"><span class="path-tag"><span class="dot" style="background:#0B8A4B"></span> الخدمات</span><span class="linkcount">٢ عمليات</span></div>
+            </div>
+            <!-- card -->
+            <div class="wc">
+              <div class="wc-h"><div style="display:flex;gap:11px"><div class="wc-ic" style="background:#E5EEFF;color:#2563EB"><svg class="i" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"/></svg></div><div><span class="bdg t-proj">مشروع</span><div class="wc-t" style="margin-top:7px">التنبؤ بالطلب على الخدمات</div></div></div><span class="bdg s-update">بحاجة لتحديث</span></div>
+              <div class="wc-d">نماذج تنبؤية لتوقّع الطلب وتحسين توزيع الموارد الحكومية.</div>
+              <div class="wc-meta"><span class="bdg p-high">عالية</span><span class="bdg" style="background:#F1F4F9;color:#54627B">تعقيد عالٍ</span></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:11px;color:#8A97AD;font-weight:700;margin-bottom:5px"><span>التقدّم</span><span>15%</span></div><div class="prog"><i style="width:15%"></i></div></div>
+              <div class="wc-foot"><span class="path-tag"><span class="dot" style="background:#4F46E5"></span> تقنيات وبيانات</span><span class="linkcount">٥ نماذج</span></div>
+            </div>
+            <!-- add card -->
+            <div class="wc" style="align-items:center;justify-content:center;border-style:dashed;color:#2563EB;cursor:pointer;min-height:200px"><div style="width:48px;height:48px;border-radius:14px;background:#EAF0FE;display:flex;align-items:center;justify-content:center"><svg class="i" viewBox="0 0 24 24" style="width:24px;height:24px"><path d="M12 5v14M5 12h14"/></svg></div><div style="font-weight:800;font-size:14px">إضافة عنصر جديد</div><div style="font-size:11.5px;color:#9AA6BC;font-weight:600">مشروع · مبادرة · عملية · خدمة</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ OPTION 1C : LEADERSHIP OVERVIEW ============ -->
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a> لوحة القيادة التنفيذية <small>· رؤية شاملة · حلقات تقدّم · مصفوفة أولوية/تعقيد · إطلاقات ومراحل قادمة</small></div>
+      <div class="dv-card fr appbg">
+        <div class="hdr">
+          <div class="brand"><div class="logo">AI</div><div class="brandtx"><b>المساعد</b><span>AGENTIC AI · UAE GOV</span></div></div>
+          <div class="entity-pill"><svg class="i" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg> وزارة شؤون مجلس الوزراء <small>· الجهة</small></div>
+          <div class="hdr-r"><button class="ghost"><svg class="i" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8"/></svg> فريق العمل</button><div class="icon-btn" style="font-weight:800;font-size:12px;color:#2563EB">EN</div><div class="avatar">أ.م</div></div>
+        </div>
+        <div style="display:flex;gap:0">
+          <!-- left rail -->
+          <div style="width:230px;flex:none;background:#fff;border-left:1px solid #E7ECF4;padding:18px 14px;display:flex;flex-direction:column;gap:7px">
+            <div style="font-size:11px;font-weight:800;color:#9AA6BC;letter-spacing:.5px;padding:0 8px 6px">المسارات</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:11px;background:#0F1F3D;color:#fff;font-weight:700;font-size:12.5px"><span class="dot" style="background:#27C2F0"></span> نظرة عامة</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 11px;border-radius:11px;color:#42506B;font-weight:600;font-size:12.5px"><span style="display:flex;gap:9px;align-items:center"><span class="dot" style="background:#0D9488"></span> بناء القدرات</span><span style="color:#9AA6BC">٤</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 11px;border-radius:11px;color:#42506B;font-weight:600;font-size:12.5px"><span style="display:flex;gap:9px;align-items:center"><span class="dot" style="background:#4F46E5"></span> تقنيات وبيانات</span><span style="color:#9AA6BC">٧</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 11px;border-radius:11px;color:#42506B;font-weight:600;font-size:12.5px"><span style="display:flex;gap:9px;align-items:center"><span class="dot" style="background:#2563EB"></span> العمليات والدعم</span><span style="color:#9AA6BC">٢٣</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 11px;border-radius:11px;color:#42506B;font-weight:600;font-size:12.5px"><span style="display:flex;gap:9px;align-items:center"><span class="dot" style="background:#7C3AED"></span> العمل الاستراتيجي</span><span style="color:#9AA6BC">٣</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 11px;border-radius:11px;color:#42506B;font-weight:600;font-size:12.5px"><span style="display:flex;gap:9px;align-items:center"><span class="dot" style="background:#0891B2"></span> الخدمات</span><span style="color:#9AA6BC">١١</span></div>
+            <div style="border-top:1px solid #F0F3F8;margin:8px 0"></div>
+            <div style="display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:11px;color:#42506B;font-weight:600;font-size:12.5px"><svg class="i" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/></svg> عناصر غير مرتبطة <span style="margin-right:auto;color:#D23B45;font-weight:800">٦</span></div>
+            <button class="prim" style="margin-top:8px;justify-content:center"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> إضافة جديد</button>
+          </div>
+          <!-- main -->
+          <div style="flex:1;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0">
+            <div style="font-size:20px;font-weight:800">نظرة القيادة العامة</div>
+            <!-- hero band -->
+            <div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:14px">
+              <div class="kpi" style="display:flex;align-items:center;gap:16px">
+                <svg viewBox="0 0 80 80" style="width:78px;height:78px;flex:none"><circle cx="40" cy="40" r="33" fill="none" stroke="#EAEEF6" stroke-width="11"/><circle cx="40" cy="40" r="33" fill="none" stroke="#2563EB" stroke-width="11" stroke-linecap="round" stroke-dasharray="207" stroke-dashoffset="98" transform="rotate(-90 40 40)"/></svg>
+                <div><div style="font-size:30px;font-weight:800">53%</div><div style="font-size:12px;color:#8A97AD;font-weight:600">متوسط التقدّم العام</div><div style="font-size:11px;color:#0B8A4B;font-weight:700;margin-top:4px">١٤ عنصر قيد التنفيذ</div></div>
+              </div>
+              <div class="kpi"><div class="n" style="color:#D23B45">3</div><div class="l">العناصر المتأخرة</div><div class="t" style="color:#D23B45">تحتاج متابعة عاجلة</div></div>
+              <div class="kpi"><div class="n" style="color:#B45309">5</div><div class="l">الاعتمادات المعلّقة</div><div class="t" style="color:#B45309">بانتظار المراجعة</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <!-- matrix -->
+              <div class="side">
+                <div class="side-h">مصفوفة الأولوية × التعقيد</div>
+                <div class="matrix">
+                  <div class="mcell" style="background:#FDEBEC;color:#D23B45">5</div><div class="mcell" style="background:#FCE3D6;color:#C2410C">3</div><div class="mcell" style="background:#FDEBEC;color:#D23B45">1</div>
+                  <div class="mcell" style="background:#FFF6E6;color:#B45309">4</div><div class="mcell" style="background:#FFF3DE;color:#B45309">7</div><div class="mcell" style="background:#FCE3D6;color:#C2410C">2</div>
+                  <div class="mcell" style="background:#EAF4EE;color:#0B8A4B">6</div><div class="mcell" style="background:#EAF4EE;color:#0B8A4B">5</div><div class="mcell" style="background:#FFF6E6;color:#B45309">8</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#9AA6BC;font-weight:700;margin-top:8px"><span>← التعقيد منخفض</span><span>عالٍ →</span></div>
+              </div>
+              <!-- upcoming launches -->
+              <div class="side">
+                <div class="side-h">الإطلاقات القادمة <span class="bdg s-sent">٤</span></div>
+                <div class="timeline-rail">
+                  <div class="tl-item"><span class="tl-dot" style="background:#2563EB;border-color:#CFE0FB"></span><div><div style="font-size:12.5px;font-weight:800">إطلاق منصة الخدمات الموحّدة</div><div style="font-size:11px;color:#8A97AD;font-weight:600">إطلاق رسمي · المرحلة ٤</div></div></div>
+                  <div class="tl-item"><span class="tl-dot" style="background:#0B8A4B;border-color:#CFEBD8"></span><div><div style="font-size:12.5px;font-weight:800">خدمة الشهادات الرقمية</div><div style="font-size:11px;color:#8A97AD;font-weight:600">إطلاق منتج / خدمة</div></div></div>
+                  <div class="tl-item"><span class="tl-dot" style="background:#6D28D9;border-color:#E1D7F8"></span><div><div style="font-size:12.5px;font-weight:800">مؤتمر تأهيل الكوادر</div><div style="font-size:11px;color:#8A97AD;font-weight:600">مؤتمر / فعالية</div></div></div>
+                </div>
+              </div>
+            </div>
+            <!-- condensed items -->
+            <div class="side">
+              <div class="side-h">المراحل القادمة · العناصر بحاجة لاعتماد</div>
+              <div class="row-item" style="border-top:none"><span style="display:flex;gap:9px;align-items:center"><span class="bdg t-proj">مشروع</span> منصة الخدمات الذكية الموحّدة</span><span style="display:flex;gap:8px;align-items:center"><span class="bdg s-review">قيد المراجعة</span><span class="bdg p-high">عالية</span></span></div>
+              <div class="row-item"><span style="display:flex;gap:9px;align-items:center"><span class="bdg t-op">عملية</span> أتمتة معالجة طلبات التراخيص</span><span style="display:flex;gap:8px;align-items:center"><span class="bdg s-sent">تم الإرسال</span><span class="bdg" style="background:#EAF4EE;color:#0B8A4B">قابل كلياً</span></span></div>
+              <div class="row-item"><span style="display:flex;gap:9px;align-items:center"><span class="bdg t-proj">مشروع</span> التنبؤ بالطلب على الخدمات</span><span style="display:flex;gap:8px;align-items:center"><span class="bdg s-update">بحاجة لتحديث</span><span class="bdg" style="background:#F1F4F9;color:#54627B">تعقيد عالٍ</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <p class="dv-next">جرّب بعدها: «ابنِ على <a class="dv-oid" href="#1b">1b</a> لكن مع شريط المسارات الجانبي من <a class="dv-oid" href="#1c">1c</a>» · «امزج صفوف المسارات في <a class="dv-oid" href="#1a">1a</a> مع بطاقات <a class="dv-oid" href="#1b">1b</a>» · «اعتمد <a class="dv-oid" href="#1c">1c</a> وابدأ ببناء بقية الشاشات»</p>
+</section>
+</x-dc>
+</body>
+</html>
