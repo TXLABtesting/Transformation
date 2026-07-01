@@ -57,6 +57,9 @@ Apply these on top of the current implementation. Each item states the intended 
 - **Launch items are numbered/named** in the create wizard's launch plan: "الإطلاق الأول", "الإطلاق الثاني", … (`launchRows[].numLabel`), incrementing as more are added.
 - Minor: sub-milestone remove (✕) button height matches the adjacent input.
 
+## Round 3 — since Round 2
+- **Program stepper responsibility labels:** in the National Committee / ممثل المسار (two-step) program stepper, both steps now show **ممثل الجهة** (entity representative) as the responsible party — the committee interfaces with the entity rep for both approval and execution, so the earlier "ممثل المسار" / "منسق المسار في الجهة" labels were replaced.
+
 ---
 
 ### How to hand this to the in-progress Claude Code session

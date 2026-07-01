@@ -465,7 +465,9 @@ function buildProgramSteps(s: Store, base: Item[]) {
   const phases = twoStep ? TWO_STEP_PHASES : s.programPhases;
   const cur = twoStep ? (s.programStep >= 3 ? 2 : 1) : s.programStep || 1;
   const respFor = (num: number): string => {
-    if (twoStep) return num === 1 ? (rawRole === 'ai' ? 'اللجنة الوطنية' : 'ممثل المسار') : 'منسق المسار في الجهة';
+    // two-step stepper (ai / path): the committee interfaces with the entity
+    // rep for both approval and execution, so both steps show ممثل الجهة.
+    if (twoStep) return 'ممثل الجهة';
     return ({ 1: 'منسق المسار في الجهة', 2: 'ممثل الجهة', 3: 'منسق المسار في الجهة' } as Record<number, string>)[num] || '';
   };
   const fnum = (num: number) => (twoStep ? (num === 2 ? 3 : 1) : num);
