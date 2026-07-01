@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: portal
+      POSTGRES_DB: transformation
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U portal -d transformation']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NEXT_PUBLIC_DATA_MODE: api
+      DATABASE_URL: postgresql://portal:portal@db:5432/transformation?schema=public
+      AI_API_BASE_URL: ${AI_API_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-default}
+    ports:
+      - '3000:3000'
+    # Push schema + seed on first boot, then start the server.
+    command: sh -c "npx prisma db push --accept-data-loss && npx tsx prisma/seed.ts && npm run start"
+
+volumes:
+  pgdata:

@@ -1,25 +1,93 @@
-# CODING AGENTS: READ THIS FIRST
+# المنصة الحكومية لتخطيط ومتابعة مشروع الذكاء الاصطناعي المساعد
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+**AI Transformation Portal** — an Arabic, right-to-left government portal to collect, review, score, fund, and track AI‑transformation candidates (projects, initiatives, operations, services) submitted by federal entities across five predefined transformation streams.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+This is a faithful reimplementation of the Claude Design prototype (`AI Transformation Portal.dc.html`) in a real stack: **Next.js 14 (App Router) · React · TypeScript · Tailwind · Postgres · Docker**, with the AI review step wired to an internal, self‑hosted OpenAI‑compatible model.
 
-## What you should do — IMPORTANT
+> The original design bundle (`project/`, `chats/`) and the extracted specs are kept for reference. The build reproduces the prototype exactly; nothing in the design was changed without sign‑off.
 
-**Read the chat transcripts first.** There are 2 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+---
 
-**Read `project/AI Transformation Portal.dc.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+## Roles (4)
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+| Role (Arabic) | Key | Scope | Can create | Fills data | Approves | Funding |
+|---|---|---|---|---|---|---|
+| منسق المسار في الجهة | `coord` | own entity + own stream | ✅ | ✅ | — | — |
+| ممثل المسار | `path` | own stream, all entities | — | read‑only | — | nominates |
+| ممثل الجهة | `entity` | whole entity | — | — | ✅ (sole approver) | receives notices |
+| اللجنة الوطنية | `ai` | everything | — | — | — | funds (basket) |
 
-## About the design files
+A role switcher in the header previews all four profiles against shared data (as in the prototype).
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+Workflow: `draft → ent1 (بانتظار اعتماد ممثل الجهة) → exec → launch → done`. Every submission passes an **AI review** first. The national committee **funds** items via a basket instead of approving gates.
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+---
 
-## Bundle contents
+## Running it
 
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `Government data collection platform` project files (HTML prototypes, assets, components)
+### Option A — quick preview (no backend)
+
+Fully client‑side, persists to `localStorage` (exactly like the prototype).
+
+```bash
+npm install
+npm run dev          # http://localhost:3000
+```
+
+### Option B — full stack (Postgres + Docker)
+
+```bash
+cp .env.example .env        # set AI_API_BASE_URL to your internal model
+docker compose up --build   # app on :3000, Postgres on :5432
+```
+
+On first boot the container pushes the schema and seeds the **34 real federal entities** + the prototype's demo items. Set `NEXT_PUBLIC_DATA_MODE=api` to use the Postgres‑backed API instead of localStorage.
+
+### Option C — static export (GitHub Pages)
+
+```bash
+npm run export       # → ./out  (client-side, heuristic AI review)
+```
+
+A GitHub Actions workflow (`.github/workflows/deploy-pages.yml`) publishes this to Pages on every push to `main`. For a project site under `/<repo>` set `NEXT_PUBLIC_BASE_PATH=/Transformation`.
+
+---
+
+## AI review (مراجعة ذكية)
+
+The review/scope/bulk steps POST to `/api/ai-review`, which proxies to your internal model (`AI_API_BASE_URL`, `AI_API_KEY`, `AI_MODEL` — any OpenAI‑compatible `/chat/completions`). If the endpoint is unset or unreachable, the app falls back to the exact deterministic Arabic heuristic from the prototype, so it always works offline (and on GitHub Pages).
+
+---
+
+## Real entities dataset
+
+`lib/data/` holds the real federal dataset lifted from the existing workplan portal:
+
+- `federalServices.json` — entity → services
+- `federalSubServices.json` — entity → **department** → services (34 entities)
+- `servicePackages.json` — entity → package → services
+- `ENTITIES_DEPARTMENTS.md` — readable index
+
+Exposed via `lib/entities.ts` (`FEDERAL_ENTITIES`, `departmentsOf`, `servicesOf`, …) for the services stream and the entity filters.
+
+---
+
+## Project layout
+
+```
+app/            Next.js routes (page.tsx root, api/ai-review proxy, layout, globals.css)
+components/     Login, TeamSetup, Dashboard, CreatePanel, DetailPanel, Basket, Overlays, Toast, Icon
+lib/
+  domain.ts     types, constants (PATHS/TYPE/ROLE), workflow (wfOf/WFMETA), scoring, program phases
+  seed.ts       the 14 prototype demo items (verbatim)
+  store.ts      Zustand store: state + all actions (ported methods) + localStorage persistence
+  viewModel.ts  port of renderVals() → the derived object the UI renders from
+  ai.ts         AI review client + heuristic fallbacks
+  entities.ts   real federal entities registry + lookups
+prisma/         schema.prisma + seed.ts (Postgres/Docker)
+project/,chats/ original Claude Design bundle (reference)
+```
+
+## Design tokens
+
+Blue `#2E74EE→#1F5FE0` · navy `#0B2A66/#0F1F3D` · approve green `#0B8A4B` · basket teal `#0E7C86` · statuses reject `#C0303B` / pending `#B45309`. Font: **Cairo**. RTL throughout.

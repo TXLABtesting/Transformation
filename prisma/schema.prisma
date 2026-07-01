@@ -1,0 +1,99 @@
+// Prisma schema for the AI Transformation Portal (Postgres backend / Docker).
+// The app runs client-side against localStorage by default; this schema backs
+// the optional server (NEXT_PUBLIC_DATA_MODE=api) deployment. Nested structures
+// (phases, launches, log, nom, funded, execChecklist, …) are stored as JSON to
+// mirror the prototype's item shape exactly.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Entity {
+  id        String   @id @default(cuid())
+  nameAr    String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  items     Item[]
+}
+
+model Item {
+  id        String   @id
+  type      String // project | initiative | operation | service
+  path      String // capacity | tech | ops | strategy | services
+  title     String
+  desc      String   @default("")
+  wf        String   @default("draft")
+  approval  String   @default("مسودة")
+
+  // scalar assessment fields
+  priority          String?
+  rank              Int?
+  complexity        String?
+  impact            String?
+  status            String?
+  transformability  String?
+  readiness         String?
+  usageIntensity    String?
+  transformPriority String?
+  automationPct     Int?
+  automationLevel   String?
+  automationSystem  String?
+  complexityLevel   String?
+  progress          Int      @default(0)
+
+  // outcomes / scope
+  scopeOfWork     String?
+  budget          String?
+  scopeApproval   String?
+  scopeFile       String?
+  expectedOutputs String?
+  expectedOutcomes String?
+  expectedImpact  String?
+  aiModels        Int?
+  targetPct       Int?
+  endDate         String?
+
+  // type-specific (operation / service)
+  opType             String?
+  subActivities      String?
+  fedEntity          String?
+  sector             String?
+  dept               String?
+  section            String?
+  serviceOwner       String?
+  targetUsers        String?
+  currentJourney     String?
+  painPoints         String?
+  expectedImprovement String?
+
+  // nested structures as JSON
+  phases        Json?
+  milestones    Json?
+  launches      Json?
+  execChecklist Json?
+  steps         Json?
+  links         Json?
+  log           Json?
+  ret           Json?
+  nom           Json?
+  funded        Json?
+  fundCancel    Json?
+  fyi           Json?
+
+  entity   Entity? @relation(fields: [entityId], references: [id])
+  entityId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AppState {
+  id        String   @id @default("singleton")
+  data      Json
+  updatedAt DateTime @updatedAt
+}
