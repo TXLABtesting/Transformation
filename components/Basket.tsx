@@ -361,22 +361,20 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                   <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
                     {it.entity} · {it.pathName}
                   </div>
-                  <div style={{ fontSize: 11.5, color: '#54627B', fontWeight: 600, marginTop: 4 }}>
-                    {it.fundedText}
-                  </div>
                   <div
                     style={{
-                      fontSize: 11.5,
+                      fontSize: 11,
+                      color: '#54627B',
                       fontWeight: 700,
-                      color: '#0B7C57',
-                      background: '#EDF9F1',
-                      borderRadius: 11,
-                      padding: '10px 12px',
-                      lineHeight: 1.6,
-                      marginTop: 10,
+                      marginTop: 9,
+                      background: '#F5F8FD',
+                      border: '1px solid #EBEFF6',
+                      borderRadius: 9,
+                      padding: '8px 10px',
+                      lineHeight: 1.55,
                     }}
                   >
-                    تُغطّى تكلفة التحويل من اللجنة الوطنية · يبقى التنفيذ من مسؤولية الجهة
+                    {it.fundedText}
                   </div>
                 </div>
               ))}

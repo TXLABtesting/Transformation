@@ -300,9 +300,6 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 <div style={{ color: '#0B7C57', fontSize: 12, fontWeight: 600, marginTop: 4 }}>
                   {d.dFundedText}
                 </div>
-                <div style={{ color: '#8A97AD', fontSize: 12, marginTop: 4 }}>
-                  يبقى التنفيذ من مسؤولية الجهة
-                </div>
               </div>
             </div>
           )}
@@ -712,7 +709,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                       cursor: 'pointer',
                     }}
                   >
-                    {d.hasScopeFile ? d.scopeFile : 'اسحب الملف هنا أو اضغط للرفع'}
+                    {d.scopeFileLabel}
                     <input type="file" style={{ display: 'none' }} />
                   </label>
                 </div>
@@ -1118,7 +1115,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
         </div>
 
         {/* ---------- FOOTER ACTION BAR ---------- */}
-        {(d.canApproveGate || d.canEdit) && (
+        {(d.canApproveGateView || d.canEdit) && (
           <div
             style={{
               background: '#fff',
@@ -1129,7 +1126,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               gap: 10,
             }}
           >
-            {d.canApproveGate ? (
+            {d.canApproveGateView ? (
               <>
                 <div style={{ position: 'relative', flex: 'none' }}>
                   <button
@@ -1167,13 +1164,15 @@ export function DetailPanel({ vm }: { vm: VM }) {
                         animation: 'fadeUp .2s',
                       }}
                     >
-                      <button
-                        onClick={d.onEdit}
-                        style={menuItemStyle('#33405A')}
-                      >
-                        <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={15} />
-                        تعديل البيانات
-                      </button>
+                      {d.showMenuEdit && (
+                        <button
+                          onClick={d.onEdit}
+                          style={menuItemStyle('#33405A')}
+                        >
+                          <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={15} />
+                          تعديل البيانات
+                        </button>
+                      )}
                       <button
                         onClick={d.onReqInfo}
                         style={{ ...menuItemStyle('#33405A'), borderTop: '1px solid #F0F3F8' }}

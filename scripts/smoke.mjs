@@ -5,7 +5,7 @@ const p = await b.newPage({ viewport:{width:1360,height:900} });
 p.on('console', m => { if (m.type()==='error' && !/Failed to load resource/i.test(m.text())) errors.push('CONSOLE '+m.text()); });
 p.on('pageerror', e => errors.push('PAGEERROR '+e.message));
 const L=m=>console.log(m);
-await p.goto('http://localhost:3030/',{waitUntil:'networkidle'});
+await p.goto('http://localhost:3050/',{waitUntil:'networkidle'});
 await p.waitForSelector('text=Sign in with UAE PASS',{timeout:10000}); L('✓ login');
 await p.click('text=Sign in with UAE PASS'); await p.waitForTimeout(400);
 await p.click('text=أكمل لاحقاً'); await p.waitForSelector('text=تقدم مشروع الذكاء الاصطناعي المساعد',{timeout:8000}); L('✓ dashboard');
@@ -14,7 +14,7 @@ if (await p.$('text=نسبة الإنجاز')) L('✓ completion KPI present');
 // coord: create wizard numbered stepper
 await p.getByRole('button',{name:'منسق المسار في الجهة',exact:true}).first().click(); await p.waitForTimeout(400);
 const add = await p.$('text=إضافة جديد');
-if (add){ await add.click(); await p.waitForSelector('text=إضافة عنصر جديد',{timeout:8000});
+if (add){ await add.click(); await p.waitForSelector('text=اختر نوع العنصر',{timeout:8000});
   await p.click('text=إضافة مشروع').catch(()=>{});
   await p.waitForTimeout(200); await p.click('text=التعبئة اليدوية').catch(()=>{});
   await p.waitForTimeout(300); L('✓ create wizard form');

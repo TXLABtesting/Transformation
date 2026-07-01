@@ -545,7 +545,7 @@ export const useStore = create<Store>((set, get) => {
       }),
 
     // ---- filters ----
-    setActivePath: (p) => setUi({ activePath: p, stepFilter: null }),
+    setActivePath: (p) => setUi({ activePath: p, filter: 'all', stepFilter: null }),
     setFilter: (v) => setUi({ filter: v }),
     setStatusFilter: (v) => setUi({ statusFilter: v }),
     setEntFilter: (v) => setUi({ entFilter: v }),
@@ -600,17 +600,17 @@ export const useStore = create<Store>((set, get) => {
       set((s) => (s.ui.draft ? { ui: { ...s.ui, draft: { ...s.ui.draft, [k]: v } } } : {})),
     fNext: () => {
       const s = get();
-      const d = s.ui.draft;
-      // scope + budget are required before an item can be submitted for approval
-      if (s.ui.fStep >= 4 && d && (!(d.scopeOfWork || '').trim() || !(d.budget || '').trim())) {
-        setUi({ fStep: 4 });
-        return toast('الرجاء إدخال نطاق العمل والميزانية قبل المتابعة');
-      }
-      if (s.ui.fStep >= 5) {
-        get().runAiReview();
-      } else {
+      if (s.ui.fStep < 5) {
         setUi({ fStep: s.ui.fStep + 1 });
+        return;
       }
+      // scope + budget are required before an item can be submitted for approval
+      const d = s.ui.draft;
+      if (d && (!(d.scopeOfWork || '').trim() || !(d.budget || '').trim())) {
+        setUi({ fStep: 4 });
+        return toast('يجب إدخال نطاق العمل والميزانية قبل الإرسال للاعتماد');
+      }
+      get().runAiReview();
     },
     fPrev: () => {
       const s = get();
@@ -740,7 +740,7 @@ export const useStore = create<Store>((set, get) => {
     closeRank: () => setUi({ rankOpen: false }),
     saveRank: () => {
       setUi({ rankOpen: false });
-      toast('تم حفظ الترتيب');
+      toast('تم حفظ ترتيب الأولوية');
     },
     rankDragStart: (i) => setUi({ rankDragFrom: i }),
     rankDragEnter: (i) => {
@@ -781,7 +781,7 @@ export const useStore = create<Store>((set, get) => {
     goToLaunch: (id) => {
       const it = findItem(id);
       if (!it) return;
-      if (!execAllDone(it)) return toast('أكمل جميع بنود التنفيذ أو حدّد سبب التأخير أولاً');
+      if (!execAllDone(it)) return toast('أكمل كل بند أو حدّد سبب التأخير وتاريخاً جديداً قبل الانتقال للإطلاق');
       patchItem(id, { wf: 'launch' });
       toast('انتقل العنصر إلى مرحلة الإطلاق');
     },
@@ -810,7 +810,7 @@ export const useStore = create<Store>((set, get) => {
     doSubmitScope: (id) => {
       const s = get();
       patchItem(id, (it) => ({ wf: 'exec', ret: null, log: withLog(s, it, 'budget') }));
-      toast('تم إرسال الميزانية ونطاق العمل لاعتماد ممثل الجهة');
+      toast('تم إرسال العنصر لاعتماد ممثل الجهة');
     },
     confirmSubReview: () => {
       const s = get();
@@ -878,7 +878,8 @@ export const useStore = create<Store>((set, get) => {
     fundItem: (id, direct) => {
       const s = get();
       const target = findItem(id);
-      if (!target || !isEntityApproved(target)) return; // only entity-approved items
+      if (!target) return;
+      if (!isEntityApproved(target)) return toast('لا يمكن تمويل العنصر قبل اعتماد ممثل الجهة'); // only entity-approved items
       patchItem(id, (it) => ({
         funded: { by: 'اللجنة الوطنية', at: Date.now(), direct: !!direct },
         nom: it.nom || { by: 'اللجنة الوطنية', role: 'اللجنة الوطنية', path: it.path, at: Date.now(), direct: true },
@@ -940,13 +941,17 @@ export const useStore = create<Store>((set, get) => {
     // ---- exports (real client-side file generation) ----
     exportExcel: () => {
       const list = exportScope(get());
-      toast('يتم تجهيز ملف Excel للتنزيل…');
-      import('./export').then((m) => m.exportExcel(list, get().entityName)).catch(() => toast('تعذّر إنشاء ملف Excel'));
+      import('./export')
+        .then((m) => m.exportExcel(list, get().entityName))
+        .then(() => toast('تم إنشاء ملف Excel'))
+        .catch(() => toast('تعذّر إنشاء ملف Excel'));
     },
     exportPpt: () => {
       const list = exportScope(get());
-      toast('يتم تجهيز عرض PowerPoint للتنزيل…');
-      import('./export').then((m) => m.exportPpt(list, get().entityName)).catch(() => toast('تعذّر إنشاء عرض PowerPoint'));
+      import('./export')
+        .then((m) => m.exportPpt(list, get().entityName))
+        .then(() => toast('تم إنشاء ملف PowerPoint'))
+        .catch(() => toast('تعذّر إنشاء عرض PowerPoint'));
     },
   };
 });

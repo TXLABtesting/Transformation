@@ -1044,16 +1044,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                 gap: 13,
               }}
             >
-              <KpiCard
-                value={vm.kpis.projects}
-                label="المشاريع"
-                iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
-              />
-              <KpiCard value={vm.kpis.initiatives} label="المبادرات" iconD="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />
-              {vm.showOpsKpi && (
-                <KpiCard value={vm.kpis.operations} label="العمليات" iconD="M3 6h18M3 12h18M3 18h18" />
-              )}
-              {vm.showSvcKpi && <KpiCard value={vm.kpis.services} label="الخدمات" grid />}
               {(vm.role === 'entity' || vm.role === 'coord') && (
                 <div
                   style={{
@@ -1068,7 +1058,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                 >
                   <div>
                     <div style={{ fontSize: 25, fontWeight: 800, color: '#13213C' }}>
-                      {vm.kpis.completion}%
+                      {vm.kpis.completion}
+                      <span style={{ fontSize: 15, color: '#9AA6BC' }}>%</span>
                     </div>
                     <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginTop: 5 }}>
                       نسبة الإنجاز
@@ -1079,17 +1070,27 @@ export function Dashboard({ vm }: { vm: VM }) {
                       width: 38,
                       height: 38,
                       borderRadius: 11,
-                      background: '#E3F6EC',
+                      background: '#E5EEFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flex: 'none',
                     }}
                   >
-                    <Icon d="M4 20V10M10 20V4M16 20v-8M21 20H3" size={19} color="#0B8A4B" />
+                    <Icon d="M3 3v18h18M7 15l4-4 3 3 5-6" size={19} color="#2563EB" />
                   </span>
                 </div>
               )}
+              <KpiCard
+                value={vm.kpis.projects}
+                label="المشاريع"
+                iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
+              />
+              <KpiCard value={vm.kpis.initiatives} label="المبادرات" iconD="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />
+              {vm.showOpsKpi && (
+                <KpiCard value={vm.kpis.operations} label="العمليات" iconD="M3 6h18M3 12h18M3 18h18" />
+              )}
+              {vm.showSvcKpi && <KpiCard value={vm.kpis.services} label="الخدمات" grid />}
             </div>
           )}
 
@@ -1479,7 +1480,7 @@ function CardItem({ c }: { c: CardVM }) {
       {c.isReturned && (
         <div style={{ background: '#FFF4F4', border: '1px solid #F6D6D9', borderRadius: 11, padding: '10px 12px' }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#C0303B', marginBottom: 3 }}>
-            أُعيد من {c.retFrom}
+            {c.retBannerLabel}
           </div>
           <div style={{ fontSize: 11.5, color: '#7A4A4E', fontWeight: 600, lineHeight: 1.6 }}>{c.retNote}</div>
         </div>
@@ -1695,7 +1696,7 @@ function CardItem({ c }: { c: CardVM }) {
             }}
           >
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0E7C86' }} />
-            مُرشّح · {c.nomBy}
+            مُرشّح · {c.nomBy} · {c.nomStream}
           </span>
           {c.canWithdrawNom && (
             <button

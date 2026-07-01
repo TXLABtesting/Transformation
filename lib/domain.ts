@@ -670,7 +670,7 @@ export function blankItem(type: ItemType, path: string): Item {
     });
   } else {
     Object.assign(base, {
-      status: type === 'initiative' ? 'مبادرة جديدة' : 'مشروع جديد',
+      status: 'مشروع جديد',
       expectedOutputs: '',
       expectedOutcomes: '',
       expectedImpact: '',

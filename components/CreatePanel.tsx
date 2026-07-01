@@ -48,14 +48,11 @@ const IC = {
   warnTri: 'M12 9v4M12 17h.01M10.3 3.9L2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z',
   infoCircle: 'M12 8h.01M11 12h1v4h1M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
   download: 'M12 3v12M8 11l4 4 4-4M5 21h14',
-};
-
-// type-card icon paths, mapped by t.key
-const TYPE_IC: Record<string, string> = {
-  project: 'M20 7 12 3 4 7v10l8 4 8-4V7z',
-  initiative: 'M13 2 3 14h7l-1 8 11-12h-7l1-6z',
-  operation: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 3v2M12 19v2M4.6 4.6 6 6M18 18l1.4 1.4M3 12h2M19 12h2',
-  service: 'M3 5h18v14H3zM3 9h18M6.2 7h.01',
+  list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+  attach: 'M21.44 11.05 12 20.5a5 5 0 0 1-7-7l9.5-9.5a3.3 3.3 0 0 1 4.7 4.7L9.4 18.1a1.6 1.6 0 0 1-2.3-2.3l8.5-8.5',
+  file: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6',
+  settings:
+    'M12 3v2M12 19v2M5 5l1.5 1.5M17.5 17.5 19 19M3 12h2M19 12h2M5 19l1.5-1.5M17.5 6.5 19 5M15.5 12a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0',
 };
 
 export function CreatePanel({ vm }: { vm: VM }) {
@@ -213,7 +210,7 @@ function TypeStep({ vm }: { vm: VM }) {
     <div>
       <h2 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 4px', color: '#13213C' }}>اختر نوع العنصر</h2>
       <p style={{ fontSize: 12.5, color: '#8A97AD', margin: '0 0 16px' }}>
-        حدّد نوع العنصر الذي تريد إضافته.
+        حدّد نوع العنصر الذي تريد إضافته في {m.mPathName}.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {m.typeCards.map((t) => (
@@ -247,7 +244,7 @@ function TypeStep({ vm }: { vm: VM }) {
                 flex: 'none',
               }}
             >
-              <Icon d={TYPE_IC[t.key] || IC.chevron} size={20} color="#2563EB" />
+              <Icon d={IC.plus} size={20} color="#2563EB" />
             </div>
             <div style={{ flex: 1, fontSize: 14, fontWeight: 800, color: '#1F2D49' }}>
               إضافة {t.label}
@@ -313,7 +310,7 @@ function MethodStep({ vm }: { vm: VM }) {
     <div>
       <h2 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 4px', color: '#13213C' }}>طريقة الإضافة</h2>
       <p style={{ fontSize: 12.5, color: '#8A97AD', margin: '0 0 16px' }}>
-        اختر كيف تريد إضافة العنصر.
+        اختر كيف تريد إدخال البيانات.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {optCard(
@@ -355,64 +352,76 @@ function FormStep({
   return (
     <div>
       {/* numbered stepper */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-        {[1, 2, 3, 4, 5].map((n, idx) => {
+      <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 16 }}>
+        {[1, 2, 3, 4, 5].map((n) => {
           const completed = n < fStep;
           const current = n === fStep;
-          const circle = completed ? (
-            <button
-              onClick={() => s.setFStep(n)}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: '#2563EB',
-                border: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                flex: 'none',
-                fontFamily: 'inherit',
-                padding: 0,
-              }}
-            >
-              <Icon d={IC.check} size={16} color="#fff" />
-            </button>
-          ) : (
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: current ? '#2563EB' : '#EAF0FE',
-                color: current ? '#fff' : '#9AA6BC',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 13,
-                fontWeight: 800,
-                flex: 'none',
-                boxShadow: current ? '0 0 0 4px rgba(37,99,235,.15)' : undefined,
-              }}
-            >
-              {n}
-            </div>
-          );
+          const filled = completed || current;
+          const label = m.fLabels[n - 1] || '';
           return (
-            <React.Fragment key={n}>
-              {circle}
-              {idx < 4 && (
-                <div
+            <div
+              key={n}
+              onClick={completed ? () => s.setFStep(n) : undefined}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 8,
+                minWidth: 0,
+                cursor: completed ? 'pointer' : 'default',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <span
                   style={{
                     flex: 1,
                     height: 2,
-                    background: completed ? '#2563EB' : '#E1E7F1',
-                    margin: '0 6px',
+                    borderRadius: 2,
+                    background: n > 1 ? (n <= fStep ? '#2563EB' : '#E1E7F1') : 'transparent',
                   }}
                 />
-              )}
-            </React.Fragment>
+                <span
+                  style={{
+                    width: 26,
+                    height: 26,
+                    flex: 'none',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 11.5,
+                    fontWeight: 800,
+                    background: filled ? '#2563EB' : '#fff',
+                    color: filled ? '#fff' : '#9AA6BC',
+                    border: filled ? 'none' : '1.5px solid #DCE3EE',
+                    boxShadow: current ? '0 0 0 4px rgba(37,99,235,.14)' : 'none',
+                  }}
+                >
+                  {completed ? <Icon d={IC.check} size={14} color="#fff" strokeWidth={3} /> : n}
+                </span>
+                <span
+                  style={{
+                    flex: 1,
+                    height: 2,
+                    borderRadius: 2,
+                    background: n < 5 ? (n < fStep ? '#2563EB' : '#E1E7F1') : 'transparent',
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  color: current ? '#13213C' : completed ? '#42506B' : '#9AA6BC',
+                  textAlign: 'center',
+                  lineHeight: 1.35,
+                  padding: '0 2px',
+                }}
+              >
+                {label}
+              </div>
+            </div>
           );
         })}
       </div>
@@ -622,24 +631,31 @@ function F2({
   const s = vm.store;
   const cardTitle: React.CSSProperties = { fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 };
   const rankBtn = (
-    <button
-      onClick={() => s.openRank()}
-      style={{
-        width: '100%',
-        marginTop: 4,
-        background: '#EAF0FE',
-        border: 'none',
-        borderRadius: 11,
-        padding: '11px 13px',
-        color: '#2563EB',
-        fontWeight: 800,
-        fontSize: 13,
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-      }}
-    >
-      ترتيب الأولوية
-    </button>
+    <div style={{ marginBottom: 14 }}>
+      <label style={labelStyle}>ترتيب الأولوية</label>
+      <button
+        onClick={() => s.openRank()}
+        style={{
+          width: '100%',
+          border: '1px solid #DCE3EE',
+          background: '#fff',
+          borderRadius: 11,
+          padding: '11px 13px',
+          fontSize: 13.5,
+          fontWeight: 700,
+          color: '#33405A',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          fontFamily: 'inherit',
+        }}
+      >
+        <span>{m.rankBtnLabel}</span>
+        <Icon d={IC.list} size={16} color="#8A97AD" />
+      </button>
+    </div>
   );
   const sel = (label: string, key: string, opts: string[]) => (
     <div style={{ marginBottom: 14 }}>
@@ -796,26 +812,53 @@ function FOutcome({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <label style={labelStyle}>نسبة التحول المستهدفة باستخدام الذكاء الاصطناعي</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ position: 'relative' }}>
             <input
               type="number"
+              min={0}
+              max={100}
               value={gv('targetPct')}
               onChange={(e) => setField('targetPct', e.target.value)}
-              style={inputStyle}
+              style={{ ...inputStyle, padding: '11px 36px 11px 13px' }}
             />
-            <span style={{ fontSize: 13, color: '#9AA6BC' }}>%</span>
+            <span
+              style={{
+                position: 'absolute',
+                left: 13,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#9AA6BC',
+              }}
+            >
+              %
+            </span>
           </div>
         </div>
         <div>
           <label style={labelStyle}>عدد نماذج وأنظمة الذكاء الاصطناعي المتوقعة</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ position: 'relative' }}>
             <input
               type="number"
+              min={0}
               value={gv('aiModels')}
               onChange={(e) => setField('aiModels', e.target.value)}
-              style={inputStyle}
+              style={{ ...inputStyle, padding: '11px 52px 11px 13px' }}
             />
-            <span style={{ fontSize: 13, color: '#9AA6BC' }}>نموذج</span>
+            <span
+              style={{
+                position: 'absolute',
+                left: 13,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#9AA6BC',
+              }}
+            >
+              نموذج
+            </span>
           </div>
         </div>
         <div>
@@ -895,6 +938,21 @@ function FBudget({
               padding: '11px 13px',
             }}
           >
+            <span
+              style={{
+                width: 34,
+                height: 34,
+                flex: 'none',
+                borderRadius: 9,
+                background: '#E3F6EC',
+                color: '#0B8A4B',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Icon d={IC.file} size={18} color="#0B8A4B" />
+            </span>
             <div style={{ flex: 1, fontSize: 12.5, color: '#1F2D49', fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {gv('scopeFile')}
             </div>
@@ -904,9 +962,11 @@ function FBudget({
                 fontWeight: 800,
                 color: '#2563EB',
                 cursor: 'pointer',
+                padding: '5px 9px',
+                borderRadius: 8,
               }}
             >
-              تغيير الملف
+              تغيير
               <input
                 type="file"
                 onChange={(e) => setField('scopeFile', e.target.files?.[0]?.name || '')}
@@ -934,19 +994,34 @@ function FBudget({
         ) : (
           <label
             style={{
-              display: 'block',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
               border: '1.5px dashed #CDD8EA',
               background: '#FAFCFF',
               borderRadius: 12,
-              padding: '18px 14px',
-              textAlign: 'center',
+              padding: '13px 15px',
               cursor: 'pointer',
-              fontSize: 12.5,
-              color: '#54627B',
-              fontWeight: 700,
             }}
           >
-            اضغط لإرفاق المستند
+            <span
+              style={{
+                width: 34,
+                height: 34,
+                flex: 'none',
+                borderRadius: 9,
+                background: '#EAF0FE',
+                color: '#2563EB',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Icon d={IC.attach} size={18} color="#2563EB" />
+            </span>
+            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B' }}>
+              أرفق مستند نطاق العمل والميزانية (PDF)
+            </span>
             <input
               type="file"
               onChange={(e) => setField('scopeFile', e.target.files?.[0]?.name || '')}
@@ -1019,27 +1094,6 @@ function FPhases({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 11.5, color: '#9AA6BC', marginTop: 3 }}>{ph.desc}</div>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <label style={labelStyle}>تاريخ البدء</label>
-              <input
-                type="date"
-                value={ph.start || ''}
-                onChange={(e) => s.updPhaseDate(pi, 'start', e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>تاريخ الانتهاء</label>
-              <input
-                type="date"
-                value={ph.end || ''}
-                onChange={(e) => s.updPhaseDate(pi, 'end', e.target.value)}
-                style={inputStyle}
-              />
             </div>
           </div>
 
@@ -1165,9 +1219,17 @@ function FPhases({ vm }: { vm: VM }) {
         {launches.map((lc, i) => (
           <div key={i} style={{ ...cardStyle, marginTop: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <span style={{ fontSize: 13.5, fontWeight: 800, color: '#0B8A4B' }}>
-                {['الإطلاق الأول', 'الإطلاق الثاني', 'الإطلاق الثالث', 'الإطلاق الرابع', 'الإطلاق الخامس'][i] ||
-                  'الإطلاق ' + (i + 1)}
+              <span style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>
+                {[
+                  'الإطلاق الأول',
+                  'الإطلاق الثاني',
+                  'الإطلاق الثالث',
+                  'الإطلاق الرابع',
+                  'الإطلاق الخامس',
+                  'الإطلاق السادس',
+                  'الإطلاق السابع',
+                  'الإطلاق الثامن',
+                ][i] || 'الإطلاق ' + (i + 1)}
               </span>
               <button
                 onClick={() => s.removeLaunch(i)}
@@ -1265,14 +1327,14 @@ function ReviewStep({ vm }: { vm: VM }) {
             width: 38,
             height: 38,
             borderRadius: 11,
-            background: 'linear-gradient(135deg,#2E74EE,#27C2F0)',
+            background: 'linear-gradient(135deg,#2E74EE,#1F5FE0)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flex: 'none',
           }}
         >
-          <Icon d={IC.sparkle} size={20} color="#fff" fill="#fff" />
+          <Icon d={IC.settings} size={21} color="#fff" />
         </div>
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>المراجعة الذكية</div>
@@ -1487,14 +1549,14 @@ function BulkReviewStep({ vm }: { vm: VM }) {
             width: 38,
             height: 38,
             borderRadius: 11,
-            background: 'linear-gradient(135deg,#2E74EE,#27C2F0)',
+            background: 'linear-gradient(135deg,#2E74EE,#1F5FE0)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flex: 'none',
           }}
         >
-          <Icon d={IC.sparkle} size={20} color="#fff" fill="#fff" />
+          <Icon d={IC.settings} size={21} color="#fff" />
         </div>
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>المراجعة الذكية للعناصر المرفوعة</div>

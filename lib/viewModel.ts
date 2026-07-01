@@ -15,6 +15,7 @@ import {
   PIC,
   NK,
   NIC,
+  ALOG,
   pathById,
   typeLabel,
   availTypes,
@@ -126,12 +127,10 @@ function build(s: Store) {
   const totalCount = base.length;
 
   // ---- active path title + summary ----
-  const activePathObj = effActivePath === 'all' ? null : pathById(effActivePath);
-  let activePathName: string;
-  if (role === 'path') activePathName = 'مسار ' + pathById(myPath).name;
-  else if (isAiRole) activePathName = 'لوحة المتابعة — جميع الجهات';
-  else if (activePathObj) activePathName = activePathObj.name;
-  else activePathName = 'لوحة المتابعة';
+  const activePathName: string =
+    effActivePath === 'all'
+      ? 'لوحة المتابعة'
+      : (role === 'path' ? 'مسار ' : '') + pathById(effActivePath).name;
   const streamSummary = summaryText(effActivePath);
 
   // ---- type filter tabs ----
@@ -294,8 +293,8 @@ function build(s: Store) {
     tmOwners: PATHS.map((p) => ({
       color: p.color,
       name: p.name,
-      ownerName: s.setup.owners[p.id]?.self ? repName : s.setup.owners[p.id]?.name || 'غير محدد',
-      ownerPos: s.setup.owners[p.id]?.self ? repPos : s.setup.owners[p.id]?.position || '',
+      ownerName: s.setup.owners[p.id]?.self ? repName : s.setup.owners[p.id]?.name || 'لم يُعيّن',
+      ownerPos: s.setup.owners[p.id]?.self ? repPos : s.setup.owners[p.id]?.position || '—',
     })),
     // deadlines modal
     deadlinesOpen: ui.deadlinesOpen,
@@ -350,16 +349,17 @@ function summaryText(activePath: string): string {
   return 'إجمالي المشاريع والمبادرات';
 }
 
-function tabDefs(activePath: string, scope: Item[]) {
+function tabDefs(activePath: string, _scope: Item[]) {
+  // option label mirrors the design's plain `t.label` — no live count suffix
   const defs: { key: string; label: string; optLabel: string }[] = [
-    { key: 'all', label: 'كل الأنواع', optLabel: `الكل (${scope.length})` },
-    { key: 'project', label: 'المشاريع', optLabel: `المشاريع (${scope.filter((i) => i.type === 'project').length})` },
-    { key: 'initiative', label: 'المبادرات', optLabel: `المبادرات (${scope.filter((i) => i.type === 'initiative').length})` },
+    { key: 'all', label: 'كل الأنواع', optLabel: 'كل الأنواع' },
+    { key: 'project', label: 'المشاريع', optLabel: 'المشاريع' },
+    { key: 'initiative', label: 'المبادرات', optLabel: 'المبادرات' },
   ];
   if (activePath === 'all' || activePath === 'ops')
-    defs.push({ key: 'operation', label: 'العمليات', optLabel: `العمليات (${scope.filter((i) => i.type === 'operation').length})` });
+    defs.push({ key: 'operation', label: 'العمليات', optLabel: 'العمليات' });
   if (activePath === 'all' || activePath === 'services')
-    defs.push({ key: 'service', label: 'الخدمات', optLabel: `الخدمات (${scope.filter((i) => i.type === 'service').length})` });
+    defs.push({ key: 'service', label: 'الخدمات', optLabel: 'الخدمات' });
   return defs;
 }
 
@@ -402,7 +402,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfBg,
     isReturned: rawRole === 'coord' && !!i.ret,
     retBannerLabel: 'ملاحظات ممثل الجهة',
-    retNote: i.ret?.note || '',
+    retNote: i.ret ? i.ret.note || (i.ret.type === 'info' ? 'طُلبت معلومات إضافية' : 'تمت الإعادة للتعديل') : '',
     retFrom: i.ret?.from || '',
     stepBadge: 'المرحلة ' + step,
     priority: i.priority,
@@ -425,7 +425,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     scoreColor: score.color,
     scoreExpl: score.expl,
     showPathCta: rawRole === 'coord' && ['draft', 'exec', 'launch'].includes(w),
-    pathCtaLabel: pathCta(w),
+    pathCtaLabel: pathCta(w, !!i.ret),
     // basket flags
     isNominated: !!i.nom && !i.funded,
     canWithdrawNom: role === 'path' && !!i.nom && !i.funded && i.nom?.by === myName,
@@ -438,6 +438,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     fundCheckBorder: s.ui.fundSel.includes(i.id) ? '#2563EB' : '#C7D1E2',
     fundCheckBg: s.ui.fundSel.includes(i.id) ? '#2563EB' : '#fff',
     nomBy: i.nom?.by || '',
+    nomStream: i.nom ? pathById(i.nom.path || i.path).name : '',
     // handlers
     onOpen: () => s.openDetail(i.id),
     onApprove: () => s.approveItem(i.id),
@@ -452,11 +453,10 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   };
 }
 
-function pathCta(w: string): string {
-  if (w === 'draft') return 'إكمال البيانات وإرسال';
+function pathCta(w: string, ret: boolean): string {
+  if (w === 'draft') return ret ? 'تعديل وإعادة الإرسال' : 'إكمال وإرسال';
   if (w === 'exec') return 'تحديث حالة التنفيذ';
-  if (w === 'launch') return 'إكمال خطة الإطلاق';
-  return 'فتح التفاصيل';
+  return 'تحديث خطة الإطلاق';
 }
 
 function buildProgramSteps(s: Store, base: Item[]) {
@@ -524,13 +524,15 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
     if (rawRole === 'ai') {
       if (i.nom && !i.funded) push('n-' + i.id, 'info', 'inbox', 'ترشيح جديد في السلة من ' + (i.nom.by || ''), tl + ' · ' + i.title + ' · ' + ent(i), i.id);
     } else if (rawRole === 'entity') {
-      if (w === 'ent1') push('e-' + i.id, 'info', 'send', 'عنصر بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
+      if (w === 'ent1') push('ent1-' + i.id, 'info', 'send', 'عنصر بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
+      if (w === 'ent2') push('ent2-' + i.id, 'info', 'wallet', 'ميزانية ونطاق عمل بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
       if (i.funded && ent(i) === s.entityName) push('f-' + i.id, 'ok', 'wallet', 'ستتكفّل اللجنة الوطنية بتكلفة تحويل هذا العنصر', tl + ' · ' + i.title + ' · يبقى التنفيذ من مسؤولية الجهة', i.id);
       if (i.fundCancel && !i.funded && ent(i) === s.entityName) push('fc-' + i.id, 'alert', 'wallet', 'أُلغي تمويل اللجنة الوطنية لهذا العنصر', tl + ' · ' + i.title + ' · السبب: ' + i.fundCancel.reason, i.id);
     } else {
       if (i.funded && i.nom && i.nom.by === myName) push('mf-' + i.id, 'ok', 'wallet', 'اعتمدت اللجنة الوطنية تمويل ترشيحك', tl + ' · ' + i.title, i.id);
       if (i.fyi) push('fy-' + i.id, 'info', 'inbox', 'للعلم: عُدّل العنصر من ممثل الجهة وأُحيل لاعتماد اللجنة الوطنية', tl + ' · ' + i.title, i.id);
       if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب معلومات إضافية من ' : 'تمت إعادة العنصر من ') + (i.ret.from || ''), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
+      if (w === 'budget' && !i.ret) push('bud-' + i.id, 'info', 'wallet', 'اعتُمدت الأولوية — أدخل الميزانية ونطاق العمل', tl + ' · ' + i.title, i.id);
       if (w === 'exec') push('x-' + i.id, 'ok', 'check', 'العنصر في مرحلة التنفيذ — حدّث الحالة', tl + ' · ' + i.title, i.id);
       if (w === 'launch') push('l-' + i.id, 'info', 'send', 'العنصر في مرحلة الإطلاق — أكمل خطة الإطلاق', tl + ' · ' + i.title, i.id);
     }
@@ -561,9 +563,9 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
   const mk = (i: Item) => {
     const score = transformScore(i);
     // funding-source line for approved rows
-    const fundedText = i.nom?.direct
+    const fundedText = i.funded?.direct
       ? 'اعتُمد مباشرة من اللجنة الوطنية'
-      : 'بترشيح من ' + (i.nom?.by || '') + ' · ' + pathById(i.path).name;
+      : 'بترشيح من ' + (i.nom?.by || 'ممثل المسار') + ' · ' + pathById(i.path).name;
     return {
       id: i.id,
       title: i.title,
@@ -607,7 +609,7 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
 }
 
 function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKey; ent: (i: Item) => string }) {
-  const { rawRole, role } = ctx;
+  const { rawRole } = ctx;
   const i = s.items.find((x) => x.id === id);
   if (!i) return null;
   const t = TYPE[i.type];
@@ -619,6 +621,19 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
   // detail view is VIEW-ONLY for item data; scope/budget are never edited here
   const canEditScope = false;
   const isDraftForCoord = rawRole === 'coord' && w === 'draft';
+  // ---- footer / menu gating (mirrors the design's derived flags) ----
+  const vStep = Math.min(s.ui.dViewStep || step, step);
+  const canApproveGateView = canApproveGate && vStep === step;
+  const onApprovalStep = vStep === 2;
+  const editLocked = step >= 3;
+  const execEditable = rawRole === 'coord' && w === 'exec';
+  const launchEditable = rawRole === 'coord' && w === 'launch';
+  const fillActive = canEditScope || execEditable || launchEditable;
+  // the "تعديل البيانات" menu item hides once approval/tracking has begun
+  const showMenuEdit = !onApprovalStep && !editLocked;
+  // fallback edit button: shown when there's no gate action and editing isn't
+  // locked — but the read-only path role never gets an edit button
+  const canEdit = !canApproveGateView && !onApprovalStep && !editLocked && !fillActive && rawRole !== 'path';
   const twoStep = rawRole === 'ai' || rawRole === 'path';
   const cur = twoStep ? (step >= 3 ? 2 : 1) : step;
   const stepLabels = twoStep
@@ -672,10 +687,12 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     retNote: i.ret?.note || '',
     // funded banner (shown inside the detail body)
     dFunded: !!i.funded,
-    dFundedText:
-      i.funded?.direct || i.nom?.direct
-        ? 'اعتُمد مباشرة من اللجنة الوطنية'
-        : 'بترشيح من ' + (i.nom?.by || ''),
+    dFundedText: i.funded
+      ? (i.funded.direct
+          ? 'مموّل مباشرة من اللجنة الوطنية'
+          : 'مموّل من اللجنة الوطنية · بترشيح من ' + (i.nom?.by || 'ممثل المسار')) +
+        ' · يبقى التنفيذ من مسؤولية الجهة'
+      : '',
     isProj: i.type === 'project' || i.type === 'initiative',
     isOp: i.type === 'operation',
     isSvc: i.type === 'service',
@@ -718,6 +735,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     showBudgetSubmit: false, // scope is submitted via the wizard, not the detail
     hasScopeFile: !!i.scopeFile,
     scopeFile: i.scopeFile || '',
+    scopeFileLabel: i.scopeFile ? 'المرفق: ' + i.scopeFile : 'اسحب الملف هنا أو اضغط للإرفاق',
     // exec / launch
     execRows,
     execEditable: rawRole === 'coord' && w === 'exec',
@@ -736,7 +754,9 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     canApproveGate,
     gateActor: w === 'ent1' ? 'ممثل الجهة' : 'اللجنة الوطنية',
     dActionMenuOpen: s.ui.dActionMenuOpen,
-    canEdit: isDraftForCoord,
+    canApproveGateView,
+    canEdit,
+    showMenuEdit,
     editLabel: isDraftForCoord ? 'متابعة وإكمال البيانات وإرسالها' : 'تعديل',
     // handlers
     onClose: () => s.closeDetail(),
@@ -748,29 +768,41 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     onScopeWork: (v: string) => s.detailField(i.id, 'scopeOfWork', v),
     onBudget: (v: string) => s.detailField(i.id, 'budget', v),
     onSubmitScope: () => s.submitScope(i.id),
+    onDownloadScope: () => s.toast('جاري تحميل المرفق…'),
     onGoLaunch: () => s.goToLaunch(i.id),
     onFinishLaunch: () => s.finishLaunch(i.id),
   };
 }
 
 function buildLogRows(i: Item) {
-  const log = i.log && i.log.length ? i.log : [];
-  if (log.length)
-    return log.map((l) => ({
-      action: l.action,
-      by: l.by,
-      role: l.role,
-      sub: l.role + ' · ' + fmtDate(l.at),
-      note: l.note || '',
-      hasNote: !!l.note,
-      color: '#2563EB',
-    }));
-  // synthesize minimal history
-  const rows: { action: string; sub: string; note: string; hasNote: boolean; color: string }[] = [
-    { action: 'أرسل العنصر للاعتماد', sub: 'منسق المسار في الجهة', note: '', hasNote: false, color: '#2563EB' },
-  ];
-  if (['exec', 'launch', 'done'].includes(wfOf(i)))
-    rows.push({ action: 'اعتمد العنصر', sub: 'ممثل الجهة', note: '', hasNote: false, color: '#0B8A4B' });
+  // Displayed action text (mirrors the design's actLabel()).
+  const actLabel = (e: { action: string; role?: string }): string => {
+    if (e.action === 'submit') return 'تم الإرسال للاعتماد';
+    if (e.action === 'approve') return 'تم الاعتماد من ' + (e.role || '');
+    if (e.action === 'pending') return 'قيد الاعتماد لدى ' + (e.role || '');
+    if (e.action === 'reject') return 'رفض العنصر';
+    if (e.action === 'info') return 'طلب معلومات إضافية';
+    return e.action;
+  };
+  const rawLog = i.log && i.log.length ? i.log : [];
+  const rows = rawLog.map((e) => {
+    const a = ALOG[e.action] || { t: e.action, c: '#64748B' };
+    const dt = new Date(e.at);
+    const when = isNaN(dt.getTime())
+      ? ''
+      : fmtDate(e.at) + ' · ' + String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
+    const namedInLabel = e.action === 'approve' || e.action === 'pending';
+    const sub = namedInLabel ? when : (e.by ? e.by + ' · ' : '') + when;
+    return { action: actLabel(e), color: a.c, sub, note: e.note || '', hasNote: !!e.note };
+  });
+  // synthesize minimal history when no real log rows exist
+  if (!rows.length) {
+    rows.push({ action: actLabel({ action: 'submit' }), color: ALOG.submit.c, sub: 'منسق المسار في الجهة', note: '', hasNote: false });
+    if (['exec', 'launch', 'done'].includes(wfOf(i)))
+      rows.push({ action: actLabel({ action: 'approve', role: 'ممثل الجهة' }), color: ALOG.approve.c, sub: '', note: '', hasNote: false });
+    else if (wfOf(i) === 'ent1')
+      rows.push({ action: actLabel({ action: 'pending', role: 'ممثل الجهة' }), color: ALOG.pending.c, sub: '', note: '', hasNote: false });
+  }
   return rows;
 }
 
@@ -780,17 +812,36 @@ function buildModal(s: Store) {
   const type = draft?.type || 'project';
   const mTypeLabel = typeLabel(type);
   const path = draft?.path || s.myPath;
-  const fLabels = ['بيانات', 'التصنيف والأولوية', 'النتائج المتوقعة', 'نطاق العمل والميزانية', 'خطة التنفيذ والإطلاق'];
+  // path name is only shown once a path has actually been chosen for the draft
+  const mPathName = draft?.path ? pathById(draft.path).name : '';
+  // per-type step 1 / step 2 titles (verbatim from design)
+  const step1Title =
+    ({ project: 'بيانات المشروع', initiative: 'بيانات المبادرة', operation: 'بيانات العملية', service: 'بيانات الخدمة' } as Record<string, string>)[type] ||
+    'البيانات العامة';
+  const step2Title =
+    ({ project: 'تقييم المشروع', initiative: 'تقييم المبادرة', operation: 'تقييم العملية', service: 'تقييم الخدمة' } as Record<string, string>)[type] ||
+    'التقييم والأولوية';
+  // per-type stepper labels (fallback to generic when no type yet)
+  const step1Label =
+    ({ project: 'بيانات المشروع', initiative: 'بيانات المبادرة', operation: 'بيانات العملية', service: 'بيانات الخدمة' } as Record<string, string>)[type] ||
+    'البيانات';
+  const step2Label =
+    ({ project: 'تقييم المشروع', initiative: 'تقييم المبادرة', operation: 'تقييم العملية', service: 'تقييم الخدمة' } as Record<string, string>)[type] ||
+    'التقييم';
+  const fLabels = [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والميزانية', 'خطة التنفيذ والإطلاق'];
+  const fTitles = [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والميزانية', 'خطة التنفيذ والإطلاق'];
   const fHints = [
-    'أدخل المعلومات العامة للعنصر',
-    'حدّد التصنيف والأولوية وتقييم التحول',
-    'صف المخرجات والنتائج والأثر المتوقع',
-    'حدّد نطاق العمل والميزانية وأرفق المستند الداعم',
-    'المراحل الربعية للتنفيذ وخطة الإطلاق',
+    'ابدأ بالمعلومات الأساسية للعنصر',
+    'حدّد الأولوية وقابلية التحول',
+    'النتائج والأثر المستهدف',
+    'نطاق العمل والميزانية والمرفقات',
+    'المراحل الربعية وخطة الإطلاق',
   ];
   return {
     mStep: ui.mStep,
-    createTitle: ui.editingId ? 'تعديل عنصر' : 'إضافة عنصر جديد',
+    createTitle: ui.editingId ? 'تعديل عنصر' : mPathName ? 'إضافة في مسار ' + mPathName : 'إضافة عنصر جديد',
+    mPathName,
+    rankBtnLabel: draft?.rank ? 'الأولوية رقم ' + draft.rank : 'اضغط لترتيب الأولوية بالسحب والإفلات',
     // path step
     pathCards: availTypesCards(s),
     // type step
@@ -808,7 +859,7 @@ function buildModal(s: Store) {
     mTypeLabel,
     fLabels,
     fHints,
-    fStepTitle: fLabels[ui.fStep - 1] || '',
+    fStepTitle: fTitles[ui.fStep - 1] || '',
     fStepHint: fHints[ui.fStep - 1] || '',
     fNextLabel: ui.fStep >= 5 ? 'مراجعة ذكية' : 'التالي',
     // ai review
