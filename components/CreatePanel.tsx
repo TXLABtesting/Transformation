@@ -4,6 +4,7 @@ import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
 import { LAUNCH_TYPES } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
+import { downloadBulkTemplate } from '@/lib/export';
 
 // ============================================================================
 // Create wizard side-panel (§9) — faithful RTL reproduction of the prototype.
@@ -534,6 +535,20 @@ function F1({
         </div>
       )}
 
+      {m.mIsProjectish && (
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>التصنيف</label>
+          <select
+            value={gv('type') === 'initiative' ? 'مبادرة' : 'مشروع'}
+            onChange={(e) => setField('type', e.target.value === 'مبادرة' ? 'initiative' : 'project')}
+            style={inputStyle}
+          >
+            <option>مشروع</option>
+            <option>مبادرة</option>
+          </select>
+        </div>
+      )}
+
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>اسم {m.mTypeLabel}</label>
         <input
@@ -694,7 +709,7 @@ function F2({
           <div style={cardTitle}>التصنيف والأولوية</div>
           {sel('الأولوية', 'priority', ['عالية', 'متوسطة', 'منخفضة'])}
           {sel('مستوى التعقيد', 'complexity', ['عالٍ', 'متوسط', 'منخفض'])}
-          {m.mIsProjectish && sel('الحالة', 'status', ['مشروع جديد', 'قيد التنفيذ', 'قائم'])}
+          {m.mIsProjectish && sel('الحالة', 'status', ['مشروع جديد', 'قيد التنفيذ', 'قائم', 'مكتمل'])}
           {rankBtn}
         </div>
       )}
@@ -1041,9 +1056,33 @@ function FPhases({ vm }: { vm: VM }) {
   const draft = m.draft;
   const sel = m.selectedLaunchPlan;
 
+  const batchPlans = m.launchPlanGroups.find((g) => g.batch === draft?.execBatch)?.plans || [];
+
   return (
     <div>
-      {/* launch plan selector (batch is derived from the plan) */}
+      {/* execution batch (خطة التنفيذ والإطلاق) */}
+      <div style={cardStyle}>
+        <label style={labelStyle}>
+          خطة التنفيذ والإطلاق <span style={{ color: '#D23B45' }}>*</span>
+        </label>
+        <select
+          value={draft?.execBatch || ''}
+          onChange={(e) => s.selectExecBatch(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">اختر الدفعة…</option>
+          {m.batchOptions.map((b) => (
+            <option key={b.name} value={b.name}>
+              {b.label}
+            </option>
+          ))}
+        </select>
+        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 7 }}>
+          حدّد الدفعة التي سيُنفَّذ ويُطلَق فيها هذا العنصر.
+        </div>
+      </div>
+
+      {/* launch plan within the selected batch */}
       <div style={cardStyle}>
         <label style={labelStyle}>
           خطة الإطلاق <span style={{ color: '#D23B45' }}>*</span>
@@ -1051,22 +1090,23 @@ function FPhases({ vm }: { vm: VM }) {
         <select
           value={draft?.launchPlanId || ''}
           onChange={(e) => s.selectLaunchPlan(e.target.value)}
-          style={inputStyle}
+          disabled={!draft?.execBatch}
+          style={{ ...inputStyle, ...(draft?.execBatch ? {} : { background: '#F1F4F9', cursor: 'not-allowed' }) }}
         >
-          <option value="">اختر خطة إطلاق…</option>
-          {m.launchPlanGroups.map((g) => (
-            <optgroup key={g.batch} label={g.period ? g.batch + ' · ' + g.period : g.batch}>
-              {g.plans.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </optgroup>
+          <option value="">{draft?.execBatch ? 'اختر خطة إطلاق…' : 'اختر الدفعة أولاً…'}</option>
+          {batchPlans.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label}
+            </option>
           ))}
         </select>
+        {draft?.execBatch && batchPlans.length === 0 && (
+          <div style={{ fontSize: 11.5, color: '#B45309', fontWeight: 600, marginTop: 7 }}>
+            لا توجد خطط إطلاق لهذه الدفعة بعد — أضفها من «إدارة خطط الإطلاق» في لوحة التحكم.
+          </div>
+        )}
         <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 7, lineHeight: 1.7 }}>
-          تُحدَّد دفعة التنفيذ تلقائياً من خطة الإطلاق المختارة. تُدار خطط الإطلاق مركزياً من لوحة التحكم
-          («إدارة خطط الإطلاق»).
+          تُدار خطط الإطلاق مركزياً من لوحة التحكم («إدارة خطط الإطلاق»).
         </div>
 
         {sel && (
@@ -1310,6 +1350,7 @@ function ReviewStep({ vm }: { vm: VM }) {
 // STEP: BULK
 function BulkStep({ vm }: { vm: VM }) {
   const s = vm.store;
+  const m = vm.modal;
   return (
     <div>
       <div
@@ -1333,6 +1374,7 @@ function BulkStep({ vm }: { vm: VM }) {
           الخطوة ١ · تنزيل القالب
         </div>
         <button
+          onClick={() => downloadBulkTemplate(m.bulkTemplateTypes)}
           style={{
             display: 'inline-flex',
             alignItems: 'center',

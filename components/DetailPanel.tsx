@@ -637,8 +637,8 @@ export function DetailPanel({ vm }: { vm: VM }) {
                         <span
                           style={{
                             marginRight: 7,
-                            background: '#DCF3F5',
-                            color: '#0E7C86',
+                            background: '#E5EEFF',
+                            color: '#2563EB',
                             borderRadius: 999,
                             padding: '2px 8px',
                             fontSize: 10,

@@ -80,10 +80,16 @@ export const PIC: Record<string, string> = {
 export type TypeOption = { key: ItemType; label: string };
 export function availTypes(path: string): TypeOption[] {
   const base: TypeOption[] = [{ key: 'project', label: 'مشروع / مبادرة' }];
-  if (path === 'ops') base.push({ key: 'operation', label: 'عملية' });
+  // operations exist in the operations stream and العمل الحكومي الاستراتيجي only
+  if (path === 'ops' || path === 'strategy') base.push({ key: 'operation', label: 'عملية' });
+  // services exist in the services stream only
   if (path === 'services') base.push({ key: 'service', label: 'خدمة' });
   return base;
 }
+
+// which type columns apply to a stream (drives dashboard breakdowns)
+export const streamHasType = (path: string, t: 'operation' | 'service'): boolean =>
+  availTypes(path).some((o) => o.key === t);
 
 // ---- 1.2 TYPE map (project/initiative merged for display) ------------------
 export const TYPE: Record<ItemType, { label: string; color: string; bg: string }> = {

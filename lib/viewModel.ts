@@ -26,6 +26,7 @@ import {
   stageWeight,
   isEntityApproved,
   isProjInit,
+  streamHasType,
   execAllDone,
   parseBudget,
   formatMoney,
@@ -131,6 +132,8 @@ function build(s: Store) {
       operations: inStream.filter((i) => i.type === 'operation').length,
       services: inStream.filter((i) => i.type === 'service').length,
       total: inStream.length,
+      hasOps: streamHasType(p.id, 'operation'),
+      hasSvc: streamHasType(p.id, 'service'),
     };
   });
   const breakdownTotals = {
@@ -145,8 +148,8 @@ function build(s: Store) {
   const isAiRole = rawRole === 'ai';
   const showRail = rawRole === 'entity';
   const showAddBtn = rawRole === 'coord';
-  const showBasket = rawRole === 'ai' || role === 'path';
-  const showEntFilter = rawRole === 'ai' || role === 'path';
+  const showBasket = rawRole === 'ai' || rawRole === 'path';
+  const showEntFilter = rawRole === 'ai' || rawRole === 'path';
 
   // ---- path rail ----
   const railPaths = PATHS.filter((p) => role !== 'path' || p.id === myPath);
@@ -179,7 +182,7 @@ function build(s: Store) {
   // options they can't act on
   const statusOptions = [
     { v: 'all', label: 'كل الحالات' },
-    ...(rawRole === 'ai' || role === 'path'
+    ...(rawRole === 'ai' || rawRole === 'path'
       ? []
       : [
           { v: 'mine', label: 'بحاجة لإجرائي' },
@@ -335,8 +338,8 @@ function build(s: Store) {
     kpis,
     breakdown,
     breakdownTotals,
-    showOpsKpi: effActivePath === 'all' || effActivePath === 'ops',
-    showSvcKpi: effActivePath === 'all' || effActivePath === 'services',
+    showOpsKpi: effActivePath === 'all' || streamHasType(effActivePath, 'operation'),
+    showSvcKpi: effActivePath === 'all' || streamHasType(effActivePath, 'service'),
     notAiRole: !isAiRole,
     // filters
     tabs,
@@ -355,9 +358,9 @@ function build(s: Store) {
     cards,
     // basket + fund bar
     basket,
-    fundBarShow: (rawRole === 'ai' || role === 'path') && ui.fundSel.length > 0,
+    fundBarShow: (rawRole === 'ai' || rawRole === 'path') && ui.fundSel.length > 0,
     fundSelCount: ui.fundSel.length,
-    fundBarActionLabel: rawRole === 'ai' ? 'تمويل التحول' : 'ترشيح للتحول',
+    fundBarActionLabel: rawRole === 'ai' ? 'تمويل التحول' : 'ترشيح للتمويل',
     // coordinator bulk-assign bar + modal
     assignBar: { show: rawRole === 'coord' && ui.assignSel.length > 0, count: ui.assignSel.length },
     assignModal: ui.assign
@@ -529,7 +532,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const wfChip = isReturned ? '#B45309' : wm.chip;
   const wfBg = isReturned ? '#FFF3DE' : wm.bg;
   const showSelectCheck =
-    ['exec', 'launch', 'done'].includes(w) && ((rawRole === 'ai' && !i.funded) || (role === 'path' && !i.nom && !i.funded));
+    ['exec', 'launch', 'done'].includes(w) && ((rawRole === 'ai' && !i.funded) || (rawRole === 'path' && !i.nom && !i.funded));
   // every card shows an execution batch + (optional) launch plan
   const msNames = execMilestones();
   const batchLabel = i.execBatch || msNames[stableHash(i.id) % msNames.length].name;
@@ -580,7 +583,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     // the stream rep (their own); coord/entity never see a pending nomination,
     // only the committee's funding decision.
     isNominated: !!i.nom && !i.funded && (rawRole === 'ai' || rawRole === 'path'),
-    canWithdrawNom: role === 'path' && !!i.nom && !i.funded && i.nom?.by === myName,
+    canWithdrawNom: rawRole === 'path' && !!i.nom && !i.funded && i.nom?.by === myName,
     isFunded,
     isFundedCommittee: rawRole === 'ai' && isFunded,
     isFundedOther: rawRole !== 'ai' && isFunded,
@@ -1069,7 +1072,11 @@ function buildModal(s: Store) {
     fStepTitle: fTitles[ui.fStep - 1] || '',
     fStepHint: fHints[ui.fStep - 1] || '',
     fNextLabel: ui.fStep >= 5 ? 'إرسال للاعتماد' : 'التالي',
-    // centrally-managed launch plans (grouped by batch) selectable for this draft
+    // execution batches (خطة التنفيذ والإطلاق) + centrally-managed launch plans
+    batchOptions: launchBatches().map((b) => ({
+      name: b.name,
+      label: b.period ? b.name + ' · ' + b.period : b.name,
+    })),
     launchPlanGroups: launchBatches()
       .map((b) => ({
         batch: b.name,
@@ -1103,6 +1110,7 @@ function buildModal(s: Store) {
     aiImproveCount: ui.aiResult?.improve.length || 0,
     aiNotesCount: ui.aiResult?.notes.length || 0,
     // bulk
+    bulkTemplateTypes: availTypes(path),
     bulkRows: ui.bulkRows,
     bulkLoading: ui.bulkLoading,
     bulkLoaded: ui.bulkLoaded,

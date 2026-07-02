@@ -41,6 +41,31 @@ export async function exportExcel(items: Item[], entityName: string) {
   );
 }
 
+// Bulk-upload template: النوع (dropdown limited to the stream's types) + العنوان + الوصف
+export async function downloadBulkTemplate(types: { key: string; label: string }[]) {
+  const mod = await import('exceljs');
+  const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('القالب', { views: [{ rightToLeft: true }] });
+  ws.columns = [
+    { header: 'النوع', key: 't', width: 22 },
+    { header: 'العنوان', key: 'ti', width: 38 },
+    { header: 'الوصف', key: 'd', width: 52 },
+  ];
+  ws.getRow(1).font = { bold: true };
+  const list = '"' + types.map((t) => t.label).join(',') + '"';
+  for (let r = 2; r <= 60; r++) {
+    ws.getCell('A' + r).dataValidation = { type: 'list', allowBlank: true, formulae: [list] };
+  }
+  const buf = await wb.xlsx.writeBuffer();
+  downloadBlob(
+    new Blob([buf], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }),
+    'قالب_الرفع_الجماعي.xlsx'
+  );
+}
+
 function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

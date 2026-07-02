@@ -198,14 +198,14 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                 height: 38,
                 flex: 'none',
                 borderRadius: 11,
-                background: '#DCF3F5',
-                color: '#0E7C86',
+                background: '#E5EEFF',
+                color: '#2563EB',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Icon d={BASKET_ICON} size={20} color="#0E7C86" />
+              <Icon d={BASKET_ICON} size={20} color="#2563EB" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{b.title}</div>

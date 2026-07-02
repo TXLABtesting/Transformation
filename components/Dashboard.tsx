@@ -360,7 +360,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       height: 18,
                       padding: '0 5px',
                       borderRadius: 9,
-                      background: '#0E7C86',
+                      background: '#2563EB',
                       color: '#fff',
                       fontSize: 10,
                       fontWeight: 800,
@@ -1180,13 +1180,18 @@ export function Dashboard({ vm }: { vm: VM }) {
                         <td style={{ padding: '8px 10px', fontWeight: 700, color: '#33415C', borderBottom: '1px solid #F4F6FA' }}>
                           {r.name}
                         </td>
-                        {[r.projInit, r.operations, r.services, r.total].map((v, i) => (
+                        {[
+                          String(r.projInit),
+                          r.hasOps ? String(r.operations) : '—',
+                          r.hasSvc ? String(r.services) : '—',
+                          String(r.total),
+                        ].map((v, i) => (
                           <td
                             key={i}
                             style={{
                               padding: '8px 10px',
                               textAlign: 'center',
-                              color: i === 3 ? '#13213C' : '#54627B',
+                              color: v === '—' ? '#C3CDDE' : i === 3 ? '#13213C' : '#54627B',
                               fontWeight: i === 3 ? 800 : 600,
                               borderBottom: '1px solid #F4F6FA',
                             }}
@@ -1705,8 +1710,8 @@ function CardItem({ c }: { c: CardVM }) {
               height: 20,
               marginTop: 1,
               borderRadius: 6,
-              border: `2px solid ${c.assignChecked ? '#0E7C86' : '#C7D1E2'}`,
-              background: c.assignChecked ? '#0E7C86' : '#fff',
+              border: `2px solid ${c.assignChecked ? '#2563EB' : '#C7D1E2'}`,
+              background: c.assignChecked ? '#2563EB' : '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1986,13 +1991,13 @@ function CardItem({ c }: { c: CardVM }) {
               gap: 6,
               fontSize: 11,
               fontWeight: 800,
-              color: '#0E7C86',
-              background: '#DCF3F5',
+              color: '#2563EB',
+              background: '#E5EEFF',
               borderRadius: 999,
               padding: '5px 11px',
             }}
           >
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0E7C86' }} />
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563EB' }} />
             {c.nomLabel}
           </span>
           {c.canWithdrawNom && (

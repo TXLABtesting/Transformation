@@ -28,6 +28,7 @@ import {
   isEntityApproved,
   PATH_REPS,
   LAUNCH_TYPES,
+  availTypes,
 } from './domain';
 import { seedItems, seedLaunchPlans } from './seed';
 import type { LaunchPlan } from './domain';
@@ -41,7 +42,7 @@ export type Setup = {
   owners: Record<string, Owner>;
 };
 
-export type BulkRow = { title: string; desc: string; _v?: string; _note?: string };
+export type BulkRow = { type?: string; title: string; desc: string; _v?: string; _note?: string };
 
 export type AssignState = {
   // bulk-assign now picks a centrally managed launch plan (implies the batch)
@@ -237,6 +238,7 @@ type Actions = {
   updLaunchPlan: (id: string, k: keyof LaunchPlan, v: string) => void;
   removeLaunchPlan: (id: string) => void;
   selectLaunchPlan: (planId: string) => void;
+  selectExecBatch: (batch: string) => void;
   togglePlanItem: (planId: string, itemId: string) => void;
   openCancelFund: (id: string) => void;
   setCancelFundNote: (v: string) => void;
@@ -640,13 +642,14 @@ export const useStore = create<Store>((set, get) => {
       }));
     },
     chooseManual: () => setUi({ method: 'manual', mStep: 'type' }),
-    chooseBulk: () => setUi({ method: 'bulk', mStep: 'type' }),
+    // bulk goes straight to the template/upload step — the file carries the types
+    chooseBulk: () => setUi({ method: 'bulk', mStep: 'bulk' }),
     mBack: () => {
-      // flow: (path) → method → type → form|bulk
+      // flow: (path) → method → type (manual) → form | bulk
       const s = get();
       const order: MStep[] = ['path', 'method', 'type', 'form'];
       const idx = order.indexOf(s.ui.mStep);
-      if (s.ui.mStep === 'bulk') return setUi({ mStep: 'type' });
+      if (s.ui.mStep === 'bulk') return setUi({ mStep: 'method' });
       if (s.ui.mStep === 'bulkReview') return setUi({ mStep: 'bulk' });
       if (idx > 0) {
         // coord: don't go back past method (no path selection)
@@ -668,7 +671,10 @@ export const useStore = create<Store>((set, get) => {
         setUi({ fStep: 4 });
         return toast('يجب إدخال نطاق العمل والميزانية قبل الإرسال للاعتماد');
       }
-      // a launch plan is mandatory
+      // execution batch + launch plan are mandatory
+      if (d && !(d.execBatch || '').trim()) {
+        return toast('اختر خطة التنفيذ والإطلاق (الدفعة) قبل الإرسال للاعتماد');
+      }
       if (d && !d.launchPlanId && !(d.launches || []).some((l) => (l.title || '').trim())) {
         return toast('اختر خطة إطلاق قبل الإرسال للاعتماد');
       }
@@ -765,27 +771,27 @@ export const useStore = create<Store>((set, get) => {
     },
     bulkDemo: async () => {
       const s = get();
-      const tl = s.ui.draft ? s.ui.draft.type : 'project';
-      const label = ({ project: 'مشروع', initiative: 'مبادرة', operation: 'عملية', service: 'خدمة' } as Record<string, string>)[tl] || 'عنصر';
+      const path = s.ui.draft?.path || s.myPath;
+      const types = availTypes(path);
+      const tKey = (i: number) => types[i % types.length]?.key || 'project';
       const rows: BulkRow[] = [
-        { title: label + ' أتمتة الإشعارات الموحّدة', desc: 'أتمتة إرسال الإشعارات عبر القنوات الرقمية.' },
-        { title: label + ' لوحة مؤشرات الأداء', desc: 'لوحة' },
-        { title: '', desc: 'تم الاستيراد من الملف المرفوع' },
+        { type: tKey(0), title: 'أتمتة الإشعارات الموحّدة', desc: 'أتمتة إرسال الإشعارات عبر القنوات الرقمية.' },
+        { type: tKey(1), title: 'لوحة مؤشرات الأداء', desc: 'لوحة' },
+        { type: tKey(0), title: '', desc: 'تم الاستيراد من الملف المرفوع' },
       ];
       setUi({ mStep: 'bulkReview', bulkLoading: true, bulkLoaded: false, bulkRows: rows });
-      const verdicts = await runBulkReview(tl, rows);
+      const verdicts = await runBulkReview('عناصر', rows);
       const withV = rows.map((r, i) => ({ ...r, _v: verdicts[i]?.verdict, _note: verdicts[i]?.note }));
       setUi({ bulkLoading: false, bulkLoaded: true, bulkRows: withV });
     },
     submitBulk: () => {
       const s = get();
       const path = s.ui.draft?.path || s.myPath;
-      const type = s.ui.draft?.type || 'project';
       const toAdd = s.ui.bulkRows
         .filter((r) => r._v !== 'يوجد خطأ')
-        .map((r) => ({
-          ...blankItem(type, path),
-          id: 'n' + Date.now() + Math.floor(Math.random() * 1000),
+        .map((r, ri) => ({
+          ...blankItem((r.type as ItemType) || 'project', path),
+          id: 'n' + Date.now() + ri + Math.floor(Math.random() * 1000),
           title: r.title,
           desc: r.desc,
           approval: 'تم الإرسال',
@@ -1102,6 +1108,25 @@ export const useStore = create<Store>((set, get) => {
           it.launchPlanId === id ? { ...it, launchPlanId: '', execBatch: '', launches: [] } : it
         ),
       }));
+    },
+    selectExecBatch: (batch: string) => {
+      const s = get();
+      set((st) => {
+        if (!st.ui.draft) return {};
+        const plan = s.launchPlans.find((p) => p.id === st.ui.draft!.launchPlanId);
+        // switching batch clears a launch plan that belongs to another batch
+        const keepPlan = plan && plan.batch === batch;
+        return {
+          ui: {
+            ...st.ui,
+            draft: {
+              ...st.ui.draft,
+              execBatch: batch,
+              ...(keepPlan ? {} : { launchPlanId: '', launches: [] }),
+            },
+          },
+        };
+      });
     },
     togglePlanItem: (planId: string, itemId: string) => {
       const s = get();
