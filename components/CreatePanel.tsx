@@ -2,9 +2,8 @@
 import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
-import { LAUNCH_TYPES } from '@/lib/domain';
+import { LAUNCH_TYPES, typeLabel, pathById } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
-import { downloadBulkTemplate } from '@/lib/export';
 
 // ============================================================================
 // Create wizard side-panel (§9) — faithful RTL reproduction of the prototype.
@@ -1383,8 +1382,9 @@ function BulkStep({ vm }: { vm: VM }) {
         <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 10 }}>
           الخطوة ١ · تنزيل القالب
         </div>
-        <button
-          onClick={() => downloadBulkTemplate(m.bulkTemplateTypes)}
+        <a
+          href="assets/workplan_template.xlsx"
+          download="قالب_خطة_العمل.xlsx"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -1400,20 +1400,22 @@ function BulkStep({ vm }: { vm: VM }) {
             fontSize: 13,
             cursor: 'pointer',
             fontFamily: 'inherit',
+            textDecoration: 'none',
+            boxSizing: 'border-box',
           }}
         >
           <Icon d={IC.download} size={18} color="#2563EB" />
-          قالب Excel
-        </button>
+          قالب خطة العمل (Excel)
+        </a>
       </div>
 
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 10 }}>
           الخطوة ٢ · رفع الملف
         </div>
-        <div
-          onClick={() => s.bulkDemo()}
+        <label
           style={{
+            display: 'block',
             border: '1.5px dashed #CDD8EA',
             background: '#FAFCFF',
             borderRadius: 12,
@@ -1422,13 +1424,42 @@ function BulkStep({ vm }: { vm: VM }) {
             cursor: 'pointer',
           }}
         >
+          <input
+            type="file"
+            accept=".xlsx"
+            style={{ display: 'none' }}
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              const buf = await f.arrayBuffer();
+              e.target.value = '';
+              s.importWorkplan(buf);
+            }}
+          />
           <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49', marginBottom: 6 }}>
-            اسحب الملف هنا أو اضغط للرفع
+            اضغط لاختيار ملف خطة العمل
           </div>
           <div style={{ fontSize: 11.5, color: '#9AA6BC', lineHeight: 1.7 }}>
-            ملف Excel بصيغة .xlsx — للتجربة سيتم تحميل ٣ عناصر نموذجية
+            ملف Excel بصيغة .xlsx بقالب خطة العمل — تُقرأ المشاريع والعمليات والخدمات وخطة الإطلاقات،
+            وما ينقص يُستكمل يدوياً بعد الاستيراد.
           </div>
-        </div>
+        </label>
+        <button
+          onClick={() => s.bulkDemo()}
+          style={{
+            marginTop: 8,
+            background: 'none',
+            border: 'none',
+            color: '#8A97AD',
+            fontSize: 11.5,
+            fontWeight: 700,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            textDecoration: 'underline',
+          }}
+        >
+          أو جرّب ببيانات نموذجية
+        </button>
       </div>
 
       <button
@@ -1530,8 +1561,38 @@ function BulkReviewStep({ vm }: { vm: VM }) {
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49' }}>
-                      {b.title || 'عنصر بدون عنوان'}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49' }}>
+                        {b.title || 'عنصر بدون عنوان'}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: '#54627B',
+                          background: '#F1F4F9',
+                          borderRadius: 999,
+                          padding: '2px 8px',
+                          flex: 'none',
+                        }}
+                      >
+                        {typeLabel(b.type || 'project')}
+                      </span>
+                      {b.path && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: '#54627B',
+                            background: '#F1F4F9',
+                            borderRadius: 999,
+                            padding: '2px 8px',
+                            flex: 'none',
+                          }}
+                        >
+                          {pathById(b.path).name}
+                        </span>
+                      )}
                     </div>
                     {b._note && <div style={{ fontSize: 11.5, color: '#9AA6BC', marginTop: 2 }}>{b._note}</div>}
                   </div>

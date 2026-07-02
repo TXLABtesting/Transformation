@@ -42,7 +42,15 @@ export type Setup = {
   owners: Record<string, Owner>;
 };
 
-export type BulkRow = { type?: string; title: string; desc: string; _v?: string; _note?: string };
+export type BulkRow = {
+  type?: string;
+  path?: string;
+  title: string;
+  desc: string;
+  extra?: Partial<Item>;
+  _v?: string;
+  _note?: string;
+};
 
 export type AssignState = {
   // bulk-assign now picks a centrally managed launch plan (implies the batch)
@@ -65,6 +73,8 @@ export type UiState = {
   bulkRows: BulkRow[];
   bulkLoading: boolean;
   bulkLoaded: boolean;
+  // launch plans parsed from an uploaded workplan (imported on submit)
+  bulkLaunches: { batch: string; title: string; ltype: string; date: string; desc: string }[];
   // panels / modals
   detailId: string | null;
   teamOpen: boolean;
@@ -182,6 +192,7 @@ type Actions = {
   backToForm: () => void;
   submitItem: () => void;
   bulkDemo: () => Promise<void>;
+  importWorkplan: (buf: ArrayBuffer) => Promise<void>;
   submitBulk: () => void;
   // rank
   openRank: () => void;
@@ -293,6 +304,7 @@ function defaultUi(): UiState {
     bulkRows: [],
     bulkLoading: false,
     bulkLoaded: false,
+    bulkLaunches: [],
     detailId: null,
     teamOpen: false,
     deadlinesOpen: false,
@@ -786,13 +798,39 @@ export const useStore = create<Store>((set, get) => {
       const withV = rows.map((r, i) => ({ ...r, _v: verdicts[i]?.verdict, _note: verdicts[i]?.note }));
       setUi({ bulkLoading: false, bulkLoaded: true, bulkRows: withV });
     },
+    importWorkplan: async (buf: ArrayBuffer) => {
+      setUi({ mStep: 'bulkReview', bulkLoading: true, bulkLoaded: false, bulkRows: [], bulkLaunches: [] });
+      try {
+        const { parseWorkplan } = await import('./workplan');
+        const parsed = await parseWorkplan(buf);
+        if (!parsed.rows.length && !parsed.launches.length) {
+          setUi({ mStep: 'bulk', bulkLoading: false });
+          return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام قالب خطة العمل');
+        }
+        const rows: BulkRow[] = parsed.rows.map((r) => ({
+          type: r.type,
+          path: r.path,
+          title: r.title,
+          desc: r.desc,
+          extra: r.extra,
+        }));
+        setUi({ bulkRows: rows, bulkLaunches: parsed.launches });
+        const verdicts = await runBulkReview('عناصر', rows);
+        const withV = rows.map((r, i) => ({ ...r, _v: verdicts[i]?.verdict, _note: verdicts[i]?.note }));
+        setUi({ bulkLoading: false, bulkLoaded: true, bulkRows: withV });
+      } catch {
+        setUi({ mStep: 'bulk', bulkLoading: false });
+        toast('تعذّرت قراءة الملف — تأكد أنه بصيغة .xlsx وبالقالب الصحيح');
+      }
+    },
     submitBulk: () => {
       const s = get();
       const path = s.ui.draft?.path || s.myPath;
       const toAdd = s.ui.bulkRows
         .filter((r) => r._v !== 'يوجد خطأ')
         .map((r, ri) => ({
-          ...blankItem((r.type as ItemType) || 'project', path),
+          ...blankItem((r.type as ItemType) || 'project', r.path || path),
+          ...(r.extra || {}),
           id: 'n' + Date.now() + ri + Math.floor(Math.random() * 1000),
           title: r.title,
           desc: r.desc,
@@ -800,9 +838,23 @@ export const useStore = create<Store>((set, get) => {
           wf: 'ent1' as WfState,
           ret: null,
         }));
-      set((st) => ({ items: [...toAdd, ...st.items] }));
+      // launch plans carried by the workplan file → إدارة خطط الإطلاق (deduped)
+      const newPlans = s.ui.bulkLaunches
+        .filter((l) => !s.launchPlans.some((p) => p.title === l.title && p.date === l.date))
+        .map((l, i) => ({
+          id: 'lp' + Date.now() + i,
+          batch: l.batch,
+          title: l.title,
+          ltype: l.ltype,
+          date: l.date,
+          desc: l.desc,
+          scope: '',
+          budget: '',
+        }));
+      set((st) => ({ items: [...toAdd, ...st.items], launchPlans: [...st.launchPlans, ...newPlans] }));
       persist();
-      setUi({ mStep: 'done' });
+      setUi({ mStep: 'done', bulkLaunches: [] });
+      if (newPlans.length) toast('تم استيراد ' + toAdd.length + ' عنصر و' + newPlans.length + ' خطة إطلاق');
     },
 
     // ---- rank modal ----

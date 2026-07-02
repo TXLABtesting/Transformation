@@ -6,7 +6,7 @@
 // Idempotent: existing rows are left untouched (upsert / create-if-missing).
 // ============================================================================
 import { PrismaClient, Prisma } from '@prisma/client';
-import { seedItems } from '../lib/seed';
+import { seedItems, seedLaunchPlans } from '../lib/seed';
 import {
   PATHS,
   PATH_REPS,
@@ -99,7 +99,26 @@ async function main() {
     });
   }
 
-  // 7) Items — decomposed into relational rows
+  // 7) Centrally managed launch plans (إدارة خطط الإطلاق)
+  for (const lp of seedLaunchPlans()) {
+    await prisma.launchPlan.upsert({
+      where: { id: lp.id },
+      update: {},
+      create: {
+        id: lp.id,
+        batch: lp.batch,
+        title: lp.title,
+        ltype: lp.ltype,
+        date: lp.date,
+        desc: lp.desc,
+        scope: lp.scope || '',
+        budget: lp.budget || '',
+        budgetAmount: lp.budget ? BigInt(parseBudget(lp.budget)) : null,
+      },
+    });
+  }
+
+  // 8) Items — decomposed into relational rows
   let created = 0;
   for (const m of seedItems()) {
     const exists = await prisma.item.findUnique({ where: { id: m.id } });
@@ -154,6 +173,7 @@ async function main() {
         painPoints: m.painPoints,
         expectedImprovement: m.expectedImprovement,
         execBatch: m.execBatch,
+        launchPlanId: m.launchPlanId ?? null,
         retType: m.ret?.type,
         retFrom: m.ret?.from,
         retNote: m.ret?.note,

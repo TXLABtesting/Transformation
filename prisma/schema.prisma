@@ -191,6 +191,9 @@ model Item {
 
   // execution planning
   execBatch String? @map("exec_batch") // FK by name into exec_batches.name_ar (kept loose for flexibility)
+  // centrally-managed launch plan the item is attached to (إدارة خطط الإطلاق)
+  launchPlanId String?     @map("launch_plan_id")
+  launchPlan   LaunchPlan? @relation(fields: [launchPlanId], references: [id], onDelete: SetNull)
 
   // returned-with-notes state (ملاحظات ممثل الجهة)
   retType String? @map("ret_type") // info | reject
@@ -214,7 +217,28 @@ model Item {
   @@index([entityId])
   @@index([streamId])
   @@index([wf])
+  @@index([launchPlanId])
   @@map("items")
+}
+
+/// Centrally managed launch plans (إدارة خطط الإطلاق) — one per launch event,
+/// defined per execution batch; may carry the group-level scope and budget
+/// for the set of operations / services / projects launched together.
+model LaunchPlan {
+  id           String  @id
+  batch        String // batch name (loose FK into exec_batches.name_ar)
+  title        String
+  ltype        String  @default("")
+  date         String  @default("")
+  desc         String  @default("")
+  scope        String  @default("")
+  budget       String  @default("")
+  budgetAmount BigInt? @map("budget_amount") // parsed درهم amount
+
+  items Item[]
+
+  @@index([batch])
+  @@map("launch_plans")
 }
 
 /// Execution checklist rows (بنود التنفيذ) — agents/testing/pilot per item.

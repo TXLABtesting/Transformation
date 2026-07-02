@@ -375,7 +375,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                             direction: 'ltr',
                             textAlign: 'right',
                           }}
-                          placeholder="رقم الهاتف *"
+                          placeholder={'⁧رقم الهاتف *⁩'}
                           value={owner?.phone || ''}
                           onChange={(e) => s.updOwner(path.id, 'phone', e.target.value)}
                         />

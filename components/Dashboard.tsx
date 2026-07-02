@@ -64,6 +64,7 @@ const stop = (e: React.MouseEvent) => e.stopPropagation();
 
 export function Dashboard({ vm }: { vm: VM }) {
   const s = vm.store;
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
 
   return (
     <div
@@ -1063,38 +1064,69 @@ export function Dashboard({ vm }: { vm: VM }) {
             </div>
           </div>
 
-          {/* KPI strip (non-ai): line 1 = totals, line 2 = percentages */}
+          {/* KPI strip (non-ai): distribution pair on its own line, then the
+              remaining totals, then the percentages line */}
           {vm.notAiRole && (
             <>
-              <div
-                data-r="kpi"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
-                  gap: 13,
-                }}
-              >
-                <KpiCard
-                  value={vm.kpis.total}
-                  label="إجمالي العناصر"
-                  iconD="M4 20V10M10 20V4M16 20v-8M21 20H3"
-                />
-                <KpiCard
-                  value={vm.kpis.projInit}
-                  label="المشاريع / المبادرات"
-                  iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
-                  rows={vm.role === 'entity' ? vm.kpiDist.projInit : undefined}
-                />
-                {vm.showOpsKpi && (
+              {vm.role === 'entity' && vm.pathFilterValue === 'all' ? (
+                <>
+                  <div
+                    data-r="kpi"
+                    style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 13 }}
+                  >
+                    <KpiCard
+                      value={vm.kpis.projInit}
+                      label="المشاريع / المبادرات"
+                      iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
+                      rows={vm.kpiDist.projInit}
+                    />
+                    <KpiCard
+                      value={vm.kpis.operations}
+                      label="العمليات"
+                      iconD="M3 6h18M3 12h18M3 18h18"
+                      rows={vm.kpiDist.operations}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
+                      gap: 13,
+                    }}
+                  >
+                    <KpiCard
+                      value={vm.kpis.total}
+                      label="إجمالي العناصر"
+                      iconD="M4 20V10M10 20V4M16 20v-8M21 20H3"
+                    />
+                    <KpiCard value={vm.kpis.services} label="الخدمات" grid />
+                  </div>
+                </>
+              ) : (
+                <div
+                  data-r="kpi"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
+                    gap: 13,
+                  }}
+                >
                   <KpiCard
-                    value={vm.kpis.operations}
-                    label="العمليات"
-                    iconD="M3 6h18M3 12h18M3 18h18"
-                    rows={vm.role === 'entity' ? vm.kpiDist.operations : undefined}
+                    value={vm.kpis.total}
+                    label="إجمالي العناصر"
+                    iconD="M4 20V10M10 20V4M16 20v-8M21 20H3"
                   />
-                )}
-                {vm.showSvcKpi && <KpiCard value={vm.kpis.services} label="الخدمات" grid />}
-              </div>
+                  <KpiCard
+                    value={vm.kpis.projInit}
+                    label="المشاريع / المبادرات"
+                    iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
+                  />
+                  {vm.showOpsKpi && (
+                    <KpiCard value={vm.kpis.operations} label="العمليات" iconD="M3 6h18M3 12h18M3 18h18" />
+                  )}
+                  {vm.showSvcKpi && <KpiCard value={vm.kpis.services} label="الخدمات" grid />}
+                </div>
+              )}
 
               {(vm.role === 'entity' || vm.role === 'coord') && (
                 <div
@@ -1228,6 +1260,30 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                 </HoverDiv>
               </div>
+              {/* Type totals with per-stream distribution (same as the entity view) */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
+                  gap: 13,
+                  marginTop: 13,
+                }}
+              >
+                <KpiCard
+                  value={vm.kpis.projInit}
+                  label="المشاريع / المبادرات"
+                  iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
+                  rows={vm.pathFilterValue === 'all' ? vm.kpiDist.projInit : undefined}
+                />
+                <KpiCard
+                  value={vm.kpis.operations}
+                  label="العمليات"
+                  iconD="M3 6h18M3 12h18M3 18h18"
+                  rows={vm.pathFilterValue === 'all' ? vm.kpiDist.operations : undefined}
+                />
+                <KpiCard value={vm.kpis.services} label="الخدمات" grid />
+              </div>
+
               {/* Budget overview: approved · spent · remaining + utilization bar */}
               <div
                 style={{
@@ -1285,12 +1341,49 @@ export function Dashboard({ vm }: { vm: VM }) {
             </>
           )}
 
-          {/* List section title */}
+          {/* List section title + view switcher */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
               قائمة العناصر المقدَّمة
             </div>
             <div style={{ flex: 1, height: 1, background: '#E1E7F1' }} />
+            <div
+              style={{
+                display: 'flex',
+                background: '#fff',
+                border: '1px solid #E7ECF4',
+                borderRadius: 10,
+                padding: 3,
+                gap: 2,
+                flex: 'none',
+              }}
+            >
+              {(
+                [
+                  { k: 'cards' as const, d: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z', t: 'بطاقات' },
+                  { k: 'list' as const, d: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', t: 'قائمة' },
+                ]
+              ).map((o) => (
+                <button
+                  key={o.k}
+                  title={o.t}
+                  onClick={() => setViewMode(o.k)}
+                  style={{
+                    width: 32,
+                    height: 28,
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: viewMode === o.k ? '#0F1F3D' : 'transparent',
+                  }}
+                >
+                  <Icon d={o.d} size={15} color={viewMode === o.k ? '#fff' : '#8A97AD'} />
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Cards grid */}
@@ -1309,6 +1402,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                 لا توجد عناصر مطابقة للمرشحات الحالية — جرّب تغيير المرشحات أو إضافة عنصر جديد.
               </div>
             </div>
+          ) : viewMode === 'list' ? (
+            <ListView cards={vm.cards} />
           ) : (
             <div data-r="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
               {vm.cards.map((c) => (
@@ -1494,6 +1589,162 @@ function BudgetFigure({ value, label }: { value: string; label: string }) {
 }
 
 type CardVM = VM['cards'][number];
+
+// ---------------------------------------------------------------------------
+// List view — the same items as a clean, scannable table
+function ListView({ cards }: { cards: CardVM[] }) {
+  const th: CSSProperties = {
+    textAlign: 'right',
+    padding: '10px 14px',
+    fontSize: 11.5,
+    fontWeight: 700,
+    color: '#8A97AD',
+    borderBottom: '1px solid #EEF1F7',
+    whiteSpace: 'nowrap',
+  };
+  const td: CSSProperties = {
+    padding: '12px 14px',
+    fontSize: 12.5,
+    color: '#33415C',
+    borderBottom: '1px solid #F4F6FA',
+    verticalAlign: 'middle',
+  };
+  return (
+    <div
+      style={{
+        background: '#fff',
+        border: '1px solid #E7ECF4',
+        borderRadius: 16,
+        overflowX: 'auto',
+      }}
+    >
+      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 860 }}>
+        <thead>
+          <tr>
+            <th style={{ ...th, width: 30 }} />
+            <th style={th}>العنصر</th>
+            <th style={th}>النوع</th>
+            <th style={th}>المسار</th>
+            <th style={th}>الحالة</th>
+            <th style={th}>خطة الإطلاق</th>
+            <th style={th}>آخر تحديث</th>
+            <th style={{ ...th, textAlign: 'center' }}>الإجراء</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cards.map((c) => (
+            <tr
+              key={c.id}
+              onClick={c.onOpen}
+              style={{ cursor: 'pointer' }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = '#F7F9FD')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '')}
+            >
+              <td style={td}>
+                {(c.showSelectCheck || c.showAssignCheck) && (
+                  <span
+                    onClick={(e) => {
+                      stop(e);
+                      if (c.showSelectCheck) c.onToggleFundSel();
+                      else c.onToggleAssignSel();
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      width: 17,
+                      height: 17,
+                      borderRadius: 5,
+                      border: `2px solid ${c.showSelectCheck ? (c.fundChecked ? '#2563EB' : '#C7D1E2') : c.assignChecked ? '#2563EB' : '#C7D1E2'}`,
+                      background: (c.showSelectCheck ? c.fundChecked : c.assignChecked) ? '#2563EB' : '#fff',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {(c.showSelectCheck ? c.fundChecked : c.assignChecked) && (
+                      <Icon d="M20 6 9 17l-5-5" size={11} color="#fff" strokeWidth={3} />
+                    )}
+                  </span>
+                )}
+              </td>
+              <td style={{ ...td, fontWeight: 800, color: '#13213C', maxWidth: 260 }}>{c.title}</td>
+              <td style={{ ...td, whiteSpace: 'nowrap' }}>{c.typeLabel}</td>
+              <td style={td}>{c.pathName}</td>
+              <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: '3px 9px',
+                    borderRadius: 999,
+                    background: c.wfBg,
+                    color: c.wfChip,
+                  }}
+                >
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: c.wfChip }} />
+                  {c.wfLabel}
+                </span>
+              </td>
+              <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {c.launchLabel || '—'}
+              </td>
+              <td style={{ ...td, whiteSpace: 'nowrap', color: '#8A97AD', fontSize: 11.5 }}>
+                {c.statusStamp || '—'}
+              </td>
+              <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                {c.canApprove ? (
+                  <button
+                    onClick={(e) => {
+                      stop(e);
+                      c.onApprove();
+                    }}
+                    style={{
+                      background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 9,
+                      padding: '7px 16px',
+                      fontWeight: 800,
+                      fontSize: 11.5,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    اعتماد
+                  </button>
+                ) : c.showPathCta ? (
+                  <button
+                    onClick={(e) => {
+                      stop(e);
+                      c.onPathCta();
+                    }}
+                    style={{
+                      background: '#EAF0FE',
+                      color: '#2563EB',
+                      border: 'none',
+                      borderRadius: 9,
+                      padding: '7px 14px',
+                      fontWeight: 800,
+                      fontSize: 11.5,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {c.pathCtaLabel}
+                  </button>
+                ) : (
+                  <span style={{ color: '#C3CDDE', fontSize: 12 }}>عرض ←</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 function CardItem({ c }: { c: CardVM }) {
   const [hover, setHover] = useState(false);
