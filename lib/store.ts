@@ -13,6 +13,7 @@ import {
   type ProgramPhase,
   type LogEntry,
   type WfState,
+  type Launch,
   PATHS,
   ROLE,
   SEED_V,
@@ -40,6 +41,13 @@ export type Setup = {
 
 export type BulkRow = { title: string; desc: string; _v?: string; _note?: string };
 
+export type AssignState = {
+  batch: string;
+  launchMode: 'none' | 'existing' | 'new';
+  launchKey: string;
+  newLaunch: { title: string; ltype: string; date: string; desc: string };
+};
+
 export type UiState = {
   // create wizard
   modalOpen: boolean;
@@ -66,6 +74,9 @@ export type UiState = {
   menuOpenId: string | null; // card ⋯ menu
   // selection / funding
   fundSel: string[];
+  // coordinator bulk-assign (execution batch + launch plan)
+  assignSel: string[];
+  assign: AssignState | null;
   cancelFund: { id: string; note: string } | null;
   reqModal: { id: string; mode: 'reject' | 'info'; note: string } | null;
   subReview: { id: string; phase: string; loading: boolean; result: { ready: string[]; improve: string[] } | null } | null;
@@ -159,6 +170,7 @@ type Actions = {
   removeSub: (phaseIdx: number, subIdx: number) => void;
   updPhaseDate: (phaseIdx: number, k: 'start' | 'end', v: string) => void;
   addLaunch: () => void;
+  addSharedLaunch: (payload: { title: string; ltype: string; date: string; desc: string }) => void;
   updLaunch: (i: number, k: string, v: string) => void;
   removeLaunch: (i: number) => void;
   runAiReview: () => Promise<void>;
@@ -207,6 +219,13 @@ type Actions = {
   toggleFundSel: (id: string) => void;
   clearFundSel: () => void;
   commitSelection: () => void;
+  // coordinator bulk-assign
+  toggleAssignSel: (id: string) => void;
+  clearAssignSel: () => void;
+  openAssign: () => void;
+  setAssign: (patch: Partial<AssignState>) => void;
+  closeAssign: () => void;
+  applyAssign: () => void;
   openCancelFund: (id: string) => void;
   setCancelFundNote: (v: string) => void;
   confirmCancelFund: () => void;
@@ -269,6 +288,8 @@ function defaultUi(): UiState {
     dActionMenuOpen: false,
     menuOpenId: null,
     fundSel: [],
+    assignSel: [],
+    assign: null,
     cancelFund: null,
     reqModal: null,
     subReview: null,
@@ -610,7 +631,7 @@ export const useStore = create<Store>((set, get) => {
         setUi({ fStep: 4 });
         return toast('يجب إدخال نطاق العمل والميزانية قبل الإرسال للاعتماد');
       }
-      get().runAiReview();
+      get().submitItem();
     },
     fPrev: () => {
       const s = get();
@@ -665,6 +686,15 @@ export const useStore = create<Store>((set, get) => {
         const launches = [
           ...(s.ui.draft.launches || []),
           { title: '', ltype: LAUNCH_TYPES[0], date: '', desc: '', phase: '', status: 'مخطط', done: false },
+        ];
+        return { ui: { ...s.ui, draft: { ...s.ui.draft, launches } } };
+      }),
+    addSharedLaunch: (payload) =>
+      set((s) => {
+        if (!s.ui.draft) return {};
+        const launches = [
+          ...(s.ui.draft.launches || []),
+          { ...payload, shared: true, status: 'مخطط', done: false },
         ];
         return { ui: { ...s.ui, draft: { ...s.ui.draft, launches } } };
       }),
@@ -919,6 +949,66 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       if (logicRole(s.role) === 'path') nominateSelected(get, set, persist, toast);
       else fundSelected(get, set, persist, toast);
+    },
+
+    // ---- coordinator bulk-assign (execution batch + launch plan) ----
+    toggleAssignSel: (id) =>
+      set((s) => ({
+        ui: {
+          ...s.ui,
+          assignSel: s.ui.assignSel.includes(id)
+            ? s.ui.assignSel.filter((x) => x !== id)
+            : [...s.ui.assignSel, id],
+        },
+      })),
+    clearAssignSel: () => setUi({ assignSel: [] }),
+    openAssign: () =>
+      setUi({
+        assign: {
+          batch: '',
+          launchMode: 'none',
+          launchKey: '',
+          newLaunch: { title: '', ltype: LAUNCH_TYPES[0], date: '', desc: '' },
+        },
+      }),
+    setAssign: (patch) =>
+      set((s) => (s.ui.assign ? { ui: { ...s.ui, assign: { ...s.ui.assign, ...patch } } } : {})),
+    closeAssign: () => setUi({ assign: null }),
+    applyAssign: () => {
+      const s = get();
+      const a = s.ui.assign;
+      if (!a) return;
+      const ids = s.ui.assignSel;
+      // find an existing launch across all items by key (title|date)
+      let found: Launch | undefined;
+      if (a.launchMode === 'existing' && a.launchKey) {
+        for (const it of s.items) {
+          const m = (it.launches || []).find((l) => l.title && l.title + '|' + l.date === a.launchKey);
+          if (m) {
+            found = m;
+            break;
+          }
+        }
+      }
+      set((st) => ({
+        items: st.items.map((it) => {
+          if (!ids.includes(it.id)) return it;
+          const patch: Partial<Item> = {};
+          if (a.batch) patch.execBatch = a.batch;
+          if (a.launchMode === 'existing' && found) {
+            patch.launches = [...(it.launches || []), { ...found, shared: true }];
+          } else if (a.launchMode === 'new' && a.newLaunch.title) {
+            patch.launches = [
+              ...(it.launches || []),
+              { ...a.newLaunch, shared: true, status: 'مخطط', done: false },
+            ];
+          }
+          return { ...it, ...patch };
+        }),
+        ui: { ...st.ui, assignSel: [], assign: null },
+      }));
+      persist();
+      toast('تم تعيين خطة التنفيذ/الإطلاق للعناصر المحددة');
     },
     openCancelFund: (id) => setUi({ cancelFund: { id, note: '' } }),
     setCancelFundNote: (v) => set((s) => (s.ui.cancelFund ? { ui: { ...s.ui, cancelFund: { ...s.ui.cancelFund, note: v } } } : {})),

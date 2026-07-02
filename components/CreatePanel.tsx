@@ -1041,130 +1041,154 @@ function FPhases({ vm }: { vm: VM }) {
   const draft = m.draft;
   const phases = draft?.phases || [];
   const launches = draft?.launches || [];
+  const batchIdx = draft?.execBatch ? phases.findIndex((ph) => ph.name === draft.execBatch) : -1;
+  const selectedBatch = batchIdx >= 0 ? phases[batchIdx] : undefined;
+  const subs = selectedBatch?.subs || [];
 
   return (
     <div>
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49' }}>
-          خطة التنفيذ — خطة ربعية (كل 3 أشهر)
-        </div>
-        <p style={{ fontSize: 11.5, color: '#9AA6BC', margin: '4px 0 0', lineHeight: 1.7 }}>
-          مراحل معتمدة كل ~3 أشهر، تُحدّد فيها ميلات رئيسية. يمكن إضافة مراحل فرعية داخل أي مرحلة.
-        </p>
-      </div>
+      {/* step title/hint come from the stepper — no duplicate header here */}
 
-      {phases.map((ph, pi) => (
-        <div key={pi} style={cardStyle}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, marginBottom: 12 }}>
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                background: '#EAF0FE',
-                color: '#2563EB',
-                fontWeight: 800,
-                fontSize: 13,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flex: 'none',
-              }}
-            >
-              {pi + 1}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49' }}>{ph.name}</span>
+      {/* execution-batch selector (coordinator only picks the batch) */}
+      <div style={cardStyle}>
+        <label style={labelStyle}>مرحلة التنفيذ (الدفعة)</label>
+        <select
+          value={draft?.execBatch || ''}
+          onChange={(e) => s.setDraftField('execBatch', e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">اختر الدفعة…</option>
+          {phases.map((ph, pi) => (
+            <option key={pi} value={ph.name}>
+              {ph.name}
+              {ph.period ? ' · ' + ph.period : ''}
+            </option>
+          ))}
+        </select>
+
+        {selectedBatch && (
+          <div
+            style={{
+              marginTop: 12,
+              background: '#F5F8FD',
+              border: '1px solid #E1E9F5',
+              borderRadius: 13,
+              padding: '12px 14px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49' }}>
+                {selectedBatch.name}
+              </span>
+              {selectedBatch.period && (
                 <span
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 5,
-                    background: '#F1F4F9',
+                    background: '#EAF0FE',
                     borderRadius: 999,
                     padding: '3px 9px',
                     fontSize: 10.5,
                     fontWeight: 700,
-                    color: '#54627B',
+                    color: '#2563EB',
                   }}
                 >
-                  <Icon d={IC.calendar} size={12} color="#54627B" />
-                  {ph.period}
+                  <Icon d={IC.calendar} size={12} color="#2563EB" />
+                  {selectedBatch.period}
                 </span>
+              )}
+            </div>
+            {selectedBatch.desc && (
+              <div style={{ fontSize: 11.5, color: '#54627B', marginTop: 5, lineHeight: 1.6 }}>
+                {selectedBatch.desc}
               </div>
-              <div style={{ fontSize: 11.5, color: '#9AA6BC', marginTop: 3 }}>{ph.desc}</div>
-            </div>
+            )}
           </div>
+        )}
+      </div>
 
-          {/* sub-milestones */}
-          <div style={{ borderTop: '1px dashed #E1E7F1', marginTop: 14, paddingTop: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#54627B' }}>المراحل الفرعية</span>
-              <button
-                onClick={() => s.addSub(pi)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  background: '#EAF0FE',
-                  color: '#2563EB',
-                  border: '1px solid #D9E4FD',
-                  borderRadius: 11,
-                  padding: '6px 10px',
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                <Icon d={IC.plus} size={13} color="#2563EB" />
-                إضافة مرحلة فرعية
-              </button>
-            </div>
-            {(ph.subs || []).map((sub, si) => (
-              <div key={si} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563EB', flex: 'none' }} />
+      {/* sub-milestones for the selected batch (item-specific) */}
+      {batchIdx >= 0 && (
+        <div style={cardStyle}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49' }}>
+            المراحل الفرعية (خاصة بهذا العنصر)
+          </div>
+          <p style={{ fontSize: 11.5, color: '#9AA6BC', margin: '4px 0 12px', lineHeight: 1.7 }}>
+            أضف مراحل فرعية داخل الدفعة المختارة إن لزم.
+          </p>
+
+          {subs.map((sub, si) => (
+            <div key={si} style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 10 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <label style={labelStyle}>اسم المرحلة الفرعية</label>
                 <input
                   value={sub.name || ''}
-                  onChange={(e) => s.updSub(pi, si, 'name', e.target.value)}
-                  placeholder="اسم المرحلة الفرعية"
-                  style={{ ...inputStyle, flex: 1 }}
+                  onChange={(e) => s.updSub(batchIdx, si, 'name', e.target.value)}
+                  placeholder="مثال: تحليل المتطلبات"
+                  style={inputStyle}
                 />
+              </div>
+              <div style={{ width: 130, flex: 'none' }}>
+                <label style={labelStyle}>البداية</label>
                 <input
                   type="date"
                   value={sub.start || ''}
-                  onChange={(e) => s.updSub(pi, si, 'start', e.target.value)}
-                  style={{ ...inputStyle, width: 140, flex: 'none' }}
+                  onChange={(e) => s.updSub(batchIdx, si, 'start', e.target.value)}
+                  style={inputStyle}
                 />
+              </div>
+              <div style={{ width: 130, flex: 'none' }}>
+                <label style={labelStyle}>النهاية</label>
                 <input
                   type="date"
                   value={sub.end || ''}
-                  onChange={(e) => s.updSub(pi, si, 'end', e.target.value)}
-                  style={{ ...inputStyle, width: 140, flex: 'none' }}
+                  onChange={(e) => s.updSub(batchIdx, si, 'end', e.target.value)}
+                  style={inputStyle}
                 />
-                <button
-                  onClick={() => s.removeSub(pi, si)}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    background: '#FCEEEF',
-                    color: '#D23B45',
-                    border: 'none',
-                    cursor: 'pointer',
-                    flex: 'none',
-                    fontSize: 13,
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  ✕
-                </button>
               </div>
-            ))}
-          </div>
+              <button
+                onClick={() => s.removeSub(batchIdx, si)}
+                style={{
+                  width: 32,
+                  height: 32,
+                  flex: 'none',
+                  borderRadius: 8,
+                  background: '#FCEEEF',
+                  color: '#D23B45',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontFamily: 'inherit',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+
+          <button
+            onClick={() => s.addSub(batchIdx)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              background: '#EAF0FE',
+              color: '#2563EB',
+              border: '1px solid #D9E4FD',
+              borderRadius: 11,
+              padding: '8px 12px',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            <Icon d={IC.plus} size={14} color="#2563EB" />
+            إضافة مرحلة فرعية
+          </button>
         </div>
-      ))}
+      )}
 
       {/* launch plan */}
       <div style={{ borderTop: '1px dashed #CDD8EA', marginTop: 6, paddingTop: 16 }}>
@@ -1198,6 +1222,34 @@ function FPhases({ vm }: { vm: VM }) {
           </button>
         </div>
 
+        {/* pick an existing (shared) launch plan */}
+        {m.existingLaunches.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <label style={labelStyle}>اختيار خطة إطلاق مشتركة</label>
+            <select
+              value=""
+              onChange={(e) => {
+                const chosen = m.existingLaunches.find((l) => l.key === e.target.value);
+                if (chosen)
+                  s.addSharedLaunch({
+                    title: chosen.title,
+                    ltype: chosen.ltype,
+                    date: chosen.date,
+                    desc: chosen.desc,
+                  });
+              }}
+              style={inputStyle}
+            >
+              <option value="">اختر خطة إطلاق مشتركة…</option>
+              {m.existingLaunches.map((l) => (
+                <option key={l.key} value={l.key}>
+                  {l.title} · {l.dateFmt}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {launches.length === 0 && (
           <div
             style={{
@@ -1219,17 +1271,33 @@ function FPhases({ vm }: { vm: VM }) {
         {launches.map((lc, i) => (
           <div key={i} style={{ ...cardStyle, marginTop: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <span style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>
-                {[
-                  'الإطلاق الأول',
-                  'الإطلاق الثاني',
-                  'الإطلاق الثالث',
-                  'الإطلاق الرابع',
-                  'الإطلاق الخامس',
-                  'الإطلاق السادس',
-                  'الإطلاق السابع',
-                  'الإطلاق الثامن',
-                ][i] || 'الإطلاق ' + (i + 1)}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>
+                  {[
+                    'الإطلاق الأول',
+                    'الإطلاق الثاني',
+                    'الإطلاق الثالث',
+                    'الإطلاق الرابع',
+                    'الإطلاق الخامس',
+                    'الإطلاق السادس',
+                    'الإطلاق السابع',
+                    'الإطلاق الثامن',
+                  ][i] || 'الإطلاق ' + (i + 1)}
+                </span>
+                {lc.shared && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      color: '#0E7C86',
+                      background: '#DCF3F5',
+                      borderRadius: 999,
+                      padding: '3px 9px',
+                    }}
+                  >
+                    مشتركة
+                  </span>
+                )}
               </span>
               <button
                 onClick={() => s.removeLaunch(i)}

@@ -1,6 +1,8 @@
 'use client';
+import type { CSSProperties } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
+import { LAUNCH_TYPES } from '@/lib/domain';
 
 const BLUE_GRAD = 'linear-gradient(180deg,#2E74EE,#1F5FE0)';
 const GREEN_GRAD = 'linear-gradient(180deg,#0EA371,#0B8A4B)';
@@ -876,6 +878,246 @@ export function Overlays({ vm }: { vm: VM }) {
           </div>
         </div>
       )}
+
+      {/* ================= ASSIGN (execution + launch) MODAL ================= */}
+      {vm.assignModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 78,
+            direction: 'rtl',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={() => s.closeAssign()}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(8,17,35,.5)',
+              backdropFilter: 'blur(3px)',
+              WebkitBackdropFilter: 'blur(3px)',
+              animation: 'fadeIn .2s',
+            }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: 540,
+              background: '#fff',
+              borderRadius: 20,
+              boxShadow: '0 30px 70px -24px rgba(2,12,35,.5)',
+              animation: 'fadeUp .3s',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '88vh',
+            }}
+          >
+            <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>
+                  تعيين خطة التنفيذ والإطلاق
+                </div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
+                  عيّن الدفعة وخطة الإطلاق نفسها للعناصر المحددة (التي تُطلق معاً).
+                </div>
+              </div>
+              <button
+                onClick={() => s.closeAssign()}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
+                  border: '1px solid #E7ECF4',
+                  background: '#fff',
+                  color: '#54627B',
+                  cursor: 'pointer',
+                  fontSize: 16,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ padding: '0 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* execution batch */}
+              <div>
+                <label style={assignLabel}>مرحلة التنفيذ (الدفعة)</label>
+                <select
+                  value={vm.assignModal.batch}
+                  onChange={(e) => s.setAssign({ batch: e.target.value })}
+                  style={assignInput}
+                >
+                  <option value="">دون تغيير الدفعة…</option>
+                  {vm.assignModal.batches.map((b) => (
+                    <option key={b.name} value={b.name}>
+                      {b.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* launch mode toggle */}
+              <div>
+                <label style={assignLabel}>خطة الإطلاق</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(
+                    [
+                      { k: 'none', label: 'بدون' },
+                      { k: 'existing', label: 'اختيار مشتركة' },
+                      { k: 'new', label: 'إنشاء جديد' },
+                    ] as { k: 'none' | 'existing' | 'new'; label: string }[]
+                  ).map((o) => {
+                    const active = vm.assignModal!.launchMode === o.k;
+                    return (
+                      <button
+                        key={o.k}
+                        onClick={() => s.setAssign({ launchMode: o.k })}
+                        style={{
+                          flex: 1,
+                          border: 'none',
+                          borderRadius: 10,
+                          padding: '9px 0',
+                          fontWeight: 800,
+                          fontSize: 12.5,
+                          cursor: 'pointer',
+                          ...(active ? { background: '#0F1F3D', color: '#fff' } : { background: '#F4F7FC', color: '#54627B' }),
+                        }}
+                      >
+                        {o.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {vm.assignModal.launchMode === 'existing' && (
+                <div>
+                  <label style={assignLabel}>اختيار خطة إطلاق مشتركة</label>
+                  <select
+                    value={vm.assignModal.launchKey}
+                    onChange={(e) => s.setAssign({ launchKey: e.target.value })}
+                    style={assignInput}
+                  >
+                    <option value="">اختر خطة إطلاق مشتركة…</option>
+                    {vm.assignModal.existingLaunches.map((l) => (
+                      <option key={l.key} value={l.key}>
+                        {l.title} · {l.dateFmt}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {vm.assignModal.launchMode === 'new' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div>
+                    <label style={assignLabel}>عنوان الإطلاق</label>
+                    <input
+                      value={vm.assignModal.newLaunch.title}
+                      onChange={(e) => s.setAssign({ newLaunch: { ...vm.assignModal!.newLaunch, title: e.target.value } })}
+                      placeholder="اكتب عنوان الإطلاق"
+                      style={assignInput}
+                    />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <label style={assignLabel}>نوع الإطلاق</label>
+                      <select
+                        value={vm.assignModal.newLaunch.ltype}
+                        onChange={(e) => s.setAssign({ newLaunch: { ...vm.assignModal!.newLaunch, ltype: e.target.value } })}
+                        style={assignInput}
+                      >
+                        {LAUNCH_TYPES.map((t) => (
+                          <option key={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={assignLabel}>التاريخ المتوقع</label>
+                      <input
+                        type="date"
+                        value={vm.assignModal.newLaunch.date}
+                        onChange={(e) => s.setAssign({ newLaunch: { ...vm.assignModal!.newLaunch, date: e.target.value } })}
+                        style={assignInput}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={assignLabel}>وصف الإطلاق</label>
+                    <textarea
+                      value={vm.assignModal.newLaunch.desc}
+                      onChange={(e) => s.setAssign({ newLaunch: { ...vm.assignModal!.newLaunch, desc: e.target.value } })}
+                      rows={2}
+                      style={{ ...assignInput, resize: 'vertical' }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ padding: '16px 22px 20px', display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => s.closeAssign()}
+                style={{
+                  flex: 'none',
+                  background: '#EEF1F7',
+                  color: '#54627B',
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '13px 22px',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                }}
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={() => s.applyAssign()}
+                style={{
+                  flex: 1,
+                  background: BLUE_GRAD,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '13px 26px',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  boxShadow: BLUE_SHADOW,
+                }}
+              >
+                تطبيق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
+
+const assignLabel: CSSProperties = {
+  display: 'block',
+  fontSize: 12,
+  fontWeight: 700,
+  color: '#54627B',
+  marginBottom: 6,
+};
+const assignInput: CSSProperties = {
+  width: '100%',
+  border: '1px solid #DCE3EE',
+  background: '#fff',
+  borderRadius: 11,
+  padding: '11px 13px',
+  fontSize: 13.5,
+  outline: 'none',
+  fontFamily: 'inherit',
+  boxSizing: 'border-box',
+};

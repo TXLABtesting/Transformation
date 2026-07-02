@@ -236,6 +236,7 @@ export type Launch = {
   notes?: string;
   done?: boolean;
   doneAt?: number;
+  shared?: boolean;
 };
 export type ExecItem = {
   key: string;
@@ -303,6 +304,8 @@ export type Item = {
   currentJourney?: string;
   painPoints?: string;
   expectedImprovement?: string;
+  // execution batch the coordinator selects for this item (predefined milestone)
+  execBatch?: string;
   // nested
   phases?: Phase[];
   milestones?: Record<string, unknown>[];

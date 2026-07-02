@@ -7,7 +7,7 @@ import { TeamSetup } from '@/components/TeamSetup';
 import { Dashboard } from '@/components/Dashboard';
 import { CreatePanel } from '@/components/CreatePanel';
 import { DetailPanel } from '@/components/DetailPanel';
-import { BasketDrawer, FundBar } from '@/components/Basket';
+import { BasketDrawer, FundBar, AssignBar } from '@/components/Basket';
 import { Overlays } from '@/components/Overlays';
 import { Toast } from '@/components/Toast';
 
@@ -31,6 +31,7 @@ export default function Page() {
         <>
           <Dashboard vm={vm} />
           {vm.showBasket && <FundBar vm={vm} />}
+          <AssignBar vm={vm} />
           {vm.basketOpen && <BasketDrawer vm={vm} />}
         </>
       )}

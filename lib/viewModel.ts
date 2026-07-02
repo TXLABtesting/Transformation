@@ -294,6 +294,18 @@ function build(s: Store) {
     fundBarShow: (rawRole === 'ai' || role === 'path') && ui.fundSel.length > 0,
     fundSelCount: ui.fundSel.length,
     fundBarActionLabel: rawRole === 'ai' ? 'تمويل التحول' : 'ترشيح للتحول',
+    // coordinator bulk-assign bar + modal
+    assignBar: { show: rawRole === 'coord' && ui.assignSel.length > 0, count: ui.assignSel.length },
+    assignModal: ui.assign
+      ? {
+          ...ui.assign,
+          batches: execMilestones().map((mm) => ({
+            name: mm.name,
+            label: mm.period ? mm.name + ' · ' + mm.period : mm.name,
+          })),
+          existingLaunches: gatherExistingLaunches(s, new Set<string>()),
+        }
+      : null,
     // detail
     detail,
     detailOpen: !!ui.detailId,
@@ -432,6 +444,10 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const wfBg = isReturned ? '#FFF3DE' : wm.bg;
   const showSelectCheck =
     ['exec', 'launch', 'done'].includes(w) && ((rawRole === 'ai' && !i.funded) || (role === 'path' && !i.nom && !i.funded));
+  // every card shows an execution batch + (optional) launch plan
+  const msNames = execMilestones();
+  const batchLabel = i.execBatch || msNames[stableHash(i.id) % msNames.length].name;
+  const launchLabel = i.launches?.find((l) => l.title)?.title || '';
 
   return {
     id: i.id,
@@ -487,6 +503,13 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     fundChecked: s.ui.fundSel.includes(i.id),
     fundCheckBorder: s.ui.fundSel.includes(i.id) ? '#2563EB' : '#C7D1E2',
     fundCheckBg: s.ui.fundSel.includes(i.id) ? '#2563EB' : '#fff',
+    // execution batch + launch plan meta (shown on every card)
+    batchLabel,
+    launchLabel,
+    // coordinator bulk-assign checkbox
+    showAssignCheck: rawRole === 'coord',
+    assignChecked: s.ui.assignSel.includes(i.id),
+    onToggleAssignSel: () => s.toggleAssignSel(i.id),
     nomBy: i.nom?.by || '',
     nomStream: i.nom ? pathById(i.nom.path || i.path).name : '',
     // path rep views its own nomination → drop the (redundant) name/stream
@@ -873,6 +896,23 @@ function buildLogRows(i: Item) {
   return rows;
 }
 
+// De-duplicated launch plans gathered across all items (for sharing). Any
+// launch whose title is already present in `excludeTitles` is dropped.
+function gatherExistingLaunches(s: Store, excludeTitles: Set<string>) {
+  const seen = new Set<string>();
+  const out: { key: string; title: string; ltype: string; date: string; dateFmt: string; desc: string }[] = [];
+  for (const it of s.items) {
+    for (const l of it.launches || []) {
+      if (!l.title || excludeTitles.has(l.title)) continue;
+      const key = l.title + '|' + l.date;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ key, title: l.title, ltype: l.ltype, date: l.date, dateFmt: fmtDate(l.date), desc: l.desc || '' });
+    }
+  }
+  return out;
+}
+
 function buildModal(s: Store) {
   const ui = s.ui;
   const draft = ui.draft;
@@ -928,7 +968,12 @@ function buildModal(s: Store) {
     fHints,
     fStepTitle: fTitles[ui.fStep - 1] || '',
     fStepHint: fHints[ui.fStep - 1] || '',
-    fNextLabel: ui.fStep >= 5 ? 'مراجعة ذكية' : 'التالي',
+    fNextLabel: ui.fStep >= 5 ? 'إرسال للاعتماد' : 'التالي',
+    // shared launch plans that can be picked into this draft
+    existingLaunches: gatherExistingLaunches(
+      s,
+      new Set((draft?.launches || []).map((l) => l.title).filter(Boolean) as string[])
+    ),
     // ai review
     aiLoading: ui.aiLoading,
     aiResult: ui.aiResult,

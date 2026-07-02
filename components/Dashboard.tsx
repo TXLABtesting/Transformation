@@ -1498,30 +1498,29 @@ function CardItem({ c }: { c: CardVM }) {
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: c.wfChip }} />
             {c.wfLabel}
           </span>
+          {/* status timestamp — inline next to the status chip */}
+          {c.statusStamp && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: '#9AA6BC',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <Icon
+                d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"
+                size={11}
+                color="#9AA6BC"
+              />
+              {c.statusStamp}
+            </span>
+          )}
         </div>
       </div>
-
-      {/* Status timestamp — when it entered its current state */}
-      {c.statusStamp && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            marginTop: -5,
-            fontSize: 10.5,
-            fontWeight: 700,
-            color: '#9AA6BC',
-          }}
-        >
-          <Icon
-            d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"
-            size={12}
-            color="#9AA6BC"
-          />
-          {c.statusStamp}
-        </div>
-      )}
 
       {/* Title row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
@@ -1547,6 +1546,30 @@ function CardItem({ c }: { c: CardVM }) {
             }}
           >
             {c.fundChecked && <Icon d="M20 6 9 17l-5-5" size={13} color="#fff" strokeWidth={3} />}
+          </span>
+        )}
+        {c.showAssignCheck && (
+          <span
+            onClick={(e) => {
+              stop(e);
+              c.onToggleAssignSel();
+            }}
+            style={{
+              width: 20,
+              height: 20,
+              marginTop: 1,
+              borderRadius: 6,
+              border: `2px solid ${c.assignChecked ? '#0E7C86' : '#C7D1E2'}`,
+              background: c.assignChecked ? '#0E7C86' : '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 'none',
+              cursor: 'pointer',
+              transition: 'all .12s',
+            }}
+          >
+            {c.assignChecked && <Icon d="M20 6 9 17l-5-5" size={13} color="#fff" strokeWidth={3} />}
           </span>
         )}
         <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C', lineHeight: 1.4 }}>{c.title}</div>
@@ -1614,6 +1637,42 @@ function CardItem({ c }: { c: CardVM }) {
           </div>
         </div>
       )}
+
+      {/* Execution batch + launch plan meta */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: -2 }}>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#54627B',
+          }}
+        >
+          <Icon
+            d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"
+            size={12}
+            color="#8A97AD"
+          />
+          التنفيذ: {c.batchLabel}
+        </span>
+        {c.launchLabel && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#54627B',
+            }}
+          >
+            <Icon d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" size={12} color="#8A97AD" />
+            الإطلاق: {c.launchLabel}
+          </span>
+        )}
+      </div>
 
       {/* Footer meta */}
       <div

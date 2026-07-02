@@ -70,6 +70,71 @@ export function FundBar({ vm }: { vm: VM }) {
   );
 }
 
+export function AssignBar({ vm }: { vm: VM }) {
+  if (!vm.assignBar.show) return null;
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        bottom: 22,
+        zIndex: 56,
+        display: 'flex',
+        justifyContent: 'center',
+        pointerEvents: 'none',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+          background: '#0F1F3D',
+          color: '#fff',
+          borderRadius: 16,
+          padding: '12px 14px 12px 22px',
+          boxShadow: '0 22px 55px -14px rgba(4,12,30,.6)',
+          animation: 'fadeUp .2s',
+          pointerEvents: 'auto',
+        }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 800 }}>{vm.assignBar.count} عنصر محدّد</span>
+        <button
+          onClick={() => vm.store.clearAssignSel()}
+          style={{
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,.28)',
+            color: '#fff',
+            borderRadius: 11,
+            padding: '10px 20px',
+            fontSize: 12.5,
+            fontWeight: 800,
+            cursor: 'pointer',
+          }}
+        >
+          تخطي
+        </button>
+        <button
+          onClick={() => vm.store.openAssign()}
+          style={{
+            background: '#fff',
+            color: '#0F1F3D',
+            border: 'none',
+            borderRadius: 11,
+            padding: '10px 22px',
+            fontSize: 12.5,
+            fontWeight: 800,
+            cursor: 'pointer',
+          }}
+        >
+          تعيين خطة التنفيذ والإطلاق
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function BasketDrawer({ vm }: { vm: VM }) {
   if (!vm.basketOpen) return null;
   const b = vm.basket;
