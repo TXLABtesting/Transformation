@@ -356,17 +356,21 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {vm.hasBasketBadge && (
                   <span
                     style={{
+                      position: 'absolute',
+                      top: -5,
+                      right: -5,
                       minWidth: 18,
                       height: 18,
-                      padding: '0 5px',
+                      padding: '0 4px',
                       borderRadius: 9,
-                      background: '#2563EB',
+                      background: '#E5484D',
                       color: '#fff',
                       fontSize: 10,
                       fontWeight: 800,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      border: '2px solid #fff',
                     }}
                   >
                     {vm.basketBadge}
@@ -1382,11 +1386,28 @@ export function Dashboard({ vm }: { vm: VM }) {
           </div>
 
           {/* Cards grid */}
-          <div data-r="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
-            {vm.cards.map((c) => (
-              <CardItem key={c.id} c={c} />
-            ))}
-          </div>
+          {vm.cards.length === 0 ? (
+            <div
+              style={{
+                border: '1.5px dashed #D5DEEC',
+                background: '#FAFCFF',
+                borderRadius: 16,
+                padding: '38px 20px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>لا توجد عناصر للعرض</div>
+              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 6, lineHeight: 1.7 }}>
+                لا توجد عناصر مطابقة للمرشحات الحالية — جرّب تغيير المرشحات أو إضافة عنصر جديد.
+              </div>
+            </div>
+          ) : (
+            <div data-r="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+              {vm.cards.map((c) => (
+                <CardItem key={c.id} c={c} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1789,8 +1810,10 @@ function CardItem({ c }: { c: CardVM }) {
         </div>
       )}
 
-      {/* Execution batch + launch plan meta */}
+      {/* Execution batch + launch plan meta (only when actually planned) */}
+      {(c.batchLabel || c.launchLabel) && (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: -2 }}>
+        {c.batchLabel && (
         <span
           style={{
             display: 'inline-flex',
@@ -1808,6 +1831,7 @@ function CardItem({ c }: { c: CardVM }) {
           />
           التنفيذ: {c.batchLabel}
         </span>
+        )}
         {c.launchLabel && (
           <span
             style={{
@@ -1824,6 +1848,7 @@ function CardItem({ c }: { c: CardVM }) {
           </span>
         )}
       </div>
+      )}
 
       {/* Footer meta */}
       <div

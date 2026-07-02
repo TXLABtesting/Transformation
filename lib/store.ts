@@ -665,18 +665,20 @@ export const useStore = create<Store>((set, get) => {
         setUi({ fStep: s.ui.fStep + 1 });
         return;
       }
-      // scope + budget are required before an item can be submitted for approval
       const d = s.ui.draft;
-      if (d && (!(d.scopeOfWork || '').trim() || !(d.budget || '').trim())) {
-        setUi({ fStep: 4 });
-        return toast('يجب إدخال نطاق العمل والميزانية قبل الإرسال للاعتماد');
-      }
       // execution batch + launch plan are mandatory
       if (d && !(d.execBatch || '').trim()) {
         return toast('اختر خطة التنفيذ والإطلاق (الدفعة) قبل الإرسال للاعتماد');
       }
       if (d && !d.launchPlanId && !(d.launches || []).some((l) => (l.title || '').trim())) {
         return toast('اختر خطة إطلاق قبل الإرسال للاعتماد');
+      }
+      // cost lives on the item OR on the selected launch plan (group-level)
+      const plan = d ? s.launchPlans.find((p) => p.id === d.launchPlanId) : undefined;
+      const planHasCost = !!(plan && (plan.budget || '').trim());
+      if (d && !planHasCost && (!(d.scopeOfWork || '').trim() || !(d.budget || '').trim())) {
+        setUi({ fStep: 4 });
+        return toast('أدخل نطاق العمل والميزانية للعنصر، أو اختر خطة إطلاق تحمل ميزانية على مستوى المجموعة');
       }
       get().submitItem();
     },
@@ -1075,9 +1077,10 @@ export const useStore = create<Store>((set, get) => {
       set((s) => ({
         launchPlans: [
           ...s.launchPlans,
-          { id: 'lp' + Date.now(), batch, title: '', ltype: LAUNCH_TYPES[0], date: '', desc: '' },
+          { id: 'lp' + Date.now(), batch, title: '', ltype: LAUNCH_TYPES[0], date: '', desc: '', scope: '', budget: '' },
         ],
       }));
+      toast('تمت إضافة خطة إطلاق جديدة — أكمل بياناتها');
     },
     updLaunchPlan: (id: string, k: keyof LaunchPlan, v: string) => {
       set((s) => {
@@ -1101,13 +1104,23 @@ export const useStore = create<Store>((set, get) => {
       });
     },
     removeLaunchPlan: (id: string) => {
-      set((s) => ({
-        launchPlans: s.launchPlans.filter((p) => p.id !== id),
+      const s = get();
+      const attached = s.items.filter((it) => it.launchPlanId === id).length;
+      if (
+        attached > 0 &&
+        typeof window !== 'undefined' &&
+        !window.confirm('هذه الخطة مرتبطة بـ ' + attached + ' عنصر — سيُفصل عنها عند الحذف. متابعة؟')
+      )
+        return;
+      set((st) => ({
+        launchPlans: st.launchPlans.filter((p) => p.id !== id),
         // detach items that pointed at the removed plan
-        items: s.items.map((it) =>
+        items: st.items.map((it) =>
           it.launchPlanId === id ? { ...it, launchPlanId: '', execBatch: '', launches: [] } : it
         ),
       }));
+      persist();
+      toast('تم حذف خطة الإطلاق' + (attached ? ' وفصل ' + attached + ' عنصر عنها' : ''));
     },
     selectExecBatch: (batch: string) => {
       const s = get();
@@ -1132,6 +1145,7 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const plan = s.launchPlans.find((p) => p.id === planId);
       if (!plan) return;
+      const wasAttached = s.items.find((it) => it.id === itemId)?.launchPlanId === planId;
       set((st) => ({
         items: st.items.map((it) => {
           if (it.id !== itemId) return it;
@@ -1156,6 +1170,7 @@ export const useStore = create<Store>((set, get) => {
         }),
       }));
       persist();
+      toast(wasAttached ? 'تم فصل العنصر عن خطة الإطلاق' : 'تم ربط العنصر بخطة الإطلاق');
     },
     selectLaunchPlan: (planId: string) => {
       const s = get();
@@ -1214,6 +1229,7 @@ export const useStore = create<Store>((set, get) => {
     // ---- exports (real client-side file generation) ----
     exportExcel: () => {
       const list = exportScope(get());
+      if (!list.length) return toast('لا توجد عناصر للتصدير');
       import('./export')
         .then((m) => m.exportExcel(list, get().entityName))
         .then(() => toast('تم إنشاء ملف Excel'))
@@ -1221,6 +1237,7 @@ export const useStore = create<Store>((set, get) => {
     },
     exportPpt: () => {
       const list = exportScope(get());
+      if (!list.length) return toast('لا توجد عناصر للتصدير');
       import('./export')
         .then((m) => m.exportPpt(list, get().entityName))
         .then(() => toast('تم إنشاء ملف PowerPoint'))

@@ -1197,6 +1197,28 @@ export function Overlays({ vm }: { vm: VM }) {
                         />
                       </div>
 
+                      {/* launch-level cost: one scope + estimated budget for the whole group */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 8, marginTop: 10 }}>
+                        <div>
+                          <label style={assignLabel}>نطاق العمل (على مستوى الإطلاق)</label>
+                          <input
+                            value={p.scope || ''}
+                            onChange={(e) => s.updLaunchPlan(p.id, 'scope', e.target.value)}
+                            placeholder="نطاق تحويل المجموعة التي تُطلق معاً"
+                            style={assignInput}
+                          />
+                        </div>
+                        <div>
+                          <label style={assignLabel}>الميزانية التقديرية</label>
+                          <input
+                            value={p.budget || ''}
+                            onChange={(e) => s.updLaunchPlan(p.id, 'budget', e.target.value)}
+                            placeholder="مثال: 2,000,000 درهم"
+                            style={assignInput}
+                          />
+                        </div>
+                      </div>
+
                       {/* items launched in this plan */}
                       <div style={{ marginTop: 12 }}>
                         <label style={assignLabel}>

@@ -460,6 +460,8 @@ export function seedLaunchPlans(): LaunchPlan[] {
       ltype: 'إطلاق منتج / خدمة',
       date: '2026-11-25',
       desc: 'إطلاق الدفعة الأولى من الخدمات الاستباقية للجمهور.',
+      scope: 'تحويل مجموعة الخدمات الاستباقية الأولى وربطها بمحرك أحداث الحياة.',
+      budget: '3,500,000 درهم',
     },
     {
       id: 'lp2',
@@ -468,6 +470,8 @@ export function seedLaunchPlans(): LaunchPlan[] {
       ltype: 'تحديث نظام',
       date: '2026-11-20',
       desc: '',
+      scope: 'أتمتة مجموعة عمليات المعاملات والدعم الفني التي تُطلق معاً.',
+      budget: '1,650,000 درهم',
     },
     {
       id: 'lp3',
@@ -476,6 +480,8 @@ export function seedLaunchPlans(): LaunchPlan[] {
       ltype: 'تحديث نظام',
       date: '2026-10-10',
       desc: 'تفعيل التوصيات لمستخدمي منصة البيانات.',
+      scope: 'تفعيل محرك التوصيات على بيانات المنصة الحكومية.',
+      budget: '800,000 درهم',
     },
     {
       id: 'lp4',
@@ -484,6 +490,8 @@ export function seedLaunchPlans(): LaunchPlan[] {
       ltype: 'مؤتمر / فعالية',
       date: '2027-01-20',
       desc: 'تخريج الدفعة الأولى من السفراء المعتمدين.',
+      scope: 'تأهيل وتخريج دفعة سفراء الذكاء الاصطناعي.',
+      budget: '600,000 درهم',
     },
     {
       id: 'lp5',
@@ -492,6 +500,8 @@ export function seedLaunchPlans(): LaunchPlan[] {
       ltype: 'إطلاق منتج / خدمة',
       date: '2026-09-10',
       desc: '',
+      scope: 'إطلاق مساعد الاستعلام الموحّد عبر القنوات.',
+      budget: '1,500,000 درهم',
     },
   ];
 }

@@ -914,7 +914,8 @@ function FBudget({
     <div style={cardStyle}>
       <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 2 }}>نطاق العمل والميزانية</div>
       <p style={{ fontSize: 11.5, color: '#9AA6BC', margin: '0 0 14px', lineHeight: 1.7 }}>
-        حدّد نطاق العمل التفصيلي والميزانية التقديرية وأرفق المستند الداعم.
+        حدّد نطاق العمل التفصيلي والميزانية التقديرية وأرفق المستند الداعم. يمكن ترك الحقلين فارغين إذا كانت
+        التكلفة على مستوى خطة الإطلاق (مجموعة تُحوَّل معاً) — تُحدَّد في الخطوة التالية.
       </p>
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>
@@ -1172,6 +1173,15 @@ function FPhases({ vm }: { vm: VM }) {
             </div>
             {sel.desc && (
               <div style={{ fontSize: 11.5, color: '#54627B', marginTop: 6, lineHeight: 1.7 }}>{sel.desc}</div>
+            )}
+            {(sel.budget || sel.scope) && (
+              <div style={{ fontSize: 11.5, color: '#54627B', marginTop: 6, lineHeight: 1.7 }}>
+                {sel.scope && <>نطاق المجموعة: {sel.scope}</>}
+                {sel.scope && sel.budget && ' · '}
+                {sel.budget && (
+                  <span style={{ fontWeight: 800, color: '#1F2D49' }}>الميزانية التقديرية: {sel.budget}</span>
+                )}
+              </div>
             )}
           </div>
         )}

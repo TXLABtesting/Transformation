@@ -207,10 +207,18 @@ function build(s: Store) {
   const scores = withScore.map((i) => transformScore(i).v);
   const sumV = scores.reduce((a, b) => a + b, 0);
   const n = scores.length || 1;
-  // spent budget = total budget of committee-funded (approved) items
-  const spentBudget = base
-    .filter((i) => i.funded)
-    .reduce((a, i) => a + parseBudget(i.budget), 0);
+  // spent budget = own budgets of committee-funded items + each funded launch
+  // plan's group budget counted ONCE (items without an own budget share it)
+  const fundedItems = base.filter((i) => i.funded);
+  const spentOwn = fundedItems.reduce((a, i) => a + parseBudget(i.budget), 0);
+  const fundedPlanIds = new Set(
+    fundedItems.filter((i) => !parseBudget(i.budget) && i.launchPlanId).map((i) => i.launchPlanId!)
+  );
+  const spentPlans = [...fundedPlanIds].reduce(
+    (a, id) => a + parseBudget(s.launchPlans.find((p) => p.id === id)?.budget),
+    0
+  );
+  const spentBudget = spentOwn + spentPlans;
   const aiStats = {
     entCount: new Set(base.map((i) => ent(i))).size,
     total: base.length,
@@ -535,7 +543,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     ['exec', 'launch', 'done'].includes(w) && ((rawRole === 'ai' && !i.funded) || (rawRole === 'path' && !i.nom && !i.funded));
   // every card shows an execution batch + (optional) launch plan
   const msNames = execMilestones();
-  const batchLabel = i.execBatch || msNames[stableHash(i.id) % msNames.length].name;
+  // only show the real batch — no synthetic fallback
+  const batchLabel = i.execBatch || '';
   const launchLabel = i.launches?.find((l) => l.title)?.title || '';
 
   return {
@@ -761,7 +770,14 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
     const n = parseInt((b || '').replace(/[^\d]/g, ''), 10);
     return isNaN(n) ? 0 : n;
   };
-  const fundedTotal = appSrc.reduce((a, i) => a + parseBudget(i.budget), 0);
+  // own budgets + each shared launch plan's group budget counted once
+  const fundedOwn = appSrc.reduce((a, i) => a + parseBudget(i.budget), 0);
+  const planIds = new Set(
+    appSrc.filter((i) => !parseBudget(i.budget) && i.launchPlanId).map((i) => i.launchPlanId!)
+  );
+  const fundedTotal =
+    fundedOwn +
+    [...planIds].reduce((a, id) => a + parseBudget(s.launchPlans.find((p) => p.id === id)?.budget), 0);
   const fundedTotalLabel = fundedTotal.toLocaleString('en-US') + ' درهم';
   return {
     isCommittee: isCom,
@@ -794,6 +810,8 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
   const canApproveGate = rawRole === 'entity' && w === 'ent1';
   // detail view is VIEW-ONLY for item data; scope/budget are never edited here
   const canEditScope = false;
+  // group-level cost carried by the item's launch plan
+  const planCost = s.launchPlans.find((p) => p.id === i.launchPlanId);
   const isDraftForCoord = rawRole === 'coord' && w === 'draft';
   // ---- footer / menu gating (mirrors the design's derived flags) ----
   const vStep = Math.min(s.ui.dViewStep || step, step);
@@ -905,13 +923,14 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     scoreExpl: score.expl,
     // steps
     dSteps,
-    // scope
-    scopeOfWork: i.scopeOfWork || '',
-    budget: i.budget || '',
+    // scope — falls back to the launch plan's group-level cost when the item
+    // has none of its own (cost defined per launch, not per item)
+    scopeOfWork: i.scopeOfWork || (planCost?.scope ? planCost.scope + ' (على مستوى خطة الإطلاق)' : ''),
+    budget: i.budget || (planCost?.budget ? planCost.budget + ' (على مستوى خطة الإطلاق)' : ''),
     scopeApproval: i.scopeApproval,
     canEditScope,
-    scopeReadOnly: !canEditScope && !!(i.scopeOfWork || i.budget),
-    scopePendingInput: !canEditScope && !i.scopeOfWork && !i.budget,
+    scopeReadOnly: !canEditScope && !!(i.scopeOfWork || i.budget || planCost?.budget || planCost?.scope),
+    scopePendingInput: !canEditScope && !i.scopeOfWork && !i.budget && !planCost?.budget && !planCost?.scope,
     showBudgetSubmit: false, // scope is submitted via the wizard, not the detail
     hasScopeFile: !!i.scopeFile,
     scopeFile: i.scopeFile || '',
@@ -1099,6 +1118,8 @@ function buildModal(s: Store) {
             ltype: p.ltype,
             date: p.date,
             desc: p.desc,
+            scope: p.scope || '',
+            budget: p.budget || '',
           }
         : null;
     })(),

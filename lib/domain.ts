@@ -562,6 +562,10 @@ export type LaunchPlan = {
   ltype: string;
   date: string;
   desc: string;
+  // cost can live at the launch level: one scope + estimated budget for the
+  // group of operations/services (or projects) transformed together
+  scope?: string;
+  budget?: string;
 };
 
 // Item execution state set by the coordinator during creation
@@ -741,7 +745,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = 'mock5';
+export const SEED_V = 'mock6';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 
