@@ -1066,41 +1066,37 @@ export function Dashboard({ vm }: { vm: VM }) {
             </div>
           </div>
 
-          {/* KPI strip (non-ai): hero total + composition, distributions as
-              mini bars, percentages as progress tiles — one blue, no extras */}
-          {vm.notAiRole && (
-            <>
-              <div
-                data-r="kpirow"
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}
-              >
-                <CompositionCard
-                  total={vm.kpis.total}
-                  segments={[
-                    { label: 'المشاريع / المبادرات', value: vm.kpis.projInit },
-                    ...(vm.showOpsKpi ? [{ label: 'العمليات', value: vm.kpis.operations }] : []),
-                    ...(vm.showSvcKpi ? [{ label: 'الخدمات', value: vm.kpis.services }] : []),
-                  ]}
-                />
-                {vm.role === 'entity' && vm.pathFilterValue === 'all' && (
-                  <>
-                    <KpiCard
-                      value={vm.kpis.projInit}
-                      label="المشاريع / المبادرات"
-                      iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
-                      rows={vm.kpiDist.projInit}
-                    />
-                    <KpiCard
-                      value={vm.kpis.operations}
-                      label="العمليات"
-                      iconD="M3 6h18M3 12h18M3 18h18"
-                      rows={vm.kpiDist.operations}
-                    />
-                  </>
-                )}
-              </div>
-
-              {(vm.role === 'entity' || vm.role === 'coord') && (
+          {/* KPI strip (non-ai): total always first. Entity gets hero +
+              distribution cards then a percentages row; single-stream roles
+              get one dense row (hero + percentage tiles) — no empty space */}
+          {vm.notAiRole &&
+            (vm.role === 'entity' && vm.pathFilterValue === 'all' ? (
+              <>
+                <div
+                  data-r="kpirow"
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}
+                >
+                  <CompositionCard
+                    total={vm.kpis.total}
+                    segments={[
+                      { label: 'المشاريع / المبادرات', value: vm.kpis.projInit },
+                      { label: 'العمليات', value: vm.kpis.operations },
+                      { label: 'الخدمات', value: vm.kpis.services },
+                    ]}
+                  />
+                  <KpiCard
+                    value={vm.kpis.projInit}
+                    label="المشاريع / المبادرات"
+                    iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
+                    rows={vm.kpiDist.projInit}
+                  />
+                  <KpiCard
+                    value={vm.kpis.operations}
+                    label="العمليات"
+                    iconD="M3 6h18M3 12h18M3 18h18"
+                    rows={vm.kpiDist.operations}
+                  />
+                </div>
                 <div
                   data-r="kpirow"
                   style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 }}
@@ -1110,9 +1106,26 @@ export function Dashboard({ vm }: { vm: VM }) {
                   <PctCard value={vm.kpis.avgAutomationPct} label="متوسط نسبة الأتمتة الحالية" />
                   <PctCard value={vm.kpis.completedPct} label="عناصر مكتملة" sub={vm.kpis.completedCount + ' عنصر'} />
                 </div>
-              )}
-            </>
-          )}
+              </>
+            ) : (
+              <div
+                data-r="kpirow"
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 }}
+              >
+                <CompositionCard
+                  total={vm.kpis.total}
+                  segments={[
+                    { label: 'المشاريع / المبادرات', value: vm.kpis.projInit },
+                    ...(vm.showOpsKpi ? [{ label: 'العمليات', value: vm.kpis.operations }] : []),
+                    ...(vm.showSvcKpi ? [{ label: 'الخدمات', value: vm.kpis.services }] : []),
+                  ]}
+                />
+                <PctCard value={vm.kpis.completion} label="نسبة الإنجاز" />
+                <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة الأجينتة المستهدفة" />
+                <PctCard value={vm.kpis.avgAutomationPct} label="متوسط نسبة الأتمتة الحالية" />
+                <PctCard value={vm.kpis.completedPct} label="عناصر مكتملة" sub={vm.kpis.completedCount + ' عنصر'} />
+              </div>
+            ))}
 
           {/* Committee analytics (ai) */}
           {vm.isAiRole && (
@@ -1406,6 +1419,110 @@ function KpiCard({
   sub?: string;
   rows?: { label: string; value: number }[];
 }) {
+  const iconChip = (
+    <span
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: 9,
+        background: '#EAF0FE',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 'none',
+      }}
+    >
+      {grid ? (
+        <svg
+          width={16}
+          height={16}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#2563EB"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </svg>
+      ) : (
+        <Icon d={iconD!} size={16} color="#2563EB" />
+      )}
+    </span>
+  );
+  const valueBlock = (
+    <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', lineHeight: 1.25 }}>
+      {value}
+      {suffix && <span style={{ fontSize: 13, color: '#9AA6BC' }}>{suffix}</span>}
+      {sub && <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 700, marginRight: 6 }}>({sub})</span>}
+    </div>
+  );
+
+  // with a distribution: total (with icon) on the start side, bars fill the rest
+  if (rows && rows.length > 0) {
+    const max = Math.max(1, ...rows.map((r) => r.value));
+    return (
+      <div
+        style={{
+          background: '#fff',
+          border: '1px solid #E7ECF4',
+          borderRadius: 14,
+          padding: '13px 15px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+        }}
+      >
+        <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          {iconChip}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</div>
+            {valueBlock}
+          </div>
+        </div>
+        <div style={{ width: 1, alignSelf: 'stretch', background: '#F0F3F8', flex: 'none' }} />
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {rows.map((r) => (
+            <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 600,
+                  color: '#6B7A93',
+                  width: 110,
+                  flex: 'none',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {r.label}
+              </span>
+              <span style={{ flex: 1, height: 5, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden' }}>
+                <span
+                  style={{
+                    display: 'block',
+                    height: '100%',
+                    width: `${Math.round((r.value / max) * 100)}%`,
+                    borderRadius: 999,
+                    background: '#2563EB',
+                  }}
+                />
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#13213C', width: 16, textAlign: 'left', flex: 'none' }}>
+                {r.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -1416,89 +1533,12 @@ function KpiCard({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-        <span
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 9,
-            background: '#EAF0FE',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flex: 'none',
-          }}
-        >
-          {grid ? (
-            <svg
-              width={16}
-              height={16}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#2563EB"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="3" y="3" width="7" height="7" rx="1.5" />
-              <rect x="14" y="3" width="7" height="7" rx="1.5" />
-              <rect x="3" y="14" width="7" height="7" rx="1.5" />
-              <rect x="14" y="14" width="7" height="7" rx="1.5" />
-            </svg>
-          ) : (
-            <Icon d={iconD!} size={16} color="#2563EB" />
-          )}
-        </span>
+        {iconChip}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</div>
-          <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', lineHeight: 1.25 }}>
-            {value}
-            {suffix && <span style={{ fontSize: 13, color: '#9AA6BC' }}>{suffix}</span>}
-            {sub && (
-              <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 700, marginRight: 6 }}>({sub})</span>
-            )}
-          </div>
+          {valueBlock}
         </div>
       </div>
-      {rows && rows.length > 0 && (
-        <div style={{ marginTop: 10, paddingTop: 9, borderTop: '1px solid #F0F3F8', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {(() => {
-            const max = Math.max(1, ...rows.map((r) => r.value));
-            return rows.map((r) => (
-              <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span
-                  style={{
-                    fontSize: 10.5,
-                    fontWeight: 600,
-                    color: '#6B7A93',
-                    width: 118,
-                    flex: 'none',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {r.label}
-                </span>
-                <span style={{ flex: 1, height: 5, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden' }}>
-                  <span
-                    style={{
-                      display: 'block',
-                      height: '100%',
-                      width: `${Math.round((r.value / max) * 100)}%`,
-                      borderRadius: 999,
-                      background: '#2563EB',
-                    }}
-                  />
-                </span>
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#13213C', width: 16, textAlign: 'left', flex: 'none' }}>
-                  {r.value}
-                </span>
-              </div>
-            ));
-          })()}
-        </div>
-      )}
     </div>
   );
 }
@@ -1569,7 +1609,7 @@ function CompositionCard({
   );
 }
 
-// Percentage tile with a slim progress bar (one blue on a neutral track).
+// Percentage tile — label + value only, no decoration.
 function PctCard({ value, label, sub }: { value: number; label: string; sub?: string }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
@@ -1580,17 +1620,6 @@ function PctCard({ value, label, sub }: { value: number; label: string; sub?: st
         {value}
         <span style={{ fontSize: 13, color: '#9AA6BC' }}>%</span>
         {sub && <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 700, marginRight: 6 }}>({sub})</span>}
-      </div>
-      <div style={{ height: 5, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden', marginTop: 8 }}>
-        <div
-          style={{
-            height: '100%',
-            width: `${Math.min(100, Math.max(0, value))}%`,
-            borderRadius: 999,
-            background: '#2563EB',
-            transition: 'width .4s ease',
-          }}
-        />
       </div>
     </div>
   );
