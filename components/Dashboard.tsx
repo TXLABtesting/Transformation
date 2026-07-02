@@ -79,6 +79,7 @@ export function Dashboard({ vm }: { vm: VM }) {
     >
       {/* ===================== HEADER ===================== */}
       <div
+        data-r="hdr"
         style={{
           background: '#fff',
           borderBottom: '1px solid #E7ECF4',
@@ -102,6 +103,7 @@ export function Dashboard({ vm }: { vm: VM }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Role switcher */}
           <div
+            data-r="hdrpills"
             style={{
               display: 'flex',
               background: '#F4F7FC',
@@ -885,7 +887,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {vm.streamSummary}
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div data-r="actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', gap: 8 }}>
                 <HoverButton
                   onClick={s.exportExcel}
@@ -1064,16 +1066,24 @@ export function Dashboard({ vm }: { vm: VM }) {
             </div>
           </div>
 
-          {/* KPI strip (non-ai): distribution pair on its own line, then the
-              remaining totals, then the percentages line */}
+          {/* KPI strip (non-ai): hero total + composition, distributions as
+              mini bars, percentages as progress tiles — one blue, no extras */}
           {vm.notAiRole && (
             <>
-              {vm.role === 'entity' && vm.pathFilterValue === 'all' ? (
-                <>
-                  <div
-                    data-r="kpi"
-                    style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 13 }}
-                  >
+              <div
+                data-r="kpirow"
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}
+              >
+                <CompositionCard
+                  total={vm.kpis.total}
+                  segments={[
+                    { label: 'المشاريع / المبادرات', value: vm.kpis.projInit },
+                    ...(vm.showOpsKpi ? [{ label: 'العمليات', value: vm.kpis.operations }] : []),
+                    ...(vm.showSvcKpi ? [{ label: 'الخدمات', value: vm.kpis.services }] : []),
+                  ]}
+                />
+                {vm.role === 'entity' && vm.pathFilterValue === 'all' && (
+                  <>
                     <KpiCard
                       value={vm.kpis.projInit}
                       label="المشاريع / المبادرات"
@@ -1086,81 +1096,19 @@ export function Dashboard({ vm }: { vm: VM }) {
                       iconD="M3 6h18M3 12h18M3 18h18"
                       rows={vm.kpiDist.operations}
                     />
-                  </div>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
-                      gap: 13,
-                    }}
-                  >
-                    <KpiCard
-                      value={vm.kpis.total}
-                      label="إجمالي العناصر"
-                      iconD="M4 20V10M10 20V4M16 20v-8M21 20H3"
-                    />
-                    <KpiCard value={vm.kpis.services} label="الخدمات" grid />
-                  </div>
-                </>
-              ) : (
-                <div
-                  data-r="kpi"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
-                    gap: 13,
-                  }}
-                >
-                  <KpiCard
-                    value={vm.kpis.total}
-                    label="إجمالي العناصر"
-                    iconD="M4 20V10M10 20V4M16 20v-8M21 20H3"
-                  />
-                  <KpiCard
-                    value={vm.kpis.projInit}
-                    label="المشاريع / المبادرات"
-                    iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
-                  />
-                  {vm.showOpsKpi && (
-                    <KpiCard value={vm.kpis.operations} label="العمليات" iconD="M3 6h18M3 12h18M3 18h18" />
-                  )}
-                  {vm.showSvcKpi && <KpiCard value={vm.kpis.services} label="الخدمات" grid />}
-                </div>
-              )}
+                  </>
+                )}
+              </div>
 
               {(vm.role === 'entity' || vm.role === 'coord') && (
                 <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
-                    gap: 13,
-                  }}
+                  data-r="kpirow"
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 }}
                 >
-                  <KpiCard
-                    value={vm.kpis.completion}
-                    suffix="%"
-                    label="نسبة الإنجاز"
-                    iconD="M3 3v18h18M7 15l4-4 3 3 5-6"
-                  />
-                  <KpiCard
-                    value={vm.kpis.avgTargetPct}
-                    suffix="%"
-                    label="متوسط نسبة الأجينتة المستهدفة"
-                    iconD="M12 2v20M2 12h20"
-                  />
-                  <KpiCard
-                    value={vm.kpis.avgAutomationPct}
-                    suffix="%"
-                    label="متوسط نسبة الأتمتة الحالية"
-                    iconD="M4 4h16v16H4zM9 9h6v6H9z"
-                  />
-                  <KpiCard
-                    value={vm.kpis.completedPct}
-                    suffix="%"
-                    sub={vm.kpis.completedCount + ' عنصر'}
-                    label="عناصر مكتملة"
-                    iconD="M20 6 9 17l-5-5"
-                  />
+                  <PctCard value={vm.kpis.completion} label="نسبة الإنجاز" />
+                  <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة الأجينتة المستهدفة" />
+                  <PctCard value={vm.kpis.avgAutomationPct} label="متوسط نسبة الأتمتة الحالية" />
+                  <PctCard value={vm.kpis.completedPct} label="عناصر مكتملة" sub={vm.kpis.completedCount + ' عنصر'} />
                 </div>
               )}
             </>
@@ -1173,45 +1121,49 @@ export function Dashboard({ vm }: { vm: VM }) {
                 data-r="kpi"
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 13, marginBottom: 4 }}
               >
-                <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" />
                 <StatCard value={vm.aiStats.total} label="إجمالي العناصر" />
+                <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" />
                 <StatCard value={vm.aiStats.pending} label="بانتظار الاعتماد" dot="#B45309" />
                 <StatCard value={vm.aiStats.funded} label="معتمدة للتمويل" dot="#0B8A4B" />
-                <HoverDiv
-                  base={{
+                <div
+                  data-tip=""
+                  style={{
                     position: 'relative',
                     background: '#fff',
                     border: '1px solid #E7ECF4',
-                    borderRadius: 16,
-                    padding: '15px 17px',
+                    borderRadius: 14,
+                    padding: '13px 15px',
+                    cursor: 'help',
                   }}
-                  hover={{ zIndex: 5 }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ fontSize: 25, fontWeight: 800, color: '#13213C' }}>
-                      {vm.aiStats.avgPct}
-                      <span style={{ fontSize: 13, color: '#9AA6BC' }}>%</span>
-                    </div>
+                  <div
+                    style={{
+                      fontSize: 11.5,
+                      color: '#6B7A93',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    متوسط درجة التحول
                     <span
-                      data-tip=""
                       style={{
-                        position: 'relative',
-                        width: 18,
-                        height: 18,
+                        width: 15,
+                        height: 15,
                         borderRadius: '50%',
                         background: '#EAF0FE',
                         color: '#2563EB',
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 11,
-                        fontWeight: 900,
-                        cursor: 'help',
+                        flex: 'none',
                       }}
                     >
                       <svg
-                        width={12}
-                        height={12}
+                        width={10}
+                        height={10}
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -1223,42 +1175,45 @@ export function Dashboard({ vm }: { vm: VM }) {
                         <path d="M12 16v-4M12 8h.01" />
                         <circle cx="12" cy="12" r="9" />
                       </svg>
-                      <span
-                        data-tipbox=""
-                        style={{
-                          position: 'absolute',
-                          top: 24,
-                          right: -2,
-                          left: 'auto',
-                          transform: 'none',
-                          width: 250,
-                          maxWidth: '70vw',
-                          background: '#0F1F3D',
-                          color: '#fff',
-                          fontSize: 11,
-                          fontWeight: 600,
-                          lineHeight: 1.7,
-                          padding: '11px 13px',
-                          borderRadius: 10,
-                          boxShadow: '0 16px 40px -14px rgba(2,12,35,.5)',
-                          opacity: 0,
-                          visibility: 'hidden',
-                          transition: 'opacity .15s',
-                          pointerEvents: 'none',
-                          textAlign: 'right',
-                          zIndex: 20,
-                        }}
-                      >
-                        متوسط درجات التحول لكل العناصر معبّراً عنه كنسبة مئوية. تُحسب درجة كل عنصر (من 5) من: الأثر
-                        ٢٥٪ · القابلية ٢٠٪ · الجاهزية ١٥٪ · كثافة الاستخدام ١٥٪ · الأولوية ١٠٪ · فرصة الأتمتة ١٠٪ ·
-                        سهولة التعقيد ٥٪ ثم تُحوّل النتيجة إلى نسبة مئوية.
-                      </span>
                     </span>
                   </div>
-                  <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginTop: 5 }}>
-                    متوسط درجة التحول
+                  <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', marginTop: 3, lineHeight: 1.25 }}>
+                    {vm.aiStats.avgPct}
+                    <span style={{ fontSize: 13, color: '#9AA6BC' }}>%</span>
                   </div>
-                </HoverDiv>
+                  {/* tooltip anchored to the card's inner-left edge so it always
+                      opens toward the page center and never clips the viewport */}
+                  <span
+                    data-tipbox=""
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      left: 8,
+                      right: 'auto',
+                      transform: 'none',
+                      width: 250,
+                      maxWidth: '76vw',
+                      background: '#0F1F3D',
+                      color: '#fff',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      lineHeight: 1.7,
+                      padding: '11px 13px',
+                      borderRadius: 10,
+                      boxShadow: '0 16px 40px -14px rgba(2,12,35,.5)',
+                      opacity: 0,
+                      visibility: 'hidden',
+                      transition: 'opacity .15s',
+                      pointerEvents: 'none',
+                      textAlign: 'right',
+                      zIndex: 30,
+                    }}
+                  >
+                    متوسط درجات التحول لكل العناصر معبّراً عنه كنسبة مئوية. تُحسب درجة كل عنصر (من 5) من: الأثر
+                    ٢٥٪ · القابلية ٢٠٪ · الجاهزية ١٥٪ · كثافة الاستخدام ١٥٪ · الأولوية ١٠٪ · فرصة الأتمتة ١٠٪ ·
+                    سهولة التعقيد ٥٪ ثم تُحوّل النتيجة إلى نسبة مئوية.
+                  </span>
+                </div>
               </div>
               {/* Type totals with per-stream distribution (same as the entity view) */}
               <div
@@ -1332,6 +1287,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 تصنيف توصيات التحول الذكي
               </div>
               <div
+                data-r="reco"
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 4 }}
               >
                 <RecoCard value={vm.aiStats.now} label="موصى به 100%" dot="#0B8A4B" />
@@ -1505,25 +1461,137 @@ function KpiCard({
         </div>
       </div>
       {rows && rows.length > 0 && (
-        <div
-          style={{
-            marginTop: 9,
-            paddingTop: 8,
-            borderTop: '1px solid #F0F3F8',
-            fontSize: 11,
-            fontWeight: 600,
-            color: '#8A97AD',
-            lineHeight: 1.9,
-          }}
-        >
-          {rows.map((r, i) => (
-            <span key={r.label} style={{ whiteSpace: 'nowrap' }}>
-              {i > 0 && <span style={{ color: '#D5DEEC' }}> · </span>}
-              {r.label} <span style={{ fontWeight: 800, color: '#33415C' }}>{r.value}</span>
-            </span>
-          ))}
+        <div style={{ marginTop: 10, paddingTop: 9, borderTop: '1px solid #F0F3F8', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {(() => {
+            const max = Math.max(1, ...rows.map((r) => r.value));
+            return rows.map((r) => (
+              <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    color: '#6B7A93',
+                    width: 118,
+                    flex: 'none',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {r.label}
+                </span>
+                <span style={{ flex: 1, height: 5, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden' }}>
+                  <span
+                    style={{
+                      display: 'block',
+                      height: '100%',
+                      width: `${Math.round((r.value / max) * 100)}%`,
+                      borderRadius: 999,
+                      background: '#2563EB',
+                    }}
+                  />
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#13213C', width: 16, textAlign: 'left', flex: 'none' }}>
+                  {r.value}
+                </span>
+              </div>
+            ));
+          })()}
         </div>
       )}
+    </div>
+  );
+}
+
+// Hero tile: total first, with a single-hue stacked composition bar.
+// Identity is carried by lightness steps of ONE blue + direct labels.
+const BLUE_STEPS = ['#2563EB', '#7DA4F2', '#C2D5FA'];
+function CompositionCard({
+  total,
+  segments,
+}: {
+  total: number;
+  segments: { label: string; value: number }[];
+}) {
+  const segs = segments.filter((x) => x.value > 0);
+  const sum = segs.reduce((a, x) => a + x.value, 0) || 1;
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+        <span style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600 }}>إجمالي العناصر</span>
+        <span style={{ fontSize: 24, fontWeight: 800, color: '#13213C', lineHeight: 1.2 }}>{total}</span>
+      </div>
+      {/* stacked composition bar — 2px gaps, rounded segments */}
+      <div style={{ display: 'flex', gap: 2, height: 8, marginTop: 10 }}>
+        {segs.length === 0 ? (
+          <span style={{ flex: 1, borderRadius: 999, background: '#EEF1F6' }} />
+        ) : (
+          segs.map((x, i) => (
+            <span
+              key={x.label}
+              style={{
+                flex: x.value / sum,
+                minWidth: 8,
+                borderRadius: 999,
+                background: BLUE_STEPS[i % BLUE_STEPS.length],
+              }}
+            />
+          ))
+        )}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '4px 14px',
+          marginTop: 9,
+          fontSize: 10.5,
+          fontWeight: 600,
+          color: '#6B7A93',
+        }}
+      >
+        {segments.map((x, i) => (
+          <span key={x.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 3,
+                background: BLUE_STEPS[i % BLUE_STEPS.length],
+                flex: 'none',
+              }}
+            />
+            {x.label} <span style={{ fontWeight: 800, color: '#13213C' }}>{x.value}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Percentage tile with a slim progress bar (one blue on a neutral track).
+function PctCard({ value, label, sub }: { value: number; label: string; sub?: string }) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
+      <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', marginTop: 3, lineHeight: 1.25 }}>
+        {value}
+        <span style={{ fontSize: 13, color: '#9AA6BC' }}>%</span>
+        {sub && <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 700, marginRight: 6 }}>({sub})</span>}
+      </div>
+      <div style={{ height: 5, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden', marginTop: 8 }}>
+        <div
+          style={{
+            height: '100%',
+            width: `${Math.min(100, Math.max(0, value))}%`,
+            borderRadius: 999,
+            background: '#2563EB',
+            transition: 'width .4s ease',
+          }}
+        />
+      </div>
     </div>
   );
 }
