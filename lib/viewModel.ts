@@ -782,9 +782,11 @@ function buildLogRows(i: Item) {
     if (e.action === 'pending') return 'قيد الاعتماد لدى ' + (e.role || '');
     if (e.action === 'reject') return 'رفض العنصر';
     if (e.action === 'info') return 'طلب معلومات إضافية';
-    return e.action;
+    // fund / nominate / unfund / declineNom / cancelFund / budget … → Arabic
+    return ALOG[e.action]?.t || e.action;
   };
-  const rawLog = i.log && i.log.length ? i.log : [];
+  // newest action first (latest entry at the top of the log)
+  const rawLog = i.log && i.log.length ? [...i.log].reverse() : [];
   const rows = rawLog.map((e) => {
     const a = ALOG[e.action] || { t: e.action, c: '#64748B' };
     const dt = new Date(e.at);
