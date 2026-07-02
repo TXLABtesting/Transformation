@@ -713,11 +713,12 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = 'wf8';
+export const SEED_V = 'mock1';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 
-// entity resolver (entOf)
+// entity resolver — mock items carry `entity` explicitly; default to the
+// session entity (the old prototype id-based hack is gone with the new seed)
 export function entOf(i: Item, entityName = DEFAULT_ENTITY): string {
-  return i.entity || (['p2', 'o2'].includes(i.id) ? ALT_ENTITY : entityName);
+  return i.entity || entityName;
 }
