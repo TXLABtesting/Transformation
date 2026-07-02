@@ -1196,6 +1196,74 @@ export function Overlays({ vm }: { vm: VM }) {
                           style={assignInput}
                         />
                       </div>
+
+                      {/* items launched in this plan */}
+                      <div style={{ marginTop: 12 }}>
+                        <label style={assignLabel}>
+                          العناصر التي تُطلق في هذا الإطلاق
+                          <span style={{ color: '#9AA6BC', fontWeight: 600 }}>
+                            {' '}
+                            ({p.items.filter((x) => x.checked).length} محدد)
+                          </span>
+                        </label>
+                        <div
+                          style={{
+                            border: '1px solid #E7ECF4',
+                            borderRadius: 11,
+                            background: '#fff',
+                            maxHeight: 168,
+                            overflowY: 'auto',
+                          }}
+                        >
+                          {p.items.length === 0 && (
+                            <div style={{ padding: '11px 13px', fontSize: 12, color: '#9AA6BC', fontWeight: 600 }}>
+                              لا توجد عناصر بعد.
+                            </div>
+                          )}
+                          {p.items.map((x) => (
+                            <label
+                              key={x.id}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 9,
+                                padding: '8px 12px',
+                                borderBottom: '1px solid #F4F6FA',
+                                cursor: 'pointer',
+                                fontSize: 12.5,
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={x.checked}
+                                onChange={() => s.togglePlanItem(p.id, x.id)}
+                                style={{ width: 15, height: 15, accentColor: '#2563EB', flex: 'none' }}
+                              />
+                              <span
+                                style={{
+                                  fontSize: 10.5,
+                                  fontWeight: 700,
+                                  color: '#54627B',
+                                  background: '#F1F4F9',
+                                  borderRadius: 999,
+                                  padding: '2px 8px',
+                                  flex: 'none',
+                                }}
+                              >
+                                {x.typeLabel}
+                              </span>
+                              <span style={{ fontWeight: 700, color: '#33415C', flex: 1, minWidth: 0 }}>
+                                {x.title}
+                              </span>
+                              {x.inOtherPlan && (
+                                <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, flex: 'none' }}>
+                                  مرتبط بإطلاق آخر
+                                </span>
+                              )}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

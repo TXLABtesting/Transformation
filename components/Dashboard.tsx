@@ -1224,10 +1224,10 @@ export function Dashboard({ vm }: { vm: VM }) {
                 data-r="kpi"
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 13, marginBottom: 4 }}
               >
-                <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" color="#13213C" />
-                <StatCard value={vm.aiStats.total} label="إجمالي العناصر" color="#13213C" />
-                <StatCard value={vm.aiStats.pending} label="بانتظار الاعتماد" color="#B45309" />
-                <StatCard value={vm.aiStats.funded} label="معتمدة للتمويل" color="#0B8A4B" />
+                <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" />
+                <StatCard value={vm.aiStats.total} label="إجمالي العناصر" />
+                <StatCard value={vm.aiStats.pending} label="بانتظار الاعتماد" dot="#B45309" />
+                <StatCard value={vm.aiStats.funded} label="معتمدة للتمويل" dot="#0B8A4B" />
                 <HoverDiv
                   base={{
                     position: 'relative',
@@ -1239,7 +1239,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   hover={{ zIndex: 5 }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ fontSize: 25, fontWeight: 800, color: '#2563EB' }}>
+                    <div style={{ fontSize: 25, fontWeight: 800, color: '#13213C' }}>
                       {vm.aiStats.avgPct}
                       <span style={{ fontSize: 13, color: '#9AA6BC' }}>%</span>
                     </div>
@@ -1361,9 +1361,9 @@ export function Dashboard({ vm }: { vm: VM }) {
               <div
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 4 }}
               >
-                <RecoCard value={vm.aiStats.now} label="موصى به 100%" color="#0B8A4B" />
-                <RecoCard value={vm.aiStats.wait} label="قائمة الانتظار" color="#B45309" />
-                <RecoCard value={vm.aiStats.low} label="غير موصى به" color="#DC2B38" />
+                <RecoCard value={vm.aiStats.now} label="موصى به 100%" dot="#0B8A4B" />
+                <RecoCard value={vm.aiStats.wait} label="قائمة الانتظار" dot="#B45309" />
+                <RecoCard value={vm.aiStats.low} label="غير موصى به" dot="#DC2B38" />
               </div>
             </>
           )}
@@ -1478,20 +1478,46 @@ function KpiCard({
   );
 }
 
-function StatCard({ value, label, color }: { value: number; label: string; color: string }) {
+function StatCard({ value, label, dot }: { value: number; label: string; dot?: string }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '15px 17px' }}>
-      <div style={{ fontSize: 25, fontWeight: 800, color }}>{value}</div>
-      <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginTop: 5 }}>{label}</div>
+      <div style={{ fontSize: 25, fontWeight: 800, color: '#13213C' }}>{value}</div>
+      <div
+        style={{
+          fontSize: 12,
+          color: '#8A97AD',
+          fontWeight: 600,
+          marginTop: 5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flex: 'none' }} />}
+        {label}
+      </div>
     </div>
   );
 }
 
-function RecoCard({ value, label, color }: { value: number; label: string; color: string }) {
+function RecoCard({ value, label, dot }: { value: number; label: string; dot: string }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: 14 }}>
-      <div style={{ fontSize: 24, fontWeight: 800, color }}>{value}</div>
-      <div style={{ fontSize: 11.5, fontWeight: 700, color: '#8A97AD', marginTop: 5 }}>{label}</div>
+      <div style={{ fontSize: 24, fontWeight: 800, color: '#13213C' }}>{value}</div>
+      <div
+        style={{
+          fontSize: 11.5,
+          fontWeight: 700,
+          color: '#8A97AD',
+          marginTop: 5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flex: 'none' }} />
+        {label}
+      </div>
     </div>
   );
 }

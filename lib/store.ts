@@ -237,6 +237,7 @@ type Actions = {
   updLaunchPlan: (id: string, k: keyof LaunchPlan, v: string) => void;
   removeLaunchPlan: (id: string) => void;
   selectLaunchPlan: (planId: string) => void;
+  togglePlanItem: (planId: string, itemId: string) => void;
   openCancelFund: (id: string) => void;
   setCancelFundNote: (v: string) => void;
   confirmCancelFund: () => void;
@@ -1073,12 +1074,63 @@ export const useStore = create<Store>((set, get) => {
       }));
     },
     updLaunchPlan: (id: string, k: keyof LaunchPlan, v: string) => {
-      set((s) => ({
-        launchPlans: s.launchPlans.map((p) => (p.id === id ? { ...p, [k]: v } : p)),
-      }));
+      set((s) => {
+        const launchPlans = s.launchPlans.map((p) => (p.id === id ? { ...p, [k]: v } : p));
+        const plan = launchPlans.find((p) => p.id === id)!;
+        // keep attached items' launch entries in sync with the edited plan
+        const items = s.items.map((it) =>
+          it.launchPlanId === id
+            ? {
+                ...it,
+                execBatch: plan.batch,
+                launches: (it.launches || []).map((l, li) =>
+                  li === 0
+                    ? { ...l, title: plan.title, ltype: plan.ltype, date: plan.date, desc: plan.desc }
+                    : l
+                ),
+              }
+            : it
+        );
+        return { launchPlans, items };
+      });
     },
     removeLaunchPlan: (id: string) => {
-      set((s) => ({ launchPlans: s.launchPlans.filter((p) => p.id !== id) }));
+      set((s) => ({
+        launchPlans: s.launchPlans.filter((p) => p.id !== id),
+        // detach items that pointed at the removed plan
+        items: s.items.map((it) =>
+          it.launchPlanId === id ? { ...it, launchPlanId: '', execBatch: '', launches: [] } : it
+        ),
+      }));
+    },
+    togglePlanItem: (planId: string, itemId: string) => {
+      const s = get();
+      const plan = s.launchPlans.find((p) => p.id === planId);
+      if (!plan) return;
+      set((st) => ({
+        items: st.items.map((it) => {
+          if (it.id !== itemId) return it;
+          if (it.launchPlanId === planId)
+            return { ...it, launchPlanId: '', execBatch: '', launches: [] };
+          return {
+            ...it,
+            launchPlanId: plan.id,
+            execBatch: plan.batch,
+            launches: [
+              {
+                title: plan.title,
+                ltype: plan.ltype,
+                date: plan.date,
+                desc: plan.desc,
+                shared: true,
+                status: 'مخطط',
+                done: false,
+              },
+            ],
+          };
+        }),
+      }));
+      persist();
     },
     selectLaunchPlan: (planId: string) => {
       const s = get();

@@ -112,6 +112,7 @@ export function seedItems(): Item[] {
       scopeOfWork: 'بناء نموذج تصنيف عربي وربطه بنظام المراسلات مع مسار مراجعة بشرية للاستثناءات.',
       budget: '750,000 درهم',
       execBatch: 'إطلاق الدفعة الأولى',
+      launchPlanId: 'lp2',
       endDate: '2026-11-30',
       steps: [],
       phases: [],
@@ -162,6 +163,7 @@ export function seedItems(): Item[] {
       scopeOfWork: 'بناء محرك أحداث الحياة وتكامله مع 5 أنظمة خدمية، مع مساعد ذكي للمتعاملين.',
       budget: '2,400,000 درهم',
       execBatch: 'إطلاق الدفعة الأولى',
+      launchPlanId: 'lp1',
       phases: [],
       launches: [
         {
@@ -211,6 +213,7 @@ export function seedItems(): Item[] {
       budget: '1,100,000 درهم',
       scopeOfWork: 'بناء مساعد محادثة للتجديد مع التكامل مع بوابة الدفع والسجل التجاري.',
       execBatch: 'إطلاق الدفعة الأولى',
+      launchPlanId: 'lp1',
       endDate: '2026-11-30',
       phases: [],
       launches: [
@@ -261,6 +264,7 @@ export function seedItems(): Item[] {
       budget: '900,000 درهم',
       scopeOfWork: 'تصميم المنهج وتنفيذ 6 دفعات تدريبية مع شهادات معتمدة.',
       execBatch: 'إطلاق الدفعة الثانية',
+      launchPlanId: 'lp4',
       phases: [],
       launches: [
         {
@@ -308,6 +312,7 @@ export function seedItems(): Item[] {
       budget: '3,200,000 درهم',
       scopeOfWork: 'بناء محرك التوصيات وتكامله مع منصة البيانات الوطنية.',
       execBatch: 'إطلاق الدفعة الأولى',
+      launchPlanId: 'lp3',
       phases: [],
       launches: [
         {
@@ -356,6 +361,7 @@ export function seedItems(): Item[] {
       budget: '1,500,000 درهم',
       scopeOfWork: 'بناء المساعد الموحّد وربطه بأنظمة الطلبات عبر القنوات الرقمية.',
       execBatch: 'إطلاق الدفعة الأولى',
+      launchPlanId: 'lp5',
       endDate: '2026-09-15',
       nom: {
         by: 'سعادة محمد راشد بن طليعة',

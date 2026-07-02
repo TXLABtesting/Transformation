@@ -385,7 +385,19 @@ function build(s: Store) {
     launchPlanMgr: launchBatches().map((b) => ({
       batch: b.name,
       period: b.period || '',
-      plans: s.launchPlans.filter((p) => p.batch === b.name),
+      plans: s.launchPlans
+        .filter((p) => p.batch === b.name)
+        .map((p) => ({
+          ...p,
+          // items that can be launched in this plan (operations / projects-initiatives / services)
+          items: roleBase.map((i) => ({
+            id: i.id,
+            title: i.title,
+            typeLabel: typeLabel(i.type),
+            checked: i.launchPlanId === p.id,
+            inOtherPlan: !!i.launchPlanId && i.launchPlanId !== p.id,
+          })),
+        })),
     })),
     // team panel
     teamOpen: ui.teamOpen,
