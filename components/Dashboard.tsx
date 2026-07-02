@@ -394,7 +394,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 cursor: 'pointer',
               }}
             >
-              {vm.repInitials}
+              {vm.profileInitials}
             </div>
             {vm.profileOpen && (
               <div
@@ -436,10 +436,10 @@ export function Dashboard({ vm }: { vm: VM }) {
                       flex: 'none',
                     }}
                   >
-                    {vm.repInitials}
+                    {vm.profileInitials}
                   </span>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{vm.repName}</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{vm.profileName}</div>
                     <div
                       style={{
                         fontSize: 11,
@@ -449,7 +449,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                         textOverflow: 'ellipsis',
                       }}
                     >
-                      {vm.repPos}
+                      {vm.profilePos}
                     </div>
                   </div>
                 </div>

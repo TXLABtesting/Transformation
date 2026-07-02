@@ -30,6 +30,7 @@ import {
   formatMoney,
   APPROVED_BUDGET,
   RETURNED_STATUS,
+  PATH_REPS,
   entOf,
   fmtDate,
   daysLeft,
@@ -230,10 +231,30 @@ function build(s: Store) {
   // ---- create modal derived ----
   const modal = buildModal(s);
 
-  // rep display
+  // rep display (entity rep — used in the team panel)
   const repName = s.setup.rep.name || 'ممثل الجهة';
   const repPos = s.setup.rep.position || '';
   const repInitials = repName.split(/\s+/).slice(0, 2).map((w) => w[0]).join('') || 'م';
+
+  // header profile identity follows the previewed role
+  const profileName =
+    rawRole === 'path'
+      ? PATH_REPS[myPath] || 'رئيس المسار'
+      : rawRole === 'ai'
+        ? 'اللجنة الوطنية'
+        : rawRole === 'coord'
+          ? s.setup.owners[myPath]?.name || 'منسق المسار في الجهة'
+          : repName;
+  const profilePos =
+    rawRole === 'path'
+      ? 'رئيس مسار ' + pathById(myPath).name
+      : rawRole === 'ai'
+        ? ROLE.ai.sub
+        : rawRole === 'coord'
+          ? 'منسق مسار ' + pathById(myPath).name
+          : repPos;
+  const profileInitials =
+    profileName.split(/\s+/).slice(0, 2).map((w) => w[0]).join('') || 'م';
 
   return {
     // view
@@ -250,6 +271,9 @@ function build(s: Store) {
     repName,
     repPos,
     repInitials,
+    profileName,
+    profilePos,
+    profileInitials,
     notifs,
     notifOpen: ui.notifOpen,
     notifUnread,
@@ -653,7 +677,7 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
     // funding-source line for approved rows
     const fundedText = i.funded?.direct
       ? 'اعتُمد مباشرة من اللجنة الوطنية'
-      : 'بترشيح من ' + (i.nom?.by || 'ممثل المسار') + ' · ' + pathById(i.path).name;
+      : 'بترشيح من ' + (i.nom?.by || 'رئيس المسار') + ' · ' + pathById(i.path).name;
     return {
       id: i.id,
       title: i.title,
@@ -681,7 +705,7 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
     isCommittee: isCom,
     title: isCom ? 'سلة اللجنة الوطنية' : 'سلة الترشيحات',
     subtitle: isCom
-      ? 'العناصر المرشّحة من ممثلي المسارات والعناصر المموّلة'
+      ? 'العناصر المرشّحة من رؤساء المسارات والعناصر المموّلة'
       : 'العناصر التي رشّحتها لتمويل اللجنة الوطنية',
     selTabLabel: isCom ? 'العناصر المرشّحة' : 'ترشيحاتي',
     appTabLabel: 'العناصر المعتمدة',
@@ -778,7 +802,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     dFundedText: i.funded
       ? (i.funded.direct
           ? 'مموّل مباشرة من اللجنة الوطنية'
-          : 'مموّل من اللجنة الوطنية · بترشيح من ' + (i.nom?.by || 'ممثل المسار')) +
+          : 'مموّل من اللجنة الوطنية · بترشيح من ' + (i.nom?.by || 'رئيس المسار')) +
         ' · يبقى التنفيذ من مسؤولية الجهة'
       : '',
     isProj: i.type === 'project' || i.type === 'initiative',

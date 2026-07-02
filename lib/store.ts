@@ -26,6 +26,7 @@ import {
   launchAllDone,
   entOf,
   isEntityApproved,
+  PATH_REPS,
   LAUNCH_TYPES,
 } from './domain';
 import { seedItems } from './seed';
@@ -337,16 +338,17 @@ export const logicRole = (r: RoleKey): RoleKey => (r === 'coord' ? 'path' : r);
 export const actorName = (s: State): string => {
   if (s.role === 'entity') return s.setup.rep.name || 'ممثل الجهة';
   if (s.role === 'ai') return 'اللجنة الوطنية';
+  // رئيس المسار: the real stream head, per stream
+  if (s.role === 'path') return PATH_REPS[s.myPath] || 'رئيس المسار';
   const owner = s.setup.owners[s.myPath];
   if (owner?.name) return owner.name;
-  // ممثل المسار has a display name used on nomination attributions
-  return s.role === 'coord' ? 'منسق المسار في الجهة' : 'خليفة السويدي';
+  return 'منسق المسار في الجهة';
 };
 export const actorRole = (s: State): string => {
   if (s.role === 'entity') return 'ممثل الجهة';
   if (s.role === 'ai') return 'اللجنة الوطنية';
   if (s.role === 'coord') return 'منسق المسار في الجهة';
-  return 'ممثل المسار';
+  return 'رئيس المسار';
 };
 
 function withLog(s: State, it: Item, action: string, note?: string): LogEntry[] {
@@ -885,7 +887,7 @@ export const useStore = create<Store>((set, get) => {
         log: withLog(s, i, info ? 'info' : 'reject', rm.note),
       }));
       setUi({ reqModal: null });
-      toast(info ? 'تم طلب معلومات إضافية من ممثل المسار' : 'تمت إعادة العنصر إلى ممثل المسار');
+      toast(info ? 'تم طلب معلومات إضافية من رئيس المسار' : 'تمت إعادة العنصر إلى رئيس المسار');
     },
     closeReqModal: () => setUi({ reqModal: null }),
 

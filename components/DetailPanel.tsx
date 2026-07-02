@@ -753,10 +753,10 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49' }}>
-                    بانتظار إدخال ممثل المسار
+                    بانتظار إدخال رئيس المسار
                   </div>
                   <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginTop: 4 }}>
-                    سيقوم ممثل المسار بإدخال نطاق العمل والميزانية المطلوبة، وستظهر التفاصيل هنا بمجرد
+                    سيقوم رئيس المسار بإدخال نطاق العمل والميزانية المطلوبة، وستظهر التفاصيل هنا بمجرد
                     إرسالها.
                   </div>
                 </div>

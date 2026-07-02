@@ -546,7 +546,7 @@ export function Overlays({ vm }: { vm: VM }) {
                 }}
               />
               <div style={{ fontSize: 11.5, color: '#9AA6BC', marginTop: 8, lineHeight: 1.7 }}>
-                ستصل هذه الملاحظات إلى ممثل المسار، ولن ينتقل العنصر للمرحلة التالية حتى تتم معالجتها.
+                ستصل هذه الملاحظات إلى رئيس المسار، ولن ينتقل العنصر للمرحلة التالية حتى تتم معالجتها.
               </div>
             </div>
             <div style={{ padding: '16px 22px 20px', display: 'flex', gap: 10 }}>

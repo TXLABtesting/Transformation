@@ -114,7 +114,7 @@ export const ROLE: Record<
     bg: '#E5EEFF',
   },
   path: {
-    label: 'ممثل المسار',
+    label: 'رئيس المسار',
     sub: 'تعبئة ومتابعة بيانات المسار',
     badge: '#0B8A4B',
     bg: '#E3F6EC',
@@ -133,10 +133,19 @@ export const ROLE: Record<
   },
 };
 
+// Real stream representatives (رئيس المسار) — one per transformation stream
+export const PATH_REPS: Record<string, string> = {
+  capacity: 'معالي عهود بنت خلفان الرومي',
+  tech: 'معالي عمر سلطان العلماء',
+  ops: 'معالي مريم بنت أحمد الحمادي',
+  strategy: 'معالي هدى الهاشمي',
+  services: 'سعادة محمد راشد بن طليعة',
+};
+
 // Role-switcher pill labels (display order in the header)
 export const ROLE_PILLS: { key: RoleKey; label: string }[] = [
   { key: 'entity', label: 'ممثل الجهة' },
-  { key: 'path', label: 'ممثل المسار' },
+  { key: 'path', label: 'رئيس المسار' },
   { key: 'coord', label: 'منسق المسار في الجهة' },
   { key: 'ai', label: 'اللجنة الوطنية' },
 ];
