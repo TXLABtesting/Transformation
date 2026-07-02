@@ -1455,122 +1455,119 @@ function KpiCard({
       style={{
         background: '#fff',
         border: '1px solid #E7ECF4',
-        borderRadius: 16,
-        padding: '15px 17px',
-        display: 'flex',
-        alignItems: rows && rows.length ? 'flex-start' : 'center',
-        justifyContent: 'space-between',
+        borderRadius: 14,
+        padding: '13px 15px',
       }}
     >
-      <div>
-        <div style={{ fontSize: 25, fontWeight: 800, color: '#13213C' }}>
-          {value}
-          {suffix && <span style={{ fontSize: 15, color: '#9AA6BC' }}>{suffix}</span>}
-          {sub && (
-            <span style={{ fontSize: 12.5, color: '#9AA6BC', fontWeight: 700, marginRight: 6 }}>({sub})</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+        <span
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 9,
+            background: '#EAF0FE',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: 'none',
+          }}
+        >
+          {grid ? (
+            <svg
+              width={16}
+              height={16}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#2563EB"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          ) : (
+            <Icon d={iconD!} size={16} color="#2563EB" />
           )}
-        </div>
-        <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginTop: 5 }}>{label}</div>
-        {rows && rows.length > 0 && (
-          <div style={{ marginTop: 9, borderTop: '1px solid #F0F3F8', paddingTop: 8 }}>
-            {rows.map((r) => (
-              <div
-                key={r.label}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 10,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: '#8A97AD',
-                  padding: '2.5px 0',
-                }}
-              >
-                <span>{r.label}</span>
-                <span style={{ fontWeight: 800, color: '#33415C' }}>{r.value}</span>
-              </div>
-            ))}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</div>
+          <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', lineHeight: 1.25 }}>
+            {value}
+            {suffix && <span style={{ fontSize: 13, color: '#9AA6BC' }}>{suffix}</span>}
+            {sub && (
+              <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 700, marginRight: 6 }}>({sub})</span>
+            )}
           </div>
-        )}
+        </div>
       </div>
-      <span
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: 11,
-          background: '#E5EEFF',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flex: 'none',
-        }}
-      >
-        {grid ? (
-          <svg
-            width={19}
-            height={19}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#2563EB"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-          </svg>
-        ) : (
-          <Icon d={iconD!} size={19} color="#2563EB" />
-        )}
-      </span>
+      {rows && rows.length > 0 && (
+        <div
+          style={{
+            marginTop: 9,
+            paddingTop: 8,
+            borderTop: '1px solid #F0F3F8',
+            fontSize: 11,
+            fontWeight: 600,
+            color: '#8A97AD',
+            lineHeight: 1.9,
+          }}
+        >
+          {rows.map((r, i) => (
+            <span key={r.label} style={{ whiteSpace: 'nowrap' }}>
+              {i > 0 && <span style={{ color: '#D5DEEC' }}> · </span>}
+              {r.label} <span style={{ fontWeight: 800, color: '#33415C' }}>{r.value}</span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 function StatCard({ value, label, dot }: { value: number; label: string; dot?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '15px 17px' }}>
-      <div style={{ fontSize: 25, fontWeight: 800, color: '#13213C' }}>{value}</div>
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
       <div
         style={{
-          fontSize: 12,
-          color: '#8A97AD',
+          fontSize: 11.5,
+          color: '#6B7A93',
           fontWeight: 600,
-          marginTop: 5,
           display: 'flex',
           alignItems: 'center',
           gap: 6,
+          whiteSpace: 'nowrap',
         }}
       >
         {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flex: 'none' }} />}
         {label}
       </div>
+      <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', marginTop: 3, lineHeight: 1.25 }}>{value}</div>
     </div>
   );
 }
 
 function RecoCard({ value, label, dot }: { value: number; label: string; dot: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: 14 }}>
-      <div style={{ fontSize: 24, fontWeight: 800, color: '#13213C' }}>{value}</div>
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
       <div
         style={{
           fontSize: 11.5,
-          fontWeight: 700,
-          color: '#8A97AD',
-          marginTop: 5,
+          fontWeight: 600,
+          color: '#6B7A93',
           display: 'flex',
           alignItems: 'center',
           gap: 6,
+          whiteSpace: 'nowrap',
         }}
       >
         <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flex: 'none' }} />
         {label}
       </div>
+      <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', marginTop: 3, lineHeight: 1.25 }}>{value}</div>
     </div>
   );
 }

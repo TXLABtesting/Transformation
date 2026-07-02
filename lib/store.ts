@@ -32,7 +32,7 @@ import {
 } from './domain';
 import { seedItems, seedLaunchPlans } from './seed';
 import type { LaunchPlan } from './domain';
-import { runItemReview, runScopeReview, type ReviewResult } from './ai';
+import { type ReviewResult } from './ai';
 
 // Plain (non-AI) validation of imported rows — a row needs a title to be
 // importable; a missing description is flagged but still imported.
@@ -197,8 +197,6 @@ type Actions = {
   addSharedLaunch: (payload: { title: string; ltype: string; date: string; desc: string }) => void;
   updLaunch: (i: number, k: string, v: string) => void;
   removeLaunch: (i: number) => void;
-  runAiReview: () => Promise<void>;
-  backToForm: () => void;
   submitItem: () => void;
   bulkDemo: () => Promise<void>;
   importWorkplan: (buf: ArrayBuffer) => Promise<void>;
@@ -780,14 +778,6 @@ export const useStore = create<Store>((set, get) => {
         const launches = (s.ui.draft.launches || []).filter((_, j) => j !== i);
         return { ui: { ...s.ui, draft: { ...s.ui.draft, launches } } };
       }),
-    runAiReview: async () => {
-      const s = get();
-      if (!s.ui.draft) return;
-      setUi({ mStep: 'review', aiLoading: true, aiResult: null });
-      const result = await runItemReview(s.ui.draft);
-      setUi({ aiLoading: false, aiResult: result });
-    },
-    backToForm: () => setUi({ mStep: 'form' }),
     submitItem: () => {
       commitDraft(get, set, persist, toast, 'تم الإرسال', false);
       setUi({ mStep: 'done' });
@@ -964,11 +954,7 @@ export const useStore = create<Store>((set, get) => {
       if (!it) return;
       if (!(it.scopeOfWork || '').trim() || !(it.budget || '').trim())
         return toast('الرجاء إدخال نطاق العمل والميزانية أولاً');
-      setUi({ subReview: { id, phase: 'budget', loading: true, result: null } });
-      runScopeReview(it).then((result) => {
-        const cur = get().ui.subReview;
-        if (cur && cur.id === id) setUi({ subReview: { ...cur, loading: false, result } });
-      });
+      get().doSubmitScope(id);
     },
     doSubmitScope: (id) => {
       const s = get();
