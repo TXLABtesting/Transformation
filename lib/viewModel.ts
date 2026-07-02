@@ -517,12 +517,12 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       rawRole === 'path'
         ? 'مُرشّح للتمويل'
         : 'مُرشّح · ' + (i.nom?.by || '') + ' · ' + (i.nom ? pathById(i.nom.path || i.path).name : ''),
-    // when the item entered its current status (for the header timestamp)
+    // time of the last status change (shown next to the status chip)
     statusStamp:
       w === 'ent1'
-        ? 'قُدّم للاعتماد · ' + fmtStampShort(itemTimes(i).submittedAt)
+        ? fmtStampShort(itemTimes(i).submittedAt)
         : ['exec', 'launch', 'done'].includes(w)
-          ? 'اعتُمد · ' + fmtStampShort(itemTimes(i).approvedAt)
+          ? fmtStampShort(itemTimes(i).approvedAt)
           : '',
     // handlers
     onOpen: () => s.openDetail(i.id),
