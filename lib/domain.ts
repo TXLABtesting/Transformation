@@ -144,10 +144,10 @@ export const PATH_REPS: Record<string, string> = {
 
 // Role-switcher pill labels (display order in the header)
 export const ROLE_PILLS: { key: RoleKey; label: string }[] = [
-  { key: 'entity', label: 'ممثل الجهة' },
-  { key: 'path', label: 'رئيس المسار' },
   { key: 'coord', label: 'منسق المسار في الجهة' },
+  { key: 'entity', label: 'ممثل الجهة' },
   { key: 'ai', label: 'اللجنة الوطنية' },
+  { key: 'path', label: 'رئيس المسار' },
 ];
 
 // ---- 1.4 Status / approval enums ------------------------------------------
