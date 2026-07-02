@@ -1462,9 +1462,9 @@ function KpiCard({
     </div>
   );
 
-  // with a distribution: total (with icon) on the start side, bars fill the rest
+  // with a distribution: icon stacked above the total on the start side,
+  // plain label + number rows filling the rest (no bars)
   if (rows && rows.length > 0) {
-    const max = Math.max(1, ...rows.map((r) => r.value));
     return (
       <div
         style={{
@@ -1477,7 +1477,7 @@ function KpiCard({
           gap: 14,
         }}
       >
-        <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+        <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 7, minWidth: 0 }}>
           {iconChip}
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</div>
@@ -1485,16 +1485,14 @@ function KpiCard({
           </div>
         </div>
         <div style={{ width: 1, alignSelf: 'stretch', background: '#F0F3F8', flex: 'none' }} />
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
           {rows.map((r) => (
-            <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               <span
                 style={{
-                  fontSize: 10.5,
+                  fontSize: 11,
                   fontWeight: 600,
                   color: '#6B7A93',
-                  width: 110,
-                  flex: 'none',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -1502,20 +1500,7 @@ function KpiCard({
               >
                 {r.label}
               </span>
-              <span style={{ flex: 1, height: 5, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden' }}>
-                <span
-                  style={{
-                    display: 'block',
-                    height: '100%',
-                    width: `${Math.round((r.value / max) * 100)}%`,
-                    borderRadius: 999,
-                    background: '#2563EB',
-                  }}
-                />
-              </span>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#13213C', width: 16, textAlign: 'left', flex: 'none' }}>
-                {r.value}
-              </span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#13213C', flex: 'none' }}>{r.value}</span>
             </div>
           ))}
         </div>
