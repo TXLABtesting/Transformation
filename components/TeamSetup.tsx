@@ -246,7 +246,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>المسمى الوظيفي {star}</label>
+                  <label style={labelStyle}>المسمى الوظيفي</label>
                   <input
                     style={inputStyle}
                     value={s.setup.rep.position}
@@ -357,7 +357,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                             fontSize: 13,
                             outline: 'none',
                           }}
-                          placeholder="المسمى الوظيفي *"
+                          placeholder="المسمى الوظيفي"
                           value={owner?.position || ''}
                           onChange={(e) => s.updOwner(path.id, 'position', e.target.value)}
                         />
