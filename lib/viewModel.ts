@@ -187,6 +187,7 @@ function build(s: Store) {
     approvedBudgetLabel: formatMoney(APPROVED_BUDGET),
     spentBudget,
     spentBudgetLabel: formatMoney(spentBudget),
+    remainingBudgetLabel: formatMoney(Math.max(0, APPROVED_BUDGET - spentBudget)),
     budgetPct: APPROVED_BUDGET ? Math.min(100, Math.round((spentBudget / APPROVED_BUDGET) * 100)) : 0,
   };
 
