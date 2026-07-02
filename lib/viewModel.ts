@@ -260,7 +260,9 @@ function build(s: Store) {
     basketBadge: basket.pendingCount,
     hasBasketBadge: basket.pendingCount > 0,
     basketOpen: ui.basketOpen,
-    // banner + steps
+    // banner + steps — the program journey banner is for the working roles
+    // (entity/coord); oversight roles (committee, stream rep) don't see it
+    showProgramBanner: rawRole === 'entity' || rawRole === 'coord',
     banner,
     programSteps,
     isAiRole,

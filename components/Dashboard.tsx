@@ -493,7 +493,8 @@ export function Dashboard({ vm }: { vm: VM }) {
         </div>
       </div>
 
-      {/* ===================== BANNER + STEPPER ===================== */}
+      {/* ===================== BANNER + STEPPER (entity/coord only) ===================== */}
+      {vm.showProgramBanner && (
       <div
         style={{
           margin: '16px 24px 0',
@@ -718,6 +719,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           })}
         </div>
       </div>
+      )}
 
       {/* ===================== WORK AREA ===================== */}
       <div
