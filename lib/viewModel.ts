@@ -72,16 +72,18 @@ function build(s: Store) {
 
   const effActivePath = role === 'path' ? myPath : ui.activePath;
 
-  // visibility of drafts / ent1
-  let visible = base.slice();
+  // visibility of drafts / ent1 — this is the role's whole universe: KPIs and
+  // stats must count from it too, or numbers won't match the visible cards
+  let roleBase = base;
   if (rawRole === 'ai' || rawRole === 'path') {
-    visible = visible.filter((i) => {
+    roleBase = base.filter((i) => {
       const w = wfOf(i);
       return w !== 'draft' && w !== 'ent1';
     });
   } else if (rawRole === 'entity') {
-    visible = visible.filter((i) => wfOf(i) !== 'draft');
+    roleBase = base.filter((i) => wfOf(i) !== 'draft');
   }
+  let visible = roleBase.slice();
   if (effActivePath !== 'all') visible = visible.filter((i) => i.path === effActivePath);
   if (ui.filter !== 'all') visible = visible.filter((i) => i.type === ui.filter);
   // status filter
@@ -92,8 +94,8 @@ function build(s: Store) {
   // step filter
   if (ui.stepFilter != null) visible = visible.filter((i) => stepIndexOf(i) === ui.stepFilter);
 
-  // ---- KPI scope ----
-  const scope = effActivePath === 'all' ? base : base.filter((i) => i.path === effActivePath);
+  // ---- KPI scope (counts what this role can actually see) ----
+  const scope = effActivePath === 'all' ? roleBase : roleBase.filter((i) => i.path === effActivePath);
   const cnt = (f: (i: Item) => boolean) => scope.filter(f).length;
   const completion = scope.length
     ? Math.round(scope.reduce((a, i) => a + stageWeight(i), 0) / scope.length)
