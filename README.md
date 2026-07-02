@@ -41,7 +41,7 @@ cp .env.example .env        # set AI_API_BASE_URL to your internal model
 docker compose up --build   # app on :3000, Postgres on :5432
 ```
 
-On first boot the container pushes the schema and seeds the **34 real federal entities** + the prototype's demo items. Set `NEXT_PUBLIC_DATA_MODE=api` to use the Postgres‑backed API instead of localStorage.
+On first boot the container pushes the schema and seeds the database. The schema is **fully relational (17 tables)** — `streams` (+ رؤساء المسارات), `entities` (34 federal + the session entity), `items` with child tables for the execution checklist, per‑batch sub‑milestones, the approval/action `log_entries`, `nominations` / `fundings` / `funding_cancellations`, plus **shared launches** modeled properly as `launches` ↔ `item_launches` (many‑to‑many, completion synced once for all sharers), and reference tables for the quarterly `exec_batches`, `program_phases` and `settings` (approved budget). A baseline migration is checked in at `prisma/migrations/0001_init/`. Set `NEXT_PUBLIC_DATA_MODE=api` to use the Postgres‑backed API instead of localStorage.
 
 ### Option C — static export (GitHub Pages)
 
