@@ -1196,86 +1196,41 @@ export function Dashboard({ vm }: { vm: VM }) {
                   background: '#fff',
                   border: '1px solid #E7ECF4',
                   borderRadius: 16,
-                  padding: '16px 18px',
+                  padding: '20px 24px',
                   marginTop: 13,
                 }}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 18,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <BudgetFigure
-                    icon="M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2 2 0 0 0 0 4h4v-4z"
-                    color="#2563EB"
-                    iconBg="#EAF0FE"
-                    value={vm.aiStats.approvedBudgetLabel}
-                    label="الميزانية المعتمدة"
-                  />
-                  <div style={{ width: 1, alignSelf: 'stretch', background: '#EBEFF6' }} />
-                  <BudgetFigure
-                    icon="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
-                    color="#0B8A4B"
-                    iconBg="#E3F6EC"
-                    value={vm.aiStats.spentBudgetLabel}
-                    label="الميزانية المصروفة حتى الآن"
-                  />
-                  <div style={{ width: 1, alignSelf: 'stretch', background: '#EBEFF6' }} />
-                  <BudgetFigure
-                    icon="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"
-                    color="#54627B"
-                    iconBg="#F1F4F9"
-                    value={vm.aiStats.remainingBudgetLabel}
-                    label="المتبقي من الميزانية"
-                  />
-                  {/* utilization chip */}
-                  <div style={{ marginRight: 'auto' }}>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        background: vm.aiStats.budgetPct >= 85 ? '#FCEEEF' : '#E3F6EC',
-                        color: vm.aiStats.budgetPct >= 85 ? '#D23B45' : '#0B8A4B',
-                        borderRadius: 999,
-                        padding: '6px 13px',
-                        fontSize: 12.5,
-                        fontWeight: 800,
-                      }}
-                    >
-                      {vm.aiStats.budgetPct}%
-                      <span style={{ fontWeight: 700, fontSize: 11 }}>نسبة الاستخدام</span>
-                    </span>
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
+                  <BudgetFigure value={vm.aiStats.approvedBudgetLabel} label="الميزانية المعتمدة" />
+                  <div style={{ width: 1, height: 36, background: '#EBEFF6' }} />
+                  <BudgetFigure value={vm.aiStats.spentBudgetLabel} label="المصروفة حتى الآن" />
+                  <div style={{ width: 1, height: 36, background: '#EBEFF6' }} />
+                  <BudgetFigure value={vm.aiStats.remainingBudgetLabel} label="المتبقي" />
+                  <span
+                    style={{
+                      marginRight: 'auto',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#54627B',
+                      background: '#F1F4F9',
+                      borderRadius: 999,
+                      padding: '6px 13px',
+                    }}
+                  >
+                    نسبة الاستخدام {vm.aiStats.budgetPct}%
+                  </span>
                 </div>
-                {/* utilization bar */}
-                <div style={{ marginTop: 14 }}>
-                  <div style={{ height: 8, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden' }}>
+                <div style={{ marginTop: 18 }}>
+                  <div style={{ height: 6, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden' }}>
                     <div
                       style={{
                         width: `${vm.aiStats.budgetPct}%`,
                         height: '100%',
-                        background: 'linear-gradient(90deg,#0EA371,#0B8A4B)',
+                        background: '#2563EB',
                         borderRadius: 999,
                         transition: 'width .4s ease',
                       }}
                     />
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginTop: 6,
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      color: '#9AA6BC',
-                    }}
-                  >
-                    <span>{vm.aiStats.spentBudgetLabel} مصروفة</span>
-                    <span>الإجمالي {vm.aiStats.approvedBudgetLabel}</span>
                   </div>
                 </div>
               </div>
@@ -1410,41 +1365,15 @@ function RecoCard({ value, label, color }: { value: number; label: string; color
   );
 }
 
-function BudgetFigure({
-  icon,
-  color,
-  iconBg,
-  value,
-  label,
-}: {
-  icon: string;
-  color: string;
-  iconBg: string;
-  value: string;
-  label: string;
-}) {
+function BudgetFigure({ value, label }: { value: string; label: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
-      <span
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          flex: 'none',
-          background: iconBg,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+    <div style={{ minWidth: 0 }}>
+      <div
+        style={{ fontSize: 20, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap', lineHeight: 1.25 }}
       >
-        <Icon d={icon} color={color} size={19} />
-      </span>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 19, fontWeight: 800, color, whiteSpace: 'nowrap', lineHeight: 1.2 }}>
-          {value}
-        </div>
-        <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 700, marginTop: 2 }}>{label}</div>
+        {value}
       </div>
+      <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginTop: 4 }}>{label}</div>
     </div>
   );
 }

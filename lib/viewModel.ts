@@ -827,7 +827,8 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     // exec / launch
     execRows,
     execEditable: rawRole === 'coord' && w === 'exec',
-    showExecView: ['exec'].includes(w),
+    // executed tasks stay visible (read-only) through launch and completion
+    showExecView: ['exec', 'launch', 'done'].includes(w),
     showGoLaunch: rawRole === 'coord' && w === 'exec',
     execBlocked: !execAllDone(i),
     execOpacity: execAllDone(i) ? 1 : 0.55,
