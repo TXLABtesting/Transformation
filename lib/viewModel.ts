@@ -823,6 +823,12 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     subActivities: i.subActivities,
     automationLevel: i.automationLevel,
     automationPct: i.automationPct,
+    automationSystem: i.automationSystem,
+    complexityLevel: i.complexityLevel,
+    sector: i.sector,
+    dept: i.dept,
+    section: i.section,
+    itemEntityName: entOf(i, s.entityName),
     // svc fields
     serviceOwner: i.serviceOwner,
     targetUsers: i.targetUsers,
@@ -861,6 +867,30 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     showLaunchView: ['launch', 'done'].includes(w),
     showFinishLaunch: rawRole === 'coord' && w === 'launch',
     hasLaunchChk: (i.launches || []).length > 0,
+    // execution plan as entered by the coordinator (visible before approval)
+    execBatchName: i.execBatch || '',
+    execBatchPeriod:
+      execMilestones().find((b) => b.name === i.execBatch)?.period || '',
+    subMilestones: (i.phases || [])
+      .filter((p) => !i.execBatch || p.name === i.execBatch)
+      .flatMap((p) => p.subs || [])
+      .filter((sub) => (sub.name || '').trim())
+      .map((sub) => ({
+        name: sub.name,
+        startFmt: fmtDate(sub.start),
+        endFmt: fmtDate(sub.end),
+      })),
+    // planned launch plan — read-only, shown in the pre-launch stages so the
+    // approver sees everything before approving
+    plannedLaunches: (i.launches || [])
+      .filter((l) => (l.title || '').trim())
+      .map((l) => ({
+        title: l.title,
+        ltype: l.ltype,
+        dateFmt: fmtDate(l.date),
+        desc: l.desc || '',
+        shared: !!l.shared,
+      })),
     // approval log
     logRows: buildLogRows(i),
     // gate actions

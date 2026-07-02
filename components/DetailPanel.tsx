@@ -21,6 +21,13 @@ const valueStyle: React.CSSProperties = {
   color: '#1F2D49',
 };
 
+const sectionCard: React.CSSProperties = {
+  background: '#fff',
+  border: '1px solid #E7ECF4',
+  borderRadius: 14,
+  padding: '16px 18px',
+};
+
 export function DetailPanel({ vm }: { vm: VM }) {
   const d = vm.detail!;
 
@@ -431,11 +438,87 @@ export function DetailPanel({ vm }: { vm: VM }) {
                     <div style={valueStyle}>{d.readiness}</div>
                   </div>
                 </div>
-                <div>
-                  <div style={labelStyle}>مستوى الأتمتة</div>
-                  <div style={valueStyle}>
-                    {d.automationLevel} · {d.automationPct}%
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                  <div>
+                    <div style={labelStyle}>مستوى الأتمتة</div>
+                    <div style={valueStyle}>
+                      {d.automationLevel} · {d.automationPct}%
+                    </div>
                   </div>
+                  {d.automationSystem && (
+                    <div>
+                      <div style={labelStyle}>نظام الأتمتة</div>
+                      <div style={valueStyle}>{d.automationSystem}</div>
+                    </div>
+                  )}
+                  {d.complexityLevel && (
+                    <div>
+                      <div style={labelStyle}>مستوى تعقيد الأتمتة</div>
+                      <div style={valueStyle}>{d.complexityLevel}</div>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
+                  <div>
+                    <div style={labelStyle}>الجهة الاتحادية المعنية</div>
+                    <div style={valueStyle}>{d.itemEntityName}</div>
+                  </div>
+                  {d.sector && (
+                    <div>
+                      <div style={labelStyle}>القطاع المعني</div>
+                      <div style={valueStyle}>{d.sector}</div>
+                    </div>
+                  )}
+                  {d.dept && (
+                    <div>
+                      <div style={labelStyle}>الإدارة المعنية</div>
+                      <div style={valueStyle}>{d.dept}</div>
+                    </div>
+                  )}
+                  {d.section && (
+                    <div>
+                      <div style={labelStyle}>القسم المعني</div>
+                      <div style={valueStyle}>{d.section}</div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* --- OUTCOMES for non-project types (entered in step 3) --- */}
+            {!d.isProj && (d.expectedOutputs || d.expectedOutcomes || d.expectedImpact || !!d.targetPct || !!d.aiModels) && (
+              <>
+                {d.expectedOutputs && (
+                  <div>
+                    <div style={labelStyle}>المخرجات المتوقعة</div>
+                    <div style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}>{d.expectedOutputs}</div>
+                  </div>
+                )}
+                {d.expectedOutcomes && (
+                  <div>
+                    <div style={labelStyle}>النتائج المتوقعة</div>
+                    <div style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}>{d.expectedOutcomes}</div>
+                  </div>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                  {d.expectedImpact && (
+                    <div>
+                      <div style={labelStyle}>الأثر المتوقع</div>
+                      <div style={valueStyle}>{d.expectedImpact}</div>
+                    </div>
+                  )}
+                  {!!d.aiModels && (
+                    <div>
+                      <div style={labelStyle}>نماذج الذكاء</div>
+                      <div style={valueStyle}>{d.aiModels}</div>
+                    </div>
+                  )}
+                  {!!d.targetPct && (
+                    <div>
+                      <div style={labelStyle}>نسبة التحول</div>
+                      <div style={valueStyle}>{d.targetPct}%</div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -474,6 +557,106 @@ export function DetailPanel({ vm }: { vm: VM }) {
               </>
             )}
           </div>
+
+          {/* ===== EXECUTION PLAN (as entered by the coordinator) ===== */}
+          {d.execBatchName && (
+            <div style={sectionCard}>
+              <div style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C', marginBottom: 10 }}>
+                خطة التنفيذ
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: '#EAF0FE',
+                    color: '#2563EB',
+                    borderRadius: 999,
+                    padding: '5px 12px',
+                    fontSize: 12,
+                    fontWeight: 800,
+                  }}
+                >
+                  {d.execBatchName}
+                </span>
+                {d.execBatchPeriod && (
+                  <span style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 700 }}>
+                    {d.execBatchPeriod}
+                  </span>
+                )}
+              </div>
+              {d.subMilestones.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ ...labelStyle, marginBottom: 8 }}>المراحل الفرعية</div>
+                  {d.subMilestones.map((sm, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 9,
+                        padding: '7px 0',
+                        borderBottom: i < d.subMilestones.length - 1 ? '1px solid #F0F3F8' : 'none',
+                      }}
+                    >
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563EB', flex: 'none' }} />
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#33405A', flex: 1 }}>{sm.name}</span>
+                      <span style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 700 }}>
+                        {sm.startFmt} — {sm.endFmt}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ===== PLANNED LAUNCHES (read-only, pre-launch stages) ===== */}
+          {!d.showLaunchView && d.plannedLaunches.length > 0 && (
+            <div style={sectionCard}>
+              <div style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C', marginBottom: 10 }}>
+                خطة الإطلاق
+              </div>
+              {d.plannedLaunches.map((l, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '9px 0',
+                    borderBottom: i < d.plannedLaunches.length - 1 ? '1px solid #F0F3F8' : 'none',
+                  }}
+                >
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB', flex: 'none' }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>
+                      {l.title}
+                      {l.shared && (
+                        <span
+                          style={{
+                            marginRight: 7,
+                            background: '#DCF3F5',
+                            color: '#0E7C86',
+                            borderRadius: 999,
+                            padding: '2px 8px',
+                            fontSize: 10,
+                            fontWeight: 800,
+                          }}
+                        >
+                          مشتركة
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 600, marginTop: 2 }}>
+                      {l.ltype} · التسليم المتوقع {l.dateFmt}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* ===== RECOMMENDATION ===== */}
           {d.showReco && (
