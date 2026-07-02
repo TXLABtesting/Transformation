@@ -32,7 +32,16 @@ import {
 } from './domain';
 import { seedItems, seedLaunchPlans } from './seed';
 import type { LaunchPlan } from './domain';
-import { runItemReview, runScopeReview, runBulkReview, type ReviewResult } from './ai';
+import { runItemReview, runScopeReview, type ReviewResult } from './ai';
+
+// Plain (non-AI) validation of imported rows — a row needs a title to be
+// importable; a missing description is flagged but still imported.
+const plainVerdict = (r: BulkRow): BulkRow =>
+  !(r.title || '').trim()
+    ? { ...r, _v: 'يوجد خطأ', _note: 'اسم العنصر مفقود — لن يُستورد هذا الصف' }
+    : !(r.desc || '').trim()
+      ? { ...r, _v: 'بحاجة إلى مراجعة', _note: 'الوصف غير مكتمل — يمكن استكماله يدوياً بعد الاستيراد' }
+      : { ...r, _v: 'جاهز', _note: 'مكتمل وصالح للإرسال' };
 
 export type MStep = 'path' | 'type' | 'method' | 'form' | 'review' | 'bulk' | 'bulkReview' | 'done';
 
@@ -793,10 +802,12 @@ export const useStore = create<Store>((set, get) => {
         { type: tKey(1), title: 'لوحة مؤشرات الأداء', desc: 'لوحة' },
         { type: tKey(0), title: '', desc: 'تم الاستيراد من الملف المرفوع' },
       ];
-      setUi({ mStep: 'bulkReview', bulkLoading: true, bulkLoaded: false, bulkRows: rows });
-      const verdicts = await runBulkReview('عناصر', rows);
-      const withV = rows.map((r, i) => ({ ...r, _v: verdicts[i]?.verdict, _note: verdicts[i]?.note }));
-      setUi({ bulkLoading: false, bulkLoaded: true, bulkRows: withV });
+      setUi({
+        mStep: 'bulkReview',
+        bulkLoading: false,
+        bulkLoaded: true,
+        bulkRows: rows.map(plainVerdict),
+      });
     },
     importWorkplan: async (buf: ArrayBuffer) => {
       setUi({ mStep: 'bulkReview', bulkLoading: true, bulkLoaded: false, bulkRows: [], bulkLaunches: [] });
@@ -814,10 +825,12 @@ export const useStore = create<Store>((set, get) => {
           desc: r.desc,
           extra: r.extra,
         }));
-        setUi({ bulkRows: rows, bulkLaunches: parsed.launches });
-        const verdicts = await runBulkReview('عناصر', rows);
-        const withV = rows.map((r, i) => ({ ...r, _v: verdicts[i]?.verdict, _note: verdicts[i]?.note }));
-        setUi({ bulkLoading: false, bulkLoaded: true, bulkRows: withV });
+        setUi({
+          bulkLoading: false,
+          bulkLoaded: true,
+          bulkRows: rows.map(plainVerdict),
+          bulkLaunches: parsed.launches,
+        });
       } catch {
         setUi({ mStep: 'bulk', bulkLoading: false });
         toast('تعذّرت قراءة الملف — تأكد أنه بصيغة .xlsx وبالقالب الصحيح');
