@@ -1063,70 +1063,53 @@ export function Dashboard({ vm }: { vm: VM }) {
             </div>
           </div>
 
-          {/* KPI strip (non-ai) */}
+          {/* KPI strip (non-ai): line 1 = totals, line 2 = percentages */}
           {vm.notAiRole && (
-            <div
-              data-r="kpi"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
-                gap: 13,
-              }}
-            >
+            <>
+              <div
+                data-r="kpi"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
+                  gap: 13,
+                }}
+              >
+                <KpiCard
+                  value={vm.kpis.total}
+                  label="إجمالي العناصر"
+                  iconD="M4 20V10M10 20V4M16 20v-8M21 20H3"
+                />
+                <KpiCard
+                  value={vm.kpis.projInit}
+                  label="المشاريع / المبادرات"
+                  iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
+                  rows={vm.role === 'entity' ? vm.kpiDist.projInit : undefined}
+                />
+                {vm.showOpsKpi && (
+                  <KpiCard
+                    value={vm.kpis.operations}
+                    label="العمليات"
+                    iconD="M3 6h18M3 12h18M3 18h18"
+                    rows={vm.role === 'entity' ? vm.kpiDist.operations : undefined}
+                  />
+                )}
+                {vm.showSvcKpi && <KpiCard value={vm.kpis.services} label="الخدمات" grid />}
+              </div>
+
               {(vm.role === 'entity' || vm.role === 'coord') && (
                 <div
                   style={{
-                    background: '#fff',
-                    border: '1px solid #E7ECF4',
-                    borderRadius: 16,
-                    padding: '15px 17px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
+                    gap: 13,
                   }}
                 >
-                  <div>
-                    <div style={{ fontSize: 25, fontWeight: 800, color: '#13213C' }}>
-                      {vm.kpis.completion}
-                      <span style={{ fontSize: 15, color: '#9AA6BC' }}>%</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginTop: 5 }}>
-                      نسبة الإنجاز
-                    </div>
-                  </div>
-                  <span
-                    style={{
-                      width: 38,
-                      height: 38,
-                      borderRadius: 11,
-                      background: '#E5EEFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flex: 'none',
-                    }}
-                  >
-                    <Icon d="M3 3v18h18M7 15l4-4 3 3 5-6" size={19} color="#2563EB" />
-                  </span>
-                </div>
-              )}
-              <KpiCard
-                value={vm.kpis.projInit}
-                label="المشاريع / المبادرات"
-                iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
-                rows={vm.role === 'entity' ? vm.kpiDist.projInit : undefined}
-              />
-              {vm.showOpsKpi && (
-                <KpiCard
-                  value={vm.kpis.operations}
-                  label="العمليات"
-                  iconD="M3 6h18M3 12h18M3 18h18"
-                  rows={vm.role === 'entity' ? vm.kpiDist.operations : undefined}
-                />
-              )}
-              {vm.showSvcKpi && <KpiCard value={vm.kpis.services} label="الخدمات" grid />}
-              {(vm.role === 'entity' || vm.role === 'coord') && (
-                <>
+                  <KpiCard
+                    value={vm.kpis.completion}
+                    suffix="%"
+                    label="نسبة الإنجاز"
+                    iconD="M3 3v18h18M7 15l4-4 3 3 5-6"
+                  />
                   <KpiCard
                     value={vm.kpis.avgTargetPct}
                     suffix="%"
@@ -1140,14 +1123,15 @@ export function Dashboard({ vm }: { vm: VM }) {
                     iconD="M4 4h16v16H4zM9 9h6v6H9z"
                   />
                   <KpiCard
-                    value={vm.kpis.completedCount}
-                    sub={vm.kpis.completedPct + '%'}
+                    value={vm.kpis.completedPct}
+                    suffix="%"
+                    sub={vm.kpis.completedCount + ' عنصر'}
                     label="عناصر مكتملة"
                     iconD="M20 6 9 17l-5-5"
                   />
-                </>
+                </div>
               )}
-            </div>
+            </>
           )}
 
           {/* Committee analytics (ai) */}
