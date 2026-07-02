@@ -1545,6 +1545,8 @@ function CardItem({ c }: { c: CardVM }) {
             borderRadius: 999,
             background: c.typeBg,
             color: c.typeColor,
+            whiteSpace: 'nowrap',
+            flex: 'none',
           }}
         >
           {c.typeLabel}
@@ -1758,29 +1760,9 @@ function CardItem({ c }: { c: CardVM }) {
         </div>
       )}
 
-      {/* Execution batch + launch plan meta (only when actually planned) */}
-      {(c.batchLabel || c.launchLabel) && (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: -2 }}>
-        {c.batchLabel && (
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 5,
-            fontSize: 11,
-            fontWeight: 700,
-            color: '#54627B',
-          }}
-        >
-          <Icon
-            d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"
-            size={12}
-            color="#8A97AD"
-          />
-          التنفيذ: {c.batchLabel}
-        </span>
-        )}
-        {c.launchLabel && (
+      {/* launch plan meta (batch already lives in the status chip) */}
+      {c.launchLabel && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: -2 }}>
           <span
             style={{
               display: 'inline-flex',
@@ -1794,11 +1776,10 @@ function CardItem({ c }: { c: CardVM }) {
             <Icon d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" size={12} color="#8A97AD" />
             الإطلاق: {c.launchLabel}
           </span>
-        )}
-      </div>
+        </div>
       )}
 
-      {/* Footer meta */}
+      {/* Footer meta — pinned to the bottom so cards in a row align */}
       <div
         style={{
           display: 'flex',
@@ -1806,6 +1787,7 @@ function CardItem({ c }: { c: CardVM }) {
           justifyContent: 'space-between',
           borderTop: '1px solid #F0F3F8',
           paddingTop: 11,
+          marginTop: 'auto',
         }}
       >
         <span

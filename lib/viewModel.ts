@@ -195,8 +195,7 @@ function build(s: Store) {
           { v: 'mine', label: 'بحاجة لإجرائي' },
           { v: 'pending', label: 'بانتظار الاعتماد' },
         ]),
-    { v: 'exec', label: 'قيد التنفيذ' },
-    { v: 'launch', label: 'قيد الإطلاق' },
+    { v: 'planned', label: 'مخطط (معتمد)' },
     { v: 'done', label: 'مكتمل' },
     { v: 'draft', label: 'مسودة' },
   ];
@@ -470,6 +469,7 @@ function statusMatch(i: Item, f: string, rawRole: RoleKey, s: Store): boolean {
     return canAct || (role === 'path' && (['draft', 'budget', 'exec', 'launch'].includes(w) || !!i.ret));
   }
   if (f === 'pending') return ['ent1', 'pm1', 'ent2', 'pm2'].includes(w);
+  if (f === 'planned') return ['exec', 'launch', 'budget'].includes(w);
   return w === f;
 }
 
@@ -542,11 +542,22 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const step = stepIndexOf(i);
   const canApprove = rawRole === 'entity' && w === 'ent1';
   const isFunded = !!i.funded;
-  // a returned item surfaces an amber "بحاجة إلى تعديل" chip instead of "مسودة"
+  // status chip mirrors the real lifecycle exactly:
+  // مسودة → بحاجة إلى تعديل → بانتظار اعتماد ممثل الجهة → مخطط · الدفعة N → مكتمل
   const isReturned = !!i.ret;
-  const wfLabel = isReturned ? RETURNED_STATUS : wm.label;
-  const wfChip = isReturned ? '#B45309' : wm.chip;
-  const wfBg = isReturned ? '#FFF3DE' : wm.bg;
+  const batchShort = (i.execBatch || '').replace('إطلاق ', '');
+  let wfLabel = wm.label;
+  let wfChip = wm.chip;
+  let wfBg = wm.bg;
+  if (isReturned) {
+    wfLabel = RETURNED_STATUS;
+    wfChip = '#B45309';
+    wfBg = '#FFF3DE';
+  } else if (w === 'exec' || w === 'launch') {
+    wfLabel = batchShort ? 'مخطط · ' + batchShort : 'معتمد';
+    wfChip = '#2563EB';
+    wfBg = '#EAF0FE';
+  }
   const showSelectCheck =
     ['exec', 'launch', 'done'].includes(w) && ((rawRole === 'ai' && !i.funded) || (rawRole === 'path' && !i.nom && !i.funded));
   // every card shows an execution batch + (optional) launch plan
