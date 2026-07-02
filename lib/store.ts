@@ -633,6 +633,10 @@ export const useStore = create<Store>((set, get) => {
         setUi({ fStep: 4 });
         return toast('يجب إدخال نطاق العمل والميزانية قبل الإرسال للاعتماد');
       }
+      // a launch plan is mandatory: at least one launch (shared or new)
+      if (d && !(d.launches || []).some((l) => (l.title || '').trim())) {
+        return toast('أضف خطة إطلاق واحدة على الأقل (مشتركة أو جديدة) قبل الإرسال للاعتماد');
+      }
       get().submitItem();
     },
     fPrev: () => {
@@ -817,10 +821,29 @@ export const useStore = create<Store>((set, get) => {
       patchItem(id, { wf: 'launch' });
       toast('انتقل العنصر إلى مرحلة الإطلاق');
     },
-    toggleLaunchDone: (id, idx) =>
-      patchItem(id, (it) => ({
-        launches: (it.launches || []).map((l, i) => (i === idx ? { ...l, done: !l.done, doneAt: !l.done ? Date.now() : undefined } : l)),
-      })),
+    toggleLaunchDone: (id, idx) => {
+      const it = findItem(id);
+      const target = (it?.launches || [])[idx];
+      if (!it || !target) return;
+      const newDone = !target.done;
+      const at = newDone ? Date.now() : undefined;
+      // shared launches complete together: sync every item carrying the same
+      // launch (matched by title|date) — they are launched together for real
+      const key = (target.title || '').trim() + '|' + (target.date || '');
+      const syncable = key !== '|';
+      set((st) => ({
+        items: st.items.map((item) => ({
+          ...item,
+          launches: (item.launches || []).map((l, i) => {
+            const isTarget = item.id === id && i === idx;
+            const isTwin =
+              syncable && (l.title || '').trim() + '|' + (l.date || '') === key;
+            return isTarget || isTwin ? { ...l, done: newDone, doneAt: at } : l;
+          }),
+        })),
+      }));
+      persist();
+    },
     finishLaunch: (id) => {
       const it = findItem(id);
       if (!it) return;

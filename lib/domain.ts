@@ -696,7 +696,7 @@ export function blankItem(type: ItemType, path: string): Item {
 }
 
 // Predefined committee funding allocation (approved budget ceiling), in درهم.
-export const APPROVED_BUDGET = 50_000_000;
+export const APPROVED_BUDGET = 100_000_000;
 
 // Parse a free-text budget string ("4,500,000 درهم") into a number.
 export function parseBudget(b?: string): number {
@@ -713,7 +713,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = 'mock1';
+export const SEED_V = 'mock2';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 

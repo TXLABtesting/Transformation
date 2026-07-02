@@ -115,7 +115,16 @@ export function seedItems(): Item[] {
       endDate: '2026-11-30',
       steps: [],
       phases: [],
-      launches: [],
+      launches: [
+        {
+          title: 'تفعيل التصنيف الآلي للمعاملات',
+          ltype: 'تحديث نظام',
+          date: '2026-11-20',
+          desc: '',
+          status: 'مخطط',
+          done: false,
+        },
+      ],
       execChecklist: [
         { key: 'agents', label: 'بناء النظام الوكيلي', status: 'لم تبدأ', newDate: '', reason: '' },
         { key: 'testing', label: 'الاختبار وضمان الجودة', status: 'لم تبدأ', newDate: '', reason: '' },
@@ -253,7 +262,16 @@ export function seedItems(): Item[] {
       scopeOfWork: 'تصميم المنهج وتنفيذ 6 دفعات تدريبية مع شهادات معتمدة.',
       execBatch: 'إطلاق الدفعة الثانية',
       phases: [],
-      launches: [],
+      launches: [
+        {
+          title: 'حفل تخريج سفراء الذكاء الاصطناعي',
+          ltype: 'مؤتمر / فعالية',
+          date: '2027-01-20',
+          desc: 'تخريج الدفعة الأولى من السفراء المعتمدين.',
+          status: 'مخطط',
+          done: false,
+        },
+      ],
       execChecklist: [
         { key: 'agents', label: 'بناء النظام الوكيلي', status: 'مكتمل', newDate: '', reason: '' },
         { key: 'testing', label: 'الاختبار وضمان الجودة', status: 'مكتمل', newDate: '', reason: '' },
