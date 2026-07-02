@@ -968,10 +968,9 @@ export function Overlays({ vm }: { vm: VM }) {
                 <div style={{ display: 'flex', gap: 6 }}>
                   {(
                     [
-                      { k: 'none', label: 'بدون' },
-                      { k: 'existing', label: 'اختيار مشتركة' },
-                      { k: 'new', label: 'إنشاء جديد' },
-                    ] as { k: 'none' | 'existing' | 'new'; label: string }[]
+                      { k: 'existing', label: 'اختيار خطة إطلاق' },
+                      { k: 'new', label: 'إنشاء إطلاق جديد' },
+                    ] as { k: 'existing' | 'new'; label: string }[]
                   ).map((o) => {
                     const active = vm.assignModal!.launchMode === o.k;
                     return (

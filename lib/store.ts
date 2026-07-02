@@ -43,7 +43,7 @@ export type BulkRow = { title: string; desc: string; _v?: string; _note?: string
 
 export type AssignState = {
   batch: string;
-  launchMode: 'none' | 'existing' | 'new';
+  launchMode: 'existing' | 'new';
   launchKey: string;
   newLaunch: { title: string; ltype: string; date: string; desc: string };
 };
@@ -966,7 +966,8 @@ export const useStore = create<Store>((set, get) => {
       setUi({
         assign: {
           batch: '',
-          launchMode: 'none',
+          // a launch plan is required: pick an existing shared one or create new
+          launchMode: 'existing',
           launchKey: '',
           newLaunch: { title: '', ltype: LAUNCH_TYPES[0], date: '', desc: '' },
         },
@@ -979,6 +980,11 @@ export const useStore = create<Store>((set, get) => {
       const a = s.ui.assign;
       if (!a) return;
       const ids = s.ui.assignSel;
+      // a launch plan is required — either an existing shared one or a new one
+      if (a.launchMode === 'existing' && !a.launchKey)
+        return toast('اختر خطة إطلاق مشتركة أولاً');
+      if (a.launchMode === 'new' && !a.newLaunch.title.trim())
+        return toast('أدخل اسم الإطلاق الجديد أولاً');
       // find an existing launch across all items by key (title|date)
       let found: Launch | undefined;
       if (a.launchMode === 'existing' && a.launchKey) {
