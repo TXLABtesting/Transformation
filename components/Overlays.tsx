@@ -1007,7 +1007,7 @@ export function Overlays({ vm }: { vm: VM }) {
                     <option value="">اختر خطة إطلاق مشتركة…</option>
                     {vm.assignModal.existingLaunches.map((l) => (
                       <option key={l.key} value={l.key}>
-                        {l.title} · {l.dateFmt}
+                        {l.optLabel}
                       </option>
                     ))}
                   </select>

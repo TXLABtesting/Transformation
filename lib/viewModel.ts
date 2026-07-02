@@ -900,14 +900,33 @@ function buildLogRows(i: Item) {
 // launch whose title is already present in `excludeTitles` is dropped.
 function gatherExistingLaunches(s: Store, excludeTitles: Set<string>) {
   const seen = new Set<string>();
-  const out: { key: string; title: string; ltype: string; date: string; dateFmt: string; desc: string }[] = [];
+  const out: {
+    key: string;
+    title: string;
+    ltype: string;
+    date: string;
+    dateFmt: string;
+    desc: string;
+    itemTitle: string;
+    optLabel: string;
+  }[] = [];
   for (const it of s.items) {
     for (const l of it.launches || []) {
       if (!l.title || excludeTitles.has(l.title)) continue;
       const key = l.title + '|' + l.date;
       if (seen.has(key)) continue;
       seen.add(key);
-      out.push({ key, title: l.title, ltype: l.ltype, date: l.date, dateFmt: fmtDate(l.date), desc: l.desc || '' });
+      out.push({
+        key,
+        title: l.title,
+        ltype: l.ltype,
+        date: l.date,
+        dateFmt: fmtDate(l.date),
+        desc: l.desc || '',
+        itemTitle: it.title,
+        // launch name · owning item · date — so shared plans are unambiguous
+        optLabel: l.title + ' — ' + it.title + ' · ' + fmtDate(l.date),
+      });
     }
   }
   return out;

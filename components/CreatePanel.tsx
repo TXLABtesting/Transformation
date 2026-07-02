@@ -1243,7 +1243,7 @@ function FPhases({ vm }: { vm: VM }) {
               <option value="">اختر خطة إطلاق مشتركة…</option>
               {m.existingLaunches.map((l) => (
                 <option key={l.key} value={l.key}>
-                  {l.title} · {l.dateFmt}
+                  {l.optLabel}
                 </option>
               ))}
             </select>
