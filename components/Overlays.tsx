@@ -1,5 +1,5 @@
 'use client';
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
 import { LAUNCH_TYPES } from '@/lib/domain';
@@ -21,6 +21,8 @@ const IC_GRIP = 'M9 5h.01 M9 12h.01 M9 19h.01 M15 5h.01 M15 12h.01 M15 19h.01';
 
 export function Overlays({ vm }: { vm: VM }) {
   const s = vm.store;
+  // launch-plan manager: one plan expanded at a time (unnamed plans auto-open)
+  const [openPlan, setOpenPlan] = useState<string | null>(null);
   return (
     <>
       {/* ================= TEAM PANEL ================= */}
@@ -1127,167 +1129,184 @@ export function Overlays({ vm }: { vm: VM }) {
                     </div>
                   )}
 
-                  {g.plans.map((p) => (
+                  {g.plans.map((p) => {
+                    const selCount = p.items.filter((x) => x.checked).length;
+                    const isOpen = openPlan === p.id || !p.title.trim();
+                    return (
                     <div
                       key={p.id}
                       style={{
                         border: '1px solid #EEF1F7',
                         borderRadius: 13,
-                        padding: '12px 13px',
                         marginBottom: 10,
                         background: '#FAFCFF',
+                        overflow: 'hidden',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 10 }}>
+                      {/* collapsed row */}
+                      <div
+                        onClick={() => setOpenPlan(isOpen ? '' : p.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '12px 13px',
+                          cursor: 'pointer',
+                        }}
+                      >
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <label style={assignLabel}>اسم الإطلاق</label>
-                          <input
-                            value={p.title}
-                            onChange={(e) => s.updLaunchPlan(p.id, 'title', e.target.value)}
-                            placeholder="مثال: إطلاق خدمات المرحلة الأولى"
-                            style={assignInput}
-                          />
-                        </div>
-                        <div style={{ width: 150, flex: 'none' }}>
-                          <label style={assignLabel}>نوع الإطلاق</label>
-                          <select
-                            value={p.ltype}
-                            onChange={(e) => s.updLaunchPlan(p.id, 'ltype', e.target.value)}
-                            style={assignInput}
-                          >
-                            {LAUNCH_TYPES.map((t) => (
-                              <option key={t}>{t}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div style={{ width: 150, flex: 'none' }}>
-                          <label style={assignLabel}>التاريخ</label>
-                          <input
-                            type="date"
-                            value={p.date}
-                            onChange={(e) => s.updLaunchPlan(p.id, 'date', e.target.value)}
-                            style={assignInput}
-                          />
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49' }}>
+                            {p.title.trim() || 'خطة إطلاق جديدة'}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
+                            {[p.date || 'بدون تاريخ', p.ltype, p.budget, selCount + ' عنصر']
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </div>
                         </div>
                         <button
-                          onClick={() => s.removeLaunchPlan(p.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            s.removeLaunchPlan(p.id);
+                          }}
                           style={{
-                            width: 34,
-                            height: 38,
+                            width: 30,
+                            height: 30,
                             flex: 'none',
-                            borderRadius: 9,
+                            borderRadius: 8,
                             background: '#FCEEEF',
                             color: '#D23B45',
                             border: 'none',
                             cursor: 'pointer',
-                            fontSize: 13,
+                            fontSize: 12,
                             fontFamily: 'inherit',
                           }}
                         >
                           ✕
                         </button>
-                      </div>
-                      <div>
-                        <label style={assignLabel}>الوصف</label>
-                        <input
-                          value={p.desc}
-                          onChange={(e) => s.updLaunchPlan(p.id, 'desc', e.target.value)}
-                          placeholder="وصف مختصر للإطلاق أو الإعلان"
-                          style={assignInput}
-                        />
+                        <Icon d={isOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={16} color="#8A97AD" />
                       </div>
 
-                      {/* launch-level cost: one scope + estimated budget for the whole group */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 8, marginTop: 10 }}>
-                        <div>
-                          <label style={assignLabel}>نطاق العمل (على مستوى الإطلاق)</label>
-                          <input
-                            value={p.scope || ''}
-                            onChange={(e) => s.updLaunchPlan(p.id, 'scope', e.target.value)}
-                            placeholder="نطاق تحويل المجموعة التي تُطلق معاً"
-                            style={assignInput}
-                          />
-                        </div>
-                        <div>
-                          <label style={assignLabel}>الميزانية التقديرية</label>
-                          <input
-                            value={p.budget || ''}
-                            onChange={(e) => s.updLaunchPlan(p.id, 'budget', e.target.value)}
-                            placeholder="مثال: 2,000,000 درهم"
-                            style={assignInput}
-                          />
-                        </div>
-                      </div>
-
-                      {/* items launched in this plan */}
-                      <div style={{ marginTop: 12 }}>
-                        <label style={assignLabel}>
-                          العناصر التي تُطلق في هذا الإطلاق
-                          <span style={{ color: '#9AA6BC', fontWeight: 600 }}>
-                            {' '}
-                            ({p.items.filter((x) => x.checked).length} محدد)
-                          </span>
-                        </label>
-                        <div
-                          style={{
-                            border: '1px solid #E7ECF4',
-                            borderRadius: 11,
-                            background: '#fff',
-                            maxHeight: 168,
-                            overflowY: 'auto',
-                          }}
-                        >
-                          {p.items.length === 0 && (
-                            <div style={{ padding: '11px 13px', fontSize: 12, color: '#9AA6BC', fontWeight: 600 }}>
-                              لا توجد عناصر بعد.
+                      {/* expanded editor */}
+                      {isOpen && (
+                        <div style={{ padding: '0 13px 13px', borderTop: '1px solid #F0F3F8' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 150px 150px', gap: 8, marginTop: 12 }}>
+                            <div>
+                              <label style={assignLabel}>اسم الإطلاق</label>
+                              <input
+                                value={p.title}
+                                onChange={(e) => s.updLaunchPlan(p.id, 'title', e.target.value)}
+                                placeholder="مثال: إطلاق خدمات المرحلة الأولى"
+                                style={assignInput}
+                              />
                             </div>
-                          )}
-                          {p.items.map((x) => (
-                            <label
-                              key={x.id}
+                            <div>
+                              <label style={assignLabel}>نوع الإطلاق</label>
+                              <select
+                                value={p.ltype}
+                                onChange={(e) => s.updLaunchPlan(p.id, 'ltype', e.target.value)}
+                                style={assignInput}
+                              >
+                                {LAUNCH_TYPES.map((t) => (
+                                  <option key={t}>{t}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label style={assignLabel}>التاريخ</label>
+                              <input
+                                type="date"
+                                value={p.date}
+                                onChange={(e) => s.updLaunchPlan(p.id, 'date', e.target.value)}
+                                style={assignInput}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px', gap: 8, marginTop: 10 }}>
+                            <div>
+                              <label style={assignLabel}>نطاق العمل (على مستوى الإطلاق)</label>
+                              <input
+                                value={p.scope || ''}
+                                onChange={(e) => s.updLaunchPlan(p.id, 'scope', e.target.value)}
+                                placeholder="نطاق تحويل المجموعة التي تُطلق معاً"
+                                style={assignInput}
+                              />
+                            </div>
+                            <div>
+                              <label style={assignLabel}>الميزانية التقديرية</label>
+                              <input
+                                value={p.budget || ''}
+                                onChange={(e) => s.updLaunchPlan(p.id, 'budget', e.target.value)}
+                                placeholder="مثال: 2,000,000 درهم"
+                                style={assignInput}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ marginTop: 10 }}>
+                            <label style={assignLabel}>العناصر التي تُطلق في هذا الإطلاق ({selCount} محدد)</label>
+                            <div
                               style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 9,
-                                padding: '8px 12px',
-                                borderBottom: '1px solid #F4F6FA',
-                                cursor: 'pointer',
-                                fontSize: 12.5,
+                                border: '1px solid #E7ECF4',
+                                borderRadius: 11,
+                                background: '#fff',
+                                maxHeight: 150,
+                                overflowY: 'auto',
                               }}
                             >
-                              <input
-                                type="checkbox"
-                                checked={x.checked}
-                                onChange={() => s.togglePlanItem(p.id, x.id)}
-                                style={{ width: 15, height: 15, accentColor: '#2563EB', flex: 'none' }}
-                              />
-                              <span
-                                style={{
-                                  fontSize: 10.5,
-                                  fontWeight: 700,
-                                  color: '#54627B',
-                                  background: '#F1F4F9',
-                                  borderRadius: 999,
-                                  padding: '2px 8px',
-                                  flex: 'none',
-                                }}
-                              >
-                                {x.typeLabel}
-                              </span>
-                              <span style={{ fontWeight: 700, color: '#33415C', flex: 1, minWidth: 0 }}>
-                                {x.title}
-                              </span>
-                              {x.inOtherPlan && (
-                                <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, flex: 'none' }}>
-                                  مرتبط بإطلاق آخر
-                                </span>
+                              {p.items.length === 0 && (
+                                <div style={{ padding: '11px 13px', fontSize: 12, color: '#9AA6BC', fontWeight: 600 }}>
+                                  لا توجد عناصر بعد.
+                                </div>
                               )}
-                            </label>
-                          ))}
+                              {p.items.map((x) => (
+                                <label
+                                  key={x.id}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 9,
+                                    padding: '8px 12px',
+                                    borderBottom: '1px solid #F4F6FA',
+                                    cursor: 'pointer',
+                                    fontSize: 12.5,
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={x.checked}
+                                    onChange={() => s.togglePlanItem(p.id, x.id)}
+                                    style={{ width: 15, height: 15, accentColor: '#2563EB', flex: 'none' }}
+                                  />
+                                  <span
+                                    style={{
+                                      fontSize: 10.5,
+                                      fontWeight: 700,
+                                      color: '#54627B',
+                                      background: '#F1F4F9',
+                                      borderRadius: 999,
+                                      padding: '2px 8px',
+                                      flex: 'none',
+                                    }}
+                                  >
+                                    {x.typeLabel}
+                                  </span>
+                                  <span style={{ fontWeight: 700, color: '#33415C', flex: 1, minWidth: 0 }}>
+                                    {x.title}
+                                  </span>
+                                  {x.inOtherPlan && (
+                                    <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, flex: 'none' }}>
+                                      مرتبط بإطلاق آخر
+                                    </span>
+                                  )}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ))}
             </div>

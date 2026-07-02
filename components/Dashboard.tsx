@@ -1114,9 +1114,15 @@ export function Dashboard({ vm }: { vm: VM }) {
                 value={vm.kpis.projInit}
                 label="المشاريع / المبادرات"
                 iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
+                rows={vm.role === 'entity' ? vm.kpiDist.projInit : undefined}
               />
               {vm.showOpsKpi && (
-                <KpiCard value={vm.kpis.operations} label="العمليات" iconD="M3 6h18M3 12h18M3 18h18" />
+                <KpiCard
+                  value={vm.kpis.operations}
+                  label="العمليات"
+                  iconD="M3 6h18M3 12h18M3 18h18"
+                  rows={vm.role === 'entity' ? vm.kpiDist.operations : undefined}
+                />
               )}
               {vm.showSvcKpi && <KpiCard value={vm.kpis.services} label="الخدمات" grid />}
               {(vm.role === 'entity' || vm.role === 'coord') && (
@@ -1141,88 +1147,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                   />
                 </>
               )}
-            </div>
-          )}
-
-          {/* Entity totals breakdown (type × stream) */}
-          {vm.role === 'entity' && vm.breakdownTotals.total > 0 && (
-            <div
-              style={{
-                background: '#fff',
-                border: '1px solid #E7ECF4',
-                borderRadius: 16,
-                padding: '17px 19px',
-              }}
-            >
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', marginBottom: 12 }}>
-                توزيع العناصر حسب المسار والنوع
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-                <thead>
-                  <tr>
-                    {['المسار', 'المشاريع / المبادرات', 'العمليات', 'الخدمات', 'الإجمالي'].map((h, i) => (
-                      <th
-                        key={h}
-                        style={{
-                          textAlign: i === 0 ? 'right' : 'center',
-                          padding: '7px 10px',
-                          color: '#8A97AD',
-                          fontWeight: 700,
-                          borderBottom: '1px solid #EEF1F7',
-                        }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {vm.breakdown
-                    .filter((r) => r.total > 0)
-                    .map((r) => (
-                      <tr key={r.name}>
-                        <td style={{ padding: '8px 10px', fontWeight: 700, color: '#33415C', borderBottom: '1px solid #F4F6FA' }}>
-                          {r.name}
-                        </td>
-                        {[
-                          String(r.projInit),
-                          r.hasOps ? String(r.operations) : '—',
-                          r.hasSvc ? String(r.services) : '—',
-                          String(r.total),
-                        ].map((v, i) => (
-                          <td
-                            key={i}
-                            style={{
-                              padding: '8px 10px',
-                              textAlign: 'center',
-                              color: v === '—' ? '#C3CDDE' : i === 3 ? '#13213C' : '#54627B',
-                              fontWeight: i === 3 ? 800 : 600,
-                              borderBottom: '1px solid #F4F6FA',
-                            }}
-                          >
-                            {v}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  <tr>
-                    <td style={{ padding: '9px 10px', fontWeight: 800, color: '#13213C' }}>الإجمالي</td>
-                    {[
-                      vm.breakdownTotals.projInit,
-                      vm.breakdownTotals.operations,
-                      vm.breakdownTotals.services,
-                      vm.breakdownTotals.total,
-                    ].map((v, i) => (
-                      <td
-                        key={i}
-                        style={{ padding: '9px 10px', textAlign: 'center', fontWeight: 800, color: '#13213C' }}
-                      >
-                        {v}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
             </div>
           )}
 
@@ -1437,6 +1361,7 @@ function KpiCard({
   grid,
   suffix,
   sub,
+  rows,
 }: {
   value: number;
   label: string;
@@ -1444,6 +1369,7 @@ function KpiCard({
   grid?: boolean;
   suffix?: string;
   sub?: string;
+  rows?: { label: string; value: number }[];
 }) {
   return (
     <div
@@ -1453,7 +1379,7 @@ function KpiCard({
         borderRadius: 16,
         padding: '15px 17px',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: rows && rows.length ? 'flex-start' : 'center',
         justifyContent: 'space-between',
       }}
     >
@@ -1466,6 +1392,28 @@ function KpiCard({
           )}
         </div>
         <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginTop: 5 }}>{label}</div>
+        {rows && rows.length > 0 && (
+          <div style={{ marginTop: 9, borderTop: '1px solid #F0F3F8', paddingTop: 8 }}>
+            {rows.map((r) => (
+              <div
+                key={r.label}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: '#8A97AD',
+                  padding: '2.5px 0',
+                }}
+              >
+                <span>{r.label}</span>
+                <span style={{ fontWeight: 800, color: '#33415C' }}>{r.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       <span
         style={{

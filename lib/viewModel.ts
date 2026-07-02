@@ -143,6 +143,13 @@ function build(s: Store) {
     services: roleBase.filter((i) => i.type === 'service').length,
     total: roleBase.length,
   };
+  // per-stream distribution shown INSIDE the type KPI cards (entity view)
+  const kpiDist = {
+    projInit: breakdown.filter((r) => r.projInit > 0).map((r) => ({ label: r.name, value: r.projInit })),
+    operations: breakdown
+      .filter((r) => r.hasOps)
+      .map((r) => ({ label: r.name, value: r.operations })),
+  };
 
   // ---- role flags ----
   const isAiRole = rawRole === 'ai';
@@ -346,6 +353,7 @@ function build(s: Store) {
     kpis,
     breakdown,
     breakdownTotals,
+    kpiDist,
     showOpsKpi: effActivePath === 'all' || streamHasType(effActivePath, 'operation'),
     showSvcKpi: effActivePath === 'all' || streamHasType(effActivePath, 'service'),
     notAiRole: !isAiRole,
