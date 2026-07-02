@@ -76,31 +76,33 @@ export const PIC: Record<string, string> = {
   services: 'M3 5h18v14H3zM3 9h18M6.2 7h.01',
 };
 
-// Allowed item types per path
+// Allowed item types per path — project & initiative are ONE merged type
 export type TypeOption = { key: ItemType; label: string };
 export function availTypes(path: string): TypeOption[] {
-  const base: TypeOption[] = [
-    { key: 'project', label: 'مشروع' },
-    { key: 'initiative', label: 'مبادرة' },
-  ];
+  const base: TypeOption[] = [{ key: 'project', label: 'مشروع / مبادرة' }];
   if (path === 'ops') base.push({ key: 'operation', label: 'عملية' });
   if (path === 'services') base.push({ key: 'service', label: 'خدمة' });
   return base;
 }
 
-// ---- 1.2 TYPE map ----------------------------------------------------------
+// ---- 1.2 TYPE map (project/initiative merged for display) ------------------
 export const TYPE: Record<ItemType, { label: string; color: string; bg: string }> = {
-  project: { label: 'مشروع', color: '#2563EB', bg: '#E5EEFF' },
-  initiative: { label: 'مبادرة', color: '#2563EB', bg: '#E5EEFF' },
+  project: { label: 'مشروع / مبادرة', color: '#2563EB', bg: '#E5EEFF' },
+  initiative: { label: 'مشروع / مبادرة', color: '#2563EB', bg: '#E5EEFF' },
   operation: { label: 'عملية', color: '#2563EB', bg: '#E5EEFF' },
   service: { label: 'خدمة', color: '#2563EB', bg: '#E5EEFF' },
 };
 
 export const typeLabel = (t: string): string =>
-  ({ project: 'مشروع', initiative: 'مبادرة', operation: 'عملية', service: 'خدمة' } as Record<
-    string,
-    string
-  >)[t] || 'عنصر';
+  ({
+    project: 'مشروع / مبادرة',
+    initiative: 'مشروع / مبادرة',
+    operation: 'عملية',
+    service: 'خدمة',
+  } as Record<string, string>)[t] || 'عنصر';
+
+// project & initiative count as one merged bucket
+export const isProjInit = (t: string): boolean => t === 'project' || t === 'initiative';
 
 // ---- 1.3 Roles -------------------------------------------------------------
 export const ROLE: Record<
@@ -315,6 +317,8 @@ export type Item = {
   expectedImprovement?: string;
   // execution batch the coordinator selects for this item (predefined milestone)
   execBatch?: string;
+  // the managed launch plan this item is attached to
+  launchPlanId?: string;
   // nested
   phases?: Phase[];
   milestones?: Record<string, unknown>[];
@@ -539,6 +543,24 @@ export function execMilestones(): Phase[] {
   ];
 }
 
+// Launch-eligible batches (الدفعات الأربع) — التقييم والتهيئة is excluded
+export function launchBatches(): Phase[] {
+  return execMilestones().filter((b) => b.name !== 'التقييم والتهيئة');
+}
+
+// Centrally managed launch plan (defined per batch via "إدارة خطط الإطلاق")
+export type LaunchPlan = {
+  id: string;
+  batch: string; // batch name (إطلاق الدفعة الأولى…الرابعة)
+  title: string;
+  ltype: string;
+  date: string;
+  desc: string;
+};
+
+// Item execution state set by the coordinator during creation
+export const START_STATES = ['لم يبدأ بعد', 'قيد التنفيذ', 'مكتمل'];
+
 export const TWO_STEP_PHASES: ProgramPhase[] = [
   {
     n: 'اعتماد اختيار أولويات التحول الذكي',
@@ -713,7 +735,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = 'mock2';
+export const SEED_V = 'mock4';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 

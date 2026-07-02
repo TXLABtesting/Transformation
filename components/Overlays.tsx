@@ -945,119 +945,28 @@ export function Overlays({ vm }: { vm: VM }) {
             </div>
 
             <div style={{ padding: '0 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* execution batch */}
-              <div>
-                <label style={assignLabel}>مرحلة التنفيذ (الدفعة)</label>
-                <select
-                  value={vm.assignModal.batch}
-                  onChange={(e) => s.setAssign({ batch: e.target.value })}
-                  style={assignInput}
-                >
-                  <option value="">دون تغيير الدفعة…</option>
-                  {vm.assignModal.batches.map((b) => (
-                    <option key={b.name} value={b.name}>
-                      {b.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* launch mode toggle */}
               <div>
                 <label style={assignLabel}>خطة الإطلاق</label>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {(
-                    [
-                      { k: 'existing', label: 'اختيار خطة إطلاق' },
-                      { k: 'new', label: 'إنشاء إطلاق جديد' },
-                    ] as { k: 'existing' | 'new'; label: string }[]
-                  ).map((o) => {
-                    const active = vm.assignModal!.launchMode === o.k;
-                    return (
-                      <button
-                        key={o.k}
-                        onClick={() => s.setAssign({ launchMode: o.k })}
-                        style={{
-                          flex: 1,
-                          border: 'none',
-                          borderRadius: 10,
-                          padding: '9px 0',
-                          fontWeight: 800,
-                          fontSize: 12.5,
-                          cursor: 'pointer',
-                          ...(active ? { background: '#0F1F3D', color: '#fff' } : { background: '#F4F7FC', color: '#54627B' }),
-                        }}
-                      >
-                        {o.label}
-                      </button>
-                    );
-                  })}
+                <select
+                  value={vm.assignModal.planId}
+                  onChange={(e) => s.setAssign({ planId: e.target.value })}
+                  style={assignInput}
+                >
+                  <option value="">اختر خطة إطلاق…</option>
+                  {vm.assignModal.planGroups.map((g) => (
+                    <optgroup key={g.batch} label={g.batch}>
+                      {g.plans.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 6 }}>
+                  ستُعيَّن الدفعة تلقائياً من خطة الإطلاق المختارة. لإضافة خطط جديدة استخدم «إدارة خطط الإطلاق».
                 </div>
               </div>
-
-              {vm.assignModal.launchMode === 'existing' && (
-                <div>
-                  <label style={assignLabel}>اختيار خطة إطلاق مشتركة</label>
-                  <select
-                    value={vm.assignModal.launchKey}
-                    onChange={(e) => s.setAssign({ launchKey: e.target.value })}
-                    style={assignInput}
-                  >
-                    <option value="">اختر خطة إطلاق مشتركة…</option>
-                    {vm.assignModal.existingLaunches.map((l) => (
-                      <option key={l.key} value={l.key}>
-                        {l.optLabel}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {vm.assignModal.launchMode === 'new' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div>
-                    <label style={assignLabel}>عنوان الإطلاق</label>
-                    <input
-                      value={vm.assignModal.newLaunch.title}
-                      onChange={(e) => s.setAssign({ newLaunch: { ...vm.assignModal!.newLaunch, title: e.target.value } })}
-                      placeholder="اكتب عنوان الإطلاق"
-                      style={assignInput}
-                    />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <div>
-                      <label style={assignLabel}>نوع الإطلاق</label>
-                      <select
-                        value={vm.assignModal.newLaunch.ltype}
-                        onChange={(e) => s.setAssign({ newLaunch: { ...vm.assignModal!.newLaunch, ltype: e.target.value } })}
-                        style={assignInput}
-                      >
-                        {LAUNCH_TYPES.map((t) => (
-                          <option key={t}>{t}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={assignLabel}>التاريخ المتوقع</label>
-                      <input
-                        type="date"
-                        value={vm.assignModal.newLaunch.date}
-                        onChange={(e) => s.setAssign({ newLaunch: { ...vm.assignModal!.newLaunch, date: e.target.value } })}
-                        style={assignInput}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label style={assignLabel}>وصف الإطلاق</label>
-                    <textarea
-                      value={vm.assignModal.newLaunch.desc}
-                      onChange={(e) => s.setAssign({ newLaunch: { ...vm.assignModal!.newLaunch, desc: e.target.value } })}
-                      rows={2}
-                      style={{ ...assignInput, resize: 'vertical' }}
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             <div style={{ padding: '16px 22px 20px', display: 'flex', gap: 10 }}>
@@ -1093,6 +1002,223 @@ export function Overlays({ vm }: { vm: VM }) {
                 }}
               >
                 تطبيق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= LAUNCH-PLAN MANAGER (إدارة خطط الإطلاق) ================= */}
+      {vm.launchPlansOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 60,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+            direction: 'rtl',
+          }}
+        >
+          <div
+            onClick={() => s.closeLaunchPlans()}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(8,18,40,.5)', animation: 'fadeIn .2s' }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: 760,
+              background: '#F4F7FC',
+              borderRadius: 20,
+              boxShadow: '0 30px 70px -24px rgba(2,12,35,.5)',
+              animation: 'fadeUp .3s',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '90vh',
+            }}
+          >
+            <div
+              style={{
+                background: '#fff',
+                borderBottom: '1px solid #E7ECF4',
+                borderRadius: '20px 20px 0 0',
+                padding: '18px 22px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 12,
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>إدارة خطط الإطلاق</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
+                  عرّف خطط الإطلاق لكل دفعة (الاسم، التاريخ، النوع، الوصف) — تُستخدم عند إنشاء العناصر وتعيينها.
+                </div>
+              </div>
+              <button
+                onClick={() => s.closeLaunchPlans()}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
+                  border: '1px solid #E7ECF4',
+                  background: '#fff',
+                  color: '#54627B',
+                  cursor: 'pointer',
+                  fontSize: 16,
+                  fontFamily: 'inherit',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {vm.launchPlanMgr.map((g) => (
+                <div
+                  key={g.batch}
+                  style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '15px 17px' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <div>
+                      <span style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>{g.batch}</span>
+                      {g.period && (
+                        <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 700, marginRight: 8 }}>
+                          {g.period}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => s.addLaunchPlan(g.batch)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        background: '#EAF0FE',
+                        color: '#2563EB',
+                        border: '1px solid #D9E4FD',
+                        borderRadius: 10,
+                        padding: '7px 11px',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      + إضافة إطلاق
+                    </button>
+                  </div>
+
+                  {g.plans.length === 0 && (
+                    <div
+                      style={{
+                        border: '1.5px dashed #DCE3EE',
+                        borderRadius: 12,
+                        padding: '13px 14px',
+                        textAlign: 'center',
+                        fontSize: 12,
+                        color: '#9AA6BC',
+                        fontWeight: 600,
+                      }}
+                    >
+                      لا توجد خطط إطلاق لهذه الدفعة بعد.
+                    </div>
+                  )}
+
+                  {g.plans.map((p) => (
+                    <div
+                      key={p.id}
+                      style={{
+                        border: '1px solid #EEF1F7',
+                        borderRadius: 13,
+                        padding: '12px 13px',
+                        marginBottom: 10,
+                        background: '#FAFCFF',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 10 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <label style={assignLabel}>اسم الإطلاق</label>
+                          <input
+                            value={p.title}
+                            onChange={(e) => s.updLaunchPlan(p.id, 'title', e.target.value)}
+                            placeholder="مثال: إطلاق خدمات المرحلة الأولى"
+                            style={assignInput}
+                          />
+                        </div>
+                        <div style={{ width: 150, flex: 'none' }}>
+                          <label style={assignLabel}>نوع الإطلاق</label>
+                          <select
+                            value={p.ltype}
+                            onChange={(e) => s.updLaunchPlan(p.id, 'ltype', e.target.value)}
+                            style={assignInput}
+                          >
+                            {LAUNCH_TYPES.map((t) => (
+                              <option key={t}>{t}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div style={{ width: 150, flex: 'none' }}>
+                          <label style={assignLabel}>التاريخ</label>
+                          <input
+                            type="date"
+                            value={p.date}
+                            onChange={(e) => s.updLaunchPlan(p.id, 'date', e.target.value)}
+                            style={assignInput}
+                          />
+                        </div>
+                        <button
+                          onClick={() => s.removeLaunchPlan(p.id)}
+                          style={{
+                            width: 34,
+                            height: 38,
+                            flex: 'none',
+                            borderRadius: 9,
+                            background: '#FCEEEF',
+                            color: '#D23B45',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: 13,
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div>
+                        <label style={assignLabel}>الوصف</label>
+                        <input
+                          value={p.desc}
+                          onChange={(e) => s.updLaunchPlan(p.id, 'desc', e.target.value)}
+                          placeholder="وصف مختصر للإطلاق أو الإعلان"
+                          style={assignInput}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ padding: '14px 20px 18px' }}>
+              <button
+                onClick={() => s.closeLaunchPlans()}
+                style={{
+                  width: '100%',
+                  background: BLUE_GRAD,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '13px 26px',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  boxShadow: BLUE_SHADOW,
+                }}
+              >
+                حفظ وإغلاق
               </button>
             </div>
           </div>

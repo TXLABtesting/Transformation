@@ -29,7 +29,8 @@ import {
   PATH_REPS,
   LAUNCH_TYPES,
 } from './domain';
-import { seedItems } from './seed';
+import { seedItems, seedLaunchPlans } from './seed';
+import type { LaunchPlan } from './domain';
 import { runItemReview, runScopeReview, runBulkReview, type ReviewResult } from './ai';
 
 export type MStep = 'path' | 'type' | 'method' | 'form' | 'review' | 'bulk' | 'bulkReview' | 'done';
@@ -43,17 +44,18 @@ export type Setup = {
 export type BulkRow = { title: string; desc: string; _v?: string; _note?: string };
 
 export type AssignState = {
-  batch: string;
-  launchMode: 'existing' | 'new';
-  launchKey: string;
-  newLaunch: { title: string; ltype: string; date: string; desc: string };
+  // bulk-assign now picks a centrally managed launch plan (implies the batch)
+  planId: string;
 };
 
 export type UiState = {
   // create wizard
   modalOpen: boolean;
   mStep: MStep;
+  method: 'manual' | 'bulk';
   draft: Item | null;
+  // manage-launch-plans panel
+  launchPlansOpen: boolean;
   fStep: number; // 1..5
   editingId: string | null;
   editCtx: { role: RoleKey; origWf: WfState } | null;
@@ -106,6 +108,7 @@ type State = {
   entityName: string;
   setupDone: boolean;
   items: Item[];
+  launchPlans: LaunchPlan[];
   readNotifs: string[];
   programStep: number;
   programPhases: ProgramPhase[];
@@ -227,6 +230,13 @@ type Actions = {
   setAssign: (patch: Partial<AssignState>) => void;
   closeAssign: () => void;
   applyAssign: () => void;
+  // manage launch plans
+  openLaunchPlans: () => void;
+  closeLaunchPlans: () => void;
+  addLaunchPlan: (batch: string) => void;
+  updLaunchPlan: (id: string, k: keyof LaunchPlan, v: string) => void;
+  removeLaunchPlan: (id: string) => void;
+  selectLaunchPlan: (planId: string) => void;
   openCancelFund: (id: string) => void;
   setCancelFundNote: (v: string) => void;
   confirmCancelFund: () => void;
@@ -269,6 +279,8 @@ function defaultUi(): UiState {
   return {
     modalOpen: false,
     mStep: 'path',
+    method: 'manual',
+    launchPlansOpen: false,
     draft: null,
     fStep: 1,
     editingId: null,
@@ -316,6 +328,7 @@ function initialState(): State {
     entityName: DEFAULT_ENTITY,
     setupDone: false,
     items: seedItems(),
+    launchPlans: seedLaunchPlans(),
     readNotifs: [],
     programStep: 1,
     programPhases: DEFAULT_PROGRAM_PHASES.map((p) => ({ ...p })),
@@ -375,6 +388,7 @@ export const useStore = create<Store>((set, get) => {
       setupDone: s.setupDone,
       seedV: SEED_V,
       items: s.items,
+      launchPlans: s.launchPlans,
       phase: s.phase,
       setup: s.setup,
       readNotifs: s.readNotifs,
@@ -422,9 +436,15 @@ export const useStore = create<Store>((set, get) => {
         saved = null;
       }
       if (saved) {
-        const items = saved.seedV === SEED_V && Array.isArray(saved.items) ? (saved.items as Item[]) : seedItems();
+        const fresh = saved.seedV !== SEED_V;
+        const items = !fresh && Array.isArray(saved.items) ? (saved.items as Item[]) : seedItems();
+        const launchPlans =
+          !fresh && Array.isArray(saved.launchPlans)
+            ? (saved.launchPlans as LaunchPlan[])
+            : seedLaunchPlans();
         set((s) => ({
           ...s,
+          launchPlans,
           view: (saved!.view as State['view']) || 'login',
           lang: (saved!.lang as State['lang']) || 'ar',
           entityName: (saved!.entityName as string) || DEFAULT_ENTITY,
@@ -590,31 +610,45 @@ export const useStore = create<Store>((set, get) => {
         notifOpen: false,
       };
       if (s.role === 'coord') {
-        // path-rep (coord) skips path selection → straight to type within own stream
-        setUi({ ...common, mStep: 'type', draft: blankItem('project', s.myPath), activePath: s.myPath });
+        // coord starts by picking HOW to add (bulk / manual), then the type
+        setUi({
+          ...common,
+          mStep: 'method',
+          method: 'manual',
+          draft: blankItem('project', s.myPath),
+          activePath: s.myPath,
+        });
       } else {
         setUi({ ...common, mStep: 'path' });
       }
     },
     closeModal: () => setUi({ modalOpen: false, draft: null, editingId: null }),
     mSetPath: (pid) => {
-      set((s) => ({ ui: { ...s.ui, draft: blankItem('project', pid), mStep: 'type' } }));
+      set((s) => ({ ui: { ...s.ui, draft: blankItem('project', pid), mStep: 'method' } }));
     },
     mSetType: (t) => {
       const s = get();
       const path = s.ui.draft?.path || s.myPath;
-      set((st) => ({ ui: { ...st.ui, draft: blankItem(t, path), mStep: 'method' } }));
+      set((st) => ({
+        ui: {
+          ...st.ui,
+          draft: blankItem(t, path),
+          mStep: st.ui.method === 'bulk' ? 'bulk' : 'form',
+          fStep: 1,
+        },
+      }));
     },
-    chooseManual: () => setUi({ mStep: 'form', fStep: 1 }),
-    chooseBulk: () => setUi({ mStep: 'bulk' }),
+    chooseManual: () => setUi({ method: 'manual', mStep: 'type' }),
+    chooseBulk: () => setUi({ method: 'bulk', mStep: 'type' }),
     mBack: () => {
+      // flow: (path) → method → type → form|bulk
       const s = get();
-      const order: MStep[] = ['path', 'type', 'method', 'form'];
+      const order: MStep[] = ['path', 'method', 'type', 'form'];
       const idx = order.indexOf(s.ui.mStep);
-      if (s.ui.mStep === 'bulk') return setUi({ mStep: 'method' });
+      if (s.ui.mStep === 'bulk') return setUi({ mStep: 'type' });
       if (s.ui.mStep === 'bulkReview') return setUi({ mStep: 'bulk' });
       if (idx > 0) {
-        // coord: don't go back past type
+        // coord: don't go back past method (no path selection)
         const min = s.role === 'coord' ? 1 : 0;
         setUi({ mStep: order[Math.max(min, idx - 1)] });
       }
@@ -633,9 +667,9 @@ export const useStore = create<Store>((set, get) => {
         setUi({ fStep: 4 });
         return toast('يجب إدخال نطاق العمل والميزانية قبل الإرسال للاعتماد');
       }
-      // a launch plan is mandatory: at least one launch (shared or new)
-      if (d && !(d.launches || []).some((l) => (l.title || '').trim())) {
-        return toast('أضف خطة إطلاق واحدة على الأقل (مشتركة أو جديدة) قبل الإرسال للاعتماد');
+      // a launch plan is mandatory
+      if (d && !d.launchPlanId && !(d.launches || []).some((l) => (l.title || '').trim())) {
+        return toast('اختر خطة إطلاق قبل الإرسال للاعتماد');
       }
       get().submitItem();
     },
@@ -987,16 +1021,7 @@ export const useStore = create<Store>((set, get) => {
         },
       })),
     clearAssignSel: () => setUi({ assignSel: [] }),
-    openAssign: () =>
-      setUi({
-        assign: {
-          batch: '',
-          // a launch plan is required: pick an existing shared one or create new
-          launchMode: 'existing',
-          launchKey: '',
-          newLaunch: { title: '', ltype: LAUNCH_TYPES[0], date: '', desc: '' },
-        },
-      }),
+    openAssign: () => setUi({ assign: { planId: '' } }),
     setAssign: (patch) =>
       set((s) => (s.ui.assign ? { ui: { ...s.ui, assign: { ...s.ui.assign, ...patch } } } : {})),
     closeAssign: () => setUi({ assign: null }),
@@ -1004,42 +1029,92 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const a = s.ui.assign;
       if (!a) return;
+      const plan = s.launchPlans.find((p) => p.id === a.planId);
+      if (!plan) return toast('اختر خطة إطلاق أولاً');
       const ids = s.ui.assignSel;
-      // a launch plan is required — either an existing shared one or a new one
-      if (a.launchMode === 'existing' && !a.launchKey)
-        return toast('اختر خطة إطلاق مشتركة أولاً');
-      if (a.launchMode === 'new' && !a.newLaunch.title.trim())
-        return toast('أدخل اسم الإطلاق الجديد أولاً');
-      // find an existing launch across all items by key (title|date)
-      let found: Launch | undefined;
-      if (a.launchMode === 'existing' && a.launchKey) {
-        for (const it of s.items) {
-          const m = (it.launches || []).find((l) => l.title && l.title + '|' + l.date === a.launchKey);
-          if (m) {
-            found = m;
-            break;
-          }
-        }
-      }
       set((st) => ({
         items: st.items.map((it) => {
           if (!ids.includes(it.id)) return it;
-          const patch: Partial<Item> = {};
-          if (a.batch) patch.execBatch = a.batch;
-          if (a.launchMode === 'existing' && found) {
-            patch.launches = [...(it.launches || []), { ...found, shared: true }];
-          } else if (a.launchMode === 'new' && a.newLaunch.title) {
-            patch.launches = [
-              ...(it.launches || []),
-              { ...a.newLaunch, shared: true, status: 'مخطط', done: false },
-            ];
-          }
-          return { ...it, ...patch };
+          return {
+            ...it,
+            execBatch: plan.batch,
+            launchPlanId: plan.id,
+            launches: [
+              {
+                title: plan.title,
+                ltype: plan.ltype,
+                date: plan.date,
+                desc: plan.desc,
+                shared: true,
+                status: 'مخطط',
+                done: false,
+              },
+            ],
+          };
         }),
         ui: { ...st.ui, assignSel: [], assign: null },
       }));
       persist();
-      toast('تم تعيين خطة التنفيذ/الإطلاق للعناصر المحددة');
+      toast('تم تعيين خطة التنفيذ والإطلاق للعناصر المحددة');
+    },
+
+    // ---- manage launch plans (إدارة خطط الإطلاق) ----
+    openLaunchPlans: () => setUi({ launchPlansOpen: true }),
+    closeLaunchPlans: () => {
+      setUi({ launchPlansOpen: false });
+      persist();
+    },
+    addLaunchPlan: (batch: string) => {
+      set((s) => ({
+        launchPlans: [
+          ...s.launchPlans,
+          { id: 'lp' + Date.now(), batch, title: '', ltype: LAUNCH_TYPES[0], date: '', desc: '' },
+        ],
+      }));
+    },
+    updLaunchPlan: (id: string, k: keyof LaunchPlan, v: string) => {
+      set((s) => ({
+        launchPlans: s.launchPlans.map((p) => (p.id === id ? { ...p, [k]: v } : p)),
+      }));
+    },
+    removeLaunchPlan: (id: string) => {
+      set((s) => ({ launchPlans: s.launchPlans.filter((p) => p.id !== id) }));
+    },
+    selectLaunchPlan: (planId: string) => {
+      const s = get();
+      const plan = s.launchPlans.find((p) => p.id === planId);
+      set((st) => {
+        if (!st.ui.draft) return {};
+        if (!plan) {
+          return {
+            ui: {
+              ...st.ui,
+              draft: { ...st.ui.draft, launchPlanId: '', execBatch: '', launches: [] },
+            },
+          };
+        }
+        return {
+          ui: {
+            ...st.ui,
+            draft: {
+              ...st.ui.draft,
+              launchPlanId: plan.id,
+              execBatch: plan.batch,
+              launches: [
+                {
+                  title: plan.title,
+                  ltype: plan.ltype,
+                  date: plan.date,
+                  desc: plan.desc,
+                  shared: true,
+                  status: 'مخطط',
+                  done: false,
+                },
+              ],
+            },
+          },
+        };
+      });
     },
     openCancelFund: (id) => setUi({ cancelFund: { id, note: '' } }),
     setCancelFundNote: (v) => set((s) => (s.ui.cancelFund ? { ui: { ...s.ui, cancelFund: { ...s.ui.cancelFund, note: v } } } : {})),

@@ -25,6 +25,7 @@ import {
   transformScore,
   stageWeight,
   isEntityApproved,
+  isProjInit,
   execAllDone,
   parseBudget,
   formatMoney,
@@ -36,6 +37,8 @@ import {
   daysLeft,
   countdown,
   execMilestones,
+  launchBatches,
+  START_STATES,
   DEFAULT_PROGRAM_PHASES,
   TWO_STEP_PHASES,
   type Item,
@@ -85,7 +88,10 @@ function build(s: Store) {
   }
   let visible = roleBase.slice();
   if (effActivePath !== 'all') visible = visible.filter((i) => i.path === effActivePath);
-  if (ui.filter !== 'all') visible = visible.filter((i) => i.type === ui.filter);
+  if (ui.filter !== 'all')
+    visible = visible.filter((i) =>
+      ui.filter === 'projinit' ? isProjInit(i.type) : i.type === ui.filter
+    );
   // status filter
   if (ui.statusFilter !== 'all') visible = visible.filter((i) => statusMatch(i, ui.statusFilter, rawRole, s));
   // entity filter (ai/path)
@@ -100,12 +106,39 @@ function build(s: Store) {
   const completion = scope.length
     ? Math.round(scope.reduce((a, i) => a + stageWeight(i), 0) / scope.length)
     : 0;
+  const avgOf = (vals: number[]) =>
+    vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+  const completedCount = cnt((i) => wfOf(i) === 'done');
   const kpis = {
-    projects: cnt((i) => i.type === 'project'),
-    initiatives: cnt((i) => i.type === 'initiative'),
+    total: scope.length,
+    projInit: cnt((i) => isProjInit(i.type)),
     operations: cnt((i) => i.type === 'operation'),
     services: cnt((i) => i.type === 'service'),
     completion,
+    // agentification metrics
+    avgTargetPct: avgOf(scope.map((i) => i.targetPct).filter((v): v is number => v != null && v > 0)),
+    avgAutomationPct: avgOf(scope.map((i) => i.automationPct).filter((v): v is number => v != null)),
+    completedCount,
+    completedPct: scope.length ? Math.round((completedCount / scope.length) * 100) : 0,
+  };
+
+  // ---- entity totals breakdown: type × stream ----
+  const breakdown = PATHS.map((p) => {
+    const inStream = roleBase.filter((i) => i.path === p.id);
+    return {
+      name: p.name,
+      projInit: inStream.filter((i) => isProjInit(i.type)).length,
+      operations: inStream.filter((i) => i.type === 'operation').length,
+      services: inStream.filter((i) => i.type === 'service').length,
+      total: inStream.length,
+    };
+  });
+  const breakdownTotals = {
+    name: 'الإجمالي',
+    projInit: roleBase.filter((i) => isProjInit(i.type)).length,
+    operations: roleBase.filter((i) => i.type === 'operation').length,
+    services: roleBase.filter((i) => i.type === 'service').length,
+    total: roleBase.length,
   };
 
   // ---- role flags ----
@@ -118,7 +151,7 @@ function build(s: Store) {
   // ---- path rail ----
   const railPaths = PATHS.filter((p) => role !== 'path' || p.id === myPath);
   const pathRail = railPaths.map((p) => {
-    const count = base.filter((i) => i.path === p.id).length;
+    const count = roleBase.filter((i) => i.path === p.id).length;
     const active = ui.activePath === p.id;
     return {
       id: p.id,
@@ -130,7 +163,7 @@ function build(s: Store) {
       onClick: () => s.setActivePath(p.id),
     };
   });
-  const totalCount = base.length;
+  const totalCount = roleBase.length;
 
   // ---- active path title + summary ----
   const activePathName: string =
@@ -300,6 +333,8 @@ function build(s: Store) {
     activePathName,
     streamSummary,
     kpis,
+    breakdown,
+    breakdownTotals,
     showOpsKpi: effActivePath === 'all' || effActivePath === 'ops',
     showSvcKpi: effActivePath === 'all' || effActivePath === 'services',
     notAiRole: !isAiRole,
@@ -327,12 +362,16 @@ function build(s: Store) {
     assignBar: { show: rawRole === 'coord' && ui.assignSel.length > 0, count: ui.assignSel.length },
     assignModal: ui.assign
       ? {
-          ...ui.assign,
-          batches: execMilestones().map((mm) => ({
-            name: mm.name,
-            label: mm.period ? mm.name + ' · ' + mm.period : mm.name,
-          })),
-          existingLaunches: gatherExistingLaunches(s, new Set<string>()),
+          planId: ui.assign.planId,
+          planGroups: launchBatches().map((b) => ({
+            batch: b.name,
+            plans: s.launchPlans
+              .filter((p) => p.batch === b.name)
+              .map((p) => ({
+                id: p.id,
+                label: p.title + ' · ' + (p.date || 'بدون تاريخ') + (p.ltype ? ' · ' + p.ltype : ''),
+              })),
+          })).filter((g) => g.plans.length > 0),
         }
       : null,
     // detail
@@ -341,6 +380,13 @@ function build(s: Store) {
     // create modal
     modal,
     modalOpen: ui.modalOpen,
+    // launch-plan manager (إدارة خطط الإطلاق)
+    launchPlansOpen: ui.launchPlansOpen,
+    launchPlanMgr: launchBatches().map((b) => ({
+      batch: b.name,
+      period: b.period || '',
+      plans: s.launchPlans.filter((p) => p.batch === b.name),
+    })),
     // team panel
     teamOpen: ui.teamOpen,
     tmRep: s.setup.rep,
@@ -404,11 +450,10 @@ function summaryText(activePath: string): string {
 }
 
 function tabDefs(activePath: string, _scope: Item[]) {
-  // option label mirrors the design's plain `t.label` — no live count suffix
+  // project & initiative are one merged bucket
   const defs: { key: string; label: string; optLabel: string }[] = [
     { key: 'all', label: 'كل الأنواع', optLabel: 'كل الأنواع' },
-    { key: 'project', label: 'المشاريع', optLabel: 'المشاريع' },
-    { key: 'initiative', label: 'المبادرات', optLabel: 'المبادرات' },
+    { key: 'projinit', label: 'المشاريع / المبادرات', optLabel: 'المشاريع / المبادرات' },
   ];
   if (activePath === 'all' || activePath === 'ops')
     defs.push({ key: 'operation', label: 'العمليات', optLabel: 'العمليات' });
@@ -956,42 +1001,6 @@ function buildLogRows(i: Item) {
   return rows;
 }
 
-// De-duplicated launch plans gathered across all items (for sharing). Any
-// launch whose title is already present in `excludeTitles` is dropped.
-function gatherExistingLaunches(s: Store, excludeTitles: Set<string>) {
-  const seen = new Set<string>();
-  const out: {
-    key: string;
-    title: string;
-    ltype: string;
-    date: string;
-    dateFmt: string;
-    desc: string;
-    itemTitle: string;
-    optLabel: string;
-  }[] = [];
-  for (const it of s.items) {
-    for (const l of it.launches || []) {
-      if (!l.title || excludeTitles.has(l.title)) continue;
-      const key = l.title + '|' + l.date;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push({
-        key,
-        title: l.title,
-        ltype: l.ltype,
-        date: l.date,
-        dateFmt: fmtDate(l.date),
-        desc: l.desc || '',
-        itemTitle: it.title,
-        // launch name · owning item · date — so shared plans are unambiguous
-        optLabel: l.title + ' — ' + it.title + ' · ' + fmtDate(l.date),
-      });
-    }
-  }
-  return out;
-}
-
 function buildModal(s: Store) {
   const ui = s.ui;
   const draft = ui.draft;
@@ -1021,7 +1030,7 @@ function buildModal(s: Store) {
     'حدّد الأولوية وقابلية التحول',
     'النتائج والأثر المستهدف',
     'نطاق العمل والميزانية والمرفقات',
-    'المراحل الربعية وخطة الإطلاق',
+    'اختر خطة الإطلاق وحالة العنصر',
   ];
   return {
     mStep: ui.mStep,
@@ -1048,11 +1057,33 @@ function buildModal(s: Store) {
     fStepTitle: fTitles[ui.fStep - 1] || '',
     fStepHint: fHints[ui.fStep - 1] || '',
     fNextLabel: ui.fStep >= 5 ? 'إرسال للاعتماد' : 'التالي',
-    // shared launch plans that can be picked into this draft
-    existingLaunches: gatherExistingLaunches(
-      s,
-      new Set((draft?.launches || []).map((l) => l.title).filter(Boolean) as string[])
-    ),
+    // centrally-managed launch plans (grouped by batch) selectable for this draft
+    launchPlanGroups: launchBatches()
+      .map((b) => ({
+        batch: b.name,
+        period: b.period || '',
+        plans: s.launchPlans
+          .filter((p) => p.batch === b.name)
+          .map((p) => ({
+            id: p.id,
+            label: p.title + ' · ' + (p.date || 'بدون تاريخ') + (p.ltype ? ' · ' + p.ltype : ''),
+          })),
+      }))
+      .filter((g) => g.plans.length > 0),
+    selectedLaunchPlan: (() => {
+      const p = s.launchPlans.find((x) => x.id === draft?.launchPlanId);
+      return p
+        ? {
+            title: p.title,
+            batch: p.batch,
+            period: launchBatches().find((b) => b.name === p.batch)?.period || '',
+            ltype: p.ltype,
+            date: p.date,
+            desc: p.desc,
+          }
+        : null;
+    })(),
+    startStates: START_STATES,
     // ai review
     aiLoading: ui.aiLoading,
     aiResult: ui.aiResult,

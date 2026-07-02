@@ -1034,39 +1034,42 @@ function FBudget({
   );
 }
 
-// F-PHASES + F-LAUNCH (step5)
+// F-PHASES: execution & launch plan (step 5) — pick a managed launch plan + start state
 function FPhases({ vm }: { vm: VM }) {
   const m = vm.modal;
   const s = vm.store;
   const draft = m.draft;
-  const phases = draft?.phases || [];
-  const launches = draft?.launches || [];
-  const batchIdx = draft?.execBatch ? phases.findIndex((ph) => ph.name === draft.execBatch) : -1;
-  const selectedBatch = batchIdx >= 0 ? phases[batchIdx] : undefined;
-  const subs = selectedBatch?.subs || [];
+  const sel = m.selectedLaunchPlan;
 
   return (
     <div>
-      {/* step title/hint come from the stepper — no duplicate header here */}
-
-      {/* execution-batch selector (coordinator only picks the batch) */}
+      {/* launch plan selector (batch is derived from the plan) */}
       <div style={cardStyle}>
-        <label style={labelStyle}>مرحلة التنفيذ (الدفعة)</label>
+        <label style={labelStyle}>
+          خطة الإطلاق <span style={{ color: '#D23B45' }}>*</span>
+        </label>
         <select
-          value={draft?.execBatch || ''}
-          onChange={(e) => s.setDraftField('execBatch', e.target.value)}
+          value={draft?.launchPlanId || ''}
+          onChange={(e) => s.selectLaunchPlan(e.target.value)}
           style={inputStyle}
         >
-          <option value="">اختر الدفعة…</option>
-          {phases.map((ph, pi) => (
-            <option key={pi} value={ph.name}>
-              {ph.name}
-              {ph.period ? ' · ' + ph.period : ''}
-            </option>
+          <option value="">اختر خطة إطلاق…</option>
+          {m.launchPlanGroups.map((g) => (
+            <optgroup key={g.batch} label={g.period ? g.batch + ' · ' + g.period : g.batch}>
+              {g.plans.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
+        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 7, lineHeight: 1.7 }}>
+          تُحدَّد دفعة التنفيذ تلقائياً من خطة الإطلاق المختارة. تُدار خطط الإطلاق مركزياً من لوحة التحكم
+          («إدارة خطط الإطلاق»).
+        </div>
 
-        {selectedBatch && (
+        {sel && (
           <div
             style={{
               marginTop: 12,
@@ -1077,280 +1080,80 @@ function FPhases({ vm }: { vm: VM }) {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49' }}>
-                {selectedBatch.name}
+              <span style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49' }}>{sel.title}</span>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  background: '#EAF0FE',
+                  borderRadius: 999,
+                  padding: '3px 9px',
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  color: '#2563EB',
+                }}
+              >
+                {sel.batch}
+                {sel.period ? ' · ' + sel.period : ''}
               </span>
-              {selectedBatch.period && (
+              {sel.date && (
                 <span
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 5,
-                    background: '#EAF0FE',
+                    background: '#EEF1F7',
                     borderRadius: 999,
                     padding: '3px 9px',
                     fontSize: 10.5,
                     fontWeight: 700,
-                    color: '#2563EB',
+                    color: '#54627B',
                   }}
                 >
-                  <Icon d={IC.calendar} size={12} color="#2563EB" />
-                  {selectedBatch.period}
+                  <Icon d={IC.calendar} size={12} color="#54627B" />
+                  {sel.date}
+                </span>
+              )}
+              {sel.ltype && (
+                <span
+                  style={{
+                    background: '#EEF1F7',
+                    borderRadius: 999,
+                    padding: '3px 9px',
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    color: '#54627B',
+                  }}
+                >
+                  {sel.ltype}
                 </span>
               )}
             </div>
-            {selectedBatch.desc && (
-              <div style={{ fontSize: 11.5, color: '#54627B', marginTop: 5, lineHeight: 1.6 }}>
-                {selectedBatch.desc}
-              </div>
+            {sel.desc && (
+              <div style={{ fontSize: 11.5, color: '#54627B', marginTop: 6, lineHeight: 1.7 }}>{sel.desc}</div>
             )}
           </div>
         )}
       </div>
 
-      {/* sub-milestones for the selected batch (item-specific) */}
-      {batchIdx >= 0 && (
-        <div style={cardStyle}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49' }}>
-            المراحل الفرعية (خاصة بهذا العنصر)
-          </div>
-          <p style={{ fontSize: 11.5, color: '#9AA6BC', margin: '4px 0 12px', lineHeight: 1.7 }}>
-            أضف مراحل فرعية داخل الدفعة المختارة إن لزم.
-          </p>
-
-          {subs.map((sub, si) => (
-            <div key={si} style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 10 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <label style={labelStyle}>اسم المرحلة الفرعية</label>
-                <input
-                  value={sub.name || ''}
-                  onChange={(e) => s.updSub(batchIdx, si, 'name', e.target.value)}
-                  placeholder="مثال: تحليل المتطلبات"
-                  style={inputStyle}
-                />
-              </div>
-              <div style={{ width: 130, flex: 'none' }}>
-                <label style={labelStyle}>البداية</label>
-                <input
-                  type="date"
-                  value={sub.start || ''}
-                  onChange={(e) => s.updSub(batchIdx, si, 'start', e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-              <div style={{ width: 130, flex: 'none' }}>
-                <label style={labelStyle}>النهاية</label>
-                <input
-                  type="date"
-                  value={sub.end || ''}
-                  onChange={(e) => s.updSub(batchIdx, si, 'end', e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-              <button
-                onClick={() => s.removeSub(batchIdx, si)}
-                style={{
-                  width: 32,
-                  height: 32,
-                  flex: 'none',
-                  borderRadius: 8,
-                  background: '#FCEEEF',
-                  color: '#D23B45',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontFamily: 'inherit',
-                }}
-              >
-                ✕
-              </button>
-            </div>
+      {/* item start state */}
+      <div style={cardStyle}>
+        <label style={labelStyle}>حالة العنصر عند الإدراج</label>
+        <select
+          value={draft?.status || 'لم يبدأ بعد'}
+          onChange={(e) => s.setDraftField('status', e.target.value)}
+          style={inputStyle}
+        >
+          {m.startStates.map((st) => (
+            <option key={st} value={st}>
+              {st}
+            </option>
           ))}
-
-          <button
-            onClick={() => s.addSub(batchIdx)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              background: '#EAF0FE',
-              color: '#2563EB',
-              border: '1px solid #D9E4FD',
-              borderRadius: 11,
-              padding: '8px 12px',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            <Icon d={IC.plus} size={14} color="#2563EB" />
-            إضافة مرحلة فرعية
-          </button>
+        </select>
+        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 7 }}>
+          هل هذا العنصر لم يبدأ بعد، قيد التنفيذ حالياً، أم مكتمل؟
         </div>
-      )}
-
-      {/* launch plan */}
-      <div style={{ borderTop: '1px dashed #CDD8EA', marginTop: 6, paddingTop: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49' }}>خطة الإطلاق</div>
-            <p style={{ fontSize: 11.5, color: '#9AA6BC', margin: '4px 0 0' }}>
-              أضف إطلاقاً واحداً أو أكثر مرتبطاً بالمراحل.
-            </p>
-          </div>
-          <button
-            onClick={() => s.addLaunch()}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              background: '#EAF0FE',
-              color: '#2563EB',
-              border: '1px solid #D9E4FD',
-              borderRadius: 11,
-              padding: '8px 12px',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              flex: 'none',
-              fontFamily: 'inherit',
-            }}
-          >
-            <Icon d={IC.plus} size={14} color="#2563EB" />
-            إضافة إطلاق
-          </button>
-        </div>
-
-        {/* pick an existing (shared) launch plan */}
-        {m.existingLaunches.length > 0 && (
-          <div style={{ marginTop: 12 }}>
-            <label style={labelStyle}>اختيار خطة إطلاق مشتركة</label>
-            <select
-              value=""
-              onChange={(e) => {
-                const chosen = m.existingLaunches.find((l) => l.key === e.target.value);
-                if (chosen)
-                  s.addSharedLaunch({
-                    title: chosen.title,
-                    ltype: chosen.ltype,
-                    date: chosen.date,
-                    desc: chosen.desc,
-                  });
-              }}
-              style={inputStyle}
-            >
-              <option value="">اختر خطة إطلاق مشتركة…</option>
-              {m.existingLaunches.map((l) => (
-                <option key={l.key} value={l.key}>
-                  {l.optLabel}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {launches.length === 0 && (
-          <div
-            style={{
-              border: '1.5px dashed #CDD8EA',
-              background: '#FAFCFF',
-              borderRadius: 12,
-              padding: '18px 14px',
-              textAlign: 'center',
-              fontSize: 12.5,
-              color: '#9AA6BC',
-              fontWeight: 600,
-              marginTop: 12,
-            }}
-          >
-            لا توجد إطلاقات بعد. أضف إطلاقاً عند الحاجة.
-          </div>
-        )}
-
-        {launches.map((lc, i) => (
-          <div key={i} style={{ ...cardStyle, marginTop: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>
-                  {[
-                    'الإطلاق الأول',
-                    'الإطلاق الثاني',
-                    'الإطلاق الثالث',
-                    'الإطلاق الرابع',
-                    'الإطلاق الخامس',
-                    'الإطلاق السادس',
-                    'الإطلاق السابع',
-                    'الإطلاق الثامن',
-                  ][i] || 'الإطلاق ' + (i + 1)}
-                </span>
-                {lc.shared && (
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 800,
-                      color: '#0E7C86',
-                      background: '#DCF3F5',
-                      borderRadius: 999,
-                      padding: '3px 9px',
-                    }}
-                  >
-                    مشتركة
-                  </span>
-                )}
-              </span>
-              <button
-                onClick={() => s.removeLaunch(i)}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: '#FCEEEF',
-                  color: '#D23B45',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontFamily: 'inherit',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-              <div>
-                <label style={labelStyle}>نوع الإطلاق</label>
-                <select
-                  value={lc.ltype || LAUNCH_TYPES[0]}
-                  onChange={(e) => s.updLaunch(i, 'ltype', e.target.value)}
-                  style={inputStyle}
-                >
-                  {LAUNCH_TYPES.map((t) => (
-                    <option key={t}>{t}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>التاريخ المتوقع</label>
-                <input
-                  type="date"
-                  value={lc.date || ''}
-                  onChange={(e) => s.updLaunch(i, 'date', e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-            </div>
-            <div>
-              <label style={labelStyle}>وصف الإطلاق / الإعلان</label>
-              <textarea
-                value={lc.desc || ''}
-                onChange={(e) => s.updLaunch(i, 'desc', e.target.value)}
-                placeholder="مثال: إطلاق المرحلة الأولى من نظام الرد الآلي الذكي..."
-                rows={2}
-                style={{ ...inputStyle, resize: 'vertical' }}
-              />
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );

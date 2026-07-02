@@ -1012,26 +1012,49 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </select>
               )}
               {vm.showAddBtn && (
-                <button
-                  onClick={s.openCreate}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    height: 40,
-                    padding: '0 18px',
-                    background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 11,
-                    fontWeight: 800,
-                    fontSize: 13.5,
-                    cursor: 'pointer',
-                    boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
-                  }}
-                >
-                  <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديد
-                </button>
+                <>
+                  <button
+                    onClick={() => s.openLaunchPlans()}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      height: 40,
+                      padding: '0 16px',
+                      background: '#fff',
+                      color: '#33415C',
+                      border: '1px solid #DCE3EE',
+                      borderRadius: 11,
+                      fontWeight: 800,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <Icon d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" size={16} color="#54627B" />
+                    إدارة خطط الإطلاق
+                  </button>
+                  <button
+                    onClick={s.openCreate}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      height: 40,
+                      padding: '0 18px',
+                      background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 11,
+                      fontWeight: 800,
+                      fontSize: 13.5,
+                      cursor: 'pointer',
+                      boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
+                    }}
+                  >
+                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديد
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -1084,15 +1107,113 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </div>
               )}
               <KpiCard
-                value={vm.kpis.projects}
-                label="المشاريع"
+                value={vm.kpis.projInit}
+                label="المشاريع / المبادرات"
                 iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
               />
-              <KpiCard value={vm.kpis.initiatives} label="المبادرات" iconD="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />
               {vm.showOpsKpi && (
                 <KpiCard value={vm.kpis.operations} label="العمليات" iconD="M3 6h18M3 12h18M3 18h18" />
               )}
               {vm.showSvcKpi && <KpiCard value={vm.kpis.services} label="الخدمات" grid />}
+              {(vm.role === 'entity' || vm.role === 'coord') && (
+                <>
+                  <KpiCard
+                    value={vm.kpis.avgTargetPct}
+                    suffix="%"
+                    label="متوسط نسبة الأجينتة المستهدفة"
+                    iconD="M12 2v20M2 12h20"
+                  />
+                  <KpiCard
+                    value={vm.kpis.avgAutomationPct}
+                    suffix="%"
+                    label="متوسط نسبة الأتمتة الحالية"
+                    iconD="M4 4h16v16H4zM9 9h6v6H9z"
+                  />
+                  <KpiCard
+                    value={vm.kpis.completedCount}
+                    sub={vm.kpis.completedPct + '%'}
+                    label="عناصر مكتملة"
+                    iconD="M20 6 9 17l-5-5"
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Entity totals breakdown (type × stream) */}
+          {vm.role === 'entity' && vm.breakdownTotals.total > 0 && (
+            <div
+              style={{
+                background: '#fff',
+                border: '1px solid #E7ECF4',
+                borderRadius: 16,
+                padding: '17px 19px',
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', marginBottom: 12 }}>
+                توزيع العناصر حسب المسار والنوع
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                <thead>
+                  <tr>
+                    {['المسار', 'المشاريع / المبادرات', 'العمليات', 'الخدمات', 'الإجمالي'].map((h, i) => (
+                      <th
+                        key={h}
+                        style={{
+                          textAlign: i === 0 ? 'right' : 'center',
+                          padding: '7px 10px',
+                          color: '#8A97AD',
+                          fontWeight: 700,
+                          borderBottom: '1px solid #EEF1F7',
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {vm.breakdown
+                    .filter((r) => r.total > 0)
+                    .map((r) => (
+                      <tr key={r.name}>
+                        <td style={{ padding: '8px 10px', fontWeight: 700, color: '#33415C', borderBottom: '1px solid #F4F6FA' }}>
+                          {r.name}
+                        </td>
+                        {[r.projInit, r.operations, r.services, r.total].map((v, i) => (
+                          <td
+                            key={i}
+                            style={{
+                              padding: '8px 10px',
+                              textAlign: 'center',
+                              color: i === 3 ? '#13213C' : '#54627B',
+                              fontWeight: i === 3 ? 800 : 600,
+                              borderBottom: '1px solid #F4F6FA',
+                            }}
+                          >
+                            {v}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  <tr>
+                    <td style={{ padding: '9px 10px', fontWeight: 800, color: '#13213C' }}>الإجمالي</td>
+                    {[
+                      vm.breakdownTotals.projInit,
+                      vm.breakdownTotals.operations,
+                      vm.breakdownTotals.services,
+                      vm.breakdownTotals.total,
+                    ].map((v, i) => (
+                      <td
+                        key={i}
+                        style={{ padding: '9px 10px', textAlign: 'center', fontWeight: 800, color: '#13213C' }}
+                      >
+                        {v}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
             </div>
           )}
 
@@ -1288,11 +1409,15 @@ function KpiCard({
   label,
   iconD,
   grid,
+  suffix,
+  sub,
 }: {
   value: number;
   label: string;
   iconD?: string;
   grid?: boolean;
+  suffix?: string;
+  sub?: string;
 }) {
   return (
     <div
@@ -1307,7 +1432,13 @@ function KpiCard({
       }}
     >
       <div>
-        <div style={{ fontSize: 25, fontWeight: 800, color: '#13213C' }}>{value}</div>
+        <div style={{ fontSize: 25, fontWeight: 800, color: '#13213C' }}>
+          {value}
+          {suffix && <span style={{ fontSize: 15, color: '#9AA6BC' }}>{suffix}</span>}
+          {sub && (
+            <span style={{ fontSize: 12.5, color: '#9AA6BC', fontWeight: 700, marginRight: 6 }}>({sub})</span>
+          )}
+        </div>
         <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginTop: 5 }}>{label}</div>
       </div>
       <span
