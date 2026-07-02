@@ -683,6 +683,24 @@ export function blankItem(type: ItemType, path: string): Item {
   return base;
 }
 
+// Predefined committee funding allocation (approved budget ceiling), in درهم.
+export const APPROVED_BUDGET = 50_000_000;
+
+// Parse a free-text budget string ("4,500,000 درهم") into a number.
+export function parseBudget(b?: string): number {
+  const n = parseInt((b || '').replace(/[^\d]/g, ''), 10);
+  return isNaN(n) ? 0 : n;
+}
+
+// Format a currency amount for display (abbreviates millions).
+export function formatMoney(n: number): string {
+  if (n >= 1_000_000) {
+    const m = n / 1_000_000;
+    return (Number.isInteger(m) ? String(m) : m.toFixed(1)) + ' مليون درهم';
+  }
+  return n.toLocaleString('en-US') + ' درهم';
+}
+
 export const SEED_V = 'wf8';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';

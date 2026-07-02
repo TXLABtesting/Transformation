@@ -1188,6 +1188,25 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                 </HoverDiv>
               </div>
+              {/* Budget cards: approved allocation + spent so far */}
+              <div
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 13, marginTop: 13 }}
+              >
+                <BudgetCard
+                  label="الميزانية المعتمدة"
+                  value={vm.aiStats.approvedBudgetLabel}
+                  color="#2563EB"
+                  iconBg="#EAF0FE"
+                />
+                <BudgetCard
+                  label="الميزانية المصروفة حتى الآن"
+                  value={vm.aiStats.spentBudgetLabel}
+                  color="#0B8A4B"
+                  iconBg="#E3F6EC"
+                  pct={vm.aiStats.budgetPct}
+                  caption={`${vm.aiStats.budgetPct}% من الميزانية المعتمدة`}
+                />
+              </div>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C', margin: '10px 0 2px' }}>
                 تصنيف توصيات التحول الذكي
               </div>
@@ -1319,6 +1338,57 @@ function RecoCard({ value, label, color }: { value: number; label: string; color
   );
 }
 
+function BudgetCard({
+  label,
+  value,
+  color,
+  iconBg,
+  pct,
+  caption,
+}: {
+  label: string;
+  value: string;
+  color: string;
+  iconBg: string;
+  pct?: number;
+  caption?: string;
+}) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '15px 17px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color, whiteSpace: 'nowrap' }}>{value}</div>
+          <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginTop: 5 }}>{label}</div>
+        </div>
+        <span
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 11,
+            flex: 'none',
+            background: iconBg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon d="M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2 2 0 0 0 0 4h4v-4z" color={color} />
+        </span>
+      </div>
+      {pct != null && (
+        <div style={{ marginTop: 11 }}>
+          <div style={{ height: 6, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden' }}>
+            <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 999 }} />
+          </div>
+          {caption && (
+            <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 700, marginTop: 5 }}>{caption}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 type CardVM = VM['cards'][number];
 
 function CardItem({ c }: { c: CardVM }) {
@@ -1430,6 +1500,28 @@ function CardItem({ c }: { c: CardVM }) {
           </span>
         </div>
       </div>
+
+      {/* Status timestamp — when it entered its current state */}
+      {c.statusStamp && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            marginTop: -5,
+            fontSize: 10.5,
+            fontWeight: 700,
+            color: '#9AA6BC',
+          }}
+        >
+          <Icon
+            d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"
+            size={12}
+            color="#9AA6BC"
+          />
+          {c.statusStamp}
+        </div>
+      )}
 
       {/* Title row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
@@ -1696,7 +1788,7 @@ function CardItem({ c }: { c: CardVM }) {
             }}
           >
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0E7C86' }} />
-            مُرشّح · {c.nomBy} · {c.nomStream}
+            {c.nomLabel}
           </span>
           {c.canWithdrawNom && (
             <button

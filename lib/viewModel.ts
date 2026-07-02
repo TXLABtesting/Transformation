@@ -26,6 +26,9 @@ import {
   stageWeight,
   isEntityApproved,
   execAllDone,
+  parseBudget,
+  formatMoney,
+  APPROVED_BUDGET,
   RETURNED_STATUS,
   entOf,
   fmtDate,
@@ -165,6 +168,10 @@ function build(s: Store) {
   const scores = withScore.map((i) => transformScore(i).v);
   const sumV = scores.reduce((a, b) => a + b, 0);
   const n = scores.length || 1;
+  // spent budget = total budget of committee-funded (approved) items
+  const spentBudget = base
+    .filter((i) => i.funded)
+    .reduce((a, i) => a + parseBudget(i.budget), 0);
   const aiStats = {
     entCount: new Set(base.map((i) => ent(i))).size,
     total: base.length,
@@ -175,6 +182,12 @@ function build(s: Store) {
     now: scores.filter((v) => v >= 4.2).length,
     wait: scores.filter((v) => v >= 2 && v < 4.2).length,
     low: scores.filter((v) => v < 2).length,
+    // budget cards
+    approvedBudget: APPROVED_BUDGET,
+    approvedBudgetLabel: formatMoney(APPROVED_BUDGET),
+    spentBudget,
+    spentBudgetLabel: formatMoney(spentBudget),
+    budgetPct: APPROVED_BUDGET ? Math.min(100, Math.round((spentBudget / APPROVED_BUDGET) * 100)) : 0,
   };
 
   // ---- program steps + countdown ----
@@ -363,6 +376,41 @@ function tabDefs(activePath: string, _scope: Item[]) {
   return defs;
 }
 
+// ---- action timestamps (real log times; stable synthesized fallback for seed) ----
+function stableHash(id: string): number {
+  let h = 0;
+  for (let k = 0; k < id.length; k++) h = (h * 31 + id.charCodeAt(k)) | 0;
+  return Math.abs(h);
+}
+const REF_NOW = Date.parse('2026-07-02T09:30:00Z');
+function itemTimes(i: Item): { submittedAt: number; approvedAt: number } {
+  const log = i.log || [];
+  const sub = log.find((e) => e.action === 'submit' || e.action === 'budget');
+  const app = log.find((e) => e.action === 'approve');
+  if (sub || app) return { submittedAt: sub?.at ?? app?.at ?? REF_NOW, approvedAt: app?.at ?? 0 };
+  const h = stableHash(i.id);
+  const submittedAt = REF_NOW - ((h % 6) + 2) * 86400000 - (h % 8) * 3600000 - (h % 13) * 60000;
+  const approvedAt = submittedAt + 86400000 + (h % 6) * 3600000 + (h % 11) * 60000;
+  return { submittedAt, approvedAt };
+}
+const AR_MONTHS_SHORT = [
+  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+];
+function hhmm(ms: number): string {
+  const d = new Date(ms);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function fmtDateTime(ms: number): string {
+  if (!ms) return '';
+  return fmtDate(ms) + ' · ' + hhmm(ms);
+}
+function fmtStampShort(ms: number): string {
+  if (!ms) return '';
+  const d = new Date(ms);
+  return d.getDate() + ' ' + AR_MONTHS_SHORT[d.getMonth()] + ' · ' + hhmm(ms);
+}
+
 type Ctx = { rawRole: RoleKey; role: RoleKey; myName: string; ent: (i: Item) => string };
 
 function mkCard(i: Item, s: Store, ctx: Ctx) {
@@ -426,8 +474,10 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     scoreExpl: score.expl,
     showPathCta: rawRole === 'coord' && ['draft', 'exec', 'launch'].includes(w),
     pathCtaLabel: pathCta(w, !!i.ret),
-    // basket flags
-    isNominated: !!i.nom && !i.funded,
+    // basket flags — nomination is visible only to the committee (to act) and
+    // the stream rep (their own); coord/entity never see a pending nomination,
+    // only the committee's funding decision.
+    isNominated: !!i.nom && !i.funded && (rawRole === 'ai' || rawRole === 'path'),
     canWithdrawNom: role === 'path' && !!i.nom && !i.funded && i.nom?.by === myName,
     isFunded,
     isFundedCommittee: rawRole === 'ai' && isFunded,
@@ -439,6 +489,18 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     fundCheckBg: s.ui.fundSel.includes(i.id) ? '#2563EB' : '#fff',
     nomBy: i.nom?.by || '',
     nomStream: i.nom ? pathById(i.nom.path || i.path).name : '',
+    // path rep views its own nomination → drop the (redundant) name/stream
+    nomLabel:
+      rawRole === 'path'
+        ? 'مُرشّح للتمويل'
+        : 'مُرشّح · ' + (i.nom?.by || '') + ' · ' + (i.nom ? pathById(i.nom.path || i.path).name : ''),
+    // when the item entered its current status (for the header timestamp)
+    statusStamp:
+      w === 'ent1'
+        ? 'قُدّم للاعتماد · ' + fmtStampShort(itemTimes(i).submittedAt)
+        : ['exec', 'launch', 'done'].includes(w)
+          ? 'اعتُمد · ' + fmtStampShort(itemTimes(i).approvedAt)
+          : '',
     // handlers
     onOpen: () => s.openDetail(i.id),
     onApprove: () => s.approveItem(i.id),
@@ -797,13 +859,16 @@ function buildLogRows(i: Item) {
     const sub = namedInLabel ? when : (e.by ? e.by + ' · ' : '') + when;
     return { action: actLabel(e), color: a.c, sub, note: e.note || '', hasNote: !!e.note };
   });
-  // synthesize minimal history when no real log rows exist
+  // synthesize minimal history when no real log rows exist — with timestamps
   if (!rows.length) {
-    rows.push({ action: actLabel({ action: 'submit' }), color: ALOG.submit.c, sub: 'منسق المسار في الجهة', note: '', hasNote: false });
-    if (['exec', 'launch', 'done'].includes(wfOf(i)))
-      rows.push({ action: actLabel({ action: 'approve', role: 'ممثل الجهة' }), color: ALOG.approve.c, sub: '', note: '', hasNote: false });
-    else if (wfOf(i) === 'ent1')
-      rows.push({ action: actLabel({ action: 'pending', role: 'ممثل الجهة' }), color: ALOG.pending.c, sub: '', note: '', hasNote: false });
+    const t = itemTimes(i);
+    const w = wfOf(i);
+    // newest first: approval/pending above submission
+    if (['exec', 'launch', 'done'].includes(w))
+      rows.push({ action: actLabel({ action: 'approve', role: 'ممثل الجهة' }), color: ALOG.approve.c, sub: fmtDateTime(t.approvedAt), note: '', hasNote: false });
+    else if (w === 'ent1')
+      rows.push({ action: actLabel({ action: 'pending', role: 'ممثل الجهة' }), color: ALOG.pending.c, sub: fmtDateTime(t.submittedAt), note: '', hasNote: false });
+    rows.push({ action: actLabel({ action: 'submit' }), color: ALOG.submit.c, sub: 'منسق المسار في الجهة · ' + fmtDateTime(t.submittedAt), note: '', hasNote: false });
   }
   return rows;
 }
