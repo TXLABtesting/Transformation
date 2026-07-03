@@ -1289,9 +1289,9 @@ export function Overlays({ vm }: { vm: VM }) {
                                   <span style={{ fontWeight: 700, color: '#33415C', flex: 1, minWidth: 0 }}>
                                     {x.title}
                                   </span>
-                                  {x.inOtherPlan && (
-                                    <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, flex: 'none' }}>
-                                      مرتبط بإطلاق آخر
+                                  {x.otherBatch && (
+                                    <span style={{ fontSize: 10.5, color: '#B45309', fontWeight: 600, flex: 'none' }}>
+                                      في دفعة أخرى
                                     </span>
                                   )}
                                 </label>

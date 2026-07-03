@@ -173,7 +173,6 @@ async function main() {
         painPoints: m.painPoints,
         expectedImprovement: m.expectedImprovement,
         execBatch: m.execBatch,
-        launchPlanId: m.launchPlanId ?? null,
         retType: m.ret?.type,
         retFrom: m.ret?.from,
         retNote: m.ret?.note,
@@ -222,6 +221,15 @@ async function main() {
           : undefined,
       },
     });
+
+    // managed launch-plan memberships (one batch, possibly several launches)
+    for (const lpId of m.launchPlanIds || []) {
+      await prisma.itemLaunchPlan.upsert({
+        where: { itemId_launchPlanId: { itemId: m.id, launchPlanId: lpId } },
+        update: {},
+        create: { itemId: m.id, launchPlanId: lpId },
+      });
+    }
 
     // launches: shared across items → upsert by (title, date), then join row
     for (const l of m.launches || []) {

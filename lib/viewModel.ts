@@ -225,7 +225,7 @@ function build(s: Store) {
   const fundedItems = base.filter((i) => i.funded);
   const spentOwn = fundedItems.reduce((a, i) => a + parseBudget(i.budget), 0);
   const fundedPlanIds = new Set(
-    fundedItems.filter((i) => !parseBudget(i.budget) && i.launchPlanId).map((i) => i.launchPlanId!)
+    fundedItems.filter((i) => !parseBudget(i.budget)).flatMap((i) => i.launchPlanIds || [])
   );
   const spentPlans = [...fundedPlanIds].reduce(
     (a, id) => a + parseBudget(s.launchPlans.find((p) => p.id === id)?.budget),
@@ -415,8 +415,8 @@ function build(s: Store) {
             id: i.id,
             title: i.title,
             typeLabel: typeLabel(i.type),
-            checked: i.launchPlanId === p.id,
-            inOtherPlan: !!i.launchPlanId && i.launchPlanId !== p.id,
+            checked: (i.launchPlanIds || []).includes(p.id),
+            otherBatch: !!i.execBatch && i.execBatch !== p.batch,
           })),
         })),
     })),
@@ -567,7 +567,10 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const msNames = execMilestones();
   // only show the real batch — no synthetic fallback
   const batchLabel = i.execBatch || '';
-  const launchLabel = i.launches?.find((l) => l.title)?.title || '';
+  const named = (i.launches || []).filter((l) => (l.title || '').trim());
+  const launchLabel = named.length
+    ? named[0].title + (named.length > 1 ? ' (+' + (named.length - 1) + ')' : '')
+    : '';
 
   return {
     id: i.id,
@@ -648,7 +651,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     onOpen: () => s.openDetail(i.id),
     onApprove: () => s.approveItem(i.id),
     onMenu: () => s.toggleMenu(i.id),
-    canDelete: rawRole === 'coord' && w === 'draft' && !i.ret,
+    canDelete: rawRole === 'coord' && ((w === 'draft' && !i.ret) || w === 'ent1'),
     onDelete: () => s.deleteItem(i.id),
     onReqInfo: () => s.reqInfoItem(i.id),
     onReject: () => s.rejectItem(i.id),
@@ -797,7 +800,7 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
   // own budgets + each shared launch plan's group budget counted once
   const fundedOwn = appSrc.reduce((a, i) => a + parseBudget(i.budget), 0);
   const planIds = new Set(
-    appSrc.filter((i) => !parseBudget(i.budget) && i.launchPlanId).map((i) => i.launchPlanId!)
+    appSrc.filter((i) => !parseBudget(i.budget)).flatMap((i) => i.launchPlanIds || [])
   );
   const fundedTotal =
     fundedOwn +
@@ -835,7 +838,9 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
   // detail view is VIEW-ONLY for item data; scope/budget are never edited here
   const canEditScope = false;
   // group-level cost carried by the item's launch plan
-  const planCost = s.launchPlans.find((p) => p.id === i.launchPlanId);
+  const planCost = (i.launchPlanIds || [])
+    .map((pid) => s.launchPlans.find((p) => p.id === pid))
+    .find((p) => p && ((p.budget || '').trim() || (p.scope || '').trim()));
   const isDraftForCoord = rawRole === 'coord' && w === 'draft';
   // ---- footer / menu gating (mirrors the design's derived flags) ----
   const vStep = Math.min(s.ui.dViewStep || step, step);
@@ -1120,33 +1125,6 @@ function buildModal(s: Store) {
       name: b.name,
       label: b.period ? b.name + ' · ' + b.period : b.name,
     })),
-    launchPlanGroups: launchBatches()
-      .map((b) => ({
-        batch: b.name,
-        period: b.period || '',
-        plans: s.launchPlans
-          .filter((p) => p.batch === b.name)
-          .map((p) => ({
-            id: p.id,
-            label: p.title + ' · ' + (p.date || 'بدون تاريخ') + (p.ltype ? ' · ' + p.ltype : ''),
-          })),
-      }))
-      .filter((g) => g.plans.length > 0),
-    selectedLaunchPlan: (() => {
-      const p = s.launchPlans.find((x) => x.id === draft?.launchPlanId);
-      return p
-        ? {
-            title: p.title,
-            batch: p.batch,
-            period: launchBatches().find((b) => b.name === p.batch)?.period || '',
-            ltype: p.ltype,
-            date: p.date,
-            desc: p.desc,
-            scope: p.scope || '',
-            budget: p.budget || '',
-          }
-        : null;
-    })(),
     startStates: START_STATES,
     // ai review
     aiLoading: ui.aiLoading,

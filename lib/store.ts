@@ -29,6 +29,7 @@ import {
   PATH_REPS,
   LAUNCH_TYPES,
   availTypes,
+  launchesFromPlans,
 } from './domain';
 import { seedItems, seedLaunchPlans } from './seed';
 import type { LaunchPlan } from './domain';
@@ -256,7 +257,6 @@ type Actions = {
   addLaunchPlan: (batch: string) => void;
   updLaunchPlan: (id: string, k: keyof LaunchPlan, v: string) => void;
   removeLaunchPlan: (id: string) => void;
-  selectLaunchPlan: (planId: string) => void;
   selectExecBatch: (batch: string) => void;
   togglePlanItem: (planId: string, itemId: string) => void;
   openCancelFund: (id: string) => void;
@@ -460,7 +460,11 @@ export const useStore = create<Store>((set, get) => {
       }
       if (saved) {
         const fresh = saved.seedV !== SEED_V;
-        const items = !fresh && Array.isArray(saved.items) ? (saved.items as Item[]) : seedItems();
+        const items = (!fresh && Array.isArray(saved.items) ? (saved.items as Item[]) : seedItems())
+          // migrate legacy single-plan field to the multi-plan array
+          .map((it) =>
+            it.launchPlanIds || !it.launchPlanId ? it : { ...it, launchPlanIds: [it.launchPlanId] }
+          );
         const launchPlans =
           !fresh && Array.isArray(saved.launchPlans)
             ? (saved.launchPlans as LaunchPlan[])
@@ -773,15 +777,21 @@ export const useStore = create<Store>((set, get) => {
     deleteItem: (id) => {
       const it = get().items.find((x) => x.id === id);
       if (!it) return;
-      if (wfOf(it) !== 'draft' || it.ret)
-        return toast('يمكن حذف المسودات فقط — العناصر المعادة بملاحظات تُعدَّل ويُعاد إرسالها');
-      if (typeof window !== 'undefined' && !window.confirm('حذف "' + it.title + '" نهائياً؟')) return;
+      const w = wfOf(it);
+      const deletable = (w === 'draft' && !it.ret) || w === 'ent1';
+      if (!deletable)
+        return toast('يمكن حذف المسودات أو ما أُرسل ولم يُعتمد بعد فقط');
+      const msg =
+        w === 'ent1'
+          ? '"' + it.title + '" مُرسل لممثل الجهة ولم يُعتمد بعد — سيُسحب ويُحذف نهائياً. متابعة؟'
+          : 'حذف "' + it.title + '" نهائياً؟';
+      if (typeof window !== 'undefined' && !window.confirm(msg)) return;
       set((st) => ({
         items: st.items.filter((x) => x.id !== id),
         ui: { ...st.ui, detailId: st.ui.detailId === id ? null : st.ui.detailId, menuOpenId: null },
       }));
       persist();
-      toast('تم حذف المسودة');
+      toast(w === 'ent1' ? 'تم سحب العنصر وحذفه' : 'تم حذف المسودة');
     },
     submitItem: () => {
       commitDraft(get, set, persist, toast, 'تم الإرسال', false);
@@ -1099,13 +1109,15 @@ export const useStore = create<Store>((set, get) => {
       set((st) => ({
         items: st.items.map((it) => {
           if (!ids.includes(it.id)) return it;
-          const plan = st.launchPlans.find((p) => p.id === it.launchPlanId);
-          // a launch plan from another batch no longer applies
-          const keepPlan = plan && plan.batch === a.batch;
+          // plans from another batch no longer apply — one batch per item
+          const kept = (it.launchPlanIds || []).filter(
+            (pid) => st.launchPlans.find((p) => p.id === pid)?.batch === a.batch
+          );
           return {
             ...it,
             execBatch: a.batch,
-            ...(keepPlan ? {} : { launchPlanId: '', launches: [] }),
+            launchPlanIds: kept,
+            launches: launchesFromPlans(kept, st.launchPlans),
           };
         }),
         ui: { ...st.ui, assignSel: [], assign: null },
@@ -1132,19 +1144,10 @@ export const useStore = create<Store>((set, get) => {
     updLaunchPlan: (id: string, k: keyof LaunchPlan, v: string) => {
       set((s) => {
         const launchPlans = s.launchPlans.map((p) => (p.id === id ? { ...p, [k]: v } : p));
-        const plan = launchPlans.find((p) => p.id === id)!;
         // keep attached items' launch entries in sync with the edited plan
         const items = s.items.map((it) =>
-          it.launchPlanId === id
-            ? {
-                ...it,
-                execBatch: plan.batch,
-                launches: (it.launches || []).map((l, li) =>
-                  li === 0
-                    ? { ...l, title: plan.title, ltype: plan.ltype, date: plan.date, desc: plan.desc }
-                    : l
-                ),
-              }
+          (it.launchPlanIds || []).includes(id)
+            ? { ...it, launches: launchesFromPlans(it.launchPlanIds, launchPlans) }
             : it
         );
         return { launchPlans, items };
@@ -1152,20 +1155,25 @@ export const useStore = create<Store>((set, get) => {
     },
     removeLaunchPlan: (id: string) => {
       const s = get();
-      const attached = s.items.filter((it) => it.launchPlanId === id).length;
+      const attached = s.items.filter((it) => (it.launchPlanIds || []).includes(id)).length;
       if (
         attached > 0 &&
         typeof window !== 'undefined' &&
         !window.confirm('هذه الخطة مرتبطة بـ ' + attached + ' عنصر — سيُفصل عنها عند الحذف. متابعة؟')
       )
         return;
-      set((st) => ({
-        launchPlans: st.launchPlans.filter((p) => p.id !== id),
-        // detach items that pointed at the removed plan
-        items: st.items.map((it) =>
-          it.launchPlanId === id ? { ...it, launchPlanId: '', execBatch: '', launches: [] } : it
-        ),
-      }));
+      set((st) => {
+        const launchPlans = st.launchPlans.filter((p) => p.id !== id);
+        return {
+          launchPlans,
+          // detach the removed plan; the item keeps its batch
+          items: st.items.map((it) => {
+            if (!(it.launchPlanIds || []).includes(id)) return it;
+            const kept = (it.launchPlanIds || []).filter((x) => x !== id);
+            return { ...it, launchPlanIds: kept, launches: launchesFromPlans(kept, launchPlans) };
+          }),
+        };
+      });
       persist();
       toast('تم حذف خطة الإطلاق' + (attached ? ' وفصل ' + attached + ' عنصر عنها' : ''));
     },
@@ -1173,16 +1181,18 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       set((st) => {
         if (!st.ui.draft) return {};
-        const plan = s.launchPlans.find((p) => p.id === st.ui.draft!.launchPlanId);
-        // switching batch clears a launch plan that belongs to another batch
-        const keepPlan = plan && plan.batch === batch;
+        // switching batch drops launch plans that belong to another batch
+        const kept = (st.ui.draft.launchPlanIds || []).filter(
+          (pid) => s.launchPlans.find((p) => p.id === pid)?.batch === batch
+        );
         return {
           ui: {
             ...st.ui,
             draft: {
               ...st.ui.draft,
               execBatch: batch,
-              ...(keepPlan ? {} : { launchPlanId: '', launches: [] }),
+              launchPlanIds: kept,
+              launches: launchesFromPlans(kept, s.launchPlans),
             },
           },
         };
@@ -1192,68 +1202,29 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const plan = s.launchPlans.find((p) => p.id === planId);
       if (!plan) return;
-      const wasAttached = s.items.find((it) => it.id === itemId)?.launchPlanId === planId;
+      const target = s.items.find((it) => it.id === itemId);
+      if (!target) return;
+      const wasAttached = (target.launchPlanIds || []).includes(planId);
+      // one batch per item: attaching to a plan from another batch is blocked
+      if (!wasAttached && target.execBatch && target.execBatch !== plan.batch)
+        return toast('العنصر معيَّن في ' + target.execBatch + ' — الدفعة واحدة لكل عنصر');
       set((st) => ({
         items: st.items.map((it) => {
           if (it.id !== itemId) return it;
-          if (it.launchPlanId === planId)
-            return { ...it, launchPlanId: '', execBatch: '', launches: [] };
+          const kept = wasAttached
+            ? (it.launchPlanIds || []).filter((x) => x !== planId)
+            : [...(it.launchPlanIds || []), planId];
           return {
             ...it,
-            launchPlanId: plan.id,
-            execBatch: plan.batch,
-            launches: [
-              {
-                title: plan.title,
-                ltype: plan.ltype,
-                date: plan.date,
-                desc: plan.desc,
-                shared: true,
-                status: 'مخطط',
-                done: false,
-              },
-            ],
+            // adopting a plan fixes the batch; detaching keeps it
+            execBatch: it.execBatch || plan.batch,
+            launchPlanIds: kept,
+            launches: launchesFromPlans(kept, st.launchPlans),
           };
         }),
       }));
       persist();
       toast(wasAttached ? 'تم فصل العنصر عن خطة الإطلاق' : 'تم ربط العنصر بخطة الإطلاق');
-    },
-    selectLaunchPlan: (planId: string) => {
-      const s = get();
-      const plan = s.launchPlans.find((p) => p.id === planId);
-      set((st) => {
-        if (!st.ui.draft) return {};
-        if (!plan) {
-          return {
-            ui: {
-              ...st.ui,
-              draft: { ...st.ui.draft, launchPlanId: '', execBatch: '', launches: [] },
-            },
-          };
-        }
-        return {
-          ui: {
-            ...st.ui,
-            draft: {
-              ...st.ui.draft,
-              launchPlanId: plan.id,
-              execBatch: plan.batch,
-              launches: [
-                {
-                  title: plan.title,
-                  ltype: plan.ltype,
-                  date: plan.date,
-                  desc: plan.desc,
-                  shared: true,
-                  status: 'مخطط',
-                  done: false,
-                },
-              ],
-            },
-          },
-        };
-      });
     },
     openCancelFund: (id) => setUi({ cancelFund: { id, note: '' } }),
     setCancelFundNote: (v) => set((s) => (s.ui.cancelFund ? { ui: { ...s.ui, cancelFund: { ...s.ui.cancelFund, note: v } } } : {})),

@@ -1028,9 +1028,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                       gap: 8,
                       height: 40,
                       padding: '0 16px',
-                      background: '#fff',
-                      color: '#33415C',
-                      border: '1px solid #DCE3EE',
+                      background: '#EAF0FE',
+                      color: '#2563EB',
+                      border: '1px solid #D9E4FD',
                       borderRadius: 11,
                       fontWeight: 800,
                       fontSize: 13,
@@ -1038,7 +1038,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       fontFamily: 'inherit',
                     }}
                   >
-                    <Icon d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" size={16} color="#54627B" />
+                    <Icon d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" size={16} color="#2563EB" />
                     إدارة خطط الإطلاق
                   </button>
                   <button

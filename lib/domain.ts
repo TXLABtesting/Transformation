@@ -323,7 +323,10 @@ export type Item = {
   expectedImprovement?: string;
   // execution batch the coordinator selects for this item (predefined milestone)
   execBatch?: string;
-  // the managed launch plan this item is attached to
+  // managed launch plans this item is attached to — one batch per item, but
+  // an item may participate in SEVERAL launches within that batch
+  launchPlanIds?: string[];
+  /** @deprecated legacy single-plan field, migrated to launchPlanIds on hydrate */
   launchPlanId?: string;
   // nested
   phases?: Phase[];
@@ -568,6 +571,23 @@ export type LaunchPlan = {
   budget?: string;
 };
 
+
+// item launches derived from its attached (managed) launch plans
+export function launchesFromPlans(ids: string[] | undefined, plans: LaunchPlan[]): Launch[] {
+  return (ids || [])
+    .map((id) => plans.find((p) => p.id === id))
+    .filter((p): p is LaunchPlan => !!p)
+    .map((p) => ({
+      title: p.title,
+      ltype: p.ltype,
+      date: p.date,
+      desc: p.desc,
+      shared: true,
+      status: 'مخطط',
+      done: false,
+    }));
+}
+
 // Item execution state set by the coordinator during creation
 export const START_STATES = ['لم يبدأ بعد', 'قيد التنفيذ', 'مكتمل'];
 
@@ -745,7 +765,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = 'mock6';
+export const SEED_V = 'mock7';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 
