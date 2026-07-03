@@ -923,10 +923,14 @@ export function Overlays({ vm }: { vm: VM }) {
             <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>
-                  تعيين خطة التنفيذ والإطلاق
+                  {vm.assignModal.isChange ? 'تغيير خطة التنفيذ والإطلاق' : 'تعيين خطة التنفيذ والإطلاق'}
                 </div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
-                  عيّن دفعة التنفيذ والإطلاق نفسها للعناصر المحددة.
+                  {vm.assignModal.isChange
+                    ? vm.assignModal.currentBatches.length === 1
+                      ? 'الدفعة الحالية: ' + vm.assignModal.currentBatches[0] + ' — اختر الدفعة الجديدة.'
+                      : 'العناصر المحددة في دفعات مختلفة — اختر الدفعة الموحّدة الجديدة.'
+                    : 'عيّن دفعة التنفيذ والإطلاق نفسها للعناصر المحددة.'}
                 </div>
               </div>
               <button
@@ -999,7 +1003,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   boxShadow: BLUE_SHADOW,
                 }}
               >
-                تطبيق
+                {vm.assignModal.isChange ? 'تغيير' : 'تطبيق'}
               </button>
             </div>
           </div>

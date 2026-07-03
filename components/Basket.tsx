@@ -128,7 +128,7 @@ export function AssignBar({ vm }: { vm: VM }) {
             cursor: 'pointer',
           }}
         >
-          تعيين خطة التنفيذ والإطلاق
+          {vm.assignBar.actionLabel}
         </button>
       </div>
     </div>

@@ -1096,7 +1096,13 @@ export const useStore = create<Store>((set, get) => {
         },
       })),
     clearAssignSel: () => setUi({ assignSel: [] }),
-    openAssign: () => setUi({ assign: { batch: '' } }),
+    openAssign: () => {
+      const s = get();
+      const sel = s.items.filter((i) => s.ui.assignSel.includes(i.id));
+      const batches = Array.from(new Set(sel.map((i) => i.execBatch).filter(Boolean)));
+      // re-selecting already-planned items preselects their current batch
+      setUi({ assign: { batch: batches.length === 1 ? (batches[0] as string) : '' } });
+    },
     setAssign: (patch) =>
       set((s) => (s.ui.assign ? { ui: { ...s.ui, assign: { ...s.ui.assign, ...patch } } } : {})),
     closeAssign: () => setUi({ assign: null }),

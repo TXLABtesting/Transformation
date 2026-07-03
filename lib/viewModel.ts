@@ -215,6 +215,13 @@ function build(s: Store) {
   // ---- cards ----
   const cards = visible.map((i) => mkCard(i, s, { rawRole, role, myName, ent }));
 
+  // bulk-assign selection state (change vs first assignment)
+  const assignSelItems = s.items.filter((i) => ui.assignSel.includes(i.id));
+  const assignSelBatches = Array.from(
+    new Set(assignSelItems.map((i) => i.execBatch).filter((b): b is string => !!b))
+  );
+  const assignIsChange = assignSelItems.length > 0 && assignSelItems.every((i) => !!i.execBatch);
+
   // ---- committee analytics ----
   const withScore = base.filter((i) => wfOf(i) !== 'draft');
   const scores = withScore.map((i) => transformScore(i).v);
@@ -384,11 +391,18 @@ function build(s: Store) {
     fundBarShow: (rawRole === 'ai' || rawRole === 'path') && ui.fundSel.length > 0,
     fundSelCount: ui.fundSel.length,
     fundBarActionLabel: rawRole === 'ai' ? 'تمويل التحول' : 'ترشيح للتمويل',
-    // coordinator bulk-assign bar + modal
-    assignBar: { show: rawRole === 'coord' && ui.assignSel.length > 0, count: ui.assignSel.length },
+    // coordinator bulk-assign bar + modal — re-selecting planned items reads as
+    // a CHANGE, not a fresh assignment
+    assignBar: {
+      show: rawRole === 'coord' && ui.assignSel.length > 0,
+      count: ui.assignSel.length,
+      actionLabel: assignIsChange ? 'تغيير خطة التنفيذ والإطلاق' : 'تعيين خطة التنفيذ والإطلاق',
+    },
     assignModal: ui.assign
       ? {
           batch: ui.assign.batch,
+          isChange: assignIsChange,
+          currentBatches: assignSelBatches,
           batchOptions: launchBatches().map((b) => ({
             name: b.name,
             label: b.period ? b.name + ' · ' + b.period : b.name,
