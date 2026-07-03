@@ -934,7 +934,7 @@ function FBudget({
       </div>
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>
-          الميزانية التقديرية <span style={{ color: '#D23B45' }}>*</span>
+          الميزانية التقديرية
         </label>
         <input
           value={gv('budget')}
