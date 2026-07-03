@@ -388,16 +388,11 @@ function build(s: Store) {
     assignBar: { show: rawRole === 'coord' && ui.assignSel.length > 0, count: ui.assignSel.length },
     assignModal: ui.assign
       ? {
-          planId: ui.assign.planId,
-          planGroups: launchBatches().map((b) => ({
-            batch: b.name,
-            plans: s.launchPlans
-              .filter((p) => p.batch === b.name)
-              .map((p) => ({
-                id: p.id,
-                label: p.title + ' · ' + (p.date || 'بدون تاريخ') + (p.ltype ? ' · ' + p.ltype : ''),
-              })),
-          })).filter((g) => g.plans.length > 0),
+          batch: ui.assign.batch,
+          batchOptions: launchBatches().map((b) => ({
+            name: b.name,
+            label: b.period ? b.name + ' · ' + b.period : b.name,
+          })),
         }
       : null,
     // detail
@@ -653,6 +648,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     onOpen: () => s.openDetail(i.id),
     onApprove: () => s.approveItem(i.id),
     onMenu: () => s.toggleMenu(i.id),
+    canDelete: rawRole === 'coord' && w === 'draft',
+    onDelete: () => s.deleteItem(i.id),
     onReqInfo: () => s.reqInfoItem(i.id),
     onReject: () => s.rejectItem(i.id),
     onPathCta: () => s.openDetail(i.id),

@@ -2223,14 +2223,14 @@ function CardItem({ c }: { c: CardVM }) {
 
       {/* Coord fill CTA */}
       {c.showPathCta && (
-        <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 11 }}>
+        <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 11, display: 'flex', gap: 8 }}>
           <button
             onClick={(e) => {
               stop(e);
               c.onPathCta();
             }}
             style={{
-              width: '100%',
+              flex: 1,
               background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
               color: '#fff',
               border: 'none',
@@ -2244,6 +2244,29 @@ function CardItem({ c }: { c: CardVM }) {
           >
             {c.pathCtaLabel}
           </button>
+          {c.canDelete && (
+            <button
+              title="حذف المسودة"
+              onClick={(e) => {
+                stop(e);
+                c.onDelete();
+              }}
+              style={{
+                width: 40,
+                flex: 'none',
+                background: '#FCEEEF',
+                color: '#C0303B',
+                border: 'none',
+                borderRadius: 9,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Icon d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" size={15} color="#C0303B" />
+            </button>
+          )}
         </div>
       )}
 

@@ -926,7 +926,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   تعيين خطة التنفيذ والإطلاق
                 </div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
-                  عيّن الدفعة وخطة الإطلاق نفسها للعناصر المحددة (التي تُطلق معاً).
+                  عيّن دفعة التنفيذ والإطلاق نفسها للعناصر المحددة.
                 </div>
               </div>
               <button
@@ -948,25 +948,21 @@ export function Overlays({ vm }: { vm: VM }) {
 
             <div style={{ padding: '0 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={assignLabel}>خطة الإطلاق</label>
+                <label style={assignLabel}>خطة التنفيذ والإطلاق (الدفعة)</label>
                 <select
-                  value={vm.assignModal.planId}
-                  onChange={(e) => s.setAssign({ planId: e.target.value })}
+                  value={vm.assignModal.batch}
+                  onChange={(e) => s.setAssign({ batch: e.target.value })}
                   style={assignInput}
                 >
-                  <option value="">اختر خطة إطلاق…</option>
-                  {vm.assignModal.planGroups.map((g) => (
-                    <optgroup key={g.batch} label={g.batch}>
-                      {g.plans.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.label}
-                        </option>
-                      ))}
-                    </optgroup>
+                  <option value="">اختر الدفعة…</option>
+                  {vm.assignModal.batchOptions.map((b) => (
+                    <option key={b.name} value={b.name}>
+                      {b.label}
+                    </option>
                   ))}
                 </select>
                 <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 6 }}>
-                  ستُعيَّن الدفعة تلقائياً من خطة الإطلاق المختارة. لإضافة خطط جديدة استخدم «إدارة خطط الإطلاق».
+                  لربط العناصر بخطة إطلاق داخل الدفعة استخدم «إدارة خطط الإطلاق».
                 </div>
               </div>
             </div>

@@ -62,8 +62,8 @@ export type BulkRow = {
 };
 
 export type AssignState = {
-  // bulk-assign now picks a centrally managed launch plan (implies the batch)
-  planId: string;
+  // bulk-assign sets the execution & launch batch (الدفعة) for the selection
+  batch: string;
 };
 
 export type UiState = {
@@ -198,6 +198,7 @@ type Actions = {
   updLaunch: (i: number, k: string, v: string) => void;
   removeLaunch: (i: number) => void;
   submitItem: () => void;
+  deleteItem: (id: string) => void;
   bulkDemo: () => Promise<void>;
   importWorkplan: (buf: ArrayBuffer) => Promise<void>;
   submitBulk: () => void;
@@ -769,6 +770,18 @@ export const useStore = create<Store>((set, get) => {
         const launches = (s.ui.draft.launches || []).filter((_, j) => j !== i);
         return { ui: { ...s.ui, draft: { ...s.ui.draft, launches } } };
       }),
+    deleteItem: (id) => {
+      const it = get().items.find((x) => x.id === id);
+      if (!it) return;
+      if (wfOf(it) !== 'draft') return toast('يمكن حذف المسودات فقط');
+      if (typeof window !== 'undefined' && !window.confirm('حذف "' + it.title + '" نهائياً؟')) return;
+      set((st) => ({
+        items: st.items.filter((x) => x.id !== id),
+        ui: { ...st.ui, detailId: st.ui.detailId === id ? null : st.ui.detailId, menuOpenId: null },
+      }));
+      persist();
+      toast('تم حذف المسودة');
+    },
     submitItem: () => {
       commitDraft(get, set, persist, toast, 'تم الإرسال', false);
       setUi({ mStep: 'done' });
@@ -1072,7 +1085,7 @@ export const useStore = create<Store>((set, get) => {
         },
       })),
     clearAssignSel: () => setUi({ assignSel: [] }),
-    openAssign: () => setUi({ assign: { planId: '' } }),
+    openAssign: () => setUi({ assign: { batch: '' } }),
     setAssign: (patch) =>
       set((s) => (s.ui.assign ? { ui: { ...s.ui, assign: { ...s.ui.assign, ...patch } } } : {})),
     closeAssign: () => setUi({ assign: null }),
@@ -1080,33 +1093,24 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const a = s.ui.assign;
       if (!a) return;
-      const plan = s.launchPlans.find((p) => p.id === a.planId);
-      if (!plan) return toast('اختر خطة إطلاق أولاً');
+      if (!(a.batch || '').trim()) return toast('اختر الدفعة أولاً');
       const ids = s.ui.assignSel;
       set((st) => ({
         items: st.items.map((it) => {
           if (!ids.includes(it.id)) return it;
+          const plan = st.launchPlans.find((p) => p.id === it.launchPlanId);
+          // a launch plan from another batch no longer applies
+          const keepPlan = plan && plan.batch === a.batch;
           return {
             ...it,
-            execBatch: plan.batch,
-            launchPlanId: plan.id,
-            launches: [
-              {
-                title: plan.title,
-                ltype: plan.ltype,
-                date: plan.date,
-                desc: plan.desc,
-                shared: true,
-                status: 'مخطط',
-                done: false,
-              },
-            ],
+            execBatch: a.batch,
+            ...(keepPlan ? {} : { launchPlanId: '', launches: [] }),
           };
         }),
         ui: { ...st.ui, assignSel: [], assign: null },
       }));
       persist();
-      toast('تم تعيين خطة التنفيذ والإطلاق للعناصر المحددة');
+      toast('تم تعيين الدفعة للعناصر المحددة');
     },
 
     // ---- manage launch plans (إدارة خطط الإطلاق) ----
