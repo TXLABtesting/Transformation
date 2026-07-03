@@ -1515,14 +1515,16 @@ function KpiCard({
         border: '1px solid #E7ECF4',
         borderRadius: 14,
         padding: '13px 15px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: 7,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-        {iconChip}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</div>
-          {valueBlock}
-        </div>
+      {iconChip}
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</div>
+        {valueBlock}
       </div>
     </div>
   );
