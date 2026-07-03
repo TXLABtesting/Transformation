@@ -707,7 +707,7 @@ function F2({
           <div style={cardTitle}>التصنيف والأولوية</div>
           {sel('الأولوية', 'priority', ['عالية', 'متوسطة', 'منخفضة'])}
           {sel('مستوى التعقيد', 'complexity', ['عالٍ', 'متوسط', 'منخفض'])}
-          {m.mIsProjectish && sel('الحالة', 'status', ['مشروع جديد', 'قيد التنفيذ', 'قائم', 'مكتمل'])}
+          {sel('الحالة', 'status', ['مشروع جديد', 'قيد التنفيذ', 'قائم', 'مكتمل'])}
           {rankBtn}
         </div>
       )}
@@ -718,6 +718,7 @@ function F2({
             <div style={cardTitle}>تقييم التحول للمساعد الذكي</div>
             {sel('الأولوية', 'priority', ['عالية', 'متوسطة', 'منخفضة'])}
             {sel('مستوى التعقيد', 'complexity', ['عالٍ', 'متوسط', 'منخفض'])}
+            {sel('الحالة', 'status', ['مشروع جديد', 'قيد التنفيذ', 'قائم', 'مكتمل'])}
             {rankBtn}
             {sel('قابلية التحول', 'transformability', ['قابل كلياً', 'قابل جزئياً', 'غير قابل للتحول', 'أخرى'])}
             {sel('أولوية التحول', 'transformPriority', ['منخفضة', 'متوسطة', 'عالية'])}
@@ -1048,18 +1049,15 @@ function FBudget({
   );
 }
 
-// F-PHASES: execution & launch plan (step 5) — pick a managed launch plan + start state
+// F-PHASES (step 5): pick the execution & launch batch only — launch plans
+// are attached centrally via «إدارة خطط الإطلاق» or the dashboard bulk-assign
 function FPhases({ vm }: { vm: VM }) {
   const m = vm.modal;
   const s = vm.store;
   const draft = m.draft;
-  const sel = m.selectedLaunchPlan;
-
-  const batchPlans = m.launchPlanGroups.find((g) => g.batch === draft?.execBatch)?.plans || [];
 
   return (
     <div>
-      {/* execution batch (خطة التنفيذ والإطلاق) */}
       <div style={cardStyle}>
         <label style={labelStyle}>
           خطة التنفيذ والإطلاق <span style={{ color: '#D23B45' }}>*</span>
@@ -1076,131 +1074,9 @@ function FPhases({ vm }: { vm: VM }) {
             </option>
           ))}
         </select>
-        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 7 }}>
-          حدّد الدفعة التي سيُنفَّذ ويُطلَق فيها هذا العنصر.
-        </div>
-      </div>
-
-      {/* launch plan within the selected batch */}
-      <div style={cardStyle}>
-        <label style={labelStyle}>
-          خطة الإطلاق <span style={{ color: '#D23B45' }}>*</span>
-        </label>
-        <select
-          value={draft?.launchPlanId || ''}
-          onChange={(e) => s.selectLaunchPlan(e.target.value)}
-          disabled={!draft?.execBatch}
-          style={{ ...inputStyle, ...(draft?.execBatch ? {} : { background: '#F1F4F9', cursor: 'not-allowed' }) }}
-        >
-          <option value="">{draft?.execBatch ? 'اختر خطة إطلاق…' : 'اختر الدفعة أولاً…'}</option>
-          {batchPlans.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-        {draft?.execBatch && batchPlans.length === 0 && (
-          <div style={{ fontSize: 11.5, color: '#B45309', fontWeight: 600, marginTop: 7 }}>
-            لا توجد خطط إطلاق لهذه الدفعة بعد — أضفها من «إدارة خطط الإطلاق» في لوحة التحكم.
-          </div>
-        )}
         <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 7, lineHeight: 1.7 }}>
-          تُدار خطط الإطلاق مركزياً من لوحة التحكم («إدارة خطط الإطلاق»).
-        </div>
-
-        {sel && (
-          <div
-            style={{
-              marginTop: 12,
-              background: '#F5F8FD',
-              border: '1px solid #E1E9F5',
-              borderRadius: 13,
-              padding: '12px 14px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49' }}>{sel.title}</span>
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  background: '#EAF0FE',
-                  borderRadius: 999,
-                  padding: '3px 9px',
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: '#2563EB',
-                }}
-              >
-                {sel.batch}
-                {sel.period ? ' · ' + sel.period : ''}
-              </span>
-              {sel.date && (
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    background: '#EEF1F7',
-                    borderRadius: 999,
-                    padding: '3px 9px',
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                    color: '#54627B',
-                  }}
-                >
-                  <Icon d={IC.calendar} size={12} color="#54627B" />
-                  {sel.date}
-                </span>
-              )}
-              {sel.ltype && (
-                <span
-                  style={{
-                    background: '#EEF1F7',
-                    borderRadius: 999,
-                    padding: '3px 9px',
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                    color: '#54627B',
-                  }}
-                >
-                  {sel.ltype}
-                </span>
-              )}
-            </div>
-            {sel.desc && (
-              <div style={{ fontSize: 11.5, color: '#54627B', marginTop: 6, lineHeight: 1.7 }}>{sel.desc}</div>
-            )}
-            {(sel.budget || sel.scope) && (
-              <div style={{ fontSize: 11.5, color: '#54627B', marginTop: 6, lineHeight: 1.7 }}>
-                {sel.scope && <>نطاق المجموعة: {sel.scope}</>}
-                {sel.scope && sel.budget && ' · '}
-                {sel.budget && (
-                  <span style={{ fontWeight: 800, color: '#1F2D49' }}>الميزانية التقديرية: {sel.budget}</span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* item start state */}
-      <div style={cardStyle}>
-        <label style={labelStyle}>حالة العنصر عند الإدراج</label>
-        <select
-          value={draft?.status || 'لم يبدأ بعد'}
-          onChange={(e) => s.setDraftField('status', e.target.value)}
-          style={inputStyle}
-        >
-          {m.startStates.map((st) => (
-            <option key={st} value={st}>
-              {st}
-            </option>
-          ))}
-        </select>
-        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 7 }}>
-          هل هذا العنصر لم يبدأ بعد، قيد التنفيذ حالياً، أم مكتمل؟
+          حدّد الدفعة التي سيُنفَّذ ويُطلَق فيها هذا العنصر. يُربط العنصر بخطة إطلاق لاحقاً من
+          «إدارة خطط الإطلاق» أو من لوحة المتابعة.
         </div>
       </div>
     </div>

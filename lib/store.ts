@@ -685,19 +685,10 @@ export const useStore = create<Store>((set, get) => {
         return;
       }
       const d = s.ui.draft;
-      // execution batch + launch plan are mandatory
+      // only the execution batch is mandatory at creation — the launch plan is
+      // attached later (إدارة خطط الإطلاق), and cost may live at the plan level
       if (d && !(d.execBatch || '').trim()) {
         return toast('اختر خطة التنفيذ والإطلاق (الدفعة) قبل الإرسال للاعتماد');
-      }
-      if (d && !d.launchPlanId && !(d.launches || []).some((l) => (l.title || '').trim())) {
-        return toast('اختر خطة إطلاق قبل الإرسال للاعتماد');
-      }
-      // cost lives on the item OR on the selected launch plan (group-level)
-      const plan = d ? s.launchPlans.find((p) => p.id === d.launchPlanId) : undefined;
-      const planHasCost = !!(plan && (plan.budget || '').trim());
-      if (d && !planHasCost && (!(d.scopeOfWork || '').trim() || !(d.budget || '').trim())) {
-        setUi({ fStep: 4 });
-        return toast('أدخل نطاق العمل والميزانية للعنصر، أو اختر خطة إطلاق تحمل ميزانية على مستوى المجموعة');
       }
       get().submitItem();
     },
