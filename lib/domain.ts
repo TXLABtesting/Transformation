@@ -501,7 +501,7 @@ export function execMilestones(): Phase[] {
   return [
     {
       name: 'التقييم والتهيئة',
-      period: 'يونيو – يوليو 2026',
+      period: 'يونيو – أغسطس 2026',
       desc: 'تقييم الوضع الحالي وتحديد الأولويات',
       start: '2026-06-01',
       end: '2026-07-31',
@@ -511,7 +511,7 @@ export function execMilestones(): Phase[] {
     },
     {
       name: 'إطلاق المرحلة الأولى',
-      period: 'يوليو – نوفمبر 2026',
+      period: 'سبتمبر – نوفمبر 2026',
       desc: 'تطوير وإطلاق أول 3 نماذج',
       start: '2026-07-15',
       end: '2026-11-30',
@@ -613,7 +613,6 @@ export const LAUNCH_TYPES = [
   'إطلاق منتج / خدمة',
   'إعلان رسمي',
   'مؤتمر / فعالية',
-  'تحديث نظام',
   'شراكة استراتيجية',
   'أخرى',
 ];
@@ -769,7 +768,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = 'mock9';
+export const SEED_V = 'mock10';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 

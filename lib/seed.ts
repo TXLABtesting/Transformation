@@ -119,7 +119,7 @@ export function seedItems(): Item[] {
       launches: [
         {
           title: 'تفعيل التصنيف الآلي للمعاملات',
-          ltype: 'تحديث نظام',
+          ltype: 'إعلان رسمي',
           date: '2026-11-20',
           desc: '',
           status: 'مخطط',
@@ -317,7 +317,7 @@ export function seedItems(): Item[] {
       launches: [
         {
           title: 'تفعيل محرك التوصيات',
-          ltype: 'تحديث نظام',
+          ltype: 'إعلان رسمي',
           date: '2026-10-10',
           desc: 'تفعيل التوصيات لمستخدمي منصة البيانات.',
           status: 'قيد الإعداد',
@@ -429,7 +429,7 @@ export function seedItems(): Item[] {
       launches: [
         {
           title: 'تفعيل التصنيف الآلي للمعاملات',
-          ltype: 'تحديث نظام',
+          ltype: 'إعلان رسمي',
           date: '2026-11-20',
           desc: '',
           shared: true,
@@ -468,7 +468,7 @@ export function seedLaunchPlans(): LaunchPlan[] {
       id: 'lp2',
       batch: 'إطلاق المرحلة الأولى',
       title: 'تفعيل التصنيف الآلي للمعاملات',
-      ltype: 'تحديث نظام',
+      ltype: 'إعلان رسمي',
       date: '2026-11-20',
       desc: '',
       scope: 'أتمتة مجموعة عمليات المعاملات والدعم الفني التي تُطلق معاً.',
@@ -479,7 +479,7 @@ export function seedLaunchPlans(): LaunchPlan[] {
       id: 'lp3',
       batch: 'إطلاق المرحلة الأولى',
       title: 'تفعيل محرك التوصيات',
-      ltype: 'تحديث نظام',
+      ltype: 'إعلان رسمي',
       date: '2026-10-10',
       desc: 'تفعيل التوصيات لمستخدمي منصة البيانات.',
       scope: 'تفعيل محرك التوصيات على بيانات المنصة الحكومية.',
