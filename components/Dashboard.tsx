@@ -970,6 +970,16 @@ export function Dashboard({ vm }: { vm: VM }) {
                   <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة التحول الذكي المساعد" />
                   <PctCard value={vm.kpis.avgAutomationPct} label="متوسط نسبة الأتمتة الحالية" />
                   <PctCard value={vm.kpis.completedPct} label={'المكتمل من ' + vm.typesPhrase} sub={String(vm.kpis.completedCount)} />
+                  {vm.showExecBudget && (
+                    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
+                      <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, lineHeight: 1.5 }}>
+                        ميزانية التنفيذ التقديرية
+                      </div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#13213C', marginTop: 5, lineHeight: 1.25 }}>
+                        {vm.execBudgetTotalLabel}
+                      </div>
+                    </div>
+                  )}
                   {vm.showLaunchBudget && (
                     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
                       <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, lineHeight: 1.5 }}>

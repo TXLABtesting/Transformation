@@ -1222,41 +1222,6 @@ export function Overlays({ vm }: { vm: VM }) {
                               />
                             </div>
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
-                            <div>
-                              <label style={assignLabel}>الميزانية التقديرية للتنفيذ</label>
-                              <input
-                                value={p.budget || ''}
-                                onChange={(e) => s.updLaunchPlan(p.id, 'budget', e.target.value)}
-                                placeholder="مثال: 2,000,000 درهم"
-                                style={assignInput}
-                              />
-                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
-                                هذه هي التكلفة التي تُحتسب في إجماليات اللجنة الوطنية.
-                              </div>
-                            </div>
-                            <div>
-                              <label style={assignLabel}>الميزانية التقديرية للإطلاق</label>
-                              <input
-                                value={p.launchBudget || ''}
-                                onChange={(e) => s.updLaunchPlan(p.id, 'launchBudget', e.target.value)}
-                                placeholder="تكلفة الإطلاق / الفعالية"
-                                style={assignInput}
-                              />
-                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
-                                للاطلاع فقط (ممثل الجهة) — لا تدخل في إجماليات التمويل.
-                              </div>
-                            </div>
-                          </div>
-                          <div style={{ marginTop: 10 }}>
-                            <label style={assignLabel}>نطاق العمل (على مستوى الإطلاق)</label>
-                            <input
-                              value={p.scope || ''}
-                              onChange={(e) => s.updLaunchPlan(p.id, 'scope', e.target.value)}
-                              placeholder="نطاق تحويل المجموعة التي تُطلق معاً"
-                              style={assignInput}
-                            />
-                          </div>
                           <div style={{ marginTop: 10 }}>
                             <label style={assignLabel}>العناصر التي تُطلق في هذا الإطلاق ({selCount} محدد)</label>
                             <div
@@ -1326,6 +1291,42 @@ export function Overlays({ vm }: { vm: VM }) {
                                 </label>
                               ))}
                             </div>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
+                            <div>
+                              <label style={assignLabel}>الميزانية التقديرية للتنفيذ</label>
+                              <input
+                                value={p.budget || ''}
+                                onChange={(e) => s.updLaunchPlan(p.id, 'budget', e.target.value)}
+                                placeholder="مثال: 2,000,000 درهم"
+                                style={assignInput}
+                              />
+                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
+                                هذه هي التكلفة التي تُحتسب في إجماليات اللجنة الوطنية.
+                              </div>
+                            </div>
+                            <div>
+                              <label style={assignLabel}>الميزانية التقديرية للإطلاق</label>
+                              <input
+                                value={p.launchBudget || ''}
+                                onChange={(e) => s.updLaunchPlan(p.id, 'launchBudget', e.target.value)}
+                                placeholder="تكلفة الإطلاق / الفعالية"
+                                style={assignInput}
+                              />
+                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
+                                للاطلاع فقط (ممثل الجهة) — لا تدخل في إجماليات التمويل.
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ marginTop: 10 }}>
+                            <label style={assignLabel}>نطاق العمل (على مستوى الإطلاق)</label>
+                            <textarea
+                              value={p.scope || ''}
+                              onChange={(e) => s.updLaunchPlan(p.id, 'scope', e.target.value)}
+                              placeholder="نطاق تحويل المجموعة التي تُطلق معاً"
+                              rows={3}
+                              style={{ ...assignInput, resize: 'vertical', minHeight: 74 }}
+                            />
                           </div>
                         </div>
                       )}

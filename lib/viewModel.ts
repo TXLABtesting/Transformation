@@ -150,6 +150,15 @@ function build(s: Store) {
     (a, id) => a + parseBudget(s.launchPlans.find((p) => p.id === id)?.launchBudget),
     0
   );
+  // matching EXECUTION total for the same portfolio (same no-double-count rule
+  // as the committee: own item budgets + distinct plan execution budgets)
+  const execOwnTotal = roleBase.reduce((a, i) => a + parseBudget(i.budget), 0);
+  const execPlanIds = new Set(
+    roleBase.filter((i) => !parseBudget(i.budget)).flatMap((i) => i.launchPlanIds || [])
+  );
+  const execBudgetTotal =
+    execOwnTotal +
+    [...execPlanIds].reduce((a, id) => a + parseBudget(s.launchPlans.find((p) => p.id === id)?.budget), 0);
 
   // per-stream distribution shown INSIDE the type KPI cards (entity view) —
   // every eligible stream is listed, including zeros
@@ -379,6 +388,8 @@ function build(s: Store) {
     kpiDist,
     launchBudgetTotalLabel: formatMoney(launchBudgetTotal),
     showLaunchBudget: launchBudgetTotal > 0,
+    execBudgetTotalLabel: formatMoney(execBudgetTotal),
+    showExecBudget: execBudgetTotal > 0,
     showOpsKpi: effActivePath === 'all' || streamHasType(effActivePath, 'operation'),
     showSvcKpi: effActivePath === 'all' || streamHasType(effActivePath, 'service'),
     notAiRole: !isAiRole,
