@@ -181,6 +181,13 @@ function build(s: Store) {
       ? 'لوحة المتابعة'
       : (role === 'path' ? 'مسار ' : '') + pathById(effActivePath).name;
   const streamSummary = summaryText(effActivePath);
+  // scope-aware type enumeration — replaces the generic word "عناصر"
+  const typesPhrase =
+    effActivePath === 'all'
+      ? 'المشاريع والمبادرات والعمليات والخدمات'
+      : 'المشاريع والمبادرات' +
+        (streamHasType(effActivePath, 'operation') ? ' والعمليات' : '') +
+        (streamHasType(effActivePath, 'service') ? ' والخدمات' : '');
 
   // ---- type filter tabs ----
   const tabs = tabDefs(effActivePath, scope);
@@ -349,6 +356,7 @@ function build(s: Store) {
     activePathAll: ui.activePath === 'all',
     activePathName,
     streamSummary,
+    typesPhrase,
     kpis,
     breakdown,
     breakdownTotals,

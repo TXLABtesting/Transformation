@@ -1077,6 +1077,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}
                 >
                   <CompositionCard
+                    title={'إجمالي ' + vm.typesPhrase}
                     total={vm.kpis.total}
                     segments={[
                       { label: 'المشاريع / المبادرات', value: vm.kpis.projInit },
@@ -1102,9 +1103,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                   style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 }}
                 >
                   <PctCard value={vm.kpis.completion} label="نسبة الإنجاز" />
-                  <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة الأجينتة المستهدفة" />
+                  <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة التحول الذكي المساعد" />
                   <PctCard value={vm.kpis.avgAutomationPct} label="متوسط نسبة الأتمتة الحالية" />
-                  <PctCard value={vm.kpis.completedPct} label="عناصر مكتملة" sub={vm.kpis.completedCount + ' عنصر'} />
+                  <PctCard value={vm.kpis.completedPct} label={'المكتمل من ' + vm.typesPhrase} sub={String(vm.kpis.completedCount)} />
                 </div>
               </>
             ) : (
@@ -1113,6 +1114,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 }}
               >
                 <CompositionCard
+                  title={'إجمالي ' + vm.typesPhrase}
                   total={vm.kpis.total}
                   segments={[
                     { label: 'المشاريع / المبادرات', value: vm.kpis.projInit },
@@ -1121,9 +1123,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                   ]}
                 />
                 <PctCard value={vm.kpis.completion} label="نسبة الإنجاز" />
-                <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة الأجينتة المستهدفة" />
+                <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة التحول الذكي المساعد" />
                 <PctCard value={vm.kpis.avgAutomationPct} label="متوسط نسبة الأتمتة الحالية" />
-                <PctCard value={vm.kpis.completedPct} label="عناصر مكتملة" sub={vm.kpis.completedCount + ' عنصر'} />
+                <PctCard value={vm.kpis.completedPct} label={'المكتمل من ' + vm.typesPhrase} sub={String(vm.kpis.completedCount)} />
               </div>
             ))}
 
@@ -1134,7 +1136,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 data-r="kpi"
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 13, marginBottom: 4 }}
               >
-                <StatCard value={vm.aiStats.total} label="إجمالي العناصر" />
+                <StatCard value={vm.aiStats.total} label="إجمالي المشاريع والمبادرات والعمليات والخدمات" />
                 <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" />
                 <StatCard value={vm.aiStats.pending} label="بانتظار الاعتماد" dot="#B45309" />
                 <StatCard value={vm.aiStats.funded} label="معتمدة للتمويل" dot="#0B8A4B" />
@@ -1313,7 +1315,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           {/* List section title + view switcher */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
-              قائمة العناصر المقدَّمة
+              {'قائمة ' + vm.typesPhrase + ' المقدَّمة'}
             </div>
             <div style={{ flex: 1, height: 1, background: '#E1E7F1' }} />
             <div
@@ -1366,7 +1368,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>لا توجد عناصر للعرض</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>{'لا توجد ' + vm.typesPhrase + ' للعرض'}</div>
               <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 6, lineHeight: 1.7 }}>
                 لا توجد عناصر مطابقة للمرشحات الحالية — جرّب تغيير المرشحات أو إضافة عنصر جديد.
               </div>
@@ -1536,16 +1538,18 @@ const BLUE_STEPS = ['#2563EB', '#7DA4F2', '#C2D5FA'];
 function CompositionCard({
   total,
   segments,
+  title,
 }: {
   total: number;
   segments: { label: string; value: number }[];
+  title: string;
 }) {
   const segs = segments.filter((x) => x.value > 0);
   const sum = segs.reduce((a, x) => a + x.value, 0) || 1;
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-        <span style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600 }}>إجمالي العناصر</span>
+        <span style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, lineHeight: 1.5 }}>{title}</span>
         <span style={{ fontSize: 24, fontWeight: 800, color: '#13213C', lineHeight: 1.2 }}>{total}</span>
       </div>
       {/* stacked composition bar — 2px gaps, rounded segments */}
@@ -1600,7 +1604,7 @@ function CompositionCard({
 function PctCard({ value, label, sub }: { value: number; label: string; sub?: string }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
-      <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, lineHeight: 1.5 }}>
         {label}
       </div>
       <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', marginTop: 3, lineHeight: 1.25 }}>
@@ -1623,7 +1627,7 @@ function StatCard({ value, label, dot }: { value: number; label: string; dot?: s
           display: 'flex',
           alignItems: 'center',
           gap: 6,
-          whiteSpace: 'nowrap',
+          lineHeight: 1.5,
         }}
       >
         {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flex: 'none' }} />}
