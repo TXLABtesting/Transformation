@@ -462,6 +462,7 @@ export function seedLaunchPlans(): LaunchPlan[] {
       desc: 'إطلاق المرحلة الأولى من الخدمات الاستباقية للجمهور.',
       scope: 'تحويل مجموعة الخدمات الاستباقية الأولى وربطها بمحرك أحداث الحياة.',
       budget: '3,500,000 درهم',
+      launchBudget: '450,000 درهم',
     },
     {
       id: 'lp2',
@@ -472,6 +473,7 @@ export function seedLaunchPlans(): LaunchPlan[] {
       desc: '',
       scope: 'أتمتة مجموعة عمليات المعاملات والدعم الفني التي تُطلق معاً.',
       budget: '1,650,000 درهم',
+      launchBudget: '150,000 درهم',
     },
     {
       id: 'lp3',
@@ -482,6 +484,7 @@ export function seedLaunchPlans(): LaunchPlan[] {
       desc: 'تفعيل التوصيات لمستخدمي منصة البيانات.',
       scope: 'تفعيل محرك التوصيات على بيانات المنصة الحكومية.',
       budget: '800,000 درهم',
+      launchBudget: '80,000 درهم',
     },
     {
       id: 'lp4',
@@ -492,6 +495,7 @@ export function seedLaunchPlans(): LaunchPlan[] {
       desc: 'تخريج المرحلة الأولى من السفراء المعتمدين.',
       scope: 'تأهيل وتخريج دفعة سفراء الذكاء الاصطناعي.',
       budget: '600,000 درهم',
+      launchBudget: '350,000 درهم',
     },
     {
       id: 'lp5',
@@ -502,6 +506,7 @@ export function seedLaunchPlans(): LaunchPlan[] {
       desc: '',
       scope: 'إطلاق مساعد الاستعلام الموحّد عبر القنوات.',
       budget: '1,500,000 درهم',
+      launchBudget: '120,000 درهم',
     },
   ];
 }

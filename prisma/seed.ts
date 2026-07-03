@@ -114,6 +114,7 @@ async function main() {
         scope: lp.scope || '',
         budget: lp.budget || '',
         budgetAmount: lp.budget ? BigInt(parseBudget(lp.budget)) : null,
+        launchBudget: lp.launchBudget || '',
       },
     });
   }

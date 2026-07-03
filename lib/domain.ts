@@ -566,9 +566,13 @@ export type LaunchPlan = {
   date: string;
   desc: string;
   // cost can live at the launch level: one scope + estimated budget for the
-  // group of operations/services (or projects) transformed together
+  // group of operations/services (or projects) transformed together.
+  // `budget` is the EXECUTION cost — this is what the committee funds and
+  // what all committee totals count. `launchBudget` is the launch/event cost,
+  // informational for the entity rep only (never aggregated for funding).
   scope?: string;
   budget?: string;
+  launchBudget?: string;
 };
 
 
@@ -765,7 +769,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = 'mock8';
+export const SEED_V = 'mock9';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 

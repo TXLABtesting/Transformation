@@ -232,7 +232,8 @@ model LaunchPlan {
   desc         String  @default("")
   scope        String  @default("")
   budget       String  @default("")
-  budgetAmount BigInt? @map("budget_amount") // parsed درهم amount
+  budgetAmount BigInt? @map("budget_amount") // parsed درهم amount (execution — funding totals)
+  launchBudget String  @default("") @map("launch_budget") // launch/event cost, informational
 
   itemLinks ItemLaunchPlan[]
 

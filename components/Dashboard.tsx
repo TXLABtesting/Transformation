@@ -970,6 +970,16 @@ export function Dashboard({ vm }: { vm: VM }) {
                   <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة التحول الذكي المساعد" />
                   <PctCard value={vm.kpis.avgAutomationPct} label="متوسط نسبة الأتمتة الحالية" />
                   <PctCard value={vm.kpis.completedPct} label={'المكتمل من ' + vm.typesPhrase} sub={String(vm.kpis.completedCount)} />
+                  {vm.showLaunchBudget && (
+                    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
+                      <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, lineHeight: 1.5 }}>
+                        ميزانية الإطلاق التقديرية (للاطلاع)
+                      </div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#13213C', marginTop: 5, lineHeight: 1.25 }}>
+                        {vm.launchBudgetTotalLabel}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
@@ -2085,9 +2095,10 @@ function CardItem({ c }: { c: CardVM }) {
         </div>
       )}
 
-      {/* Coord fill CTA */}
-      {c.showPathCta && (
+      {/* Coord fill CTA — delete stays available while not yet approved (ent1) */}
+      {(c.showPathCta || c.canDelete) && (
         <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 11, display: 'flex', gap: 8 }}>
+          {c.showPathCta && (
           <button
             onClick={(e) => {
               stop(e);
@@ -2108,16 +2119,16 @@ function CardItem({ c }: { c: CardVM }) {
           >
             {c.pathCtaLabel}
           </button>
+          )}
           {c.canDelete && (
             <button
-              title="حذف المسودة"
+              title={c.showPathCta ? 'حذف المسودة' : 'سحب وحذف (لم يُعتمد بعد)'}
               onClick={(e) => {
                 stop(e);
                 c.onDelete();
               }}
               style={{
-                width: 40,
-                flex: 'none',
+                ...(c.showPathCta ? { width: 40, flex: 'none' } : { flex: 1, padding: '10px 0' }),
                 background: '#FCEEEF',
                 color: '#C0303B',
                 border: 'none',
@@ -2126,9 +2137,14 @@ function CardItem({ c }: { c: CardVM }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                gap: 7,
+                fontWeight: 800,
+                fontSize: 12.5,
+                fontFamily: 'inherit',
               }}
             >
               <Icon d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" size={15} color="#C0303B" />
+              {!c.showPathCta && 'سحب وحذف'}
             </button>
           )}
         </div>

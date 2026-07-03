@@ -685,6 +685,10 @@ export const useStore = create<Store>((set, get) => {
       set((s) => (s.ui.draft ? { ui: { ...s.ui, draft: { ...s.ui.draft, [k]: v } } } : {})),
     fNext: () => {
       const s = get();
+      // a name is mandatory before leaving step 1 — no nameless cards
+      if (s.ui.fStep === 1 && !(s.ui.draft?.title || '').trim()) {
+        return toast('أدخل اسم العنصر قبل المتابعة');
+      }
       if (s.ui.fStep < 5) {
         setUi({ fStep: s.ui.fStep + 1 });
         return;
@@ -1142,7 +1146,7 @@ export const useStore = create<Store>((set, get) => {
       set((s) => ({
         launchPlans: [
           ...s.launchPlans,
-          { id: 'lp' + Date.now(), batch, title: '', ltype: LAUNCH_TYPES[0], date: '', desc: '', scope: '', budget: '' },
+          { id: 'lp' + Date.now(), batch, title: '', ltype: LAUNCH_TYPES[0], date: '', desc: '', scope: '', budget: '', launchBudget: '' },
         ],
       }));
       toast('تمت إضافة خطة إطلاق جديدة — أكمل بياناتها');

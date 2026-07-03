@@ -1222,25 +1222,40 @@ export function Overlays({ vm }: { vm: VM }) {
                               />
                             </div>
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px', gap: 8, marginTop: 10 }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
                             <div>
-                              <label style={assignLabel}>نطاق العمل (على مستوى الإطلاق)</label>
-                              <input
-                                value={p.scope || ''}
-                                onChange={(e) => s.updLaunchPlan(p.id, 'scope', e.target.value)}
-                                placeholder="نطاق تحويل المجموعة التي تُطلق معاً"
-                                style={assignInput}
-                              />
-                            </div>
-                            <div>
-                              <label style={assignLabel}>الميزانية التقديرية</label>
+                              <label style={assignLabel}>الميزانية التقديرية للتنفيذ</label>
                               <input
                                 value={p.budget || ''}
                                 onChange={(e) => s.updLaunchPlan(p.id, 'budget', e.target.value)}
                                 placeholder="مثال: 2,000,000 درهم"
                                 style={assignInput}
                               />
+                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
+                                هذه هي التكلفة التي تُحتسب في إجماليات اللجنة الوطنية.
+                              </div>
                             </div>
+                            <div>
+                              <label style={assignLabel}>الميزانية التقديرية للإطلاق</label>
+                              <input
+                                value={p.launchBudget || ''}
+                                onChange={(e) => s.updLaunchPlan(p.id, 'launchBudget', e.target.value)}
+                                placeholder="تكلفة الإطلاق / الفعالية"
+                                style={assignInput}
+                              />
+                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
+                                للاطلاع فقط (ممثل الجهة) — لا تدخل في إجماليات التمويل.
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ marginTop: 10 }}>
+                            <label style={assignLabel}>نطاق العمل (على مستوى الإطلاق)</label>
+                            <input
+                              value={p.scope || ''}
+                              onChange={(e) => s.updLaunchPlan(p.id, 'scope', e.target.value)}
+                              placeholder="نطاق تحويل المجموعة التي تُطلق معاً"
+                              style={assignInput}
+                            />
                           </div>
                           <div style={{ marginTop: 10 }}>
                             <label style={assignLabel}>العناصر التي تُطلق في هذا الإطلاق ({selCount} محدد)</label>
@@ -1292,6 +1307,16 @@ export function Overlays({ vm }: { vm: VM }) {
                                   </span>
                                   <span style={{ fontWeight: 700, color: '#33415C', flex: 1, minWidth: 0 }}>
                                     {x.title}
+                                  </span>
+                                  <span
+                                    style={{
+                                      fontSize: 11,
+                                      fontWeight: 600,
+                                      color: x.hasBudget ? '#54627B' : '#B9C3D4',
+                                      flex: 'none',
+                                    }}
+                                  >
+                                    {x.budgetLabel}
                                   </span>
                                   {x.otherBatch && (
                                     <span style={{ fontSize: 10.5, color: '#B45309', fontWeight: 600, flex: 'none' }}>

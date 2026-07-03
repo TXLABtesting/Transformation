@@ -143,6 +143,14 @@ function build(s: Store) {
     services: roleBase.filter((i) => i.type === 'service').length,
     total: roleBase.length,
   };
+  // total LAUNCH budget across the plans this portfolio participates in —
+  // informational for the entity rep only (funding totals use execution cost)
+  const entPlanIds = new Set(roleBase.flatMap((i) => i.launchPlanIds || []));
+  const launchBudgetTotal = [...entPlanIds].reduce(
+    (a, id) => a + parseBudget(s.launchPlans.find((p) => p.id === id)?.launchBudget),
+    0
+  );
+
   // per-stream distribution shown INSIDE the type KPI cards (entity view) —
   // every eligible stream is listed, including zeros
   const kpiDist = {
@@ -369,6 +377,8 @@ function build(s: Store) {
     breakdown,
     breakdownTotals,
     kpiDist,
+    launchBudgetTotalLabel: formatMoney(launchBudgetTotal),
+    showLaunchBudget: launchBudgetTotal > 0,
     showOpsKpi: effActivePath === 'all' || streamHasType(effActivePath, 'operation'),
     showSvcKpi: effActivePath === 'all' || streamHasType(effActivePath, 'service'),
     notAiRole: !isAiRole,
@@ -432,6 +442,9 @@ function build(s: Store) {
             typeLabel: typeLabel(i.type),
             checked: (i.launchPlanIds || []).includes(p.id),
             otherBatch: !!i.execBatch && i.execBatch !== p.batch,
+            // the item's own EXECUTION cost (entered at creation step 4)
+            budgetLabel: (i.budget || '').trim() || 'لم يتم تحديد الميزانية',
+            hasBudget: !!(i.budget || '').trim(),
           })),
         })),
     })),
