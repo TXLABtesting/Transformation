@@ -928,9 +928,9 @@ export function Overlays({ vm }: { vm: VM }) {
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
                   {vm.assignModal.isChange
                     ? vm.assignModal.currentBatches.length === 1
-                      ? 'الدفعة الحالية: ' + vm.assignModal.currentBatches[0] + ' — اختر الدفعة الجديدة.'
-                      : 'العناصر المحددة في دفعات مختلفة — اختر الدفعة الموحّدة الجديدة.'
-                    : 'عيّن دفعة التنفيذ والإطلاق نفسها للعناصر المحددة.'}
+                      ? 'المرحلة الحالية: ' + vm.assignModal.currentBatches[0] + ' — اختر المرحلة الجديدة.'
+                      : 'العناصر المحددة في دفعات مختلفة — اختر المرحلة الموحّدة الجديدة.'
+                    : 'عيّن مرحلة التنفيذ والإطلاق نفسها للعناصر المحددة.'}
                 </div>
               </div>
               <button
@@ -952,13 +952,13 @@ export function Overlays({ vm }: { vm: VM }) {
 
             <div style={{ padding: '0 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={assignLabel}>خطة التنفيذ والإطلاق (الدفعة)</label>
+                <label style={assignLabel}>خطة التنفيذ والإطلاق (المرحلة)</label>
                 <select
                   value={vm.assignModal.batch}
                   onChange={(e) => s.setAssign({ batch: e.target.value })}
                   style={assignInput}
                 >
-                  <option value="">اختر الدفعة…</option>
+                  <option value="">اختر المرحلة…</option>
                   {vm.assignModal.batchOptions.map((b) => (
                     <option key={b.name} value={b.name}>
                       {b.label}
@@ -966,7 +966,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   ))}
                 </select>
                 <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 6 }}>
-                  لربط العناصر بخطة إطلاق داخل الدفعة استخدم «إدارة خطط الإطلاق».
+                  لربط العناصر بخطة إطلاق داخل المرحلة استخدم «إدارة خطط الإطلاق».
                 </div>
               </div>
             </div>
@@ -1056,7 +1056,7 @@ export function Overlays({ vm }: { vm: VM }) {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>إدارة خطط الإطلاق</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
-                  عرّف خطط الإطلاق لكل دفعة (الاسم، التاريخ، النوع، الوصف) — تُستخدم عند إنشاء العناصر وتعيينها.
+                  عرّف خطط الإطلاق لكل مرحلة (الاسم، التاريخ، النوع، الوصف) — تُستخدم عند إنشاء العناصر وتعيينها.
                 </div>
               </div>
               <button
@@ -1125,7 +1125,7 @@ export function Overlays({ vm }: { vm: VM }) {
                         fontWeight: 600,
                       }}
                     >
-                      لا توجد خطط إطلاق لهذه الدفعة بعد.
+                      لا توجد خطط إطلاق لهذه المرحلة بعد.
                     </div>
                   )}
 
@@ -1295,7 +1295,7 @@ export function Overlays({ vm }: { vm: VM }) {
                                   </span>
                                   {x.otherBatch && (
                                     <span style={{ fontSize: 10.5, color: '#B45309', fontWeight: 600, flex: 'none' }}>
-                                      في دفعة أخرى
+                                      في مرحلة أخرى
                                     </span>
                                   )}
                                 </label>

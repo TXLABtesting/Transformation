@@ -561,7 +561,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const canApprove = rawRole === 'entity' && w === 'ent1';
   const isFunded = !!i.funded;
   // status chip mirrors the real lifecycle exactly:
-  // مسودة → بحاجة إلى تعديل → بانتظار اعتماد ممثل الجهة → مخطط · الدفعة N → مكتمل
+  // مسودة → بحاجة إلى تعديل → بانتظار اعتماد ممثل الجهة → مخطط · المرحلة N → مكتمل
   const isReturned = !!i.ret;
   const batchShort = (i.execBatch || '').replace('إطلاق ', '');
   let wfLabel = wm.label;
@@ -1108,7 +1108,7 @@ function buildModal(s: Store) {
     'حدّد الأولوية وقابلية التحول',
     'النتائج والأثر المستهدف',
     'نطاق العمل والميزانية والمرفقات',
-    'اختر دفعة التنفيذ والإطلاق',
+    'اختر مرحلة التنفيذ والإطلاق',
   ];
   return {
     mStep: ui.mStep,

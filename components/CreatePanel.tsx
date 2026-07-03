@@ -1063,7 +1063,7 @@ function FPhases({ vm }: { vm: VM }) {
           onChange={(e) => s.selectExecBatch(e.target.value)}
           style={inputStyle}
         >
-          <option value="">اختر الدفعة…</option>
+          <option value="">اختر المرحلة…</option>
           {m.batchOptions.map((b) => (
             <option key={b.name} value={b.name}>
               {b.label}
@@ -1071,7 +1071,7 @@ function FPhases({ vm }: { vm: VM }) {
           ))}
         </select>
         <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 7, lineHeight: 1.7 }}>
-          حدّد الدفعة التي سيُنفَّذ ويُطلَق فيها هذا العنصر. يُربط العنصر بخطة إطلاق لاحقاً من
+          حدّد المرحلة التي سيُنفَّذ ويُطلَق فيها هذا العنصر. يُربط العنصر بخطة إطلاق لاحقاً من
           «إدارة خطط الإطلاق» أو من لوحة المتابعة.
         </div>
       </div>

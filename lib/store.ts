@@ -63,7 +63,7 @@ export type BulkRow = {
 };
 
 export type AssignState = {
-  // bulk-assign sets the execution & launch batch (الدفعة) for the selection
+  // bulk-assign sets the execution & launch batch (المرحلة) for the selection
   batch: string;
 };
 
@@ -693,7 +693,7 @@ export const useStore = create<Store>((set, get) => {
       // only the execution batch is mandatory at creation — the launch plan is
       // attached later (إدارة خطط الإطلاق), and cost may live at the plan level
       if (d && !(d.execBatch || '').trim()) {
-        return toast('اختر خطة التنفيذ والإطلاق (الدفعة) قبل الإرسال للاعتماد');
+        return toast('اختر خطة التنفيذ والإطلاق (المرحلة) قبل الإرسال للاعتماد');
       }
       get().submitItem();
     },
@@ -1110,7 +1110,7 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const a = s.ui.assign;
       if (!a) return;
-      if (!(a.batch || '').trim()) return toast('اختر الدفعة أولاً');
+      if (!(a.batch || '').trim()) return toast('اختر المرحلة أولاً');
       const ids = s.ui.assignSel;
       set((st) => ({
         items: st.items.map((it) => {
@@ -1129,7 +1129,7 @@ export const useStore = create<Store>((set, get) => {
         ui: { ...st.ui, assignSel: [], assign: null },
       }));
       persist();
-      toast('تم تعيين الدفعة للعناصر المحددة');
+      toast('تم تعيين المرحلة للعناصر المحددة');
     },
 
     // ---- manage launch plans (إدارة خطط الإطلاق) ----
@@ -1213,7 +1213,7 @@ export const useStore = create<Store>((set, get) => {
       const wasAttached = (target.launchPlanIds || []).includes(planId);
       // one batch per item: attaching to a plan from another batch is blocked
       if (!wasAttached && target.execBatch && target.execBatch !== plan.batch)
-        return toast('العنصر معيَّن في ' + target.execBatch + ' — الدفعة واحدة لكل عنصر');
+        return toast('العنصر معيَّن في ' + target.execBatch + ' — المرحلة واحدة لكل عنصر');
       set((st) => ({
         items: st.items.map((it) => {
           if (it.id !== itemId) return it;

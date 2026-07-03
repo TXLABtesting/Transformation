@@ -183,7 +183,7 @@ function batchForDate(date: string, timeline: { name: string; start: string; end
   for (const t of launchable) {
     if (t.start && t.end && date >= t.start && date <= t.end) return t.name;
   }
-  return launchable[0]?.name || 'إطلاق الدفعة الأولى';
+  return launchable[0]?.name || 'إطلاق المرحلة الأولى';
 }
 
 export async function parseWorkplan(buf: ArrayBuffer): Promise<WorkplanResult> {

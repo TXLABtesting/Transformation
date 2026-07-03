@@ -46,7 +46,7 @@ async function main() {
     entityIdByName.set(nameAr, e.id);
   }
 
-  // 3) Execution batches (الدفعات الربعية الخمس)
+  // 3) Execution batches (المراحل الربعية الخمس)
   for (const [i, b] of execMilestones().entries()) {
     await prisma.execBatch.upsert({
       where: { id: i + 1 },

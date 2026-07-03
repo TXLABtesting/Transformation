@@ -510,7 +510,7 @@ export function execMilestones(): Phase[] {
       subs: [{ name: '', start: '', end: '' }],
     },
     {
-      name: 'إطلاق الدفعة الأولى',
+      name: 'إطلاق المرحلة الأولى',
       period: 'يوليو – نوفمبر 2026',
       desc: 'تطوير وإطلاق أول 3 نماذج',
       start: '2026-07-15',
@@ -520,7 +520,7 @@ export function execMilestones(): Phase[] {
       subs: [{ name: '', start: '', end: '' }],
     },
     {
-      name: 'إطلاق الدفعة الثانية',
+      name: 'إطلاق المرحلة الثانية',
       period: 'ديسمبر 2026 – فبراير 2027',
       desc: 'تطوير 4 نماذج إضافية',
       start: '2026-12-01',
@@ -530,7 +530,7 @@ export function execMilestones(): Phase[] {
       subs: [{ name: '', start: '', end: '' }],
     },
     {
-      name: 'إطلاق الدفعة الثالثة',
+      name: 'إطلاق المرحلة الثالثة',
       period: 'مارس – مايو 2027',
       desc: 'توسيع التطبيق ليشمل 5 خدمات جديدة',
       start: '2027-03-01',
@@ -540,7 +540,7 @@ export function execMilestones(): Phase[] {
       subs: [{ name: '', start: '', end: '' }],
     },
     {
-      name: 'إطلاق الدفعة الرابعة',
+      name: 'إطلاق المرحلة الرابعة',
       period: 'يونيو – أغسطس 2027',
       desc: 'إطلاق خدمات الذكاء الاصطناعي للمتعاملين',
       start: '2027-06-01',
@@ -552,7 +552,7 @@ export function execMilestones(): Phase[] {
   ];
 }
 
-// Launch-eligible batches (الدفعات الأربع) — التقييم والتهيئة is excluded
+// Launch-eligible batches (المراحل الأربع) — التقييم والتهيئة is excluded
 export function launchBatches(): Phase[] {
   return execMilestones().filter((b) => b.name !== 'التقييم والتهيئة');
 }
@@ -560,7 +560,7 @@ export function launchBatches(): Phase[] {
 // Centrally managed launch plan (defined per batch via "إدارة خطط الإطلاق")
 export type LaunchPlan = {
   id: string;
-  batch: string; // batch name (إطلاق الدفعة الأولى…الرابعة)
+  batch: string; // batch name (إطلاق المرحلة الأولى…الرابعة)
   title: string;
   ltype: string;
   date: string;
@@ -765,7 +765,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = 'mock7';
+export const SEED_V = 'mock8';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 
