@@ -28,6 +28,7 @@ model Entity {
   items        Item[]
   reps         EntityRep[]
   streamOwners StreamOwner[]
+  users        User[]
 
   @@map("entities")
 }
@@ -42,6 +43,7 @@ model Stream {
 
   items        Item[]
   streamOwners StreamOwner[]
+  users        User[]
 
   @@map("streams")
 }
@@ -379,4 +381,27 @@ model AppState {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("app_state")
+}
+
+/// Login users. Roles: entity (ممثل الجهة), coord (منسق المسار في الجهة),
+/// path (رئيس المسار), ai (اللجنة الوطنية). The five stream heads are
+/// predefined (official names/titles); their emails and phone numbers are
+/// added later for sign-in mapping (UAE PASS / IdP).
+model User {
+  id        String   @id @default(cuid())
+  role      String // entity | coord | path | ai
+  name      String
+  title     String   @default("")
+  email     String?  @unique
+  phone     String?
+  streamId  String?  @map("stream_id")
+  entityId  String?  @map("entity_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  stream Stream? @relation(fields: [streamId], references: [id])
+  entity Entity? @relation(fields: [entityId], references: [id])
+
+  @@index([role])
+  @@map("users")
 }

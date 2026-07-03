@@ -30,6 +30,7 @@ import {
   LAUNCH_TYPES,
   availTypes,
   launchesFromPlans,
+  parseBudget,
 } from './domain';
 import { seedItems, seedLaunchPlans } from './seed';
 import type { LaunchPlan } from './domain';
@@ -346,12 +347,14 @@ function initialState(): State {
   return {
     view: 'login',
     lang: 'ar',
-    role: 'entity',
+    // Default role for the delivered build (the switcher is removed): the
+    // entity rep. Production will map roles from the IdP / users table.
+    role: (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'entity',
     myPath: 'ops',
     entityName: DEFAULT_ENTITY,
     setupDone: false,
     items: seedItems(),
-    launchPlans: seedLaunchPlans(),
+    launchPlans: recalcPlanBudgets(seedItems(), seedLaunchPlans()),
     readNotifs: [],
     programStep: 1,
     programPhases: DEFAULT_PROGRAM_PHASES.map((p) => ({ ...p })),
@@ -369,6 +372,18 @@ function initialState(): State {
 }
 
 // Role coercion helper (coord behaves like path for data logic)
+
+// The plan's EXECUTION budget is derived automatically: the sum of the
+// execution budgets of the items attached to it (empty when none carry one).
+function recalcPlanBudgets(items: Item[], plans: LaunchPlan[]): LaunchPlan[] {
+  return plans.map((p) => {
+    const sum = items
+      .filter((i) => (i.launchPlanIds || []).includes(p.id))
+      .reduce((a, i) => a + parseBudget(i.budget), 0);
+    return { ...p, budget: sum > 0 ? sum.toLocaleString('en-US') + ' درهم' : '' };
+  });
+}
+
 export const logicRole = (r: RoleKey): RoleKey => (r === 'coord' ? 'path' : r);
 
 export const actorName = (s: State): string => {
@@ -465,17 +480,20 @@ export const useStore = create<Store>((set, get) => {
           .map((it) =>
             it.launchPlanIds || !it.launchPlanId ? it : { ...it, launchPlanIds: [it.launchPlanId] }
           );
-        const launchPlans =
+        const launchPlansRaw =
           !fresh && Array.isArray(saved.launchPlans)
             ? (saved.launchPlans as LaunchPlan[])
             : seedLaunchPlans();
+        const launchPlans = recalcPlanBudgets(items, launchPlansRaw);
         set((s) => ({
           ...s,
           launchPlans,
           view: (saved!.view as State['view']) || 'login',
           lang: (saved!.lang as State['lang']) || 'ar',
           entityName: (saved!.entityName as string) || DEFAULT_ENTITY,
-          role: (saved!.role as RoleKey) || 'entity',
+          role: fresh
+            ? ((process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'entity')
+            : ((saved!.role as RoleKey) || (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'entity'),
           myPath: (saved!.myPath as string) || 'ops',
           setupDone: !!saved!.setupDone,
           items,
@@ -705,8 +723,12 @@ export const useStore = create<Store>((set, get) => {
         return;
       }
       const d = s.ui.draft;
-      // only the execution batch is mandatory at creation — the launch plan is
-      // attached later (إدارة خطط الإطلاق), and cost may live at the plan level
+      // the item's execution cost feeds the plan totals automatically, so
+      // scope + budget are mandatory again at submission
+      if (d && (!(d.scopeOfWork || '').trim() || !(d.budget || '').trim())) {
+        setUi({ fStep: 4 });
+        return toast('أدخل نطاق العمل وميزانية التنفيذ قبل الإرسال للاعتماد');
+      }
       if (d && !(d.execBatch || '').trim()) {
         return toast('اختر خطة التنفيذ والإطلاق (المرحلة) قبل الإرسال للاعتماد');
       }
@@ -805,11 +827,14 @@ export const useStore = create<Store>((set, get) => {
         items: st.items.filter((x) => x.id !== id),
         ui: { ...st.ui, detailId: st.ui.detailId === id ? null : st.ui.detailId, menuOpenId: null },
       }));
+      set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
       toast(w === 'ent1' ? 'تم سحب العنصر وحذفه' : 'تم حذف المسودة');
     },
     submitItem: () => {
       commitDraft(get, set, persist, toast, 'تم الإرسال', false);
+      set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
+      persist();
       setUi({ mStep: 'done' });
     },
     bulkDemo: async () => {
@@ -1143,6 +1168,7 @@ export const useStore = create<Store>((set, get) => {
         }),
         ui: { ...st.ui, assignSel: [], assign: null },
       }));
+      set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
       toast('تم تعيين المرحلة للعناصر المحددة');
     },
@@ -1244,6 +1270,7 @@ export const useStore = create<Store>((set, get) => {
           };
         }),
       }));
+      set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
       toast(wasAttached ? 'تم فصل العنصر عن خطة الإطلاق' : 'تم ربط العنصر بخطة الإطلاق');
     },

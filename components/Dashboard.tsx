@@ -101,38 +101,8 @@ export function Dashboard({ vm }: { vm: VM }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Role switcher */}
-          <div
-            data-r="hdrpills"
-            style={{
-              display: 'flex',
-              background: '#F4F7FC',
-              border: '1px solid #E7ECF4',
-              borderRadius: 12,
-              padding: 3,
-              gap: 2,
-            }}
-          >
-            {vm.rolePills.map((p) => (
-              <button
-                key={p.key}
-                onClick={p.onClick}
-                style={{
-                  border: 'none',
-                  borderRadius: 9,
-                  padding: '8px 13px',
-                  fontWeight: 700,
-                  fontSize: 11.5,
-                  cursor: 'pointer',
-                  ...(p.active
-                    ? { background: '#0F1F3D', color: '#fff' }
-                    : { background: 'transparent', color: '#54627B' }),
-                }}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+          {/* Role switcher removed for delivery — the role will come from
+              UAE PASS / IdP claims when the IT team wires production auth. */}
 
           {/* Notifications */}
           <div style={{ position: 'relative' }}>
@@ -1194,6 +1164,45 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <RecoCard value={vm.aiStats.low} label="غير موصى به" dot="#DC2B38" />
               </div>
             </>
+          )}
+
+          {/* Per-batch (مرحلة) summary: items + total execution cost */}
+          {vm.batchSummary.some((b) => b.count > 0) && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))',
+                gap: 12,
+              }}
+            >
+              {vm.batchSummary.map((b) => (
+                <div
+                  key={b.name}
+                  style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 800, color: '#33415C' }}>{b.name}</div>
+                  {b.period && (
+                    <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 2 }}>{b.period}</div>
+                  )}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between',
+                      gap: 8,
+                      marginTop: 9,
+                      borderTop: '1px solid #F0F3F8',
+                      paddingTop: 9,
+                    }}
+                  >
+                    <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>
+                      {b.count} عنصر{b.opsCount ? ' · ' + b.opsCount + ' عملية' : ''}
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{b.costLabel}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
 
           {/* List section title + view switcher */}

@@ -1297,12 +1297,12 @@ export function Overlays({ vm }: { vm: VM }) {
                               <label style={assignLabel}>الميزانية التقديرية للتنفيذ</label>
                               <input
                                 value={p.budget || ''}
-                                onChange={(e) => s.updLaunchPlan(p.id, 'budget', e.target.value)}
-                                placeholder="مثال: 2,000,000 درهم"
-                                style={assignInput}
+                                readOnly
+                                placeholder="تُحتسب تلقائياً من العناصر المحددة"
+                                style={{ ...assignInput, background: '#F4F7FC', cursor: 'default' }}
                               />
                               <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
-                                هذه هي التكلفة التي تُحتسب في إجماليات اللجنة الوطنية.
+                                مجموع ميزانيات التنفيذ للعناصر المحددة — يُحدَّث تلقائياً ويُحتسب في إجماليات اللجنة.
                               </div>
                             </div>
                             <div>

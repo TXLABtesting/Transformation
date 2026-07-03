@@ -38,6 +38,19 @@ async function main() {
     });
   }
 
+  // 1b) Users: the five predefined stream heads (official names/titles kept
+  // as-is). Emails and phone numbers are added later for sign-in mapping.
+  for (const p of PATHS) {
+    const name = PATH_REPS[p.id];
+    if (!name) continue;
+    const existing = await prisma.user.findFirst({ where: { role: 'path', streamId: p.id } });
+    if (!existing) {
+      await prisma.user.create({
+        data: { role: 'path', name, title: 'رئيس المسار', streamId: p.id },
+      });
+    }
+  }
+
   // 2) Entities (الجهات): session entity + the 34 federal entities
   const entityNames = Array.from(new Set([DEFAULT_ENTITY, ...FEDERAL_ENTITIES]));
   const entityIdByName = new Map<string, string>();

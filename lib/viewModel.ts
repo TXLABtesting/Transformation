@@ -152,13 +152,7 @@ function build(s: Store) {
   );
   // matching EXECUTION total for the same portfolio (same no-double-count rule
   // as the committee: own item budgets + distinct plan execution budgets)
-  const execOwnTotal = roleBase.reduce((a, i) => a + parseBudget(i.budget), 0);
-  const execPlanIds = new Set(
-    roleBase.filter((i) => !parseBudget(i.budget)).flatMap((i) => i.launchPlanIds || [])
-  );
-  const execBudgetTotal =
-    execOwnTotal +
-    [...execPlanIds].reduce((a, id) => a + parseBudget(s.launchPlans.find((p) => p.id === id)?.budget), 0);
+  const execBudgetTotal = roleBase.reduce((a, i) => a + parseBudget(i.budget), 0);
 
   // per-stream distribution shown INSIDE the type KPI cards (entity view) —
   // every eligible stream is listed, including zeros
@@ -168,6 +162,19 @@ function build(s: Store) {
       .filter((r) => r.hasOps)
       .map((r) => ({ label: r.name, value: r.operations })),
   };
+
+  // ---- per-batch (مرحلة) summary: items + total execution cost ----
+  const batchSummary = launchBatches().map((b) => {
+    const inBatch = roleBase.filter((i) => i.execBatch === b.name);
+    const cost = inBatch.reduce((a, i) => a + parseBudget(i.budget), 0);
+    return {
+      name: b.name,
+      period: b.period || '',
+      count: inBatch.length,
+      opsCount: inBatch.filter((i) => i.type === 'operation').length,
+      costLabel: cost > 0 ? formatMoney(cost) : '—',
+    };
+  });
 
   // ---- role flags ----
   const isAiRole = rawRole === 'ai';
@@ -247,16 +254,9 @@ function build(s: Store) {
   const n = scores.length || 1;
   // spent budget = own budgets of committee-funded items + each funded launch
   // plan's group budget counted ONCE (items without an own budget share it)
+  // plan budgets are DERIVED from item budgets, so totals sum items directly
   const fundedItems = base.filter((i) => i.funded);
-  const spentOwn = fundedItems.reduce((a, i) => a + parseBudget(i.budget), 0);
-  const fundedPlanIds = new Set(
-    fundedItems.filter((i) => !parseBudget(i.budget)).flatMap((i) => i.launchPlanIds || [])
-  );
-  const spentPlans = [...fundedPlanIds].reduce(
-    (a, id) => a + parseBudget(s.launchPlans.find((p) => p.id === id)?.budget),
-    0
-  );
-  const spentBudget = spentOwn + spentPlans;
+  const spentBudget = fundedItems.reduce((a, i) => a + parseBudget(i.budget), 0);
   const aiStats = {
     entCount: new Set(base.map((i) => ent(i))).size,
     total: base.length,
@@ -386,6 +386,7 @@ function build(s: Store) {
     breakdown,
     breakdownTotals,
     kpiDist,
+    batchSummary,
     launchBudgetTotalLabel: formatMoney(launchBudgetTotal),
     showLaunchBudget: launchBudgetTotal > 0,
     execBudgetTotalLabel: formatMoney(execBudgetTotal),
@@ -837,13 +838,7 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
     return isNaN(n) ? 0 : n;
   };
   // own budgets + each shared launch plan's group budget counted once
-  const fundedOwn = appSrc.reduce((a, i) => a + parseBudget(i.budget), 0);
-  const planIds = new Set(
-    appSrc.filter((i) => !parseBudget(i.budget)).flatMap((i) => i.launchPlanIds || [])
-  );
-  const fundedTotal =
-    fundedOwn +
-    [...planIds].reduce((a, id) => a + parseBudget(s.launchPlans.find((p) => p.id === id)?.budget), 0);
+  const fundedTotal = appSrc.reduce((a, i) => a + parseBudget(i.budget), 0);
   const fundedTotalLabel = fundedTotal.toLocaleString('en-US') + ' درهم';
   return {
     isCommittee: isCom,
