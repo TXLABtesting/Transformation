@@ -143,9 +143,10 @@ function build(s: Store) {
     services: roleBase.filter((i) => i.type === 'service').length,
     total: roleBase.length,
   };
-  // per-stream distribution shown INSIDE the type KPI cards (entity view)
+  // per-stream distribution shown INSIDE the type KPI cards (entity view) —
+  // every eligible stream is listed, including zeros
   const kpiDist = {
-    projInit: breakdown.filter((r) => r.projInit > 0).map((r) => ({ label: r.name, value: r.projInit })),
+    projInit: breakdown.map((r) => ({ label: r.name, value: r.projInit })),
     operations: breakdown
       .filter((r) => r.hasOps)
       .map((r) => ({ label: r.name, value: r.operations })),
