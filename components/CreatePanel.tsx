@@ -707,11 +707,15 @@ function F2({
           <div style={cardTitle}>التصنيف والأولوية</div>
           {sel('الأولوية', 'priority', ['عالية', 'متوسطة', 'منخفضة'])}
           {sel('مستوى التعقيد', 'complexity', ['عالٍ', 'متوسط', 'منخفض'])}
-          {sel(
-            m.mIsProjectish ? 'حالة المشروع / المبادرة' : 'حالة الخدمة',
-            'status',
-            ['مشروع جديد', 'قيد التنفيذ', 'قائم', 'مكتمل']
-          )}
+          {m.mIsProjectish
+            ? sel(
+                'حالة المشروع / المبادرة',
+                'status',
+                gv('type') === 'initiative'
+                  ? ['مبادرة جديدة', 'قيد التنفيذ', 'قائمة', 'مكتملة']
+                  : ['مشروع جديد', 'قيد التنفيذ', 'قائم', 'مكتمل']
+              )
+            : sel('حالة الخدمة', 'status', ['خدمة جديدة', 'قيد التنفيذ', 'قائمة', 'مكتملة'])}
           {rankBtn}
         </div>
       )}
@@ -722,7 +726,7 @@ function F2({
             <div style={cardTitle}>تقييم التحول للمساعد الذكي</div>
             {sel('الأولوية', 'priority', ['عالية', 'متوسطة', 'منخفضة'])}
             {sel('مستوى التعقيد', 'complexity', ['عالٍ', 'متوسط', 'منخفض'])}
-            {sel('حالة العملية', 'status', ['مشروع جديد', 'قيد التنفيذ', 'قائم', 'مكتمل'])}
+            {sel('حالة العملية', 'status', ['عملية جديدة', 'قيد التنفيذ', 'قائمة', 'مكتملة'])}
             {rankBtn}
             {sel('قابلية التحول', 'transformability', ['قابل كلياً', 'قابل جزئياً', 'غير قابل للتحول', 'أخرى'])}
             {sel('أولوية التحول', 'transformPriority', ['منخفضة', 'متوسطة', 'عالية'])}
@@ -813,19 +817,7 @@ function FOutcome({
   return (
     <div style={cardStyle}>
       <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>
-        النتائج المتوقعة (Outcomes)
-      </div>
-      <div style={{ marginBottom: 14 }}>
-        <label style={labelStyle}>
-          النتائج المتوقعة <span style={{ color: '#D23B45' }}>*</span>
-        </label>
-        <textarea
-          value={gv('expectedOutcomes')}
-          onChange={(e) => setField('expectedOutcomes', e.target.value)}
-          placeholder="مثال: تحقيق التحول الرقمي الشامل ورفع مستوى الإنتاجية المؤسسية وتحسين تجربة المتعاملين..."
-          rows={3}
-          style={{ ...inputStyle, resize: 'vertical' }}
-        />
+        النتائج المتوقعة
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
