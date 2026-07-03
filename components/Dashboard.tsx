@@ -1167,7 +1167,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           )}
 
           {/* Per-batch (مرحلة) summary: items + total execution cost */}
-          {vm.batchSummary.some((b) => b.count > 0) && (
+          {vm.batchSummary.some((b) => b.count > 0 || (vm.showLaunchCosts && b.launches.length > 0)) && (
             <div
               style={{
                 display: 'grid',
@@ -1200,6 +1200,43 @@ export function Dashboard({ vm }: { vm: VM }) {
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{b.costLabel}</span>
                   </div>
+                  {/* per-launch budgets (entity rep + coordinator) */}
+                  {vm.showLaunchCosts && b.launches.length > 0 && (
+                    <div style={{ marginTop: 8, borderTop: '1px solid #F0F3F8', paddingTop: 7 }}>
+                      {b.launches.map((l, li) => (
+                        <div
+                          key={li}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            justifyContent: 'space-between',
+                            gap: 8,
+                            padding: '2.5px 0',
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 10.5,
+                              color: '#8A97AD',
+                              fontWeight: 600,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              minWidth: 0,
+                            }}
+                          >
+                            {l.title}
+                          </span>
+                          <span style={{ fontSize: 10.5, fontWeight: 700, color: '#33415C', flex: 'none' }}>
+                            {l.execLabel}
+                            {l.launchLabel && (
+                              <span style={{ color: '#9AA6BC', fontWeight: 600 }}> · إطلاق {l.launchLabel}</span>
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

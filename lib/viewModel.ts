@@ -173,6 +173,14 @@ function build(s: Store) {
       count: inBatch.length,
       opsCount: inBatch.filter((i) => i.type === 'operation').length,
       costLabel: cost > 0 ? formatMoney(cost) : '—',
+      // each launch in the مرحلة with its costs (entity rep + coordinator)
+      launches: s.launchPlans
+        .filter((p) => p.batch === b.name)
+        .map((p) => ({
+          title: p.title || 'خطة إطلاق جديدة',
+          execLabel: parseBudget(p.budget) > 0 ? formatMoney(parseBudget(p.budget)) : '—',
+          launchLabel: parseBudget(p.launchBudget) > 0 ? formatMoney(parseBudget(p.launchBudget)) : '',
+        })),
     };
   });
 
@@ -387,6 +395,7 @@ function build(s: Store) {
     breakdownTotals,
     kpiDist,
     batchSummary,
+    showLaunchCosts: rawRole === 'entity' || rawRole === 'coord',
     launchBudgetTotalLabel: formatMoney(launchBudgetTotal),
     showLaunchBudget: launchBudgetTotal > 0,
     execBudgetTotalLabel: formatMoney(execBudgetTotal),
