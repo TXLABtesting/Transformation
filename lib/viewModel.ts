@@ -648,7 +648,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     onOpen: () => s.openDetail(i.id),
     onApprove: () => s.approveItem(i.id),
     onMenu: () => s.toggleMenu(i.id),
-    canDelete: rawRole === 'coord' && w === 'draft',
+    canDelete: rawRole === 'coord' && w === 'draft' && !i.ret,
     onDelete: () => s.deleteItem(i.id),
     onReqInfo: () => s.reqInfoItem(i.id),
     onReject: () => s.rejectItem(i.id),

@@ -773,7 +773,8 @@ export const useStore = create<Store>((set, get) => {
     deleteItem: (id) => {
       const it = get().items.find((x) => x.id === id);
       if (!it) return;
-      if (wfOf(it) !== 'draft') return toast('يمكن حذف المسودات فقط');
+      if (wfOf(it) !== 'draft' || it.ret)
+        return toast('يمكن حذف المسودات فقط — العناصر المعادة بملاحظات تُعدَّل ويُعاد إرسالها');
       if (typeof window !== 'undefined' && !window.confirm('حذف "' + it.title + '" نهائياً؟')) return;
       set((st) => ({
         items: st.items.filter((x) => x.id !== id),
