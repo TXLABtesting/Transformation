@@ -113,7 +113,7 @@ function fieldFor(header: string): keyof Item | 'title' | 'path' | null {
   if (h === 'المسار') return 'path';
   if (h.includes('الأنشطة الفرعية')) return 'subActivities';
   if (h.includes('القطاع')) return 'sector';
-  if (h.includes('الإدارة')) return 'dept';
+  if (h.includes('الوحدة التنظيمية') || h.includes('الإدارة')) return 'dept';
   if (h.includes('القسم المعني')) return 'section';
   if (h.includes('نظام الأتمتة')) return 'automationSystem';
   if (h.includes('نسبة الأتمتة')) return 'automationPct';

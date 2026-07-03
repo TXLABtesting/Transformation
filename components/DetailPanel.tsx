@@ -471,7 +471,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   )}
                   {d.dept && (
                     <div>
-                      <div style={labelStyle}>الإدارة المعنية</div>
+                      <div style={labelStyle}>الوحدة التنظيمية المعنية</div>
                       <div style={valueStyle}>{d.dept}</div>
                     </div>
                   )}

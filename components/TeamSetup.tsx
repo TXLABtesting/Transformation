@@ -254,7 +254,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>البريد الإلكتروني</label>
+                  <label style={labelStyle}>البريد الإلكتروني {star}</label>
                   <input
                     type="email"
                     style={{ ...inputStyle, direction: 'ltr', textAlign: 'right' }}

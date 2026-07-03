@@ -603,7 +603,7 @@ function F1({
               <input value={gv('sector')} onChange={(e) => setField('sector', e.target.value)} style={inputStyle} />
             </div>
             <div>
-              <label style={labelStyle}>الإدارة المعنية</label>
+              <label style={labelStyle}>الوحدة التنظيمية المعنية</label>
               <input value={gv('dept')} onChange={(e) => setField('dept', e.target.value)} style={inputStyle} />
             </div>
             <div>
@@ -709,13 +709,13 @@ function F2({
           {sel('مستوى التعقيد', 'complexity', ['عالٍ', 'متوسط', 'منخفض'])}
           {m.mIsProjectish
             ? sel(
-                'حالة المشروع / المبادرة',
+                gv('type') === 'initiative' ? 'وضع المبادرة' : 'وضع المشروع',
                 'status',
                 gv('type') === 'initiative'
                   ? ['مبادرة جديدة', 'قيد التنفيذ', 'قائمة', 'مكتملة']
                   : ['مشروع جديد', 'قيد التنفيذ', 'قائم', 'مكتمل']
               )
-            : sel('حالة الخدمة', 'status', ['خدمة جديدة', 'قيد التنفيذ', 'قائمة', 'مكتملة'])}
+            : sel('وضع الخدمة', 'status', ['خدمة جديدة', 'قيد التنفيذ', 'قائمة', 'مكتملة'])}
           {rankBtn}
         </div>
       )}
@@ -726,7 +726,7 @@ function F2({
             <div style={cardTitle}>تقييم التحول للمساعد الذكي</div>
             {sel('الأولوية', 'priority', ['عالية', 'متوسطة', 'منخفضة'])}
             {sel('مستوى التعقيد', 'complexity', ['عالٍ', 'متوسط', 'منخفض'])}
-            {sel('حالة العملية', 'status', ['عملية جديدة', 'قيد التنفيذ', 'قائمة', 'مكتملة'])}
+            {sel('وضع العملية', 'status', ['عملية جديدة', 'قيد التنفيذ', 'قائمة', 'مكتملة'])}
             {rankBtn}
             {sel('قابلية التحول', 'transformability', ['قابل كلياً', 'قابل جزئياً', 'غير قابل للتحول', 'أخرى'])}
             {sel('أولوية التحول', 'transformPriority', ['منخفضة', 'متوسطة', 'عالية'])}

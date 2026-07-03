@@ -539,7 +539,18 @@ export const useStore = create<Store>((set, get) => {
     toggleLang: () => set((s) => ({ lang: s.lang === 'ar' ? 'en' : 'ar' })),
 
     // ---- setup ----
-    setSetupStep: (n) => setUi({ setupStep: n }),
+    setSetupStep: (n) => {
+      // moving forward past step 1 requires the rep's mandatory fields —
+      // including the email (used for official notifications)
+      if (n > 1) {
+        const r = get().setup.rep;
+        if (!(r.name || '').trim()) return toast('أدخل اسم ممثل الجهة');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((r.email || '').trim()))
+          return toast('أدخل بريداً إلكترونياً صحيحاً لممثل الجهة');
+        if (!(r.phone || '').trim()) return toast('أدخل رقم هاتف ممثل الجهة');
+      }
+      setUi({ setupStep: n });
+    },
     updRep: (k, v) =>
       set((s) => ({ setup: { ...s.setup, rep: { ...s.setup.rep, [k]: v } } })),
     updOwner: (pid, k, v) =>
