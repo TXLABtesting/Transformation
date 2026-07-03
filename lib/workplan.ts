@@ -88,11 +88,11 @@ function rowVals(ws: Sheet, r: number, max: number): string[] {
   return out;
 }
 
-// find the header row (first row whose first cell is '#' or 'م')
+// find the header row (first cell '#', 'م', or a known header word)
 function headerRow(ws: Sheet, maxScan = 6): number {
   for (let r = 1; r <= Math.min(maxScan, ws.rowCount); r++) {
     const first = cellStr(ws.getRow(r).getCell(1).value);
-    if (first === '#' || first === 'م') return r;
+    if (first === '#' || first === 'م' || first === 'المرحلة') return r;
   }
   return -1;
 }
@@ -101,7 +101,13 @@ function headerRow(ws: Sheet, maxScan = 6): number {
 function fieldFor(header: string): keyof Item | 'title' | 'path' | null {
   const h = header.replace(/\s+/g, ' ').trim();
   if (!h || h === '#' || h === 'م') return null;
-  if (h.includes('اسم المشروع') || h.includes('العملية الرئيسية') || h.includes('اسم الخدمة') || h.includes('الخدمة الرئيسية'))
+  if (
+    h.includes('اسم المشروع') ||
+    h.includes('العملية الرئيسية') ||
+    h.includes('اسم الخدمة') ||
+    h.includes('الخدمة الرئيسية') ||
+    h.includes('المهمة والعملية والخدمة')
+  )
     return 'title';
   if (h === 'الوصف') return 'desc';
   if (h.includes('ملاحظات')) return 'desc';
@@ -110,14 +116,16 @@ function fieldFor(header: string): keyof Item | 'title' | 'path' | null {
   if (h.includes('الأثر المتوقع')) return 'expectedImpact';
   if (h.includes('تاريخ الانتهاء')) return 'endDate';
   if (h === 'الحالة') return 'status';
-  if (h === 'المسار') return 'path';
-  if (h.includes('الأنشطة الفرعية')) return 'subActivities';
+  if (h === 'المسار' || h === 'المسار المعني') return 'path';
+  if (h.includes('الأنشطة الفرعية') || h.includes('الأنشطة والخدمات الفرعية')) return 'subActivities';
+  if (h === 'التصنيف') return 'opType';
+  if (h.includes('أولوية التحول')) return 'transformPriority';
   if (h.includes('القطاع')) return 'sector';
   if (h.includes('الوحدة التنظيمية') || h.includes('الإدارة')) return 'dept';
   if (h.includes('القسم المعني')) return 'section';
   if (h.includes('نظام الأتمتة')) return 'automationSystem';
   if (h.includes('نسبة الأتمتة')) return 'automationPct';
-  if (h.includes('مؤتمت')) return 'automationLevel';
+  if (h.includes('مؤتمت') || h === 'مستوى الأتمتة') return 'automationLevel';
   if (h.includes('كثافة')) return 'usageIntensity';
   if (h.includes('الجاهزية') || h.includes('جاهزية')) return 'readiness';
   if (h.includes('التعقيد')) return 'complexityLevel';
@@ -172,10 +180,20 @@ function parseTimeline(ws: Sheet | undefined): { name: string; start: string; en
   const out: { name: string; start: string; end: string }[] = [];
   for (let r = hr + 1; r <= ws.rowCount; r++) {
     const v = rowVals(ws, r, 6);
-    if (!v[1]) continue;
-    out.push({ name: v[1], start: normDate(v[4] || ''), end: normDate(v[5] || '') });
+    // real export: [المرحلة (مع الفترة), الفترة, النشاط, تاريخ البدء, تاريخ الانتهاء]
+    const rawName = (v[0] || '').replace(/\s*\(.*\)\s*$/, '').trim();
+    if (!rawName) continue;
+    out.push({ name: normBatchName(rawName), start: normDate(v[3] || ''), end: normDate(v[4] || '') });
   }
   return out;
+}
+
+// legacy wording → this portal's batch names (المراحل الأربع)
+function normBatchName(n: string): string {
+  let s = n.replace(/الدفعة/g, 'المرحلة').trim();
+  // the old plan had six batches + a closing phase — fold the tail into الرابعة
+  if (/(الخامسة|السادسة|التحسين والتوسع)/.test(s)) s = 'إطلاق المرحلة الرابعة';
+  return s;
 }
 
 function batchForDate(date: string, timeline: { name: string; start: string; end: string }[]): string {
@@ -197,13 +215,28 @@ export async function parseWorkplan(buf: ArrayBuffer): Promise<WorkplanResult> {
   let timelineWs: Sheet | undefined;
   let launchWs: Sheet | undefined;
 
+  // the real export declares its track in sheet 1 (المعلومات العامة):
+  // a row like ["المسار", "<track name>"] — it types the section-4 rows
+  let trackPath = '';
+  wb.eachSheet((ws) => {
+    if (!ws.name.includes('المعلومات العامة')) return;
+    const sheet = ws as unknown as Sheet;
+    for (let r = 1; r <= Math.min(sheet.rowCount, 12); r++) {
+      const v = rowVals(sheet, r, 2);
+      if (v[0].trim() === 'المسار') trackPath = pathByName(v[1]);
+    }
+  });
+  const trackType: ItemType =
+    trackPath === 'services' ? 'service' : trackPath === 'ops' || trackPath === 'strategy' ? 'operation' : 'project';
+
   wb.eachSheet((ws) => {
     const name = ws.name.trim();
     const sheet = ws as unknown as Sheet;
+    if (name.includes('المعلومات العامة') || name.includes('فريق العمل') || name.includes('المستهدفات')) return;
     if (name.includes('البرنامج الزمني')) timelineWs = sheet;
     else if (name.includes('الإطلاقات')) launchWs = sheet;
     else if (name.includes('المشاريع القائمة') || name.includes('المشاريع الجديدة')) {
-      const parsed = parseDataSheet(sheet, 'project', '');
+      const parsed = parseDataSheet(sheet, 'project', trackPath);
       for (const p of parsed) {
         if (name.includes('الجديدة') && !p.extra.status) p.extra.status = 'مشروع جديد';
         // stream is mandatory later; leave blank path for manual pick if unmatched
@@ -215,6 +248,9 @@ export async function parseWorkplan(buf: ArrayBuffer): Promise<WorkplanResult> {
       rows.push(...parseDataSheet(sheet, 'operation', 'strategy'));
     } else if (name.includes('مسار الخدمات')) {
       rows.push(...parseDataSheet(sheet, 'service', 'services'));
+    } else if (name.includes('العمليات والدعم المؤسسي')) {
+      // section 4 of the real export — items typed by the declared track
+      rows.push(...parseDataSheet(sheet, trackType, trackPath || 'ops'));
     }
   });
 
