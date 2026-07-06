@@ -66,6 +66,8 @@ export function Dashboard({ vm }: { vm: VM }) {
   const s = vm.store;
   // which launch row (in the مرحلة summary) is expanded to show its items
   const [openLaunch, setOpenLaunch] = useState<string | null>(null);
+  // which مرحلة card is expanded to show its details
+  const [openBatch, setOpenBatch] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
 
   return (
@@ -1200,7 +1202,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             </>
           )}
 
-          {/* Per-batch (مرحلة) summary: items + total execution cost */}
+          {/* Per-batch (مرحلة) summary: clean total + expand icon for details */}
           {vm.batchSummary.some((b) => b.count > 0 || (vm.showLaunchCosts && b.launches.length > 0)) && (
             <div
               style={{
@@ -1209,142 +1211,160 @@ export function Dashboard({ vm }: { vm: VM }) {
                 gap: 12,
               }}
             >
-              {vm.batchSummary.map((b) => (
+              {vm.batchSummary.map((b) => {
+                const isOpen = openBatch === b.name;
+                const hasDetails = b.count > 0 || (vm.showLaunchCosts && b.launches.length > 0);
+                return (
                 <div
                   key={b.name}
                   style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}
                 >
-                  <div style={{ fontSize: 12, fontWeight: 800, color: '#33415C' }}>{b.name}</div>
-                  {b.period && (
-                    <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 2 }}>{b.period}</div>
-                  )}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      justifyContent: 'space-between',
-                      gap: 8,
-                      marginTop: 9,
-                      borderTop: '1px solid #F0F3F8',
-                      paddingTop: 9,
-                    }}
-                  >
-                    <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>
-                      {b.count} عنصر{b.opsCount ? ' · ' + b.opsCount + ' عملية' : ''}
-                    </span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{b.costLabel}</span>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#33415C' }}>{b.name}</div>
+                      {b.period && (
+                        <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 2 }}>{b.period}</div>
+                      )}
+                    </div>
+                    {hasDetails && (
+                      <button
+                        title="عرض التفاصيل"
+                        onClick={() => setOpenBatch(isOpen ? null : b.name)}
+                        style={{
+                          width: 26,
+                          height: 26,
+                          flex: 'none',
+                          borderRadius: 8,
+                          border: '1px solid #E7ECF4',
+                          background: isOpen ? '#EAF0FE' : '#fff',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Icon d={isOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#2563EB" />
+                      </button>
+                    )}
                   </div>
-                  {/* per-launch budgets (entity rep + coordinator) — click a launch to see its items */}
-                  {vm.showLaunchCosts && b.launches.length > 0 && (
-                    <div style={{ marginTop: 8, borderTop: '1px solid #F0F3F8', paddingTop: 7 }}>
-                      {b.launches.map((l) => {
-                        const isOpen = openLaunch === l.id;
-                        return (
-                          <div key={l.id}>
-                            <div
-                              onClick={() => l.items.length && setOpenLaunch(isOpen ? null : l.id)}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'baseline',
-                                justifyContent: 'space-between',
-                                gap: 8,
-                                padding: '2.5px 0',
-                                cursor: l.items.length ? 'pointer' : 'default',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 4,
-                                  fontSize: 10.5,
-                                  color: '#8A97AD',
-                                  fontWeight: 600,
-                                  overflow: 'hidden',
-                                  minWidth: 0,
-                                }}
-                              >
-                                {l.items.length > 0 && (
-                                  <Icon d={isOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={11} color="#B9C3D4" />
-                                )}
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {l.title}
-                                </span>
-                              </span>
-                              <span style={{ fontSize: 10.5, fontWeight: 700, color: '#33415C', flex: 'none' }}>
-                                {l.execLabel}
-                                {l.launchLabel && (
-                                  <span style={{ color: '#9AA6BC', fontWeight: 600 }}> · إطلاق {l.launchLabel}</span>
-                                )}
-                              </span>
-                            </div>
-                            {isOpen && (
+                  <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 9 }}>{b.costLabel}</div>
+
+                  {/* details: counts + launches (click a launch for its items) */}
+                  {isOpen && (
+                    <div style={{ marginTop: 9, borderTop: '1px solid #F0F3F8', paddingTop: 8 }}>
+                      <div style={{ fontSize: 10.5, color: '#8A97AD', fontWeight: 600, marginBottom: 4 }}>
+                        {b.count} عنصر{b.opsCount ? ' · ' + b.opsCount + ' عملية' : ''}
+                      </div>
+                      {vm.showLaunchCosts &&
+                        b.launches.map((l) => {
+                          const lOpen = openLaunch === l.id;
+                          return (
+                            <div key={l.id}>
                               <div
+                                onClick={() => l.items.length && setOpenLaunch(lOpen ? null : l.id)}
                                 style={{
-                                  margin: '2px 0 6px',
-                                  background: '#F7F9FD',
-                                  border: '1px solid #EEF1F7',
-                                  borderRadius: 9,
-                                  padding: '4px 8px',
+                                  display: 'flex',
+                                  alignItems: 'baseline',
+                                  justifyContent: 'space-between',
+                                  gap: 8,
+                                  padding: '2.5px 0',
+                                  cursor: l.items.length ? 'pointer' : 'default',
                                 }}
                               >
-                                {l.items.map((x) => (
-                                  <div
-                                    key={x.id}
-                                    onClick={(e) => {
-                                      stop(e);
-                                      x.onOpen();
-                                    }}
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      gap: 8,
-                                      padding: '3px 0',
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                                      <span
-                                        style={{
-                                          fontSize: 9,
-                                          fontWeight: 700,
-                                          color: '#54627B',
-                                          background: '#EEF1F7',
-                                          borderRadius: 999,
-                                          padding: '1px 6px',
-                                          flex: 'none',
-                                        }}
-                                      >
-                                        {x.typeLabel}
-                                      </span>
-                                      <span
-                                        style={{
-                                          fontSize: 10,
-                                          fontWeight: 700,
-                                          color: '#33415C',
-                                          overflow: 'hidden',
-                                          textOverflow: 'ellipsis',
-                                          whiteSpace: 'nowrap',
-                                        }}
-                                      >
-                                        {x.title}
-                                      </span>
-                                    </span>
-                                    <span style={{ fontSize: 9.5, fontWeight: 600, color: '#8A97AD', flex: 'none' }}>
-                                      {x.budgetLabel}
-                                    </span>
-                                  </div>
-                                ))}
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                    fontSize: 10.5,
+                                    color: '#8A97AD',
+                                    fontWeight: 600,
+                                    overflow: 'hidden',
+                                    minWidth: 0,
+                                  }}
+                                >
+                                  {l.items.length > 0 && (
+                                    <Icon d={lOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={11} color="#B9C3D4" />
+                                  )}
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {l.title}
+                                  </span>
+                                </span>
+                                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#33415C', flex: 'none' }}>
+                                  {l.execLabel}
+                                  {l.launchLabel && (
+                                    <span style={{ color: '#9AA6BC', fontWeight: 600 }}> · إطلاق {l.launchLabel}</span>
+                                  )}
+                                </span>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                              {lOpen && (
+                                <div
+                                  style={{
+                                    margin: '2px 0 6px',
+                                    background: '#F7F9FD',
+                                    border: '1px solid #EEF1F7',
+                                    borderRadius: 9,
+                                    padding: '4px 8px',
+                                  }}
+                                >
+                                  {l.items.map((x) => (
+                                    <div
+                                      key={x.id}
+                                      onClick={(e) => {
+                                        stop(e);
+                                        x.onOpen();
+                                      }}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: 8,
+                                        padding: '3px 0',
+                                        cursor: 'pointer',
+                                      }}
+                                    >
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                                        <span
+                                          style={{
+                                            fontSize: 9,
+                                            fontWeight: 700,
+                                            color: '#54627B',
+                                            background: '#EEF1F7',
+                                            borderRadius: 999,
+                                            padding: '1px 6px',
+                                            flex: 'none',
+                                          }}
+                                        >
+                                          {x.typeLabel}
+                                        </span>
+                                        <span
+                                          style={{
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            color: '#33415C',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                          }}
+                                        >
+                                          {x.title}
+                                        </span>
+                                      </span>
+                                      <span style={{ fontSize: 9.5, fontWeight: 600, color: '#8A97AD', flex: 'none' }}>
+                                        {x.budgetLabel}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
