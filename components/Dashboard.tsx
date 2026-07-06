@@ -193,7 +193,7 @@ function PieCard({ title, data }: { title: string; data: { label: string; value:
   let acc = 0;
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '15px 17px' }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7A93', lineHeight: 1.5 }}>{title}</div>
+      <div style={{ fontSize: 12, fontWeight: 400, color: '#6B7A93', lineHeight: 1.5 }}>{title}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
         <svg viewBox="0 0 90 90" width={104} height={104} style={{ flex: 'none' }}>
           <circle cx="45" cy="45" r={R} fill="none" stroke="#EDF1F8" strokeWidth="13" />
@@ -244,8 +244,8 @@ function PieCard({ title, data }: { title: string; data: { label: string; value:
               <span
                 style={{
                   fontSize: 10.5,
-                  fontWeight: 700,
-                  color: '#54627B',
+                  fontWeight: 400,
+                  color: '#6B7A93',
                   flex: 1,
                   minWidth: 0,
                   overflow: 'hidden',
@@ -274,7 +274,7 @@ function RankBars({ title, rows }: { title: string; rows: { label: string; value
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '15px 17px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7A93', lineHeight: 1.5 }}>{title}</div>
+        <div style={{ fontSize: 12, fontWeight: 400, color: '#6B7A93', lineHeight: 1.5 }}>{title}</div>
         {rows.length > TOP && (
           <button
             onClick={() => setShowAll((v) => !v)}
@@ -404,7 +404,7 @@ function StatBand({
           <div
             style={{
               fontSize: 12.5,
-              fontWeight: 700,
+              fontWeight: 400,
               color: dark ? 'rgba(255,255,255,.8)' : '#6B7A93',
               lineHeight: 1.5,
               minHeight: 38,
@@ -472,8 +472,8 @@ function StatBand({
                   <span
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
-                      color: dark ? 'rgba(255,255,255,.8)' : '#54627B',
+                      fontWeight: 400,
+                      color: dark ? 'rgba(255,255,255,.8)' : '#6B7A93',
                       flex: 1,
                       minWidth: 0,
                       overflow: 'hidden',
@@ -2659,7 +2659,7 @@ function KpiCard({
         <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 7, minWidth: 0 }}>
           {iconChip}
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</div>
+            <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 400, whiteSpace: 'nowrap' }}>{label}</div>
             {valueBlock}
           </div>
         </div>
@@ -2670,7 +2670,7 @@ function KpiCard({
               <span
                 style={{
                   fontSize: 11,
-                  fontWeight: 600,
+                  fontWeight: 400,
                   color: '#6B7A93',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -2702,7 +2702,7 @@ function KpiCard({
     >
       {iconChip}
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</div>
+        <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 400, whiteSpace: 'nowrap' }}>{label}</div>
         {valueBlock}
       </div>
     </div>
@@ -2722,7 +2722,7 @@ function StatCard({ value, label, dot, info, suffix }: { value: number; label: s
         style={{
           fontSize: 11.5,
           color: '#6B7A93',
-          fontWeight: 600,
+          fontWeight: 400,
           display: 'flex',
           alignItems: 'center',
           gap: 6,
@@ -2747,7 +2747,7 @@ function RecoCard({ value, label, dot }: { value: number; label: string; dot: st
       <div
         style={{
           fontSize: 11.5,
-          fontWeight: 600,
+          fontWeight: 400,
           color: '#6B7A93',
           display: 'flex',
           alignItems: 'center',
@@ -2771,7 +2771,7 @@ function BudgetFigure({ value, label }: { value: string; label: string }) {
       >
         {value}
       </div>
-      <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginTop: 4 }}>{label}</div>
+      <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 400, marginTop: 4 }}>{label}</div>
     </div>
   );
 }
@@ -3094,7 +3094,7 @@ function CardItem({ c }: { c: CardVM }) {
                 alignItems: 'center',
                 gap: 4,
                 fontSize: 10.5,
-                fontWeight: 700,
+                fontWeight: 400,
                 color: '#9AA6BC',
                 whiteSpace: 'nowrap',
               }}
@@ -3303,8 +3303,8 @@ function CardItem({ c }: { c: CardVM }) {
             alignItems: 'center',
             gap: 6,
             fontSize: 11.5,
-            fontWeight: 700,
-            color: '#54627B',
+            fontWeight: 400,
+            color: '#6B7A93',
           }}
         >
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: c.pathColor }} /> {c.footLabel}
