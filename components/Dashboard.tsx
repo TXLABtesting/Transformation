@@ -101,8 +101,40 @@ export function Dashboard({ vm }: { vm: VM }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Role switcher removed for delivery — the role will come from
-              UAE PASS / IdP claims when the IT team wires production auth. */}
+          {/* Role switcher: demo builds only (production role comes from the
+              UAE PASS / IdP mapping wired by IT). */}
+          {vm.showRoleSwitcher && (
+            <div
+              style={{
+                display: 'flex',
+                background: '#F4F7FC',
+                border: '1px solid #E7ECF4',
+                borderRadius: 12,
+                padding: 3,
+                gap: 2,
+              }}
+            >
+              {vm.rolePills.map((p) => (
+                <button
+                  key={p.key}
+                  onClick={p.onClick}
+                  style={{
+                    border: 'none',
+                    borderRadius: 9,
+                    padding: '8px 13px',
+                    fontWeight: 700,
+                    fontSize: 11.5,
+                    cursor: 'pointer',
+                    ...(p.active
+                      ? { background: '#0F1F3D', color: '#fff' }
+                      : { background: 'transparent', color: '#54627B' }),
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Notifications */}
           <div style={{ position: 'relative' }}>

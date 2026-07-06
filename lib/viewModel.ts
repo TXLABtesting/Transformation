@@ -360,6 +360,7 @@ function build(s: Store) {
     role: rawRole,
     roleLabel: ROLE[rawRole].label,
     rolePills,
+    showRoleSwitcher: process.env.NEXT_PUBLIC_DEMO_MODE === '1',
     repName,
     repPos,
     repInitials,
