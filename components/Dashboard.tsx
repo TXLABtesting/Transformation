@@ -636,14 +636,15 @@ export function Dashboard({ vm }: { vm: VM }) {
           }}
         >
           {vm.programSteps.map((st) => {
-            const done = st.isDone;
-            const active = st.state === 'active';
-            const lineBg = done || active ? '#fff' : 'rgba(255,255,255,.2)';
-            const circleBg = done ? '#27C2F0' : active ? '#fff' : 'rgba(255,255,255,.14)';
-            const circleColor = done ? '#fff' : active ? '#123f93' : '#9FC4F2';
+            // the three phases are parallel tracks, not sequential steps —
+            // everything renders uniformly in white
+            const lineBg = '#fff';
+            const circleBg = '#fff';
+            const circleColor = '#123f93';
             const circleBorder = 'none';
-            const colGlow = active ? '0 0 0 4px rgba(39,194,240,.25)' : 'none';
-            const labelColor = active ? '#fff' : '#9FC4F2';
+            const colGlow = 'none';
+            const labelColor = '#fff';
+            const done = false;
             return (
               <div
                 key={st.num}

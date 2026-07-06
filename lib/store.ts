@@ -260,6 +260,7 @@ type Actions = {
   removeLaunchPlan: (id: string) => void;
   selectExecBatch: (batch: string) => void;
   togglePlanItem: (planId: string, itemId: string) => void;
+  setItemBudget: (itemId: string, v: string) => void;
   openCancelFund: (id: string) => void;
   setCancelFundNote: (v: string) => void;
   confirmCancelFund: () => void;
@@ -1244,6 +1245,15 @@ export const useStore = create<Store>((set, get) => {
           },
         };
       });
+    },
+    // inline edit of an item's EXECUTION budget (from إدارة خطط الإطلاق) —
+    // saves the trip to the item's detail page and re-derives plan totals
+    setItemBudget: (itemId: string, v: string) => {
+      set((st) => ({
+        items: st.items.map((it) => (it.id === itemId ? { ...it, budget: v } : it)),
+      }));
+      set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
+      persist();
     },
     togglePlanItem: (planId: string, itemId: string) => {
       const s = get();

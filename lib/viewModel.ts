@@ -475,8 +475,8 @@ function build(s: Store) {
             typeLabel: typeLabel(i.type),
             checked: (i.launchPlanIds || []).includes(p.id),
             otherBatch: !!i.execBatch && i.execBatch !== p.batch,
-            // the item's own EXECUTION cost (entered at creation step 4)
-            budgetLabel: (i.budget || '').trim() || 'لم يتم تحديد الميزانية',
+            // the item's own EXECUTION cost — editable inline in the manager
+            budget: i.budget || '',
             hasBudget: !!(i.budget || '').trim(),
           })),
         })),

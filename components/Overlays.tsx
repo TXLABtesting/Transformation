@@ -1239,56 +1239,94 @@ export function Overlays({ vm }: { vm: VM }) {
                                 </div>
                               )}
                               {p.items.map((x) => (
-                                <label
+                                <div
                                   key={x.id}
                                   style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 9,
-                                    padding: '8px 12px',
+                                    padding: '6px 12px',
                                     borderBottom: '1px solid #F4F6FA',
-                                    cursor: 'pointer',
                                     fontSize: 12.5,
                                   }}
                                 >
-                                  <input
-                                    type="checkbox"
-                                    checked={x.checked}
-                                    onChange={() => s.togglePlanItem(p.id, x.id)}
-                                    style={{ width: 15, height: 15, accentColor: '#2563EB', flex: 'none' }}
-                                  />
-                                  <span
+                                  {/* attach toggle (checkbox + chip + name) */}
+                                  <label
                                     style={{
-                                      fontSize: 10.5,
-                                      fontWeight: 700,
-                                      color: '#54627B',
-                                      background: '#F1F4F9',
-                                      borderRadius: 999,
-                                      padding: '2px 8px',
-                                      flex: 'none',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 9,
+                                      flex: 1,
+                                      minWidth: 0,
+                                      cursor: 'pointer',
                                     }}
                                   >
-                                    {x.typeLabel}
-                                  </span>
-                                  <span style={{ fontWeight: 700, color: '#33415C', flex: 1, minWidth: 0 }}>
-                                    {x.title}
-                                  </span>
-                                  <span
+                                    <input
+                                      type="checkbox"
+                                      checked={x.checked}
+                                      onChange={() => s.togglePlanItem(p.id, x.id)}
+                                      style={{ width: 15, height: 15, accentColor: '#2563EB', flex: 'none' }}
+                                    />
+                                    <span
+                                      style={{
+                                        fontSize: 10.5,
+                                        fontWeight: 700,
+                                        color: '#54627B',
+                                        background: '#F1F4F9',
+                                        borderRadius: 999,
+                                        padding: '2px 8px',
+                                        flex: 'none',
+                                      }}
+                                    >
+                                      {x.typeLabel}
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontWeight: 700,
+                                        color: '#33415C',
+                                        flex: 1,
+                                        minWidth: 0,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      {x.title}
+                                    </span>
+                                  </label>
+                                  {/* execution cost — editable inline */}
+                                  <input
+                                    value={x.budget}
+                                    onChange={(e) => s.setItemBudget(x.id, e.target.value)}
+                                    placeholder="أضف الميزانية…"
                                     style={{
+                                      width: 130,
+                                      flex: 'none',
+                                      border: x.hasBudget ? '1px solid transparent' : '1px dashed #C7D1E2',
+                                      background: x.hasBudget ? 'transparent' : '#FAFCFF',
+                                      borderRadius: 8,
+                                      padding: '4px 8px',
                                       fontSize: 11,
                                       fontWeight: 600,
-                                      color: x.hasBudget ? '#54627B' : '#B9C3D4',
-                                      flex: 'none',
+                                      color: '#33415C',
+                                      outline: 'none',
+                                      fontFamily: 'inherit',
+                                      textAlign: 'left',
+                                      direction: 'ltr',
                                     }}
-                                  >
-                                    {x.budgetLabel}
-                                  </span>
+                                    onFocus={(e) => (e.target.style.border = '1px solid #2563EB')}
+                                    onBlur={(e) =>
+                                      (e.target.style.border = (e.target.value || '').trim()
+                                        ? '1px solid transparent'
+                                        : '1px dashed #C7D1E2')
+                                    }
+                                  />
                                   {x.otherBatch && (
                                     <span style={{ fontSize: 10.5, color: '#B45309', fontWeight: 600, flex: 'none' }}>
                                       في مرحلة أخرى
                                     </span>
                                   )}
-                                </label>
+                                </div>
                               ))}
                             </div>
                           </div>
