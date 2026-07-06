@@ -1,0 +1,207 @@
+<meta charset="utf-8">
+<title>Roles &amp; Access</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; color: #1F2D49; font-size: 11px; line-height: 1.55; }
+  .page { width: 210mm; min-height: 297mm; padding: 18mm 16mm; page-break-after: always; position: relative; }
+  .page:last-child { page-break-after: auto; }
+  h1 { font-size: 26px; color: #0F1F3D; }
+  h2 { font-size: 16px; color: #0F1F3D; border-bottom: 2px solid #2563EB; padding-bottom: 5px; margin-bottom: 12px; }
+  h3 { font-size: 12.5px; color: #2563EB; margin: 12px 0 5px; }
+  p { margin-bottom: 7px; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+  th { background: #0F1F3D; color: #fff; font-size: 10px; padding: 5px 8px; text-align: left; }
+  td { border: 1px solid #DCE3EE; padding: 5px 8px; font-size: 10px; vertical-align: top; }
+  tr:nth-child(even) td { background: #F7F9FD; }
+  .yes { color: #0B8A4B; font-weight: 700; } .no { color: #C0303B; font-weight: 700; } .part { color: #B45309; font-weight: 700; }
+  .rolehead { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .rolechip { background: #0F1F3D; color: #fff; border-radius: 8px; padding: 5px 13px; font-size: 13px; font-weight: 700; }
+  .cover { background: linear-gradient(160deg, #0F1F3D 0%, #1B3B7A 70%, #2563EB 130%); color: #fff; display: flex; flex-direction: column; justify-content: center; }
+  .cover h1 { color: #fff; font-size: 30px; margin-bottom: 6px; }
+  .cover .sub { font-size: 15px; color: #AFC6E8; margin-bottom: 26px; }
+  .cover .meta { font-size: 11px; color: #AFC6E8; border-top: 1px solid rgba(255,255,255,.25); padding-top: 14px; width: 60%; }
+  .foot { position: absolute; bottom: 9mm; left: 16mm; right: 16mm; display: flex; justify-content: space-between; font-size: 8.5px; color: #8A97AD; border-top: 1px solid #E7ECF4; padding-top: 4px; }
+  svg text { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+  .caption { font-size: 9px; color: #8A97AD; text-align: center; margin-top: 3px; }
+  ul { margin: 4px 0 8px 16px; } li { margin-bottom: 3px; }
+</style>
+
+<div class="page cover">
+  <h1>AI Transformation Portal</h1>
+  <div class="sub">Roles &amp; Access — Pages, Data Visibility and Permissions</div>
+  <div class="sub" style="direction:rtl; text-align:left; font-size:13px;">المنصة الحكومية لتخطيط ومتابعة مشروع الذكاء الاصطناعي المساعد</div>
+  <div class="meta">
+    Document 2 of 2 · Prepared for the IT team (role mapping &amp; access control)<br>
+    Version 1.0 · July 2026 · Companion documents: HANDOVER.md, DEPLOYMENT.md, Architecture &amp; Data Flow (PDF)
+  </div>
+</div>
+
+<div class="page">
+  <h2>1. The four roles</h2>
+  <p>Every user belongs to exactly one role. The delivered build opens as <b>ممثل الجهة</b> by default
+  (<code>NEXT_PUBLIC_DEFAULT_ROLE</code>); in production the role comes from the sign-in mapping against the
+  <b>users</b> table. All scoping below is enforced centrally in the view-model — one place decides what each role sees.</p>
+  <table>
+    <tr><th>Role</th><th>Arabic</th><th>Who</th><th>Scope of data</th></tr>
+    <tr><td>Coordinator</td><td class="ar">منسق المسار في الجهة</td><td>The entity employee who enters the data for ONE stream</td><td>Own entity + own stream — including drafts</td></tr>
+    <tr><td>Entity representative</td><td class="ar">ممثل الجهة</td><td>The entity's official approver</td><td>Own entity, all streams — submissions onward (never drafts)</td></tr>
+    <tr><td>Stream head</td><td class="ar">رئيس المسار</td><td>Predefined national owner of one stream (5 officials)</td><td>Own stream across ALL entities — approved items only</td></tr>
+    <tr><td>National committee</td><td class="ar">اللجنة الوطنية</td><td>The national funding committee</td><td>Everything approved, across all entities and streams</td></tr>
+  </table>
+  <h3>Visibility model</h3>
+  <svg viewBox="0 0 760 250" width="100%">
+    <rect x="20" y="20" width="720" height="210" rx="12" fill="#F7F9FD" stroke="#DCE3EE"/>
+    <text x="380" y="45" text-anchor="middle" font-size="11" font-weight="700" fill="#0F1F3D">Item pool (all entities × all streams)</text>
+    <rect x="50" y="65" width="320" height="145" rx="10" fill="#EAF0FE" stroke="#2563EB"/>
+    <text x="210" y="86" text-anchor="middle" font-size="10" font-weight="700" fill="#2563EB">One entity — ممثل الجهة sees all streams of it</text>
+    <rect x="70" y="100" width="130" height="92" rx="8" fill="#fff" stroke="#0F1F3D"/>
+    <text x="135" y="120" text-anchor="middle" font-size="9" font-weight="700" fill="#0F1F3D">One stream</text>
+    <text x="135" y="136" text-anchor="middle" font-size="8.5" fill="#54627B">منسق المسار</text>
+    <text x="135" y="150" text-anchor="middle" font-size="8.5" fill="#54627B">(incl. drafts)</text>
+    <rect x="215" y="100" width="130" height="92" rx="8" fill="#fff" stroke="#C7D1E2"/>
+    <text x="280" y="140" text-anchor="middle" font-size="8.5" fill="#8A97AD">other streams…</text>
+    <rect x="400" y="65" width="320" height="66" rx="10" fill="#E3F6EC" stroke="#0B8A4B"/>
+    <text x="560" y="88" text-anchor="middle" font-size="10" font-weight="700" fill="#0B8A4B">One stream across all entities — رئيس المسار</text>
+    <text x="560" y="107" text-anchor="middle" font-size="8.5" fill="#54627B">approved items only (drafts &amp; pending approvals hidden)</text>
+    <rect x="400" y="145" width="320" height="66" rx="10" fill="#EFEAFE" stroke="#6D28D9"/>
+    <text x="560" y="168" text-anchor="middle" font-size="10" font-weight="700" fill="#6D28D9">Everything approved — اللجنة الوطنية</text>
+    <text x="560" y="187" text-anchor="middle" font-size="8.5" fill="#54627B">entity filter + stream filter available</text>
+  </svg>
+  <div class="caption">Fig. 1 — Data scoping per role</div>
+  <div class="foot"><span>AI Transformation Portal — Roles &amp; Access</span><span>2</span></div>
+</div>
+
+<div class="page">
+  <h2>2. Pages &amp; screens matrix</h2>
+  <table>
+    <tr><th>Page / panel</th><th>منسق المسار</th><th>ممثل الجهة</th><th>رئيس المسار</th><th>اللجنة الوطنية</th></tr>
+    <tr><td>Sign-in (UAE PASS)</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+    <tr><td>Team setup wizard (تسجيل فريق العمل)</td><td class="no">—</td><td class="yes">✓ (rep email mandatory)</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>Dashboard (لوحة المتابعة)</td><td class="yes">✓ own stream</td><td class="yes">✓ own entity</td><td class="yes">✓ own stream</td><td class="yes">✓ national</td></tr>
+    <tr><td>Add item wizard — manual (5 steps)</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>Bulk upload (workplan .xlsx)</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>إدارة خطط الإطلاق (launch-plan manager)</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>Bulk assign to مرحلة (select cards)</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>Item detail page</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+    <tr><td>Approve / return with notes</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>Update execution / launch status</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>Nomination basket (سلة الترشيحات)</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓ (committee basket)</td></tr>
+    <tr><td>Fund / cancel funding (with reason)</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+    <tr><td>Team panel (فريق العمل) + edit</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>Program deadlines editor</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>Excel / PowerPoint export</td><td class="yes">✓ own scope</td><td class="yes">✓ own scope</td><td class="yes">✓ own scope</td><td class="yes">✓ full scope</td></tr>
+    <tr><td>Notifications</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+  </table>
+  <h3>Program progress banner</h3>
+  <p>The three-phase program banner (with countdown) is shown to <b>منسق المسار</b> and <b>ممثل الجهة</b> only —
+  oversight roles (رئيس المسار، اللجنة الوطنية) see their analytics instead.</p>
+  <div class="foot"><span>AI Transformation Portal — Roles &amp; Access</span><span>3</span></div>
+</div>
+
+<div class="page">
+  <div class="rolehead"><span class="rolechip">1</span><h2 style="border:none;margin:0;">منسق المسار في الجهة — Coordinator</h2></div>
+  <p><b>Purpose:</b> the data owner. Creates and maintains every item of ONE stream inside their entity and plans the launches.</p>
+  <h3>Pages seen</h3>
+  <ul>
+    <li><b>Dashboard</b> — stream-scoped: totals row (إجمالي، المشاريع/المبادرات، العمليات/الخدمات as applicable to the stream), percentages row (الإنجاز، التحول الذكي المساعد، الأتمتة، المكتمل), per-مرحلة summary (items · عمليات · execution cost · each launch with its budgets), item cards/list.</li>
+    <li><b>Add wizard</b> — method (manual / bulk) → type (per stream: مشروع/مبادرة everywhere; عملية in العمليات والدعم المؤسسي and العمل الحكومي الاستراتيجي; خدمة in الخدمات) → 5 steps ending with خطة التنفيذ والإطلاق (مرحلة + launch plans + وضع العنصر).</li>
+    <li><b>Bulk upload</b> — the official workplan Excel; parsed rows reviewed before submission.</li>
+    <li><b>إدارة خطط الإطلاق</b> — collapsible launches per مرحلة: name, type, date, attached items, derived execution budget (read-only), manual launch budget, scope.</li>
+    <li><b>Item detail</b> — full data; can edit drafts, update execution checklist and launch completion.</li>
+  </ul>
+  <h3>Data visible</h3>
+  <ul>
+    <li>Only items of <b>their entity AND their stream</b> — including drafts and returned items (بحاجة إلى تعديل).</li>
+    <li>Execution budgets and launch budgets of their stream's launch plans.</li>
+    <li>Funding outcome (معتمد للتمويل) — but <b>not</b> the nomination activity of رئيس المسار.</li>
+  </ul>
+  <h3>Actions</h3>
+  <ul>
+    <li>Create / edit / submit items (name mandatory; scope + execution budget mandatory at submission).</li>
+    <li>Delete drafts and <b>withdraw &amp; delete</b> submissions not yet approved (سحب وحذف).</li>
+    <li>Manage launch plans; attach/detach items (one مرحلة per item); bulk-assign selected cards to a مرحلة.</li>
+    <li>Update execution checklist status and mark launches done (completes the item).</li>
+  </ul>
+  <div class="foot"><span>AI Transformation Portal — Roles &amp; Access</span><span>4</span></div>
+</div>
+
+<div class="page">
+  <div class="rolehead"><span class="rolechip">2</span><h2 style="border:none;margin:0;">ممثل الجهة — Entity representative</h2></div>
+  <p><b>Purpose:</b> the entity's official gate. Approves what the coordinators submit and tracks the entity's whole portfolio and costs.</p>
+  <h3>Pages seen</h3>
+  <ul>
+    <li><b>Team setup wizard</b> (first sign-in) — entity fixed from UAE PASS; rep name, <b>email (mandatory)</b>, phone; stream owners in the official stream order.</li>
+    <li><b>Dashboard</b> — entity-wide: totals row with per-stream distribution inside the المشاريع/المبادرات and العمليات cards (zeros shown), percentages row + <b>ميزانية التنفيذ التقديرية</b> and <b>ميزانية الإطلاق التقديرية (للاطلاع)</b>, per-مرحلة summary with each launch's budgets, cards/list.</li>
+    <li><b>Item detail</b> — read-only data view with the full audit log and approval actions.</li>
+    <li><b>Team panel + program deadlines editor.</b></li>
+  </ul>
+  <h3>Data visible</h3>
+  <ul>
+    <li>All streams of <b>their entity</b>, from submission onward — drafts are never visible.</li>
+    <li>Both cost figures: execution totals (what the committee counts) and launch totals (awareness only).</li>
+    <li>Funding outcomes; <b>not</b> the nomination pipeline.</li>
+  </ul>
+  <h3>Actions</h3>
+  <ul>
+    <li><b>Approve</b> a submission (اعتماد) → item becomes مخطط · المرحلة N.</li>
+    <li><b>Return with notes</b> (إعادة بملاحظات) → item goes back to the coordinator as بحاجة إلى تعديل.</li>
+    <li>Maintain the team and program deadlines; export the entity portfolio.</li>
+  </ul>
+
+  <div class="rolehead" style="margin-top:22px;"><span class="rolechip">3</span><h2 style="border:none;margin:0;">رئيس المسار — Stream head</h2></div>
+  <p><b>Purpose:</b> national owner of one stream. The five heads are predefined officials (names/titles shipped in the app; accounts linked by IT).</p>
+  <h3>Pages seen</h3>
+  <ul>
+    <li><b>Dashboard</b> — their stream across all entities, with an entity filter; KPI cards relevant to the stream.</li>
+    <li><b>Item detail</b> — read-only, full data of approved items.</li>
+    <li><b>Nomination basket (سلة الترشيحات)</b> — their nominations awaiting the committee.</li>
+  </ul>
+  <h3>Data visible</h3>
+  <ul>
+    <li>Only <b>approved</b> items (drafts and pending entity approvals are hidden) of their stream, across all entities.</li>
+    <li>Execution budgets; nomination and funding status of their stream's items.</li>
+  </ul>
+  <h3>Actions</h3>
+  <ul>
+    <li>Select items → <b>ترشيح للتمويل</b> (nominate to the committee); withdraw own nominations before funding.</li>
+  </ul>
+  <div class="foot"><span>AI Transformation Portal — Roles &amp; Access</span><span>5</span></div>
+</div>
+
+<div class="page">
+  <div class="rolehead"><span class="rolechip">4</span><h2 style="border:none;margin:0;">اللجنة الوطنية — National committee</h2></div>
+  <p><b>Purpose:</b> national oversight and funding against the approved 100M AED budget.</p>
+  <h3>Pages seen</h3>
+  <ul>
+    <li><b>Dashboard</b> — national analytics: participating entities, totals, pending/funded counts, average transformation score (with the scoring formula tooltip), the budget bar (approved / spent / remaining / utilisation), recommendation classification (موصى به / قائمة الانتظار / غير موصى به), stream + entity + status filters.</li>
+    <li><b>Committee basket</b> — items nominated by رؤساء المسارات and the funded list with total cost.</li>
+    <li><b>Item detail</b> — read-only, full data + audit log.</li>
+  </ul>
+  <h3>Data visible</h3>
+  <ul>
+    <li>Everything <b>approved</b>, across all entities and streams (drafts and pending approvals hidden).</li>
+    <li>All execution budgets; spent = sum of funded items' execution budgets only (launch budgets never counted).</li>
+  </ul>
+  <h3>Actions</h3>
+  <ul>
+    <li><b>Fund</b> nominated items (or fund directly); <b>decline</b> nominations; <b>cancel funding with a mandatory reason</b> (the entity is notified).</li>
+  </ul>
+
+  <h2 style="margin-top:20px;">5. Field-level visibility rules</h2>
+  <table>
+    <tr><th>Data</th><th>منسق المسار</th><th>ممثل الجهة</th><th>رئيس المسار</th><th>اللجنة الوطنية</th></tr>
+    <tr><td>Drafts (مسودة / بحاجة إلى تعديل)</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>Pending approvals (بانتظار اعتماد ممثل الجهة)</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>Item execution budget</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+    <tr><td>Launch budget (informational)</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>Nomination activity (who nominated)</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+    <tr><td>Funding outcome (معتمد للتمويل)</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+    <tr><td>Committee budget bar (100M)</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+    <tr><td>Audit log (item history)</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+    <tr><td>Other entities' data</td><td class="no">—</td><td class="no">—</td><td class="part">own stream only</td><td class="yes">✓</td></tr>
+  </table>
+  <p class="muted" style="font-size:9.5px;">Note: role enforcement is currently presentation-layer (single state API). Before opening the platform
+  to multiple tenants, transitions should be re-checked server-side per role — see HANDOVER.md §8.</p>
+  <div class="foot"><span>AI Transformation Portal — Roles &amp; Access</span><span>6</span></div>
+</div>
