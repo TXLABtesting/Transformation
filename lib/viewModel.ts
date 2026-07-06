@@ -206,6 +206,11 @@ function build(s: Store) {
       svcCount: inBatch.filter((i) => i.type === 'service').length,
       costLabel: cost > 0 ? formatMoney(cost) : '—',
       launchCostLabel: launchTotal > 0 ? formatMoney(launchTotal) : '—',
+      // delivery mapping: how far this مرحلة's assignments have progressed
+      underDev: inBatch.filter((i) => devStatusOfItem(i) === 'underDev').length,
+      developed: inBatch.filter((i) => devStatusOfItem(i) === 'developed').length,
+      launched: inBatch.filter((i) => devStatusOfItem(i) === 'launched').length,
+      awaiting: inBatch.filter((i) => devStatusOfItem(i) === null).length,
       // each launch in the مرحلة with its costs (entity rep + coordinator)
       launches: s.launchPlans
         .filter((p) => p.batch === b.name)
@@ -327,14 +332,7 @@ function build(s: Store) {
   // ---- sidebar navigation (§redesign) ----
   const navSection = ui.navSection || 'overview';
   const navStream = ui.navStream;
-  // simplified development status; null = not yet in the delivery pipeline
-  const devStatusOf = (i: Item): 'underDev' | 'developed' | 'launched' | null => {
-    const w = wfOf(i);
-    if (w === 'done') return 'launched';
-    if (w === 'launch') return 'developed';
-    if (w === 'budget' || w === 'exec') return 'underDev';
-    return null;
-  };
+  const devStatusOf = devStatusOfItem;
   // items that cannot be agentified carry no launch plan or execution status
   const agentifiable = (i: Item) => (i.transformability || '') !== 'غير قابل';
   const bucketOf = (section: string) => (i: Item) =>
@@ -699,6 +697,15 @@ function statusMatch(i: Item, f: string, rawRole: RoleKey, s: Store): boolean {
   if (f === 'approve') return w === 'ent1';
   if (f === 'inprog') return ['budget', 'exec', 'launch'].includes(w);
   return w === f;
+}
+
+// simplified delivery status; null = not yet in the delivery pipeline
+function devStatusOfItem(i: Item): 'underDev' | 'developed' | 'launched' | null {
+  const w = wfOf(i);
+  if (w === 'done') return 'launched';
+  if (w === 'launch') return 'developed';
+  if (w === 'budget' || w === 'exec') return 'underDev';
+  return null;
 }
 
 function summaryText(activePath: string): string {

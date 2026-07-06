@@ -1094,12 +1094,70 @@ export function Dashboard({ vm }: { vm: VM }) {
         </div>
       </div>
 
+
+      {/* ===================== WORK AREA ===================== */}
+      <div
+        data-r="work"
+        style={{ display: 'flex', gap: 16, padding: '16px 24px 44px', alignItems: 'flex-start' }}
+      >
+        {/* Sidebar navigation */}
+        <aside
+          data-r="rail"
+          style={{
+            width: 248,
+            flex: 'none',
+            alignSelf: 'stretch',
+            minHeight: 'calc(100vh - 150px)',
+            position: 'sticky',
+            top: 96,
+            background: '#fff',
+            border: '1px solid #E7ECF4',
+            borderRadius: 18,
+            padding: '18px 12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+          }}
+        >
+          <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, padding: '0 13px 10px', letterSpacing: '.04em' }}>
+            القائمة
+          </div>
+          {vm.navItems.map((n) => (
+            <button
+              key={n.key}
+              onClick={n.onClick}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '11px 13px',
+                borderRadius: 11,
+                border: 'none',
+                background: n.active ? '#0F1F3D' : 'transparent',
+                color: n.active ? '#fff' : '#42506B',
+                fontWeight: n.active ? 800 : 400,
+                fontSize: 13,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'right',
+              }}
+            >
+              <Icon d={n.icon} size={16} color={n.active ? '#fff' : '#8A97AD'} />
+              {n.label}
+            </button>
+          ))}
+        </aside>
+
+        {/* Main column */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {vm.navSection === 'overview' && (
+          <>
       {/* ===================== BANNER + STEPPER (entity/coord only) ===================== */}
       {vm.showProgramBanner && (
       <div
         data-tour="banner"
         style={{
-          margin: '16px 24px 0',
+          margin: 0,
           background: BLUE_GRAD,
           borderRadius: 18,
           padding: '18px 22px',
@@ -1226,58 +1284,6 @@ export function Dashboard({ vm }: { vm: VM }) {
       </div>
       )}
 
-      {/* ===================== WORK AREA ===================== */}
-      <div
-        data-r="work"
-        style={{ display: 'flex', gap: 16, padding: '16px 24px 44px', alignItems: 'flex-start' }}
-      >
-        {/* Sidebar navigation */}
-        <aside
-          data-r="rail"
-          style={{
-            width: 226,
-            flex: 'none',
-            position: 'sticky',
-            top: 100,
-            background: '#fff',
-            border: '1px solid #E7ECF4',
-            borderRadius: 16,
-            padding: 10,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 4,
-          }}
-        >
-          {vm.navItems.map((n) => (
-            <button
-              key={n.key}
-              onClick={n.onClick}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '11px 13px',
-                borderRadius: 11,
-                border: 'none',
-                background: n.active ? '#0F1F3D' : 'transparent',
-                color: n.active ? '#fff' : '#42506B',
-                fontWeight: n.active ? 800 : 400,
-                fontSize: 13,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                textAlign: 'right',
-              }}
-            >
-              <Icon d={n.icon} size={16} color={n.active ? '#fff' : '#8A97AD'} />
-              {n.label}
-            </button>
-          ))}
-        </aside>
-
-        {/* Main column */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {vm.navSection === 'overview' && (
-          <>
           {/* Subheader */}
           <div
             style={{
@@ -1888,6 +1894,46 @@ export function Dashboard({ vm }: { vm: VM }) {
                             .filter(Boolean)
                             .join(' · ')}
                     </div>
+                    {/* delivery mapping: status of this مرحلة's assignments */}
+                    {b.count > 0 && (
+                      <>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 12 }}>
+                          {[
+                            { label: 'قيد التطوير', v: b.underDev },
+                            { label: 'تم التطوير', v: b.developed },
+                            { label: 'تم الإطلاق', v: b.launched },
+                          ].map((x) => (
+                            <div
+                              key={x.label}
+                              style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '9px 12px' }}
+                            >
+                              <div style={{ fontSize: 10.5, color: '#6B7A93', fontWeight: 400 }}>{x.label}</div>
+                              <div style={{ fontSize: 16, fontWeight: 800, color: '#13213C', marginTop: 2 }}>{x.v}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                          <div style={{ flex: 1, height: 8, background: '#EDF1F8', borderRadius: 999, overflow: 'hidden' }}>
+                            <div
+                              style={{
+                                width: `${Math.round((b.launched / b.count) * 100)}%`,
+                                height: '100%',
+                                borderRadius: 999,
+                                background: '#0F1F3D',
+                              }}
+                            />
+                          </div>
+                          <span style={{ flex: 'none', fontSize: 11, fontWeight: 800, color: '#13213C' }}>
+                            {Math.round((b.launched / b.count) * 100)}% أُطلق
+                          </span>
+                        </div>
+                        {b.awaiting > 0 && (
+                          <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 7 }}>
+                            {b.awaiting} بانتظار الاعتماد قبل بدء التطوير
+                          </div>
+                        )}
+                      </>
+                    )}
                     {/* launches with their items */}
                     {b.launches.length > 0 && (
                       <div style={{ borderTop: '1px solid #F0F3F8', marginTop: 14, paddingTop: 12 }}>
