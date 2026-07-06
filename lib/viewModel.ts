@@ -176,22 +176,26 @@ function build(s: Store) {
       // each launch in the مرحلة with its costs (entity rep + coordinator)
       launches: s.launchPlans
         .filter((p) => p.batch === b.name)
-        .map((p) => ({
-          id: p.id,
-          title: p.title || 'خطة إطلاق جديدة',
-          execLabel: parseBudget(p.budget) > 0 ? formatMoney(parseBudget(p.budget)) : '—',
-          launchLabel: parseBudget(p.launchBudget) > 0 ? formatMoney(parseBudget(p.launchBudget)) : '',
-          // the items behind the launch cost — expandable on click
-          items: roleBase
-            .filter((i) => (i.launchPlanIds || []).includes(p.id))
-            .map((i) => ({
+        .map((p) => {
+          // scoped to the viewer: the launch's execution total is the sum of
+          // the items THIS role can see, so it always matches the card totals
+          const visItems = roleBase.filter((i) => (i.launchPlanIds || []).includes(p.id));
+          const visCost = visItems.reduce((a, i) => a + parseBudget(i.budget), 0);
+          return {
+            id: p.id,
+            title: p.title || 'خطة إطلاق جديدة',
+            execLabel: visCost > 0 ? formatMoney(visCost) : '—',
+            launchLabel: parseBudget(p.launchBudget) > 0 ? formatMoney(parseBudget(p.launchBudget)) : '',
+            items: visItems.map((i) => ({
               id: i.id,
               title: i.title,
               typeLabel: typeLabel(i.type),
               budgetLabel: (i.budget || '').trim() || 'لم يتم تحديد الميزانية',
               onOpen: () => s.openDetail(i.id),
             })),
-        })),
+          };
+        })
+        .filter((l) => l.items.length > 0),
     };
   });
 
