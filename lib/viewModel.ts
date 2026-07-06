@@ -649,6 +649,8 @@ function build(s: Store) {
     execBudgetTotalLabel: formatMoney(execBudgetTotal),
     showExecBudget: execBudgetTotal > 0,
     grandBudgetTotalLabel: formatMoney(execBudgetTotal + launchBudgetTotal),
+    execBudgetTotal,
+    launchBudgetTotal,
     showOpsKpi: effActivePath === 'all' || streamHasType(effActivePath, 'operation'),
     showSvcKpi: effActivePath === 'all' || streamHasType(effActivePath, 'service'),
     notAiRole: !isAiRole,

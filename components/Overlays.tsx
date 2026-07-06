@@ -1466,9 +1466,6 @@ export function Overlays({ vm }: { vm: VM }) {
                                 placeholder="تكلفة الإطلاق / الفعالية"
                                 style={assignInput}
                               />
-                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>
-                                للاطلاع فقط — لا تدخل في إجماليات التمويل.
-                              </div>
                             </div>
                           </div>
                           <div style={{ marginTop: 10 }}>

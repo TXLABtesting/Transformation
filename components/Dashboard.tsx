@@ -376,6 +376,7 @@ function StatBand({
     info?: string;
     dist?: { label: string; value: number }[];
     mini?: { label: string; v: number }[];
+    onOpen?: () => void;
   }[];
 }) {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
@@ -392,13 +393,13 @@ function StatBand({
       {items.map((it, i) => (
         <div
           key={it.label}
-          onClick={it.dist ? () => setOpenIdx(openIdx === i ? null : i) : undefined}
+          onClick={it.onOpen ? it.onOpen : it.dist ? () => setOpenIdx(openIdx === i ? null : i) : undefined}
           style={{
             flex: 1,
             minWidth: 0,
             padding: '15px 20px',
             borderLeft: i < items.length - 1 ? `1px solid ${dark ? 'rgba(255,255,255,.16)' : '#EBEFF6'}` : 'none',
-            cursor: it.dist ? 'pointer' : 'default',
+            cursor: it.onOpen || it.dist ? 'pointer' : 'default',
           }}
         >
           <div
@@ -415,6 +416,14 @@ function StatBand({
           >
             <span style={{ minWidth: 0 }}>{it.label}</span>
             {it.info && <InfoTip text={it.info} dark={dark} />}
+            {it.onOpen && (
+              <span
+                title="عرض البطاقات التفصيلية"
+                style={{ marginRight: 'auto', display: 'inline-flex', alignItems: 'center', flex: 'none' }}
+              >
+                <Icon d="M15 18l-6-6 6-6" size={14} color={dark ? 'rgba(255,255,255,.7)' : '#9AA6BC'} />
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5 }}>
             <span
@@ -446,6 +455,10 @@ function StatBand({
             {it.dist && (
               <span
                 title="عرض التوزيع على المسارات"
+                onClick={(e) => {
+                  stop(e);
+                  setOpenIdx(openIdx === i ? null : i);
+                }}
                 style={{
                   marginRight: 'auto',
                   width: 28,
@@ -676,8 +689,6 @@ export function Dashboard({ vm }: { vm: VM }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="assets/uae-crest.png" alt="UAE" style={{ height: 46 }} />
           {/* Role switcher: demo builds only (production role comes from the
               UAE PASS / IdP mapping wired by IT). */}
           {vm.showRoleSwitcher && (
@@ -731,7 +742,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                 fontSize: 12,
               }}
             >
-              <Icon d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" size={15} color="#8B99B0" />
               <span style={{ fontWeight: 400, color: '#6B7A93', whiteSpace: 'nowrap' }}>مرحلة {vm.banner.firstMsName}</span>
               {[
                 { v: String(vm.banner.cd.days), l: 'يوم' },
@@ -1139,24 +1149,24 @@ export function Dashboard({ vm }: { vm: VM }) {
             flexDirection: 'column',
           }}
         >
-          {/* brand */}
+          {/* brand: both logos side by side */}
           <div
             style={{
-              padding: '16px 16px 14px',
+              padding: '14px 14px 12px',
               borderBottom: '1px solid #F0F3F8',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: 12,
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="assets/logo.png" alt="logo" style={{ height: 52, maxWidth: '100%', objectFit: 'contain' }} />
+            <img src="assets/uae-crest.png" alt="UAE" style={{ height: 46, flex: 'none' }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="assets/logo.png" alt="logo" style={{ height: 46, minWidth: 0, objectFit: 'contain' }} />
           </div>
           {/* navigation */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, padding: '0 13px 10px', letterSpacing: '.04em' }}>
-            القائمة
-          </div>
           {vm.navItems.map((n) => (
             <button
               key={n.key}
@@ -1365,25 +1375,28 @@ export function Dashboard({ vm }: { vm: VM }) {
                     {
                       label: 'الإجمالي',
                       value: String(vm.kpis.total),
-                      info: 'إجمالي ' + vm.typesPhrase + ' المسجّلة ضمن نطاق اطلاعك.',
+                      info: 'إجمالي ' + vm.typesPhrase + ' المسجّلة ضمن نطاق اطلاعك. اضغطوا على البطاقة لاستعراض البطاقات التفصيلية.',
                       dist: vm.showStreamDist ? vm.kpiDist.total : undefined,
                       mini: vm.kpiBreak.total,
+                      onOpen: () => s.setNavSection('all'),
                     },
                     {
                       label: 'المشاريع / المبادرات',
                       value: String(vm.kpis.projInit),
-                      info: 'عدد المشاريع والمبادرات المسجّلة ضمن نطاق اطلاعك في مسارات التحول. اضغطوا على البطاقة لاستعراض التوزيع على المسارات.',
+                      info: 'عدد المشاريع والمبادرات المسجّلة ضمن نطاق اطلاعك في مسارات التحول. اضغطوا على البطاقة لاستعراض البطاقات التفصيلية.',
                       dist: vm.showStreamDist ? vm.kpiDist.projInit : undefined,
                       mini: vm.kpiBreak.projInit,
+                      onOpen: () => s.setNavSection('projects'),
                     },
                     ...(vm.showOpsKpi
                       ? [
                           {
                             label: 'العمليات',
                             value: String(vm.kpis.operations),
-                            info: 'عدد العمليات التخصصية وعمليات الدعم المؤسسي المسجّلة للتحول. اضغطوا على البطاقة لاستعراض التوزيع على المسارات.',
+                            info: 'عدد العمليات التخصصية وعمليات الدعم المؤسسي المسجّلة للتحول. اضغطوا على البطاقة لاستعراض البطاقات التفصيلية.',
                             dist: vm.showStreamDist ? vm.kpiDist.operations : undefined,
                             mini: vm.kpiBreak.operations,
+                            onOpen: () => s.setNavSection('operations'),
                           },
                         ]
                       : []),
@@ -1392,9 +1405,10 @@ export function Dashboard({ vm }: { vm: VM }) {
                           {
                             label: 'الخدمات',
                             value: String(vm.kpis.services),
-                            info: 'عدد الخدمات المسجّلة للتحول في مسار الخدمات.',
+                            info: 'عدد الخدمات المسجّلة للتحول في مسار الخدمات. اضغطوا على البطاقة لاستعراض البطاقات التفصيلية.',
                             dist: vm.showStreamDist ? vm.kpiDist.services : undefined,
                             mini: vm.kpiBreak.services,
+                            onOpen: () => s.setNavSection('services'),
                           },
                         ]
                       : []),
@@ -1404,25 +1418,93 @@ export function Dashboard({ vm }: { vm: VM }) {
               {vm.role === 'entity' && vm.pathFilterValue === 'all' && (vm.showExecBudget || vm.showLaunchBudget) && (
                 <>
                 <SectionLabel>الميزانيات التقديرية</SectionLabel>
-                <StatBand
-                  items={[
-                    {
-                      label: 'الميزانية الإجمالية التقديرية',
-                      value: vm.grandBudgetTotalLabel,
-                      info: 'مجموع ميزانيتي التنفيذ والإطلاق التقديريتين لجميع المشاريع والمبادرات والعمليات والخدمات في نطاقكم.',
-                    },
-                    {
-                      label: 'ميزانية التنفيذ التقديرية',
-                      value: vm.execBudgetTotalLabel,
-                      info: 'مجموع الميزانيات التقديرية لتنفيذ المشاريع والعمليات والخدمات في نطاقكم.',
-                    },
-                    {
-                      label: 'ميزانية الإطلاق التقديرية (للاطلاع)',
-                      value: vm.launchBudgetTotalLabel,
-                      info: 'مجموع ميزانيات الإطلاق لخطط الإطلاق المرتبطة — للاطلاع فقط ولا يدخل في التمويل.',
-                    },
-                  ]}
-                />
+                {(() => {
+                  const ex = vm.execBudgetTotal;
+                  const ln = vm.launchBudgetTotal;
+                  const tot = ex + ln || 1;
+                  const R = 44;
+                  const C = 2 * Math.PI * R;
+                  const exFrac = ex / tot;
+                  return (
+                    <div
+                      style={{
+                        background: '#fff',
+                        border: '1px solid #E7ECF4',
+                        borderRadius: 16,
+                        padding: '18px 24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 28,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      {/* donut: total in the middle, the two budgets as segments */}
+                      <div style={{ position: 'relative', flex: 'none', width: 150, height: 150 }}>
+                        <svg viewBox="0 0 110 110" width={150} height={150}>
+                          <circle cx="55" cy="55" r={R} fill="none" stroke="#EDF1F8" strokeWidth="13" />
+                          <circle
+                            cx="55"
+                            cy="55"
+                            r={R}
+                            fill="none"
+                            stroke="#16408F"
+                            strokeWidth="13"
+                            strokeDasharray={`${exFrac * C} ${C}`}
+                            transform="rotate(-90 55 55)"
+                          />
+                          <circle
+                            cx="55"
+                            cy="55"
+                            r={R}
+                            fill="none"
+                            stroke="#27C2F0"
+                            strokeWidth="13"
+                            strokeDasharray={`${(1 - exFrac) * C} ${C}`}
+                            strokeDashoffset={-(exFrac * C)}
+                            transform="rotate(-90 55 55)"
+                          />
+                        </svg>
+                        <div
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center',
+                            padding: '0 28px',
+                          }}
+                        >
+                          <span style={{ fontSize: 14, fontWeight: 800, color: '#13213C', lineHeight: 1.35 }}>
+                            {vm.grandBudgetTotalLabel}
+                          </span>
+                          <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, marginTop: 2 }}>الإجمالي</span>
+                        </div>
+                      </div>
+                      {/* the two budgets */}
+                      <div style={{ flex: 1, minWidth: 260, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: 3, background: '#16408F', flex: 'none' }} />
+                          <span style={{ flex: 1, fontSize: 12.5, color: '#6B7A93', fontWeight: 400, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            ميزانية التنفيذ التقديرية
+                            <InfoTip text="مجموع الميزانيات التقديرية لتنفيذ المشاريع والعمليات والخدمات في نطاقكم." />
+                          </span>
+                          <span style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{vm.execBudgetTotalLabel}</span>
+                        </div>
+                        <div style={{ height: 1, background: '#F0F3F8' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: 3, background: '#27C2F0', flex: 'none' }} />
+                          <span style={{ flex: 1, fontSize: 12.5, color: '#6B7A93', fontWeight: 400, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            ميزانية الإطلاق التقديرية
+                            <InfoTip text="مجموع ميزانيات الإطلاق لخطط الإطلاق المرتبطة." />
+                          </span>
+                          <span style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{vm.launchBudgetTotalLabel}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
                 </>
               )}
             </div>
@@ -1875,7 +1957,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                         {/* header: title + one action (coord manages, others view) */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div className="hd" style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>
-                            محتوى المرحلة
+                            خطة التنفيذ
                           </div>
                           {vm.showAddBtn ? (
                             <button
@@ -1963,21 +2045,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                             </div>
                           ))}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-                          <div style={{ flex: 1, height: 8, background: '#EDF1F8', borderRadius: 999, overflow: 'hidden' }}>
-                            <div
-                              style={{
-                                width: `${Math.round((b.launched / b.count) * 100)}%`,
-                                height: '100%',
-                                borderRadius: 999,
-                                background: '#0F1F3D',
-                              }}
-                            />
-                          </div>
-                          <span style={{ flex: 'none', fontSize: 11, fontWeight: 800, color: '#13213C' }}>
-                            {Math.round((b.launched / b.count) * 100)}% أُطلق
-                          </span>
-                        </div>
                         {b.awaiting > 0 && (
                           <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 7 }}>
                             {b.awaiting} بانتظار الاعتماد قبل بدء التطوير
@@ -1989,7 +2056,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     {vm.showAddBtn ? (
                       <div style={{ borderTop: '1px solid #F0F3F8', marginTop: 14, paddingTop: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
-                          <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>الإطلاقات</div>
+                          <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>خطة الإطلاق</div>
                           <button
                             onClick={() => setLaunchMgrFor(b.name)}
                             style={{
@@ -2017,7 +2084,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                             {(vm.launchPlanMgr.find((g) => g.batch === b.name)?.plans || []).map((p, pi) => {
                               const selCount = p.items.filter((x) => x.checked).length;
                               const ord =
-                                ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة'][pi] || String(pi + 1);
+                                ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع', 'العاشر'][pi] || String(pi + 1);
                               return (
                                 <div
                                   key={p.id}
@@ -2032,7 +2099,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                                   }}
                                 >
                                   <span className="hd" style={{ flex: 'none', fontSize: 12.5, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
-                                    خطة الإطلاق {ord}
+                                    الإطلاق {ord}
                                   </span>
                                   <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: 400, color: '#6B7A93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {p.title.trim()}
@@ -2091,7 +2158,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                                         ) : (
                       b.launches.length > 0 && (
                       <div style={{ borderTop: '1px solid #F0F3F8', marginTop: 14, paddingTop: 12 }}>
-                        <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400, marginBottom: 8 }}>الإطلاقات</div>
+                        <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400, marginBottom: 8 }}>خطة الإطلاق</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                           {b.launches.map((l) => {
                             const lOpen = openLaunch === b.name + '|' + l.id;
@@ -2163,7 +2230,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   >
                     <div style={{ padding: '18px 22px 12px', display: 'flex', alignItems: 'flex-start', gap: 12, borderBottom: '1px solid #F0F3F8' }}>
                       <div style={{ flex: 1 }}>
-                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>محتوى {itemsMgrFor}</div>
+                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>خطة التنفيذ — {itemsMgrFor.replace(/^إطلاق /, '')}</div>
                         <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3, lineHeight: 1.7 }}>
                           حدِّدوا ما يندرج ضمن هذه المرحلة — نقل بند من مرحلة أخرى يتطلب تأكيداً ويصل إشعار به لجميع المعنيين.
                         </div>
@@ -2200,7 +2267,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                           </span>
                           {x.batch && x.batch !== itemsMgrFor && (
                             <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
-                              في {x.batch}
+                              في {x.batch.replace(/^إطلاق /, '')}
                             </span>
                           )}
                         </div>
@@ -2233,7 +2300,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   >
                     <div style={{ padding: '18px 22px 12px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #F0F3F8' }}>
                       <div style={{ flex: 1 }}>
-                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>إطلاقات {launchMgrFor}</div>
+                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>خطة الإطلاق — {launchMgrFor.replace(/^إطلاق /, '')}</div>
                         <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                           أضيفوا الإطلاقات وحدِّدوا ما يشمله كل إطلاق — تنعكس التغييرات مباشرة على بطاقة المرحلة.
                         </div>
@@ -2276,7 +2343,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                         const pOpen = openLaunch === key;
                         const selCount = p.items.filter((x) => x.checked).length;
                         const ord =
-                          ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة'][pi] || String(pi + 1);
+                          ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع', 'العاشر'][pi] || String(pi + 1);
                         return (
                           <div key={p.id} style={{ border: '1px solid #EBEFF6', borderRadius: 12, overflow: 'hidden' }}>
                             <HoverDiv
@@ -2286,7 +2353,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                             >
                               <Icon d={pOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#8A97AD" />
                               <span className="hd" style={{ flex: 'none', fontSize: 13, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
-                                خطة الإطلاق {ord}
+                                الإطلاق {ord}
                               </span>
                               <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#6B7A93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {p.title.trim()}

@@ -1402,8 +1402,8 @@ export const useStore = create<Store>((set, get) => {
             kind: 'moveBatch',
             title: 'نقل بين المراحل',
             body:
-              typeLabelDef(it.type) + ' «' + it.title + '» معيَّن في ' + it.execBatch +
-              ' — هل تودّون نقله إلى ' + batch +
+              typeLabelDef(it.type) + ' «' + it.title + '» معيَّن في ' + (it.execBatch || '').replace(/^إطلاق /, '') +
+              ' — هل تودّون نقله إلى ' + batch.replace(/^إطلاق /, '') +
               '؟ سيُفصل عن إطلاقات مرحلته السابقة وسيصل إشعار بالنقل لجميع المعنيين.',
             okLabel: 'نقل وإشعار المعنيين',
             cancelLabel: 'إلغاء',
@@ -1437,8 +1437,8 @@ export const useStore = create<Store>((set, get) => {
         !batch
           ? 'أُزيلت ' + typeLabelDef(it.type) + ' من المرحلة'
           : moved
-            ? 'تم النقل إلى ' + batch + ' — سيصل إشعار لجميع المعنيين'
-            : 'تمت الإضافة إلى ' + batch
+            ? 'تم النقل إلى ' + batch.replace(/^إطلاق /, '') + ' — سيصل إشعار لجميع المعنيين'
+            : 'تمت الإضافة إلى ' + batch.replace(/^إطلاق /, '')
       );
     },
     togglePlanItem: (planId: string, itemId: string, forceMove?: boolean) => {
