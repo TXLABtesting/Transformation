@@ -407,7 +407,7 @@ function build(s: Store) {
     breakdownTotals,
     kpiDist,
     batchSummary,
-    showLaunchCosts: rawRole === 'entity' || rawRole === 'coord',
+    showLaunchCosts: rawRole === 'entity' || rawRole === 'coord' || rawRole === 'ai',
     launchBudgetTotalLabel: formatMoney(launchBudgetTotal),
     showLaunchBudget: launchBudgetTotal > 0,
     execBudgetTotalLabel: formatMoney(execBudgetTotal),
