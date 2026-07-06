@@ -665,9 +665,38 @@ export const useStore = create<Store>((set, get) => {
     setStatusFilter: (v) => setUi({ statusFilter: v }),
     // simplified delivery status: قيد التطوير / تم التطوير / تم الإطلاق
     setDevStage: (id, stage) => {
+      const s = get();
       const target = findItem(id);
       if (!target) return;
       const wf = stage === 'launched' ? 'done' : stage === 'developed' ? 'launch' : 'exec';
+      // launching syncs with the launch plan: offer to confirm the whole launch
+      if (stage === 'launched' && (target.launchPlanIds || []).length) {
+        const planIds = target.launchPlanIds || [];
+        const siblings = s.items.filter(
+          (it) =>
+            it.id !== id &&
+            (it.launchPlanIds || []).some((x) => planIds.includes(x)) &&
+            wfOf(it) !== 'done' &&
+            (it.transformability || '') !== 'غير قابل'
+        );
+        if (siblings.length) {
+          const planTitle = s.launchPlans.find((p) => planIds.includes(p.id))?.title || 'الإطلاق';
+          const all = window.confirm(
+            'هذا البند ضمن «' + planTitle + '» مع ' + siblings.length +
+              ' من البنود الأخرى — هل تودّون تأكيد الإطلاق للجميع حتى تبقى الحالات متزامنة؟ (إلغاء = هذا البند فقط)'
+          );
+          if (all) {
+            set((st) => ({
+              items: st.items.map((it) =>
+                it.id === id || siblings.some((sb) => sb.id === it.id) ? { ...it, wf: 'done' as WfState } : it
+              ),
+            }));
+            persist();
+            toast('تم تأكيد الإطلاق لجميع بنود «' + planTitle + '»');
+            return;
+          }
+        }
+      }
       patchItem(id, () => ({ wf: wf as WfState }));
       persist();
       toast(
@@ -1296,27 +1325,47 @@ export const useStore = create<Store>((set, get) => {
       const target = s.items.find((it) => it.id === itemId);
       if (!target) return;
       const wasAttached = (target.launchPlanIds || []).includes(planId);
-      // one batch per item: attaching to a plan from another batch is blocked
-      if (!wasAttached && target.execBatch && target.execBatch !== plan.batch)
-        return toast('تم التعيين مسبقاً في ' + target.execBatch + ' — مرحلة إطلاق واحدة لكل ' + typeLabelDef(target.type));
+      // one مرحلة per item: attaching to a plan from another مرحلة asks to MOVE
+      // the item (with its launches) and notifies every stakeholder
+      let crossMove = false;
+      if (!wasAttached && target.execBatch && target.execBatch !== plan.batch) {
+        const okMove = window.confirm(
+          typeLabelDef(target.type) +
+            ' «' + target.title + '» معيَّن في ' + target.execBatch +
+            ' — هل تودّون نقله إلى ' + plan.batch + '؟ سيُفصل عن إطلاقات مرحلته السابقة وسيُشعر جميع المعنيين بالنقل.'
+        );
+        if (!okMove) return;
+        crossMove = true;
+      }
       set((st) => ({
         items: st.items.map((it) => {
           if (it.id !== itemId) return it;
-          const kept = wasAttached
-            ? (it.launchPlanIds || []).filter((x) => x !== planId)
-            : [...(it.launchPlanIds || []), planId];
+          const kept = crossMove
+            ? [planId]
+            : wasAttached
+              ? (it.launchPlanIds || []).filter((x) => x !== planId)
+              : [...(it.launchPlanIds || []), planId];
           return {
             ...it,
             // adopting a plan fixes the batch; detaching keeps it
-            execBatch: it.execBatch || plan.batch,
+            execBatch: crossMove ? plan.batch : it.execBatch || plan.batch,
             launchPlanIds: kept,
             launches: launchesFromPlans(kept, st.launchPlans),
+            ...(crossMove
+              ? { stageMove: { from: target.execBatch || '', to: plan.batch, at: Date.now(), by: actorName(get()) } }
+              : {}),
           };
         }),
       }));
       set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
-      toast(wasAttached ? 'تم فصل ' + typeLabelDef(target.type) + ' عن خطة الإطلاق' : 'تم ربط ' + typeLabelDef(target.type) + ' بخطة الإطلاق');
+      toast(
+        crossMove
+          ? 'تم النقل إلى ' + plan.batch + ' — سيصل إشعار لجميع المعنيين'
+          : wasAttached
+            ? 'تم فصل ' + typeLabelDef(target.type) + ' عن خطة الإطلاق'
+            : 'تم ربط ' + typeLabelDef(target.type) + ' بخطة الإطلاق'
+      );
     },
     openCancelFund: (id) => setUi({ cancelFund: { id, note: '' } }),
     setCancelFundNote: (v) => set((s) => (s.ui.cancelFund ? { ui: { ...s.ui, cancelFund: { ...s.ui.cancelFund, note: v } } } : {})),

@@ -3,6 +3,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
 import { Tour, TOUR_EVENT, type TourStep } from './Tour';
+import { LAUNCH_TYPES } from '@/lib/domain';
 
 // first-login walkthrough: sections are matched by [data-tour] anchors and
 // steps whose anchor is not rendered for the current role are skipped
@@ -24,8 +25,8 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     sel: '[data-tour="stages"]',
-    title: 'بطاقات مراحل الإطلاق',
-    desc: 'لكل مرحلة إطلاق بطاقة تعرض إجمالي التكلفة التقديرية. اضغطوا على أيقونة التفاصيل لاستعراض خطط الإطلاق وما يرتبط بكل خطة.',
+    title: 'مراحل التنفيذ والإطلاق',
+    desc: 'لكل مرحلة بطاقة تعرض تكلفة التنفيذ وتكلفة الإطلاق وما تتضمنه من مشاريع وعمليات وخدمات، مع خطط الإطلاق المرتبطة بها وإدارتها مباشرة من الصفحة.',
   },
   {
     sel: '[data-tour="filters"]',
@@ -34,8 +35,8 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     sel: '[data-tour="add"]',
-    title: 'الإضافة وخطط الإطلاق',
-    desc: 'من هنا تتم إضافة مشروع أو مبادرة أو عملية أو خدمة جديدة، وإدارة خطط الإطلاق لكل مرحلة.',
+    title: 'الإضافة',
+    desc: 'من هنا تتم إضافة مشروع أو مبادرة أو عملية أو خدمة جديدة إلى محفظة جهتكم.',
   },
   {
     sel: '[data-tour="basket"]',
@@ -676,6 +677,35 @@ export function Dashboard({ vm }: { vm: VM }) {
             </div>
           )}
 
+          {/* Phase countdown (moved out of the banner) */}
+          {vm.showProgramBanner && (
+            <div
+              title={'الموعد النهائي: ' + vm.banner.curPhaseDeadlineFmt}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                height: 38,
+                padding: '0 15px',
+                borderRadius: 11,
+                border: 'none',
+                background: BLUE_GRAD,
+                color: '#fff',
+                fontSize: 12,
+                boxShadow: '0 8px 18px -10px rgba(11,27,58,.6)',
+              }}
+            >
+              <Icon d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" size={15} color="rgba(255,255,255,.8)" />
+              <span style={{ fontWeight: 400, color: 'rgba(255,255,255,.85)' }}>مرحلة {vm.banner.firstMsName}</span>
+              <span style={{ fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>
+                {vm.banner.cd.days} يوم
+              </span>
+              <span dir="ltr" style={{ fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>
+                {vm.banner.cd.hh}:{vm.banner.cd.mm}:{vm.banner.cd.ss}
+              </span>
+            </div>
+          )}
+
           {/* Notifications */}
           <div style={{ position: 'relative' }}>
             <button
@@ -870,34 +900,6 @@ export function Dashboard({ vm }: { vm: VM }) {
               </div>
             )}
           </div>
-
-          {/* Phase countdown (moved out of the banner) */}
-          {vm.showProgramBanner && (
-            <div
-              title={'الموعد النهائي: ' + vm.banner.curPhaseDeadlineFmt}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                height: 38,
-                padding: '0 13px',
-                borderRadius: 11,
-                border: '1px solid #E7ECF4',
-                background: '#fff',
-                color: '#42506B',
-                fontSize: 12,
-              }}
-            >
-              <Icon d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" size={15} color="#8A97AD" />
-              <span style={{ fontWeight: 400, color: '#6B7A93' }}>مرحلة {vm.banner.firstMsName}</span>
-              <span style={{ fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
-                {vm.banner.cd.days} يوم
-              </span>
-              <span dir="ltr" style={{ fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
-                {vm.banner.cd.hh}:{vm.banner.cd.mm}:{vm.banner.cd.ss}
-              </span>
-            </div>
-          )}
 
           {/* Replay the onboarding tour */}
           <HoverButton
@@ -1176,57 +1178,27 @@ export function Dashboard({ vm }: { vm: VM }) {
               'radial-gradient(circle at 97% 0%,rgba(39,194,240,.30),transparent 38%),radial-gradient(circle at 3% 100%,rgba(37,99,235,.25),transparent 40%)',
           }}
         />
+        {/* hero: title + progress ring + tiles + distribution */}
         <div
           style={{
             position: 'relative',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 16,
+            gap: 20,
             flexWrap: 'wrap',
-            marginBottom: 22,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div>
-              <div className="hd" style={{ fontSize: 18, fontWeight: 800 }}>{vm.banner.title}</div>
-              <div
-                style={{
-                  fontSize: 11.5,
-                  color: '#AFC6E8',
-                  fontWeight: 400,
-                  marginTop: 4,
-                  maxWidth: 520,
-                  lineHeight: 1.6,
-                }}
-              >
-                {vm.banner.subtitle}
-              </div>
-            </div>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              background: 'rgba(255,255,255,.07)',
-              border: '1px solid rgba(255,255,255,.12)',
-              borderRadius: 15,
-              padding: '14px 22px',
-            }}
-          >
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: '#9FC4F2', fontWeight: 400 }}>{'إجمالي ' + vm.typesPhrase}</div>
-              <div style={{ fontSize: 32, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginTop: 4 }}>
-                {vm.kpis.total}
-              </div>
+          <div style={{ minWidth: 260, flex: 1 }}>
+            <div className="hd" style={{ fontSize: 19, fontWeight: 800 }}>{vm.banner.title}</div>
+            <div style={{ fontSize: 12, color: '#AFC6E8', fontWeight: 400, marginTop: 5, maxWidth: 520, lineHeight: 1.7 }}>
+              {vm.banner.subtitle}
             </div>
             {vm.isAiRole && (
               <HoverButton
                 onClick={s.openDeadlines}
                 base={{
-                  position: 'relative',
-                  zIndex: 3,
+                  marginTop: 12,
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 7,
@@ -1234,7 +1206,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   border: '1px solid rgba(255,255,255,.2)',
                   color: '#fff',
                   borderRadius: 11,
-                  padding: '9px 13px',
+                  padding: '8px 13px',
                   fontSize: 12,
                   fontWeight: 800,
                   cursor: 'pointer',
@@ -1246,206 +1218,104 @@ export function Dashboard({ vm }: { vm: VM }) {
               </HoverButton>
             )}
           </div>
+          {/* progress ring: launched share */}
+          {(() => {
+            const total = vm.kpis.total || 0;
+            const pct = total ? Math.round((vm.launchedCount / total) * 100) : 0;
+            const R = 44;
+            const C = 2 * Math.PI * R;
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 'none' }}>
+                <svg viewBox="0 0 110 110" width={128} height={128}>
+                  <circle cx="55" cy="55" r={R} fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="11" />
+                  <circle
+                    cx="55"
+                    cy="55"
+                    r={R}
+                    fill="none"
+                    stroke="#27C2F0"
+                    strokeWidth="11"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(pct / 100) * C} ${C}`}
+                    transform="rotate(-90 55 55)"
+                  />
+                  <text x="55" y="56" textAnchor="middle" style={{ fontSize: 22, fontWeight: 800, fill: '#fff', fontFamily: 'inherit' }}>
+                    {pct}%
+                  </text>
+                  <text x="55" y="72" textAnchor="middle" style={{ fontSize: 8.5, fill: '#AFC6E8', fontFamily: 'inherit' }}>
+                    أُطلق
+                  </text>
+                </svg>
+              </div>
+            );
+          })()}
         </div>
 
-        {/* Three phase-summary cards (parallel tracks) */}
+        {/* four tiles */}
         <div
           style={{
             position: 'relative',
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))',
+            gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))',
             gap: 12,
+            marginTop: 18,
           }}
         >
+          <div style={{ background: 'rgba(255,255,255,.09)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 15, padding: '14px 18px' }}>
+            <div style={{ fontSize: 11.5, fontWeight: 400, color: '#C7D9F5' }}>{'إجمالي ' + vm.typesPhrase}</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginTop: 6, lineHeight: 1.15 }}>{vm.kpis.total}</div>
+          </div>
           {vm.programSteps.map((st) => (
             <div
               key={st.num}
               onClick={st.onStepFilter}
               style={{
-                background: 'rgba(255,255,255,.07)',
-                border: '1px solid rgba(255,255,255,.14)',
+                background: 'rgba(255,255,255,.06)',
+                border: '1px solid rgba(255,255,255,.13)',
                 borderRadius: 15,
-                padding: '15px 18px',
+                padding: '14px 18px',
                 cursor: 'pointer',
               }}
             >
-              <div style={{ fontSize: 12.5, fontWeight: 400, color: '#C7D9F5', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 400, color: '#C7D9F5' }}>
                 {['', 'تم حصرها', 'بانتظار الاعتماد', 'قيد التنفيذ'][Number(st.num)] || st.label}
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginTop: 8, lineHeight: 1.15 }}>
-                {st.stepCount}
-              </div>
-              <div style={{ fontSize: 10.5, fontWeight: 400, color: '#9FC4F2', marginTop: 5 }}>
-                من {vm.typesPhrase}
-              </div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginTop: 6, lineHeight: 1.15 }}>{st.stepCount}</div>
             </div>
           ))}
         </div>
+
+        {/* distribution bar + legend */}
+        {(() => {
+          const seg = [
+            { label: 'تم حصرها', v: Number(vm.programSteps[0]?.stepCount || 0), c: '#5B8DEF' },
+            { label: 'بانتظار الاعتماد', v: Number(vm.programSteps[1]?.stepCount || 0), c: '#8FB3F5' },
+            { label: 'قيد التنفيذ', v: Math.max(0, Number(vm.programSteps[2]?.stepCount || 0) - vm.launchedCount), c: '#27C2F0' },
+            { label: 'تم الإطلاق', v: vm.launchedCount, c: '#FFFFFF' },
+          ];
+          const tot = seg.reduce((a, x) => a + x.v, 0);
+          if (!tot) return null;
+          return (
+            <div style={{ position: 'relative', marginTop: 18 }}>
+              <div style={{ display: 'flex', height: 10, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,.1)' }}>
+                {seg.filter((x) => x.v > 0).map((x) => (
+                  <div key={x.label} style={{ width: `${(x.v / tot) * 100}%`, background: x.c }} />
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 18, marginTop: 9, flexWrap: 'wrap' }}>
+                {seg.map((x) => (
+                  <span key={x.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, color: '#C7D9F5', fontWeight: 400 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 3, background: x.c, display: 'inline-block' }} />
+                    {x.label} <b style={{ color: '#fff' }}>{x.v}</b>
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
       </div>
       )}
-
-          {/* Subheader */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 14,
-              flexWrap: 'wrap',
-            }}
-          >
-            <div>
-              <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{vm.activePathName}</div>
-              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
-                {vm.streamSummary}
-              </div>
-            </div>
-            <div data-r="actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <div
-                data-tour="filters"
-                style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
-              >
-              <select
-                value={vm.filterValue}
-                onChange={(e) => s.setFilter(e.target.value)}
-                style={selectStyle}
-              >
-                {vm.tabs.map((t) => (
-                  <option key={t.key} value={t.key}>
-                    {t.optLabel}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={vm.statusFilterValue}
-                onChange={(e) => s.setStatusFilter(e.target.value)}
-                style={selectStyle}
-              >
-                {vm.statusOptions.map((o) => (
-                  <option key={o.v} value={o.v}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              {vm.showFundFilter && (
-                <select
-                  value={vm.fundFilterValue}
-                  onChange={(e) => s.setFundFilter(e.target.value)}
-                  style={{ ...selectStyle, width: 200 }}
-                >
-                  {vm.fundOptions.map((o) => (
-                    <option key={o.v} value={o.v}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {vm.isAiRole && (
-                <select
-                  value={vm.pathFilterValue}
-                  onChange={(e) => s.setActivePath(e.target.value)}
-                  style={selectStyle}
-                >
-                  {vm.pathOptions.map((p) => (
-                    <option key={p.v} value={p.v}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {vm.showEntFilter && (
-                <select
-                  value={vm.entFilterValue}
-                  onChange={(e) => s.setEntFilter(e.target.value)}
-                  style={selectStyle}
-                >
-                  {vm.entOptions.map((e2) => (
-                    <option key={e2.v} value={e2.v}>
-                      {e2.label}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <div style={{ position: 'relative' }}>
-                <input
-                  value={vm.searchValue}
-                  onChange={(e) => s.setSearch(e.target.value)}
-                  placeholder="ابحث بالاسم أو الوصف…"
-                  style={{
-                    height: 40,
-                    width: 210,
-                    border: '1px solid #E7ECF4',
-                    background: '#fff',
-                    borderRadius: 11,
-                    padding: '0 36px 0 13px',
-                    fontSize: 12.5,
-                    fontWeight: 400,
-                    color: '#13213C',
-                    outline: 'none',
-                    fontFamily: 'inherit',
-                  }}
-                />
-                <span
-                  style={{
-                    position: 'absolute',
-                    right: 11,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    display: 'flex',
-                    pointerEvents: 'none',
-                  }}
-                >
-                  <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" size={15} color="#9AA6BC" />
-                </span>
-              </div>
-              </div>
-              {vm.showAddBtn && (
-                <div data-tour="add" style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    onClick={() => s.openLaunchPlans()}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      height: 40,
-                      padding: '0 16px',
-                      background: '#EAF0FE',
-                      color: '#2563EB',
-                      border: '1px solid #D9E4FD',
-                      borderRadius: 11,
-                      fontWeight: 800,
-                      fontSize: 13,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    <Icon d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" size={16} color="#2563EB" />
-                    إدارة خطط الإطلاق
-                  </button>
-                  <button
-                    onClick={s.openCreate}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      height: 40,
-                      padding: '0 18px',
-                      background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 11,
-                      fontWeight: 800,
-                      fontSize: 13.5,
-                      cursor: 'pointer',
-                      boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
-                    }}
-                  >
-                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديدة
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* KPI bands (non-ai): each family of statistics gets its own full
               line — counts (dark band), percentages, then budgets */}
@@ -1620,53 +1490,36 @@ export function Dashboard({ vm }: { vm: VM }) {
           )}
 
 
-          {/* List section title + view switcher */}
+          {/* Recent additions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
             <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
-              {'قائمة ' + vm.typesPhrase + ' المقدَّمة'}
+              آخر الإضافات
             </div>
             <div style={{ flex: 1, height: 1, background: '#E1E7F1' }} />
-            <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} />
-            <div
+            <button
+              onClick={() => s.setNavSection('all')}
               style={{
-                display: 'flex',
-                background: '#fff',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                height: 36,
+                padding: '0 14px',
                 border: '1px solid #E7ECF4',
-                borderRadius: 10,
-                padding: 3,
-                gap: 2,
-                flex: 'none',
+                background: '#fff',
+                borderRadius: 11,
+                color: '#42506B',
+                fontWeight: 800,
+                fontSize: 12,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
               }}
             >
-              {(
-                [
-                  { k: 'cards' as const, d: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z', t: 'بطاقات' },
-                  { k: 'list' as const, d: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', t: 'قائمة' },
-                ]
-              ).map((o) => (
-                <button
-                  key={o.k}
-                  title={o.t}
-                  onClick={() => setViewMode(o.k)}
-                  style={{
-                    width: 32,
-                    height: 28,
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: viewMode === o.k ? '#0F1F3D' : 'transparent',
-                  }}
-                >
-                  <Icon d={o.d} size={15} color={viewMode === o.k ? '#fff' : '#8A97AD'} />
-                </button>
-              ))}
-            </div>
+              عرض الكل
+              <Icon d="M15 18l-6-6 6-6" size={13} color="#8A97AD" />
+            </button>
           </div>
 
-          {/* Cards grid */}
+          {/* Recent cards (latest six) */}
           {vm.cards.length === 0 ? (
             <div
               data-tour="cards"
@@ -1683,13 +1536,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {vm.emptyDesc}
               </div>
             </div>
-          ) : viewMode === 'list' ? (
-            <div data-tour="cards">
-              <ListView cards={vm.cards} />
-            </div>
           ) : (
             <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
-              {vm.cards.map((c) => (
+              {vm.cards.slice(0, 6).map((c) => (
                 <CardItem key={c.id} c={c} />
               ))}
             </div>
@@ -1697,117 +1546,122 @@ export function Dashboard({ vm }: { vm: VM }) {
           </>
           )}
 
-          {/* ===== TYPE SECTIONS: big stream cards → drill into the list ===== */}
-          {vm.sectionTitle && !vm.navStream && (
-            <>
-              <div>
-                <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{vm.sectionTitle}</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
-                  اختر المسار لاستعراض {vm.sectionTitle}
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(330px,1fr))', gap: 14 }}>
-                {vm.sectionStreams.map((st) => (
-                  <HoverDiv
-                    key={st.id}
-                    onClick={st.onOpen}
-                    base={{
-                      background: '#fff',
-                      border: '1px solid #E7ECF4',
-                      borderRadius: 18,
-                      padding: '20px 22px',
-                      cursor: 'pointer',
-                      transition: 'box-shadow .15s,border-color .15s',
-                    }}
-                    hover={{ borderColor: '#C7D6EE', boxShadow: '0 18px 40px -22px rgba(15,31,61,.35)' }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div className="hd" style={{ fontSize: 15.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5 }}>
-                          {st.name}
-                        </div>
-                        <div style={{ fontSize: 30, fontWeight: 800, color: '#13213C', marginTop: 8 }}>{st.total}</div>
-                      </div>
-                      <span
-                        style={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: 10,
-                          border: '1px solid #E7ECF4',
-                          background: '#F7F9FD',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flex: 'none',
-                        }}
-                      >
-                        <Icon d="M15 18l-6-6 6-6" size={15} color="#54627B" />
-                      </span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 16 }}>
-                      {[
-                        { label: 'قيد التطوير', v: st.underDev },
-                        { label: 'تم التطوير', v: st.developed },
-                        { label: 'تم الإطلاق', v: st.launched },
-                      ].map((x) => (
-                        <div
-                          key={x.label}
-                          style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '10px 12px' }}
-                        >
-                          <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>{x.label}</div>
-                          <div style={{ fontSize: 18, fontWeight: 800, color: '#13213C', marginTop: 3 }}>{x.v}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </HoverDiv>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* drill-down: the stream's items */}
-          {vm.sectionTitle && vm.navStream && (
+          {/* ===== PORTFOLIO PAGES: stream summary cards + recap + list ===== */}
+          {vm.sectionTitle && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <button
-                  onClick={vm.onNavBack}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 7,
-                    height: 38,
-                    padding: '0 14px',
-                    border: '1px solid #E7ECF4',
-                    background: '#fff',
-                    borderRadius: 11,
-                    color: '#42506B',
-                    fontWeight: 400,
-                    fontSize: 12.5,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  <Icon d="M9 6l6 6-6 6" size={14} color="#8A97AD" />
-                  عودة
-                </button>
-                <div>
-                  <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>
-                    {vm.sectionTitle} — {vm.navStreamName}
-                  </div>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{vm.sectionTitle}</div>
                 </div>
-                <div style={{ flex: 1 }} />
+                {vm.showAddBtn && (
+                  <button
+                    onClick={s.openCreate}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      height: 40,
+                      padding: '0 18px',
+                      background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 11,
+                      fontWeight: 800,
+                      fontSize: 13.5,
+                      cursor: 'pointer',
+                      boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
+                    }}
+                  >
+                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديدة
+                  </button>
+                )}
+              </div>
+
+              {/* stream summary cards — الكل first, click filters the page */}
+              {vm.portfolioStreams.length > 2 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
+                  {vm.portfolioStreams.map((st) => (
+                    <HoverDiv
+                      key={st.id || 'all'}
+                      onClick={st.onClick}
+                      base={{
+                        background: st.active ? '#0F1F3D' : '#fff',
+                        border: '1px solid ' + (st.active ? '#0F1F3D' : '#E7ECF4'),
+                        borderRadius: 14,
+                        padding: '12px 14px',
+                        cursor: 'pointer',
+                      }}
+                      hover={st.active ? {} : { borderColor: '#C7D6EE' }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 400,
+                          color: st.active ? 'rgba(255,255,255,.8)' : '#6B7A93',
+                          lineHeight: 1.5,
+                          minHeight: 32,
+                        }}
+                      >
+                        {st.name}
+                      </div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: st.active ? '#fff' : '#13213C', marginTop: 4 }}>
+                        {st.total}
+                      </div>
+                    </HoverDiv>
+                  ))}
+                </div>
+              )}
+
+              {/* recap strip for the current selection */}
+              <StatBand
+                items={[
+                  { label: 'الإجمالي', value: String(vm.recap.total), info: 'إجمالي ما هو مسجّل ضمن هذا الاختيار.' },
+                  { label: 'غير قابل للتحول', value: String(vm.recap.notCapable), info: 'بنود لا تنطبق عليها خطة إطلاق أو حالة تنفيذ.' },
+                  { label: 'قيد التطوير', value: String(vm.recap.underDev), info: 'معتمدة ويجري تطويرها حالياً.' },
+                  { label: 'تم التطوير', value: String(vm.recap.developed), info: 'اكتمل تطويرها وهي جاهزة للإطلاق.' },
+                  { label: 'تم الإطلاق', value: String(vm.recap.launched), info: 'أُطلقت رسمياً.' },
+                ]}
+              />
+
+              {/* filters + search */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <select value={vm.statusFilterValue} onChange={(e) => s.setStatusFilter(e.target.value)} style={selectStyle}>
+                  {vm.statusOptions.map((o) => (
+                    <option key={o.v} value={o.v}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                {vm.showFundFilter && (
+                  <select value={vm.fundFilterValue} onChange={(e) => s.setFundFilter(e.target.value)} style={{ ...selectStyle, width: 200 }}>
+                    {vm.fundOptions.map((o) => (
+                      <option key={o.v} value={o.v}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {vm.showEntFilter && (
+                  <select value={vm.entFilterValue} onChange={(e) => s.setEntFilter(e.target.value)} style={selectStyle}>
+                    {vm.entOptions.map((e2) => (
+                      <option key={e2.v} value={e2.v}>
+                        {e2.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <div style={{ position: 'relative' }}>
                   <input
                     value={vm.searchValue}
                     onChange={(e) => s.setSearch(e.target.value)}
                     placeholder="ابحث بالاسم أو الوصف…"
                     style={{
-                      height: 38,
+                      height: 40,
                       width: 220,
                       border: '1px solid #E7ECF4',
-                      background: '#fff',
+                      backgroundColor: '#fff',
                       borderRadius: 11,
-                      padding: '0 34px 0 13px',
+                      padding: '0 36px 0 13px',
                       fontSize: 12.5,
                       fontWeight: 400,
                       color: '#13213C',
@@ -1816,10 +1670,14 @@ export function Dashboard({ vm }: { vm: VM }) {
                     }}
                   />
                   <span style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex', pointerEvents: 'none' }}>
-                    <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" size={14} color="#9AA6BC" />
+                    <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" size={15} color="#9AA6BC" />
                   </span>
                 </div>
+                <div style={{ flex: 1 }} />
+                <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} />
               </div>
+
+              {/* cards */}
               {vm.sectionCards.length === 0 ? (
                 <div
                   style={{
@@ -1832,7 +1690,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 >
                   <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>لا توجد نتائج للعرض</div>
                   <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 6, lineHeight: 1.7 }}>
-                    لا توجد إضافات في هذا المسار بعد.
+                    {vm.emptyDesc}
                   </div>
                 </div>
               ) : (
@@ -1845,11 +1703,65 @@ export function Dashboard({ vm }: { vm: VM }) {
             </>
           )}
 
+          {/* ===== ENTITIES (committee) ===== */}
+          {vm.navSection === 'entities' && (
+            <>
+              <div>
+                <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>الجهات</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
+                  الجهات المشاركة مرتّبة حسب حجم المقدَّم — اختر جهة لاستعراض محفظتها
+                </div>
+              </div>
+              {vm.entityCards.length === 0 ? (
+                <div style={{ border: '1.5px dashed #D5DEEC', background: '#FAFCFF', borderRadius: 16, padding: '38px 20px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>لا توجد جهات مشاركة بعد</div>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(420px,1fr))', gap: 14 }}>
+                  {vm.entityCards.map((e2) => (
+                    <HoverDiv
+                      key={e2.name}
+                      onClick={e2.onOpen}
+                      base={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', cursor: 'pointer' }}
+                      hover={{ borderColor: '#C7D6EE', boxShadow: '0 18px 40px -22px rgba(15,31,61,.35)' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C', lineHeight: 1.5 }}>{e2.name}</div>
+                          <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 400, marginTop: 4 }}>
+                            الميزانية التقديرية: <b style={{ color: '#13213C' }}>{e2.budgetLabel}</b>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'center', flex: 'none' }}>
+                          <div style={{ fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1.1 }}>{e2.total}</div>
+                          <div style={{ fontSize: 10, color: '#9AA6BC', fontWeight: 400 }}>الإجمالي</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 14 }}>
+                        {[
+                          { label: 'بانتظار الاعتماد', v: e2.awaiting },
+                          { label: 'قيد التطوير', v: e2.underDev },
+                          { label: 'تم التطوير', v: e2.developed },
+                          { label: 'تم الإطلاق', v: e2.launched },
+                        ].map((x) => (
+                          <div key={x.label} style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '9px 11px' }}>
+                            <div style={{ fontSize: 10, color: '#6B7A93', fontWeight: 400, lineHeight: 1.5 }}>{x.label}</div>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: '#13213C', marginTop: 2 }}>{x.v}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </HoverDiv>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
           {/* ===== LAUNCH PLANS: four big مرحلة cards ===== */}
           {vm.navSection === 'launchplans' && (
             <>
               <div>
-                <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>خطط الإطلاق</div>
+                <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>مراحل التنفيذ والإطلاق</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                   المراحل الأربع — تكلفة التنفيذ والإطلاق التقديرية، والإطلاقات وما يندرج تحت كل منها
                 </div>
@@ -1934,8 +1846,174 @@ export function Dashboard({ vm }: { vm: VM }) {
                         )}
                       </>
                     )}
-                    {/* launches with their items */}
-                    {b.launches.length > 0 && (
+                    {/* launches: coordinator manages in place, others read */}
+                    {vm.showAddBtn ? (
+                      <div style={{ borderTop: '1px solid #F0F3F8', marginTop: 14, paddingTop: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+                          <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400 }}>الإطلاقات</div>
+                          <button
+                            onClick={() => s.addLaunchPlan(b.name)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              background: '#EAF0FE',
+                              color: '#2563EB',
+                              border: '1px solid #D9E4FD',
+                              borderRadius: 10,
+                              padding: '6px 11px',
+                              fontSize: 11.5,
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            + إضافة إطلاق
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {(vm.launchPlanMgr.find((g) => g.batch === b.name)?.plans || []).map((p) => {
+                            const key = b.name + '|' + p.id;
+                            const pOpen = openLaunch === key;
+                            const selCount = p.items.filter((x) => x.checked).length;
+                            return (
+                              <div key={p.id} style={{ border: '1px solid #EBEFF6', borderRadius: 12, overflow: 'hidden' }}>
+                                <HoverDiv
+                                  onClick={() => setOpenLaunch(pOpen ? null : key)}
+                                  base={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', cursor: 'pointer', background: '#FAFCFF' }}
+                                  hover={{ background: '#F2F6FD' }}
+                                >
+                                  <Icon d={pOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#8A97AD" />
+                                  <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {p.title.trim() || 'خطة إطلاق جديدة'}
+                                  </span>
+                                  <span style={{ flex: 'none', fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>{selCount} محدد</span>
+                                  <button
+                                    onClick={(e) => {
+                                      stop(e);
+                                      s.removeLaunchPlan(p.id);
+                                    }}
+                                    title="حذف الإطلاق"
+                                    style={{
+                                      flex: 'none',
+                                      width: 26,
+                                      height: 26,
+                                      borderRadius: 8,
+                                      border: 'none',
+                                      background: '#FCEEEF',
+                                      color: '#C0303B',
+                                      cursor: 'pointer',
+                                      fontSize: 13,
+                                      fontFamily: 'inherit',
+                                    }}
+                                  >
+                                    ✕
+                                  </button>
+                                </HoverDiv>
+                                {pOpen && (
+                                  <div style={{ padding: '12px 13px', borderTop: '1px solid #F0F3F8', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 170px 150px', gap: 8 }}>
+                                      <div>
+                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>عنوان الإطلاق</label>
+                                        <input
+                                          value={p.title}
+                                          onChange={(e) => s.updLaunchPlan(p.id, 'title', e.target.value)}
+                                          placeholder="مثال: إطلاق خدمات المرحلة الأولى"
+                                          style={mgrInput}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>نوع الإطلاق</label>
+                                        <select value={p.ltype} onChange={(e) => s.updLaunchPlan(p.id, 'ltype', e.target.value)} style={mgrInput}>
+                                          {LAUNCH_TYPES.map((t) => (
+                                            <option key={t}>{t}</option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                      <div>
+                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>تاريخ الإطلاق</label>
+                                        <input type="date" value={p.date} onChange={(e) => s.updLaunchPlan(p.id, 'date', e.target.value)} style={mgrInput} />
+                                      </div>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                      <div>
+                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>الميزانية التقديرية للتنفيذ</label>
+                                        <input value={p.budget} readOnly placeholder="تُحتسب تلقائياً مما هو محدَّد" style={{ ...mgrInput, backgroundColor: '#F4F7FC', cursor: 'default' }} />
+                                      </div>
+                                      <div>
+                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>الميزانية التقديرية للإطلاق</label>
+                                        <input
+                                          value={p.launchBudget || ''}
+                                          onChange={(e) => s.updLaunchPlan(p.id, 'launchBudget', e.target.value)}
+                                          placeholder="تكلفة الإطلاق / الفعالية"
+                                          style={mgrInput}
+                                        />
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <div style={{ fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 6 }}>
+                                        ما يُطلق في هذا الإطلاق ({selCount} محدد)
+                                      </div>
+                                      <div style={{ border: '1px solid #EBEFF6', borderRadius: 10, maxHeight: 240, overflowY: 'auto' }}>
+                                        {p.items.length === 0 && (
+                                          <div style={{ padding: '12px 13px', fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>لا توجد إضافات بعد.</div>
+                                        )}
+                                        {p.items.map((x, xi) => (
+                                          <div
+                                            key={x.id}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 11px', borderTop: xi ? '1px solid #F0F3F8' : 'none' }}
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={x.checked}
+                                              onChange={() => s.togglePlanItem(p.id, x.id)}
+                                              style={{ width: 15, height: 15, accentColor: '#2563EB', cursor: 'pointer', flex: 'none' }}
+                                            />
+                                            <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 7px', borderRadius: 999, background: '#E5EEFF', color: '#2563EB', flex: 'none' }}>
+                                              {x.typeLabel}
+                                            </span>
+                                            <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                              {x.title}
+                                            </span>
+                                            {x.otherBatch && (
+                                              <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 7px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
+                                                في مرحلة أخرى
+                                              </span>
+                                            )}
+                                            <input
+                                              value={x.budget}
+                                              onChange={(e) => s.setItemBudget(x.id, e.target.value)}
+                                              placeholder="أضف الميزانية…"
+                                              style={{
+                                                flex: 'none',
+                                                width: 130,
+                                                height: 30,
+                                                border: x.hasBudget ? '1px solid #E7ECF4' : '1.5px dashed #C7D2E4',
+                                                borderRadius: 8,
+                                                padding: '0 9px',
+                                                fontSize: 11,
+                                                fontWeight: 400,
+                                                color: '#13213C',
+                                                outline: 'none',
+                                                fontFamily: 'inherit',
+                                                direction: 'ltr',
+                                                textAlign: 'right',
+                                                backgroundColor: '#fff',
+                                              }}
+                                            />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      b.launches.length > 0 && (
                       <div style={{ borderTop: '1px solid #F0F3F8', marginTop: 14, paddingTop: 12 }}>
                         <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400, marginBottom: 8 }}>الإطلاقات</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1945,20 +2023,11 @@ export function Dashboard({ vm }: { vm: VM }) {
                               <div key={l.id} style={{ border: '1px solid #EBEFF6', borderRadius: 12, overflow: 'hidden' }}>
                                 <HoverDiv
                                   onClick={() => setOpenLaunch(lOpen ? null : b.name + '|' + l.id)}
-                                  base={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    padding: '10px 13px',
-                                    cursor: 'pointer',
-                                    background: '#FAFCFF',
-                                  }}
+                                  base={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', cursor: 'pointer', background: '#FAFCFF' }}
                                   hover={{ background: '#F2F6FD' }}
                                 >
                                   <Icon d={lOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#8A97AD" />
-                                  <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>
-                                    {l.title}
-                                  </span>
+                                  <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{l.title}</span>
                                   <span style={{ flex: 'none', fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>
                                     تنفيذ: <b style={{ color: '#13213C' }}>{l.execLabel}</b>
                                     {l.launchLabel ? <> · إطلاق: <b style={{ color: '#13213C' }}>{l.launchLabel}</b></> : null}
@@ -1970,28 +2039,10 @@ export function Dashboard({ vm }: { vm: VM }) {
                                       <HoverDiv
                                         key={it.id}
                                         onClick={it.onOpen}
-                                        base={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 9,
-                                          padding: '9px 13px',
-                                          borderTop: '1px solid #F0F3F8',
-                                          cursor: 'pointer',
-                                          background: '#fff',
-                                        }}
+                                        base={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 13px', borderTop: '1px solid #F0F3F8', cursor: 'pointer', background: '#fff' }}
                                         hover={{ background: '#F7F9FD' }}
                                       >
-                                        <span
-                                          style={{
-                                            fontSize: 10,
-                                            fontWeight: 800,
-                                            padding: '2px 8px',
-                                            borderRadius: 999,
-                                            background: '#E5EEFF',
-                                            color: '#2563EB',
-                                            flex: 'none',
-                                          }}
-                                        >
+                                        <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#E5EEFF', color: '#2563EB', flex: 'none' }}>
                                           {it.typeLabel}
                                         </span>
                                         <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -2007,6 +2058,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                           })}
                         </div>
                       </div>
+                      )
                     )}
                   </div>
                 ))}
@@ -2024,6 +2076,21 @@ export function Dashboard({ vm }: { vm: VM }) {
 }
 
 // ---------------------------------------------------------------------------
+const mgrInput: CSSProperties = {
+  width: '100%',
+  height: 40,
+  border: '1px solid #DCE3EE',
+  backgroundColor: '#fff',
+  borderRadius: 10,
+  padding: '0 11px',
+  fontSize: 12.5,
+  fontWeight: 400,
+  color: '#13213C',
+  outline: 'none',
+  fontFamily: 'inherit',
+  boxSizing: 'border-box',
+};
+
 const selectStyle: CSSProperties = {
   height: 40,
   width: 170,
@@ -2593,6 +2660,47 @@ function CardItem({ c }: { c: CardVM }) {
       >
         {c.desc}
       </div>
+
+      {/* Linked launch + stage-move flags (sync visible everywhere) */}
+      {((c.launchNames && c.launchNames.length > 0) || c.stageMoved) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {c.launchNames && c.launchNames.length > 0 && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 10,
+                fontWeight: 800,
+                padding: '3px 9px',
+                borderRadius: 999,
+                background: '#F0F4FB',
+                color: '#3B5AA5',
+                maxWidth: '100%',
+              }}
+            >
+              <Icon d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" size={11} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {c.launchNames.join('، ')}
+              </span>
+            </span>
+          )}
+          {c.stageMoved && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 800,
+                padding: '3px 9px',
+                borderRadius: 999,
+                background: '#FFF3DE',
+                color: '#B45309',
+              }}
+            >
+              نُقل بين المراحل
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Returned banner */}
       {c.isReturned && (

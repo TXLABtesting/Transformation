@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
 import { RichTextEditor, RichTextView } from './RichText';
@@ -31,6 +32,8 @@ const sectionCard: React.CSSProperties = {
 
 export function DetailPanel({ vm }: { vm: VM }) {
   const d = vm.detail!;
+  // drawer tabs: البيانات / التنفيذ والإطلاق / السجل
+  const [tab, setTab] = useState<'data' | 'exec' | 'log'>('data');
 
   return (
     <div
@@ -220,6 +223,46 @@ export function DetailPanel({ vm }: { vm: VM }) {
             gap: 14,
           }}
         >
+          {/* drawer tabs */}
+          <div
+            style={{
+              display: 'flex',
+              background: '#fff',
+              border: '1px solid #E7ECF4',
+              borderRadius: 13,
+              padding: 4,
+              gap: 4,
+            }}
+          >
+            {(
+              [
+                { k: 'data', label: 'البيانات' },
+                { k: 'exec', label: 'التنفيذ والإطلاق' },
+                { k: 'log', label: 'السجل' },
+              ] as { k: 'data' | 'exec' | 'log'; label: string }[]
+            ).map((t) => (
+              <button
+                key={t.k}
+                onClick={() => setTab(t.k)}
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '9px 8px',
+                  fontWeight: tab === t.k ? 800 : 400,
+                  fontSize: 12.5,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  background: tab === t.k ? '#0F1F3D' : 'transparent',
+                  color: tab === t.k ? '#fff' : '#54627B',
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: tab === 'data' ? 'contents' : 'none' }}>
           {/* ===== INFO GRID ===== */}
           <div
             style={{
@@ -285,7 +328,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
               <div style={valueStyle}>{d.endDateFmt}</div>
             </div>
           </div>
+          </div>
 
+          <div style={{ display: tab === 'data' ? 'contents' : 'none' }}>
           {/* Funded banner */}
           {d.dFunded && (
             <div
@@ -312,7 +357,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
               </div>
             </div>
           )}
+          </div>
 
+          <div style={{ display: tab === 'data' ? 'contents' : 'none' }}>
           {/* Returned banner */}
           {d.isReturned && (
             <div
@@ -341,7 +388,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
               )}
             </div>
           )}
+          </div>
 
+          <div style={{ display: tab === 'data' ? 'contents' : 'none' }}>
           {/* Main card */}
           <div
             style={{
@@ -549,7 +598,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
               </>
             )}
           </div>
+          </div>
 
+          <div style={{ display: tab === 'exec' ? 'contents' : 'none' }}>
           {/* ===== EXECUTION PLAN (as entered by the coordinator) ===== */}
           {d.execBatchName && (
             <div style={sectionCard}>
@@ -603,7 +654,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
               )}
             </div>
           )}
+          </div>
 
+          <div style={{ display: tab === 'exec' ? 'contents' : 'none' }}>
           {/* ===== PLANNED LAUNCHES (read-only, pre-launch stages) ===== */}
           {!d.showLaunchView && d.plannedLaunches.length > 0 && (
             <div style={sectionCard}>
@@ -649,7 +702,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
               ))}
             </div>
           )}
+          </div>
 
+          <div style={{ display: tab === 'data' ? 'contents' : 'none' }}>
           {/* ===== RECOMMENDATION ===== */}
           {d.showReco && (
             <>
@@ -737,7 +792,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
               </div>
             </>
           )}
+          </div>
 
+          <div style={{ display: tab === 'log' ? 'contents' : 'none' }}>
           {/* ===== APPROVAL LOG ===== */}
           <div
             style={{
@@ -796,7 +853,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
               ))}
             </div>
           </div>
+          </div>
 
+          <div style={{ display: tab === 'exec' ? 'contents' : 'none' }}>
           {/* ===== SCOPE & BUDGET ===== */}
           <div
             style={{
@@ -966,7 +1025,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
               </div>
             )}
           </div>
+          </div>
 
+          <div style={{ display: tab === 'exec' ? 'contents' : 'none' }}>
           {/* ===== SIMPLIFIED DELIVERY STATUS ===== */}
           {d.showExecView && !d.isAgentifiable && (
             <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 16 }}>
@@ -1020,6 +1081,8 @@ export function DetailPanel({ vm }: { vm: VM }) {
               </div>
             </div>
           )}
+          </div>
+
         </div>
 
         {/* ---------- FOOTER ACTION BAR ---------- */}

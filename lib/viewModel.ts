@@ -329,71 +329,131 @@ function build(s: Store) {
   const entOptions = [{ v: 'all', label: 'كل الجهات' }, ...entValues.map((e) => ({ v: e, label: e }))];
 
   // ---- cards ----
-  // ---- sidebar navigation (§redesign) ----
+  // ---- sidebar navigation (§redesign v2) ----
   const navSection = ui.navSection || 'overview';
-  const navStream = ui.navStream;
+  const navStream = ui.navStream; // selected stream summary card ('all' = null)
   const devStatusOf = devStatusOfItem;
-  // items that cannot be agentified carry no launch plan or execution status
   const agentifiable = (i: Item) => (i.transformability || '') !== 'غير قابل';
   const bucketOf = (section: string) => (i: Item) =>
-    section === 'projects' ? isProjInit(i.type) : section === 'operations' ? i.type === 'operation' : i.type === 'service';
-  // nav items limited to what this role's scope actually contains
+    section === 'all'
+      ? true
+      : section === 'projects'
+        ? isProjInit(i.type)
+        : section === 'operations'
+          ? i.type === 'operation'
+          : i.type === 'service';
   const roleStreams =
     rawRole === 'coord' || rawRole === 'path' ? PATHS.filter((p) => p.id === myPath) : PATHS;
   const navItems = [
     { key: 'overview', label: 'نظرة عامة', icon: 'M3 13h8V3H3v10zm10 8h8V11h-8v10zM3 21h8v-6H3v6zm10-18v6h8V3h-8z' },
+    { key: 'all', label: 'الكل', icon: 'M4 6h16M4 12h16M4 18h16' },
     { key: 'projects', label: 'المشاريع والمبادرات', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7' },
     ...(roleStreams.some((p) => streamHasType(p.id, 'operation'))
-      ? [{ key: 'operations', label: 'العمليات', icon: 'M3 6h18M3 12h18M3 18h18' }]
+      ? [{ key: 'operations', label: 'العمليات', icon: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 3v2M12 19v2M4.6 4.6 6 6M18 18l1.4 1.4M3 12h2M19 12h2M4.6 19.4 6 18M18 6l1.4-1.4' }]
       : []),
     ...(roleStreams.some((p) => streamHasType(p.id, 'service'))
       ? [{ key: 'services', label: 'الخدمات', icon: 'M3 5h18v14H3zM3 9h18M6.2 7h.01' }]
       : []),
-    { key: 'launchplans', label: 'خطط الإطلاق', icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z' },
-  ].map((n) => ({ ...n, active: navSection === n.key, onClick: () => s.setNavSection(n.key) }));
-  // big stream cards for the active type section
+    { key: 'launchplans', label: 'مراحل التنفيذ والإطلاق', icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z' },
+    ...(rawRole === 'ai'
+      ? [{ key: 'entities', label: 'الجهات', icon: 'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01' }]
+      : []),
+    ...(rawRole === 'entity'
+      ? [{ key: 'team', label: 'فريق العمل', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' }]
+      : []),
+  ].map((n) => ({
+    ...n,
+    active: navSection === n.key,
+    onClick: n.key === 'team' ? () => s.openTeam() : () => s.setNavSection(n.key),
+  }));
+
   const typeSections: Record<string, string> = {
+    all: 'الكل',
     projects: 'المشاريع والمبادرات',
     operations: 'العمليات',
     services: 'الخدمات',
   };
   const isTypeSection = navSection in typeSections;
-  const sectionStreams = !isTypeSection
+  // committee/stream-head entity filter applies to the whole portfolio page
+  const portfolioBase =
+    (rawRole === 'ai' || rawRole === 'path') && ui.entFilter !== 'all'
+      ? roleBase.filter((i) => ent(i) === ui.entFilter)
+      : roleBase;
+  // stream summary cards on top of portfolio pages — «الكل» first, clickable filters
+  const portfolioStreams = !isTypeSection
     ? []
-    : roleStreams
-        .filter((p) =>
-          navSection === 'projects'
-            ? true
-            : navSection === 'operations'
+    : [
+        { id: null as string | null, name: 'الكل' },
+        ...roleStreams
+          .filter((p) =>
+            navSection === 'operations'
               ? streamHasType(p.id, 'operation')
-              : streamHasType(p.id, 'service')
+              : navSection === 'services'
+                ? streamHasType(p.id, 'service')
+                : true
+          )
+          .map((p) => ({ id: p.id as string | null, name: p.name })),
+      ].map((st) => {
+        const inScope = portfolioBase.filter(
+          (i) => bucketOf(navSection)(i) && (st.id ? i.path === st.id : true)
+        );
+        return {
+          ...st,
+          total: inScope.length,
+          active: (navStream || null) === st.id,
+          onClick: () => s.setNavStream(st.id),
+        };
+      })
+      // hide zero-count streams except «الكل» when the coord's own stream (single) —
+      // keep all for consistency; multi-stream roles see all five
+      ;
+  // recap strip for the active selection
+  const portfolioScope = !isTypeSection
+    ? []
+    : portfolioBase.filter((i) => bucketOf(navSection)(i) && (navStream ? i.path === navStream : true));
+  const recap = {
+    total: portfolioScope.length,
+    notCapable: portfolioScope.filter((i) => !agentifiable(i)).length,
+    underDev: portfolioScope.filter((i) => devStatusOf(i) === 'underDev').length,
+    developed: portfolioScope.filter((i) => devStatusOf(i) === 'developed').length,
+    launched: portfolioScope.filter((i) => devStatusOf(i) === 'launched').length,
+  };
+  // list inside the portfolio page (respects search + status + fund filters)
+  const sectionCards = !isTypeSection
+    ? []
+    : portfolioScope
+        .filter((i) => (ui.statusFilter !== 'all' ? statusMatch(i, ui.statusFilter, rawRole, s) : true))
+        .filter((i) =>
+          ui.fundFilter === 'funded' ? !!i.funded : ui.fundFilter === 'notfunded' ? !i.funded : true
         )
-        .map((p) => {
-          const inStream = roleBase.filter((i) => i.path === p.id && bucketOf(navSection)(i));
-          const cnt2 = (st: string) => inStream.filter((i) => devStatusOf(i) === st).length;
+        .filter((i) => {
+          const q2 = (ui.search || '').trim().toLowerCase();
+          if (!q2) return true;
+          return (i.title || '').toLowerCase().includes(q2) || stripHtml(i.desc || '').toLowerCase().includes(q2);
+        })
+        .map((i) => mkCard(i, s, { rawRole, role, myName, ent }));
+
+  // committee «الجهات» page: one card per entity
+  const entityCards =
+    rawRole !== 'ai'
+      ? []
+      : [...new Set(roleBase.map((i) => ent(i)))].map((e) => {
+          const inEnt = roleBase.filter((i) => ent(i) === e);
+          const budget = inEnt.reduce((a, i) => a + parseBudget(i.budget), 0);
           return {
-            id: p.id,
-            name: p.name,
-            desc: p.desc,
-            total: inStream.length,
-            underDev: cnt2('underDev'),
-            developed: cnt2('developed'),
-            launched: cnt2('launched'),
-            onOpen: () => s.setNavStream(p.id),
+            name: e,
+            total: inEnt.length,
+            awaiting: inEnt.filter((i) => devStatusOf(i) === null).length,
+            underDev: inEnt.filter((i) => devStatusOf(i) === 'underDev').length,
+            developed: inEnt.filter((i) => devStatusOf(i) === 'developed').length,
+            launched: inEnt.filter((i) => devStatusOf(i) === 'launched').length,
+            budgetLabel: budget > 0 ? formatMoney(budget) : '—',
+            onOpen: () => {
+              s.setNavSection('all');
+              s.setEntFilter(e);
+            },
           };
-        });
-  // drill-down list inside a stream
-  const sectionCards =
-    isTypeSection && navStream
-      ? roleBase
-          .filter((i) => i.path === navStream && bucketOf(navSection)(i))
-          .filter((i) => {
-            const q2 = (ui.search || '').trim().toLowerCase();
-            if (!q2) return true;
-            return (i.title || '').toLowerCase().includes(q2) || stripHtml(i.desc || '').toLowerCase().includes(q2);
-          })
-          .map((i) => mkCard(i, s, { rawRole, role, myName, ent }))
-      : [];
+        }).sort((a, b) => b.total - a.total);
 
   const cards = visible.map((i) => mkCard(i, s, { rawRole, role, myName, ent }));
 
@@ -562,11 +622,12 @@ function build(s: Store) {
     navItems,
     navSection,
     navStream,
-    navStreamName: navStream ? pathById(navStream).name : '',
     sectionTitle: (navSection in typeSections ? typeSections[navSection] : '') || '',
-    sectionStreams,
+    portfolioStreams,
+    recap,
     sectionCards,
-    onNavBack: () => s.setNavStream(null),
+    entityCards,
+    launchedCount: roleBase.filter((i) => devStatusOfItem(i) === 'launched').length,
     fundOptions,
     fundFilterValue: ui.fundFilter,
     entityRank,
@@ -804,10 +865,15 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     ? named[0].title + (named.length > 1 ? ' (+' + (named.length - 1) + ')' : '')
     : '';
 
+  const launchNames = (i.launchPlanIds || [])
+    .map((pid) => (s.launchPlans.find((p) => p.id === pid)?.title || '').trim())
+    .filter(Boolean);
   return {
     id: i.id,
     title: i.title,
     desc: stripHtml(i.desc || ''),
+    launchNames,
+    stageMoved: !!i.stageMove,
     typeLabel: t.label,
     typeColor: t.color,
     typeBg: t.bg,
@@ -974,6 +1040,15 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
       if (i.funded && i.nom && i.nom.by === myName) push('mf-' + i.id, 'ok', 'wallet', 'اعتمدت اللجنة الوطنية تمويل ترشيحك', tl + ' · ' + i.title, i.id);
       if (i.fyi) push('fy-' + i.id, 'info', 'inbox', 'للعلم: تعديل من ممثل الجهة — بانتظار اعتماد اللجنة الوطنية', tl + ' · ' + i.title, i.id);
       if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب معلومات إضافية من ' : 'تمت الإعادة من ') + (i.ret.from || ''), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
+      if (i.stageMove)
+        push(
+          'sm-' + i.id,
+          'info',
+          'rotate',
+          'نُقل بين المراحل: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to,
+          tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by,
+          i.id
+        );
       if (w === 'budget' && !i.ret) push('bud-' + i.id, 'info', 'wallet', 'اعتُمدت الأولوية — أدخل الميزانية ونطاق العمل', tl + ' · ' + i.title, i.id);
       if (w === 'exec') push('x-' + i.id, 'ok', 'check', typeLabelDef(i.type) + ' في مرحلة التنفيذ — حدّث الحالة', tl + ' · ' + i.title, i.id);
       if (w === 'launch') push('l-' + i.id, 'info', 'send', typeLabelDef(i.type) + ' في مرحلة الإطلاق — أكمل خطة الإطلاق', tl + ' · ' + i.title, i.id);

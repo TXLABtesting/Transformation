@@ -335,6 +335,8 @@ export type Item = {
   // managed launch plans this item is attached to — one batch per item, but
   // an item may participate in SEVERAL launches within that batch
   launchPlanIds?: string[];
+  // set when the item is moved between مراحل — drives stakeholder notifications
+  stageMove?: { from: string; to: string; at: number; by: string } | null;
   /** @deprecated legacy single-plan field, migrated to launchPlanIds on hydrate */
   launchPlanId?: string;
   // nested
