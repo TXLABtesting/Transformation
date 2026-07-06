@@ -255,6 +255,7 @@ function build(s: Store) {
               title: i.title,
               typeLabel: typeLabel(i.type),
               budgetLabel: (i.budget || '').trim() || 'لم يتم تحديد الميزانية',
+              launched: devStatusOfItem(i) === 'launched',
               onOpen: () => s.openDetail(i.id),
             })),
           };
@@ -748,6 +749,7 @@ function build(s: Store) {
             typeLabel: typeLabel(i.type),
             checked: (i.launchPlanIds || []).includes(p.id),
             otherBatch: !!i.execBatch && i.execBatch !== p.batch,
+            launched: devStatusOfItem(i) === 'launched',
             // the item's own EXECUTION cost — editable inline in the manager
             budget: i.budget || '',
             hasBudget: !!(i.budget || '').trim(),

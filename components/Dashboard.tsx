@@ -1424,7 +1424,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                   const tot = ex + ln || 1;
                   const R = 44;
                   const C = 2 * Math.PI * R;
-                  const exFrac = ex / tot;
+                  // keep both segments visible so the split always reads as two budgets
+                  const exFrac = Math.min(0.92, Math.max(0.08, ex / tot));
                   return (
                     <div
                       style={{
@@ -1436,6 +1437,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                         alignItems: 'center',
                         gap: 28,
                         flexWrap: 'wrap',
+                        maxWidth: 640,
                       }}
                     >
                       {/* donut: total in the middle, the two budgets as segments */}
@@ -1816,7 +1818,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                 </div>
               ) : (
-                <div data-r="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+                <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
                   {vm.sectionCards.map((c) => (
                     <CardItem key={c.id} c={c} />
                   ))}
@@ -2107,7 +2109,20 @@ export function Dashboard({ vm }: { vm: VM }) {
                                   {p.date && (
                                     <span dir="ltr" style={{ flex: 'none', fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>{p.date}</span>
                                   )}
-                                  <span style={{ flex: 'none', fontSize: 10.5, color: '#6B7A93', fontWeight: 400 }}>{selCount} محدد</span>
+                                  {(() => {
+                                    const launchedN = p.items.filter((x) => x.checked && x.launched).length;
+                                    if (selCount > 0 && launchedN === selCount)
+                                      return (
+                                        <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#E3F6EC', color: '#0B8A4B' }}>
+                                          تم الإطلاق
+                                        </span>
+                                      );
+                                    return (
+                                      <span style={{ flex: 'none', fontSize: 10.5, color: '#6B7A93', fontWeight: 400 }}>
+                                        {launchedN > 0 ? launchedN + ' من ' + selCount + ' أُطلق' : selCount + ' محدد'}
+                                      </span>
+                                    );
+                                  })()}
                                   <button
                                     title="تعديل الإطلاق"
                                     onClick={() => {
@@ -2191,6 +2206,11 @@ export function Dashboard({ vm }: { vm: VM }) {
                                         <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                           {it.title}
                                         </span>
+                                        {it.launched && (
+                                          <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#E3F6EC', color: '#0B8A4B' }}>
+                                            تم الإطلاق
+                                          </span>
+                                        )}
                                         <span style={{ flex: 'none', fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>{it.budgetLabel}</span>
                                       </HoverDiv>
                                     ))}
@@ -2436,6 +2456,11 @@ export function Dashboard({ vm }: { vm: VM }) {
                                         {x.otherBatch && (
                                           <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 7px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
                                             في مرحلة أخرى
+                                          </span>
+                                        )}
+                                        {x.launched && (
+                                          <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#E3F6EC', color: '#0B8A4B' }}>
+                                            تم الإطلاق
                                           </span>
                                         )}
                                         <span style={{ flex: 'none', fontSize: 11.5, fontWeight: 400, color: '#9AA6BC' }}>
