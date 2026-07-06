@@ -379,7 +379,6 @@ function StatBand({
     onOpen?: () => void;
   }[];
 }) {
-  const [openIdx, setOpenIdx] = useState<number | null>(null);
   return (
     <div
       style={{
@@ -393,13 +392,13 @@ function StatBand({
       {items.map((it, i) => (
         <div
           key={it.label}
-          onClick={it.onOpen ? it.onOpen : it.dist ? () => setOpenIdx(openIdx === i ? null : i) : undefined}
+          onClick={it.onOpen}
           style={{
             flex: 1,
             minWidth: 0,
             padding: '15px 20px',
             borderLeft: i < items.length - 1 ? `1px solid ${dark ? 'rgba(255,255,255,.16)' : '#EBEFF6'}` : 'none',
-            cursor: it.onOpen || it.dist ? 'pointer' : 'default',
+            cursor: it.onOpen ? 'pointer' : 'default',
           }}
         >
           <div
@@ -452,45 +451,22 @@ function StatBand({
                 {it.chip}
               </span>
             )}
-            {it.dist && (
-              <span
-                title="عرض التوزيع على المسارات"
-                onClick={(e) => {
-                  stop(e);
-                  setOpenIdx(openIdx === i ? null : i);
-                }}
-                style={{
-                  marginRight: 'auto',
-                  width: 28,
-                  height: 28,
-                  borderRadius: 9,
-                  border: `1px solid ${dark ? 'rgba(255,255,255,.35)' : '#E7ECF4'}`,
-                  background: dark ? 'rgba(255,255,255,.1)' : '#F7F9FD',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flex: 'none',
-                }}
-              >
-                <Icon
-                  d={openIdx === i ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}
-                  size={15}
-                  color={dark ? 'rgba(255,255,255,.85)' : '#54627B'}
-                />
-              </span>
-            )}
           </div>
-          {it.dist && openIdx === i && (
+          {/* التوزيع حسب المسار — always visible, labelled */}
+          {it.dist && (
             <div
               style={{
-                marginTop: 10,
+                marginTop: 12,
                 paddingTop: 10,
-                borderTop: `1px dashed ${dark ? 'rgba(255,255,255,.25)' : '#E1E7F1'}`,
+                borderTop: `1px solid ${dark ? 'rgba(255,255,255,.2)' : '#EBEFF6'}`,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 6,
               }}
             >
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: dark ? 'rgba(255,255,255,.7)' : '#8A97AD' }}>
+                التوزيع حسب المسار
+              </div>
               {it.dist.map((d) => (
                 <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span
@@ -518,11 +494,20 @@ function StatBand({
             <div
               style={{
                 marginTop: 12,
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2,1fr)',
-                gap: 6,
+                paddingTop: 10,
+                borderTop: `1px solid ${dark ? 'rgba(255,255,255,.2)' : '#EBEFF6'}`,
               }}
             >
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: dark ? 'rgba(255,255,255,.7)' : '#8A97AD', marginBottom: 7 }}>
+                التوزيع حسب الحالة
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2,1fr)',
+                  gap: 6,
+                }}
+              >
               {it.mini.map((m) => (
                 <div
                   key={m.label}
@@ -539,6 +524,7 @@ function StatBand({
                   <div style={{ fontSize: 14.5, fontWeight: 800, color: dark ? '#fff' : '#13213C', marginTop: 1 }}>{m.v}</div>
                 </div>
               ))}
+              </div>
             </div>
           )}
         </div>
@@ -1798,10 +1784,48 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </span>
                 </div>
                 <div style={{ flex: 1 }} />
+                {/* cards / table view switcher */}
+                <div
+                  style={{
+                    display: 'flex',
+                    background: '#F4F7FC',
+                    border: '1px solid #E7ECF4',
+                    borderRadius: 11,
+                    padding: 3,
+                    gap: 2,
+                  }}
+                >
+                  {(
+                    [
+                      { k: 'cards' as const, icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z', title: 'عرض البطاقات' },
+                      { k: 'list' as const, icon: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', title: 'عرض الجدول' },
+                    ]
+                  ).map((v) => (
+                    <button
+                      key={v.k}
+                      title={v.title}
+                      onClick={() => setViewMode(v.k)}
+                      style={{
+                        width: 34,
+                        height: 32,
+                        border: viewMode === v.k ? '1px solid #D8E3F5' : '1px solid transparent',
+                        borderRadius: 8,
+                        background: viewMode === v.k ? '#fff' : 'transparent',
+                        boxShadow: viewMode === v.k ? '0 1px 4px rgba(15,31,61,.10)' : 'none',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Icon d={v.icon} size={15} color={viewMode === v.k ? '#1D4ED8' : '#8A97AD'} />
+                    </button>
+                  ))}
+                </div>
                 <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} />
               </div>
 
-              {/* cards */}
+              {/* cards / table */}
               {vm.sectionCards.length === 0 ? (
                 <div
                   style={{
@@ -1817,6 +1841,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                     {vm.emptyDesc}
                   </div>
                 </div>
+              ) : viewMode === 'list' ? (
+                <ListView cards={vm.sectionCards} />
               ) : (
                 <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
                   {vm.sectionCards.map((c) => (
@@ -2780,7 +2806,7 @@ function ListView({ cards }: { cards: CardVM[] }) {
         overflowX: 'auto',
       }}
     >
-      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 860 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1020 }}>
         <thead>
           <tr>
             <th style={{ ...th, width: 30 }} />
@@ -2857,25 +2883,68 @@ function ListView({ cards }: { cards: CardVM[] }) {
               </td>
               <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
                 {c.canApprove ? (
-                  <button
-                    onClick={(e) => {
-                      stop(e);
-                      c.onApprove();
-                    }}
-                    style={{
-                      background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 9,
-                      padding: '7px 16px',
-                      fontWeight: 800,
-                      fontSize: 11.5,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    اعتماد
-                  </button>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      onClick={(e) => {
+                        stop(e);
+                        c.onApprove();
+                      }}
+                      style={{
+                        background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 9,
+                        padding: '7px 14px',
+                        fontWeight: 800,
+                        fontSize: 11.5,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      اعتماد
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        stop(e);
+                        c.onReqInfo();
+                      }}
+                      style={{
+                        background: '#fff',
+                        color: '#33405A',
+                        border: '1px solid #E7ECF4',
+                        borderRadius: 9,
+                        padding: '7px 12px',
+                        fontWeight: 700,
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      طلب معلومات إضافية
+                    </button>
+                    <button
+                      title="رفض"
+                      aria-label="رفض"
+                      onClick={(e) => {
+                        stop(e);
+                        c.onReject();
+                      }}
+                      style={{
+                        width: 30,
+                        height: 30,
+                        background: '#FCEEEF',
+                        color: '#C0303B',
+                        border: '1px solid #F5D8DB',
+                        borderRadius: 9,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Icon d="M18 6L6 18M6 6l12 12" size={12} color="#C0303B" strokeWidth={2.4} />
+                    </button>
+                  </span>
                 ) : c.showPathCta ? (
                   <button
                     onClick={(e) => {
