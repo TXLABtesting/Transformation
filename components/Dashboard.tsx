@@ -1476,6 +1476,12 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <StatBand
                   items={[
                     {
+                      label: 'الإجمالي',
+                      value: String(vm.kpis.total),
+                      info: 'إجمالي ' + vm.typesPhrase + ' المسجّلة ضمن نطاق اطلاعك.',
+                      dist: vm.showStreamDist ? vm.kpiDist.total : undefined,
+                    },
+                    {
                       label: 'المشاريع / المبادرات',
                       value: String(vm.kpis.projInit),
                       info: 'عدد المشاريع والمبادرات المسجّلة ضمن نطاق اطلاعك في مسارات التحول. اضغطوا على البطاقة لاستعراض التوزيع على المسارات.',

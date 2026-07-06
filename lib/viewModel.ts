@@ -172,6 +172,7 @@ function build(s: Store) {
   // per-stream distribution shown INSIDE the type KPI cards (entity view) —
   // every eligible stream is listed, including zeros
   const kpiDist = {
+    total: breakdown.map((r) => ({ label: r.name, value: r.total })),
     projInit: breakdown.map((r) => ({ label: r.name, value: r.projInit })),
     operations: breakdown
       .filter((r) => r.hasOps)
