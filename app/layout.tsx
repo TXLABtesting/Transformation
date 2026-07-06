@@ -1,12 +1,20 @@
 import type { Metadata } from 'next';
-import { Cairo } from 'next/font/google';
+import { Plus_Jakarta_Sans, IBM_Plex_Sans_Arabic } from 'next/font/google';
 import './globals.css';
 
-const cairo = Cairo({
-  subsets: ['arabic', 'latin'],
-  weight: ['400', '500', '600', '700', '800', '900'],
+// Plus Jakarta Sans carries Latin + numerals; Arabic glyphs fall through to
+// IBM Plex Sans Arabic (Jakarta has no Arabic set) — same modern geometric feel
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
-  variable: '--font-cairo',
+  variable: '--font-latin',
+});
+const plexArabic = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-arabic',
 });
 
 export const metadata: Metadata = {
@@ -23,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl" className={cairo.variable}>
-      <body className={cairo.className}>{children}</body>
+    <html lang="ar" dir="rtl" className={`${jakarta.variable} ${plexArabic.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }

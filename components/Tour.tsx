@@ -6,7 +6,7 @@
 // from the «جولة تعريفية» button in the header, which dispatches the
 // window event below.
 // ---------------------------------------------------------------------------
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 
 export type TourStep = { sel: string; title: string; desc: string };
 
@@ -88,21 +88,29 @@ export function Tour({ steps }: { steps: TourStep[] }) {
 
   if (!active || !rect) return null;
 
+  // the app body is scaled with CSS `zoom`; rects come back in visual pixels
+  // while our fixed positioning is re-multiplied by that zoom — divide it out
+  let z = 1;
+  if (typeof document !== 'undefined') {
+    const zv = parseFloat(getComputedStyle(document.body).zoom as string);
+    if (zv && !isNaN(zv)) z = zv;
+  }
+
   const last = idx === visible.length - 1;
   const pad = 8;
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  const cardW = Math.min(360, vw - 24);
+  const cardW = Math.min(390, vw - 24);
   // card below the target when there is room, otherwise above it
-  const below = rect.top + rect.height + pad + 190 < vh || rect.top < 220;
+  const below = rect.top + rect.height + pad + 200 < vh || rect.top < 230;
   const cardTop = below
-    ? Math.min(rect.top + rect.height + pad + 14, vh - 210)
-    : Math.max(12, rect.top - pad - 14 - 190);
+    ? Math.min(rect.top + rect.height + pad + 14, vh - 220)
+    : Math.max(12, rect.top - pad - 14 - 200);
   const cardLeft = Math.min(Math.max(12, rect.left + rect.width / 2 - cardW / 2), vw - cardW - 12);
   const arrowLeft = Math.min(Math.max(18, rect.left + rect.width / 2 - cardLeft - 7), cardW - 18);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 900, direction: 'rtl' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 900, direction: 'rtl', zoom: 1 / z } as CSSProperties}>
       {/* click blocker */}
       <div style={{ position: 'absolute', inset: 0 }} onClick={(e) => e.stopPropagation()} />
       {/* spotlight */}

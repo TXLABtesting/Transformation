@@ -161,6 +161,9 @@ function build(s: Store) {
     operations: breakdown
       .filter((r) => r.hasOps)
       .map((r) => ({ label: r.name, value: r.operations })),
+    services: breakdown
+      .filter((r) => r.hasSvc)
+      .map((r) => ({ label: r.name, value: r.services })),
   };
 
   // ---- per-batch (مرحلة) summary: items + total execution cost ----

@@ -103,6 +103,188 @@ function HoverButton({
 
 const stop = (e: React.MouseEvent) => e.stopPropagation();
 
+// shared brand gradient: deep navy (right, RTL reading start) → vivid blue
+const BLUE_GRAD = 'linear-gradient(270deg,#0F2C66 0%,#2563EB 100%)';
+
+// One full-width line of statistics: cells separated by vertical dividers,
+// small label on top and a large formatted number underneath
+function StatBand({
+  dark,
+  items,
+}: {
+  dark?: boolean;
+  items: { label: string; value: string; suffix?: string; chip?: string }[];
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        borderRadius: 16,
+        overflow: 'hidden',
+        ...(dark
+          ? { background: BLUE_GRAD, color: '#fff' }
+          : { background: '#fff', border: '1px solid #E7ECF4' }),
+      }}
+    >
+      {items.map((it, i) => (
+        <div
+          key={it.label}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: '15px 20px',
+            borderLeft: i < items.length - 1 ? `1px solid ${dark ? 'rgba(255,255,255,.16)' : '#EBEFF6'}` : 'none',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12.5,
+              fontWeight: 700,
+              color: dark ? 'rgba(255,255,255,.8)' : '#6B7A93',
+              lineHeight: 1.5,
+              minHeight: 38,
+            }}
+          >
+            {it.label}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5 }}>
+            <span
+              style={{
+                fontSize: 31,
+                fontWeight: 800,
+                color: dark ? '#fff' : '#13213C',
+                lineHeight: 1.15,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {it.value}
+              {it.suffix && <span style={{ fontSize: 17, fontWeight: 800, marginRight: 2 }}>{it.suffix}</span>}
+            </span>
+            {it.chip && (
+              <span
+                style={{
+                  padding: '3px 10px',
+                  borderRadius: 999,
+                  background: dark ? 'rgba(255,255,255,.14)' : '#F0F4FB',
+                  color: dark ? '#fff' : '#54627B',
+                  fontSize: 12,
+                  fontWeight: 800,
+                }}
+              >
+                {it.chip}
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// «تصدير» dropdown next to the view switcher: one button, Excel / PowerPoint
+function ExportMenu({ onExcel, onPpt }: { onExcel: () => void; onPpt: () => void }) {
+  const [open, setOpen] = useState(false);
+  const items = [
+    {
+      label: 'Excel',
+      iconD: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6M9 13l6 5M15 13l-6 5',
+      iconBg: '#E3F6EC',
+      iconColor: '#0B8A4B',
+      onClick: onExcel,
+    },
+    {
+      label: 'PowerPoint',
+      iconD: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6M9 13h4a2 2 0 0 1 0 4H9v-4zm0 0v5',
+      iconBg: '#FCEEE6',
+      iconColor: '#C2410C',
+      onClick: onPpt,
+    },
+  ];
+  return (
+    <div style={{ position: 'relative', flex: 'none' }}>
+      <HoverButton
+        onClick={() => setOpen((o) => !o)}
+        base={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8,
+          height: 34,
+          padding: '0 13px',
+          border: '1px solid #E7ECF4',
+          background: '#fff',
+          borderRadius: 10,
+          color: '#42506B',
+          fontWeight: 800,
+          fontSize: 12,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}
+        hover={{ borderColor: '#C7D6EE' }}
+      >
+        <Icon d="M12 3v12M7 10l5 5 5-5M5 21h14" size={15} />
+        تصدير
+        <Icon d={open ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={13} color="#8A97AD" />
+      </HoverButton>
+      {open && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 30 }} onClick={() => setOpen(false)} />
+          <div
+            style={{
+              position: 'absolute',
+              top: 40,
+              left: 0,
+              minWidth: 170,
+              background: '#fff',
+              border: '1px solid #E7ECF4',
+              borderRadius: 12,
+              boxShadow: '0 20px 50px -18px rgba(2,12,35,.4)',
+              zIndex: 31,
+              overflow: 'hidden',
+            }}
+          >
+            {items.map((it) => (
+              <HoverDiv
+                key={it.label}
+                onClick={() => {
+                  setOpen(false);
+                  it.onClick();
+                }}
+                base={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 13px',
+                  cursor: 'pointer',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  color: '#42506B',
+                }}
+                hover={{ background: '#F7F9FD' }}
+              >
+                <span
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 7,
+                    background: it.iconBg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 'none',
+                  }}
+                >
+                  <Icon d={it.iconD} size={14} color={it.iconColor} />
+                </span>
+                {it.label}
+              </HoverDiv>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function Dashboard({ vm }: { vm: VM }) {
   const s = vm.store;
   // which launch row (in the مرحلة summary) is expanded to show its items
@@ -577,7 +759,7 @@ export function Dashboard({ vm }: { vm: VM }) {
         data-tour="banner"
         style={{
           margin: '16px 24px 0',
-          background: 'linear-gradient(110deg,#0B2A66,#0E2C66 50%,#123f93)',
+          background: BLUE_GRAD,
           borderRadius: 18,
           padding: '18px 22px',
           color: '#fff',
@@ -825,88 +1007,6 @@ export function Dashboard({ vm }: { vm: VM }) {
               </div>
             </div>
             <div data-r="actions" data-tour="actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <HoverButton
-                  onClick={s.exportExcel}
-                  base={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    height: 40,
-                    padding: '0 15px',
-                    border: '1px solid #E7ECF4',
-                    background: '#fff',
-                    borderRadius: 11,
-                    color: '#42506B',
-                    fontWeight: 700,
-                    fontSize: 12.5,
-                    cursor: 'pointer',
-                    boxShadow: '0 1px 2px rgba(15,31,61,.04)',
-                    transition: 'border-color .15s,box-shadow .15s',
-                  }}
-                  hover={{ borderColor: '#BFE6CE', boxShadow: '0 6px 16px -10px rgba(11,138,75,.5)' }}
-                >
-                  <span
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 7,
-                      background: '#E3F6EC',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flex: 'none',
-                    }}
-                  >
-                    <Icon
-                      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6M9 13l6 5M15 13l-6 5"
-                      size={14}
-                      color="#0B8A4B"
-                    />
-                  </span>{' '}
-                  Excel
-                </HoverButton>
-                <HoverButton
-                  onClick={s.exportPpt}
-                  base={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    height: 40,
-                    padding: '0 15px',
-                    border: '1px solid #E7ECF4',
-                    background: '#fff',
-                    borderRadius: 11,
-                    color: '#42506B',
-                    fontWeight: 700,
-                    fontSize: 12.5,
-                    cursor: 'pointer',
-                    boxShadow: '0 1px 2px rgba(15,31,61,.04)',
-                    transition: 'border-color .15s,box-shadow .15s',
-                  }}
-                  hover={{ borderColor: '#F3D2C0', boxShadow: '0 6px 16px -10px rgba(194,65,12,.5)' }}
-                >
-                  <span
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 7,
-                      background: '#FCEEE6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flex: 'none',
-                    }}
-                  >
-                    <Icon
-                      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6M9 13h4a2 2 0 0 1 0 4H9v-4zm0 0v5"
-                      size={14}
-                      color="#C2410C"
-                    />
-                  </span>{' '}
-                  PowerPoint
-                </HoverButton>
-              </div>
               <select
                 value={vm.filterValue}
                 onChange={(e) => s.setFilter(e.target.value)}
@@ -1003,90 +1103,51 @@ export function Dashboard({ vm }: { vm: VM }) {
             </div>
           </div>
 
-          {/* KPI strip (non-ai): total always first. Entity gets hero +
-              distribution cards then a percentages row; single-stream roles
-              get one dense row (hero + percentage tiles) — no empty space */}
-          {vm.notAiRole &&
-            (vm.role === 'entity' && vm.pathFilterValue === 'all' ? (
-              <>
-                <div
-                  data-r="kpirow"
-                  data-tour="kpis"
-                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}
-                >
-                  <CompositionCard
-                    title={'إجمالي ' + vm.typesPhrase}
-                    total={vm.kpis.total}
-                    segments={[
-                      { label: 'المشاريع / المبادرات', value: vm.kpis.projInit },
-                      { label: 'العمليات', value: vm.kpis.operations },
-                      { label: 'الخدمات', value: vm.kpis.services },
-                    ]}
-                  />
-                  <KpiCard
-                    value={vm.kpis.projInit}
-                    label="المشاريع / المبادرات"
-                    iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
-                    rows={vm.kpiDist.projInit}
-                  />
-                  <KpiCard
-                    value={vm.kpis.operations}
-                    label="العمليات"
-                    iconD="M3 6h18M3 12h18M3 18h18"
-                    rows={vm.kpiDist.operations}
-                  />
-                </div>
-                <div
-                  data-r="kpirow"
-                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 }}
-                >
-                  <PctCard value={vm.kpis.completion} label="نسبة الإنجاز" />
-                  <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة التحول للذكاء الاصطناعي المساعد" />
-                  <PctCard value={vm.kpis.avgAutomationPct} label="متوسط نسبة الأتمتة الحالية" />
-                  <PctCard value={vm.kpis.completedPct} label={'المكتمل من ' + vm.typesPhrase} sub={String(vm.kpis.completedCount)} />
-                  {vm.showExecBudget && (
-                    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
-                      <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, lineHeight: 1.5 }}>
-                        ميزانية التنفيذ التقديرية
-                      </div>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: '#13213C', marginTop: 5, lineHeight: 1.25 }}>
-                        {vm.execBudgetTotalLabel}
-                      </div>
-                    </div>
-                  )}
-                  {vm.showLaunchBudget && (
-                    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
-                      <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, lineHeight: 1.5 }}>
-                        ميزانية الإطلاق التقديرية (للاطلاع)
-                      </div>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: '#13213C', marginTop: 5, lineHeight: 1.25 }}>
-                        {vm.launchBudgetTotalLabel}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div
-                data-r="kpirow"
-                data-tour="kpis"
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 }}
-              >
-                <CompositionCard
-                  title={'إجمالي ' + vm.typesPhrase}
-                  total={vm.kpis.total}
-                  segments={[
-                    { label: 'المشاريع / المبادرات', value: vm.kpis.projInit },
-                    ...(vm.showOpsKpi ? [{ label: 'العمليات', value: vm.kpis.operations }] : []),
-                    ...(vm.showSvcKpi ? [{ label: 'الخدمات', value: vm.kpis.services }] : []),
+          {/* KPI bands (non-ai): each family of statistics gets its own full
+              line — counts (dark band), percentages, then budgets */}
+          {vm.notAiRole && (
+            <>
+              <div data-r="kpirow" data-tour="kpis">
+                <StatBand
+                  dark
+                  items={[
+                    { label: 'المشاريع / المبادرات', value: String(vm.kpis.projInit) },
+                    ...(vm.showOpsKpi ? [{ label: 'العمليات', value: String(vm.kpis.operations) }] : []),
+                    ...(vm.showSvcKpi ? [{ label: 'الخدمات', value: String(vm.kpis.services) }] : []),
                   ]}
                 />
-                <PctCard value={vm.kpis.completion} label="نسبة الإنجاز" />
-                <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة التحول للذكاء الاصطناعي المساعد" />
-                <PctCard value={vm.kpis.avgAutomationPct} label="متوسط نسبة الأتمتة الحالية" />
-                <PctCard value={vm.kpis.completedPct} label={'المكتمل من ' + vm.typesPhrase} sub={String(vm.kpis.completedCount)} />
               </div>
-            ))}
+              <StatBand
+                items={[
+                  { label: 'نسبة الإنجاز', value: String(vm.kpis.completion), suffix: '%' },
+                  {
+                    label: 'متوسط نسبة التحول للذكاء الاصطناعي المساعد',
+                    value: String(vm.kpis.avgTargetPct),
+                    suffix: '%',
+                  },
+                  { label: 'متوسط نسبة الأتمتة الحالية', value: String(vm.kpis.avgAutomationPct), suffix: '%' },
+                  {
+                    label: 'المكتمل من ' + vm.typesPhrase,
+                    value: String(vm.kpis.completedPct),
+                    suffix: '%',
+                    chip: String(vm.kpis.completedCount),
+                  },
+                ]}
+              />
+              {vm.role === 'entity' && vm.pathFilterValue === 'all' && (vm.showExecBudget || vm.showLaunchBudget) && (
+                <StatBand
+                  items={[
+                    ...(vm.showExecBudget
+                      ? [{ label: 'ميزانية التنفيذ التقديرية', value: vm.execBudgetTotalLabel }]
+                      : []),
+                    ...(vm.showLaunchBudget
+                      ? [{ label: 'ميزانية الإطلاق التقديرية (للاطلاع)', value: vm.launchBudgetTotalLabel }]
+                      : []),
+                  ]}
+                />
+              )}
+            </>
+          )}
 
           {/* Committee analytics (ai) */}
           {vm.isAiRole && (
@@ -1445,6 +1506,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               {'قائمة ' + vm.typesPhrase + ' المقدَّمة'}
             </div>
             <div style={{ flex: 1, height: 1, background: '#E1E7F1' }} />
+            <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} />
             <div
               style={{
                 display: 'flex',
@@ -1668,86 +1730,8 @@ function KpiCard({
 // Hero tile: total first, with a single-hue stacked composition bar.
 // Identity is carried by lightness steps of ONE blue + direct labels.
 const BLUE_STEPS = ['#2563EB', '#7DA4F2', '#C2D5FA'];
-function CompositionCard({
-  total,
-  segments,
-  title,
-}: {
-  total: number;
-  segments: { label: string; value: number }[];
-  title: string;
-}) {
-  const segs = segments.filter((x) => x.value > 0);
-  const sum = segs.reduce((a, x) => a + x.value, 0) || 1;
-  return (
-    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-        <span style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, lineHeight: 1.5 }}>{title}</span>
-        <span style={{ fontSize: 24, fontWeight: 800, color: '#13213C', lineHeight: 1.2 }}>{total}</span>
-      </div>
-      {/* stacked composition bar — 2px gaps, rounded segments */}
-      <div style={{ display: 'flex', gap: 2, height: 8, marginTop: 10 }}>
-        {segs.length === 0 ? (
-          <span style={{ flex: 1, borderRadius: 999, background: '#EEF1F6' }} />
-        ) : (
-          segs.map((x, i) => (
-            <span
-              key={x.label}
-              style={{
-                flex: x.value / sum,
-                minWidth: 8,
-                borderRadius: 999,
-                background: BLUE_STEPS[i % BLUE_STEPS.length],
-              }}
-            />
-          ))
-        )}
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '4px 14px',
-          marginTop: 9,
-          fontSize: 10.5,
-          fontWeight: 600,
-          color: '#6B7A93',
-        }}
-      >
-        {segments.map((x, i) => (
-          <span key={x.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 3,
-                background: BLUE_STEPS[i % BLUE_STEPS.length],
-                flex: 'none',
-              }}
-            />
-            {x.label} <span style={{ fontWeight: 800, color: '#13213C' }}>{x.value}</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // Percentage tile — label + value only, no decoration.
-function PctCard({ value, label, sub }: { value: number; label: string; sub?: string }) {
-  return (
-    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
-      <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 600, lineHeight: 1.5 }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', marginTop: 3, lineHeight: 1.25 }}>
-        {value}
-        <span style={{ fontSize: 13, color: '#9AA6BC' }}>%</span>
-        {sub && <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 700, marginRight: 6 }}>({sub})</span>}
-      </div>
-    </div>
-  );
-}
 
 function StatCard({ value, label, dot }: { value: number; label: string; dot?: string }) {
   return (

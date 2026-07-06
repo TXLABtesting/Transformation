@@ -12,10 +12,14 @@ body {
   padding: 0;
 }
 body {
-  font-family: 'Cairo', system-ui, sans-serif;
+  /* Jakarta first so Latin + digits use it; Arabic glyphs fall through */
+  font-family: var(--font-latin), var(--font-arabic), 'Cairo', system-ui, sans-serif;
   direction: rtl;
   color: #0f1f3d;
   background: #eef2f9;
+  /* global content scale — the whole UI reads larger (Tour.tsx compensates
+     for this factor when measuring spotlight coordinates) */
+  zoom: 1.15;
 }
 button {
   font-family: inherit;
