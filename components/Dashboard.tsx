@@ -974,7 +974,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 }}
                 >
                   <PctCard value={vm.kpis.completion} label="نسبة الإنجاز" />
-                  <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة التحول الذكي المساعد" />
+                  <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة التحول للذكاء الاصطناعي المساعد" />
                   <PctCard value={vm.kpis.avgAutomationPct} label="متوسط نسبة الأتمتة الحالية" />
                   <PctCard value={vm.kpis.completedPct} label={'المكتمل من ' + vm.typesPhrase} sub={String(vm.kpis.completedCount)} />
                   {vm.showExecBudget && (
@@ -1014,7 +1014,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   ]}
                 />
                 <PctCard value={vm.kpis.completion} label="نسبة الإنجاز" />
-                <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة التحول الذكي المساعد" />
+                <PctCard value={vm.kpis.avgTargetPct} label="متوسط نسبة التحول للذكاء الاصطناعي المساعد" />
                 <PctCard value={vm.kpis.avgAutomationPct} label="متوسط نسبة الأتمتة الحالية" />
                 <PctCard value={vm.kpis.completedPct} label={'المكتمل من ' + vm.typesPhrase} sub={String(vm.kpis.completedCount)} />
               </div>
