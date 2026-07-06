@@ -34,7 +34,7 @@ export function FundBar({ vm }: { vm: VM }) {
           pointerEvents: 'auto',
         }}
       >
-        <span style={{ fontSize: 13, fontWeight: 800 }}>{vm.fundSelCount} عنصر محدّد</span>
+        <span style={{ fontSize: 13, fontWeight: 800 }}>المحدّد: {vm.fundSelCount}</span>
         <button
           onClick={() => vm.store.clearFundSel()}
           style={{
@@ -99,7 +99,7 @@ export function AssignBar({ vm }: { vm: VM }) {
           pointerEvents: 'auto',
         }}
       >
-        <span style={{ fontSize: 13, fontWeight: 800 }}>{vm.assignBar.count} عنصر محدّد</span>
+        <span style={{ fontSize: 13, fontWeight: 800 }}>المحدّد: {vm.assignBar.count}</span>
         <button
           onClick={() => vm.store.clearAssignSel()}
           style={{
@@ -377,7 +377,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                 }}
               >
                 <Icon d={BASKET_ICON} size={40} color="#C3CDDD" />
-                <div style={{ fontSize: 13, fontWeight: 700 }}>لا توجد عناصر مرشّحة بعد</div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>لا توجد ترشيحات بعد</div>
               </div>
             )
           ) : b.appItems.length ? (
@@ -457,7 +457,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
               }}
             >
               <Icon d={CHECK_ICON} size={40} color="#C3CDDD" />
-              <div style={{ fontSize: 13, fontWeight: 700 }}>لا توجد عناصر معتمدة بعد</div>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>لا توجد اعتمادات بعد</div>
             </div>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { stripHtml } from './richtext';
 // ============================================================================
 // Real client-side Excel (.xlsx) and PowerPoint (.pptx) export of the item
 // list — replaces the prototype's CDN SheetJS / PptxGenJS with bundled deps.
@@ -14,7 +15,7 @@ function row(i: Item, entityName: string) {
     الحالة: wfMeta(i).label,
     الأولوية: i.priority || '',
     الميزانية: i.budget || '',
-    'نطاق العمل': i.scopeOfWork || '',
+    'نطاق العمل': stripHtml(i.scopeOfWork || ''),
     'نسبة الإنجاز': stageWeight(i) + '%',
     'درجة التحول': transformScore(i).v,
     'تمويل اللجنة': i.funded ? 'نعم' : 'لا',
@@ -25,7 +26,7 @@ export async function exportExcel(items: Item[], entityName: string) {
   const mod = await import('exceljs');
   const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet('العناصر', { views: [{ rightToLeft: true }] });
+  const ws = wb.addWorksheet('المشاريع والعمليات والخدمات', { views: [{ rightToLeft: true }] });
   const headers = Object.keys(row(items[0] || ({} as Item), entityName));
   const widths = [12, 34, 24, 24, 20, 12, 18, 40, 12, 12, 12];
   ws.columns = headers.map((h, idx) => ({ header: h, key: h, width: widths[idx] || 16 }));
@@ -37,7 +38,7 @@ export async function exportExcel(items: Item[], entityName: string) {
     new Blob([buf], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
-    'عناصر_التحول_الذكي.xlsx'
+    'المشاريع_والعمليات_والخدمات.xlsx'
   );
 }
 
@@ -117,7 +118,7 @@ export async function exportPpt(items: Item[], entityName: string) {
       { x: 0.4, y: 1.2, w: 6.4, colW: [2.4, 4.0], fontSize: 12, border: { pt: 0.5, color: 'E7ECF4' } }
     );
     s.addText('نطاق العمل', { x: 7.1, y: 1.2, w: 5.8, h: 0.4, align: 'right', bold: true, color: '54627B', fontSize: 13 });
-    s.addText(i.scopeOfWork || '—', {
+    s.addText(stripHtml(i.scopeOfWork || '') || '—', {
       x: 7.1, y: 1.6, w: 5.8, h: 4.5, align: 'right', valign: 'top', color: '33405A', fontSize: 12,
     });
   }

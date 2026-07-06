@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import type { VM } from '@/lib/viewModel';
+import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
 import { LAUNCH_TYPES, typeLabel, pathById } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
@@ -76,12 +77,12 @@ export function CreatePanel({ vm }: { vm: VM }) {
           position: 'absolute',
           top: 0,
           bottom: 0,
-          left: 0,
+          right: 0,
           width: 580,
           maxWidth: '96vw',
           background: '#F7F9FD',
           boxShadow: '-24px 0 70px -24px rgba(2,12,35,.5)',
-          animation: 'slideIn .3s',
+          animation: 'slideInRight .3s',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -154,7 +155,7 @@ function PathStep({ vm }: { vm: VM }) {
     <div>
       <h2 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 4px', color: '#13213C' }}>اختر المسار</h2>
       <p style={{ fontSize: 12.5, color: '#8A97AD', margin: '0 0 16px' }}>
-        حدّد المسار الذي ينتمي إليه العنصر الجديد.
+        حدّد المسار الذي ستُضيف فيه.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {m.pathCards.map((p) => (
@@ -207,10 +208,6 @@ function TypeStep({ vm }: { vm: VM }) {
   const m = vm.modal;
   return (
     <div>
-      <h2 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 4px', color: '#13213C' }}>اختر نوع العنصر</h2>
-      <p style={{ fontSize: 12.5, color: '#8A97AD', margin: '0 0 16px' }}>
-        حدّد نوع العنصر الذي تريد إضافته في {m.mPathName}.
-      </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {m.typeCards.map((t) => (
           <button
@@ -307,10 +304,6 @@ function MethodStep({ vm }: { vm: VM }) {
   );
   return (
     <div>
-      <h2 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 4px', color: '#13213C' }}>طريقة الإضافة</h2>
-      <p style={{ fontSize: 12.5, color: '#8A97AD', margin: '0 0 16px' }}>
-        اختر كيف تريد إدخال البيانات.
-      </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {optCard(
         () => s.chooseManual(),
@@ -326,7 +319,7 @@ function MethodStep({ vm }: { vm: VM }) {
         '#0B8A4B',
         IC.upload,
         'رفع المستند',
-        'نزّل قالب خطة العمل، عبّئ عدّة عناصر دفعة واحدة، ثم ارفعه لاستيرادها ومراجعتها قبل الإرسال.'
+        'نزّل قالب خطة العمل، عبّئ عدّة صفوف دفعة واحدة، ثم ارفعه لاستيرادها ومراجعتها قبل الإرسال.'
       )}
       </div>
     </div>
@@ -548,7 +541,7 @@ function F1({
       )}
 
       <div style={{ marginBottom: 14 }}>
-        <label style={labelStyle}>اسم {m.mTypeLabel}</label>
+        <label style={labelStyle}>اسم {m.mTypeLabel} <span style={{ color: '#D23B45' }}>*</span></label>
         <input
           value={gv('title')}
           onChange={(e) => setField('title', e.target.value)}
@@ -559,24 +552,22 @@ function F1({
 
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>وصف مختصر</label>
-        <textarea
+        <RichTextEditor
           value={gv('desc')}
-          onChange={(e) => setField('desc', e.target.value)}
+          onChange={(v) => setField('desc', v)}
           placeholder="نبذة موجزة عن النطاق والهدف"
-          rows={3}
-          style={{ ...inputStyle, resize: 'vertical' }}
+          minHeight={110}
         />
       </div>
 
       {m.mIsProjectish && (
         <div style={{ marginBottom: 14 }}>
           <label style={labelStyle}>المخرجات المتوقعة</label>
-          <textarea
+          <RichTextEditor
             value={gv('expectedOutputs')}
-            onChange={(e) => setField('expectedOutputs', e.target.value)}
+            onChange={(v) => setField('expectedOutputs', v)}
             placeholder="مثال: منصة موحّدة، تطبيق ذكي، لوحة تحكم"
-            rows={2}
-            style={{ ...inputStyle, resize: 'vertical' }}
+            minHeight={96}
           />
         </div>
       )}
@@ -585,12 +576,11 @@ function F1({
         <>
           <div style={{ marginBottom: 14 }}>
             <label style={labelStyle}>الأنشطة الفرعية</label>
-            <textarea
+            <RichTextEditor
               value={gv('subActivities')}
-              onChange={(e) => setField('subActivities', e.target.value)}
+              onChange={(v) => setField('subActivities', v)}
               placeholder="مثال: استلام، تدقيق، إصدار"
-              rows={2}
-              style={{ ...inputStyle, resize: 'vertical' }}
+              minHeight={96}
             />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -755,30 +745,27 @@ function F2({
           <div style={cardTitle}>تفاصيل الخدمة</div>
           <div style={{ marginBottom: 14 }}>
             <label style={labelStyle}>رحلة المتعامل / الخطوات الحالية</label>
-            <textarea
+            <RichTextEditor
               value={gv('currentJourney')}
-              onChange={(e) => setField('currentJourney', e.target.value)}
-              rows={2}
-              style={{ ...inputStyle, resize: 'vertical' }}
+              onChange={(v) => setField('currentJourney', v)}
+              minHeight={96}
             />
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={labelStyle}>نقاط الألم</label>
-            <textarea
+            <RichTextEditor
               value={gv('painPoints')}
-              onChange={(e) => setField('painPoints', e.target.value)}
-              rows={2}
-              style={{ ...inputStyle, resize: 'vertical' }}
+              onChange={(v) => setField('painPoints', v)}
+              minHeight={96}
             />
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={labelStyle}>التحسين المتوقع</label>
-            <textarea
+            <RichTextEditor
               value={gv('expectedImprovement')}
-              onChange={(e) => setField('expectedImprovement', e.target.value)}
+              onChange={(v) => setField('expectedImprovement', v)}
               placeholder="مثال: تقليل زمن الإصدار من 3 أيام إلى دقائق"
-              rows={2}
-              style={{ ...inputStyle, resize: 'vertical' }}
+              minHeight={96}
             />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -816,9 +803,6 @@ function FOutcome({
 }) {
   return (
     <div style={cardStyle}>
-      <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>
-        النتائج المتوقعة
-      </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <label style={labelStyle}>نسبة التحول المستهدفة باستخدام الذكاء الاصطناعي</label>
@@ -872,15 +856,6 @@ function FOutcome({
           </div>
         </div>
         <div>
-          <label style={labelStyle}>الأثر المتوقع</label>
-          <input
-            value={gv('expectedImpact')}
-            onChange={(e) => setField('expectedImpact', e.target.value)}
-            placeholder="مثال: خفض زمن الإنجاز 60%، رفع الإنتاجية 25%"
-            style={inputStyle}
-          />
-        </div>
-        <div>
           <label style={labelStyle}>تاريخ الانتهاء المتوقع</label>
           <input
             type="date"
@@ -907,26 +882,24 @@ function FBudget({
   void vm;
   return (
     <div style={cardStyle}>
-      <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 2 }}>نطاق العمل والميزانية</div>
       <p style={{ fontSize: 11.5, color: '#9AA6BC', margin: '0 0 14px', lineHeight: 1.7 }}>
-        حدّد نطاق العمل التفصيلي وميزانية التنفيذ التقديرية وأرفق المستند الداعم — تُجمَع ميزانيات العناصر
+        حدّد نطاق العمل التفصيلي وميزانية التنفيذ التقديرية وأرفق المستند الداعم — تُجمَع الميزانيات
         تلقائياً على مستوى خطة الإطلاق.
       </p>
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>
           نطاق العمل التفصيلي <span style={{ color: '#D23B45' }}>*</span>
         </label>
-        <textarea
+        <RichTextEditor
           value={gv('scopeOfWork')}
-          onChange={(e) => setField('scopeOfWork', e.target.value)}
+          onChange={(v) => setField('scopeOfWork', v)}
           placeholder="صف نطاق العمل: المكوّنات، المخرجات، التكاملات، والاستثناءات"
-          rows={3}
-          style={{ ...inputStyle, resize: 'vertical' }}
+          minHeight={130}
         />
       </div>
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>
-          الميزانية التقديرية
+          الميزانية التقديرية <span style={{ color: '#D23B45' }}>*</span>
         </label>
         <input
           value={gv('budget')}
@@ -1056,7 +1029,7 @@ function FPhases({ vm }: { vm: VM }) {
     <div>
       <div style={cardStyle}>
         <label style={labelStyle}>
-          خطة التنفيذ والإطلاق <span style={{ color: '#D23B45' }}>*</span>
+          اختر مرحلة الإطلاق <span style={{ color: '#D23B45' }}>*</span>
         </label>
         <select
           value={draft?.execBatch || ''}
@@ -1071,7 +1044,7 @@ function FPhases({ vm }: { vm: VM }) {
           ))}
         </select>
         <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 7, lineHeight: 1.7 }}>
-          حدّد المرحلة التي سيُنفَّذ ويُطلَق فيها هذا العنصر. يُربط العنصر بخطة إطلاق لاحقاً من
+          حدّد مرحلة التنفيذ والإطلاق — يتم الربط بخطة إطلاق لاحقاً من
           «إدارة خطط الإطلاق» أو من لوحة المتابعة.
         </div>
       </div>
@@ -1237,8 +1210,8 @@ function BulkReviewStep({ vm }: { vm: VM }) {
           <Icon d={IC.settings} size={21} color="#fff" />
         </div>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>مراجعة العناصر المستوردة</div>
-          <div style={{ fontSize: 11.5, color: '#9AA6BC' }}>تحقّق من العناصر المقروءة من الملف قبل الإرسال للاعتماد</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>مراجعة الصفوف المستوردة</div>
+          <div style={{ fontSize: 11.5, color: '#9AA6BC' }}>تحقّق من الصفوف المقروءة من الملف قبل الإرسال للاعتماد</div>
         </div>
       </div>
 
@@ -1255,7 +1228,7 @@ function BulkReviewStep({ vm }: { vm: VM }) {
             }}
           />
           <div style={{ fontSize: 13, color: '#54627B', fontWeight: 700 }}>
-            جارٍ مراجعة {m.bulkRows.length} عناصر بالذكاء الاصطناعي…
+            جارٍ مراجعة {m.bulkRows.length} صفوف بالذكاء الاصطناعي…
           </div>
         </div>
       )}
@@ -1287,7 +1260,7 @@ function BulkReviewStep({ vm }: { vm: VM }) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49' }}>
-                        {b.title || 'عنصر بدون عنوان'}
+                        {b.title || 'بدون عنوان'}
                       </span>
                       <span
                         style={{
@@ -1350,7 +1323,7 @@ function BulkReviewStep({ vm }: { vm: VM }) {
               marginBottom: 14,
             }}
           >
-            سيتم إرسال العناصر الجاهزة وبحاجة لمراجعة فقط. العناصر التي بها أخطاء لن تُرسَل.
+            سيتم إرسال الصفوف الجاهزة وبحاجة لمراجعة فقط. الصفوف التي بها أخطاء لن تُرسَل.
           </div>
 
           <div style={{ display: 'flex', gap: 10 }}>
@@ -1384,7 +1357,7 @@ function BulkReviewStep({ vm }: { vm: VM }) {
                 fontFamily: 'inherit',
               }}
             >
-              إرسال العناصر للاعتماد
+              الإرسال للاعتماد
             </button>
           </div>
         </>
@@ -1415,7 +1388,7 @@ function DoneStep({ vm }: { vm: VM }) {
       </div>
       <div style={{ fontSize: 18, fontWeight: 800, color: '#13213C', marginBottom: 8 }}>تم بنجاح</div>
       <p style={{ fontSize: 13, color: '#8A97AD', lineHeight: 1.8, maxWidth: 340, margin: '0 auto 24px' }}>
-        تمت إضافة العنصر وإرساله لاعتماد ممثل الجهة.
+        تمت الإضافة والإرسال لاعتماد ممثل الجهة.
       </p>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
         <button
@@ -1432,7 +1405,7 @@ function DoneStep({ vm }: { vm: VM }) {
             fontFamily: 'inherit',
           }}
         >
-          إضافة عنصر آخر
+          إضافة المزيد
         </button>
         <button
           onClick={() => s.closeModal()}

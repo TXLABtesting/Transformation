@@ -1,6 +1,7 @@
 'use client';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
+import { RichTextEditor, RichTextView } from './RichText';
 import { SC, EXEC_STATUS_OPTS } from '@/lib/domain';
 
 const CHECK = 'M20 6 9 17l-5-5';
@@ -56,12 +57,12 @@ export function DetailPanel({ vm }: { vm: VM }) {
           position: 'absolute',
           top: 0,
           bottom: 0,
-          left: 0,
+          right: 0,
           width: 680,
           maxWidth: '97vw',
           background: '#F4F7FC',
           boxShadow: '-24px 0 70px -24px rgba(2,12,35,.5)',
-          animation: 'slideIn .3s',
+          animation: 'slideInRight .3s',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -358,7 +359,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
             </div>
             <div>
               <div style={labelStyle}>الوصف</div>
-              <div style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}>{d.desc}</div>
+              <RichTextView html={d.desc} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
             </div>
 
             {/* --- PROJECT / INITIATIVE --- */}
@@ -366,20 +367,16 @@ export function DetailPanel({ vm }: { vm: VM }) {
               <>
                 <div>
                   <div style={labelStyle}>المخرجات المتوقعة</div>
-                  <div style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}>
-                    {d.expectedOutputs}
-                  </div>
+                  <RichTextView html={d.expectedOutputs} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
                 </div>
                 <div>
                   <div style={labelStyle}>النتائج المتوقعة</div>
-                  <div style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}>
-                    {d.expectedOutcomes}
-                  </div>
+                  <RichTextView html={d.expectedOutcomes} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   <div>
                     <div style={labelStyle}>الأثر المتوقع</div>
-                    <div style={valueStyle}>{d.expectedImpact}</div>
+                    <RichTextView html={d.expectedImpact} style={valueStyle} />
                   </div>
                   <div>
                     <div style={labelStyle}>نماذج الذكاء</div>
@@ -421,7 +418,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   </div>
                   <div>
                     <div style={labelStyle}>الأنشطة الفرعية</div>
-                    <div style={valueStyle}>{d.subActivities}</div>
+                    <RichTextView html={d.subActivities} style={valueStyle} />
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
@@ -491,20 +488,20 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 {d.expectedOutputs && (
                   <div>
                     <div style={labelStyle}>المخرجات المتوقعة</div>
-                    <div style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}>{d.expectedOutputs}</div>
+                    <RichTextView html={d.expectedOutputs} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
                   </div>
                 )}
                 {d.expectedOutcomes && (
                   <div>
                     <div style={labelStyle}>النتائج المتوقعة</div>
-                    <div style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}>{d.expectedOutcomes}</div>
+                    <RichTextView html={d.expectedOutcomes} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
                   </div>
                 )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   {d.expectedImpact && (
                     <div>
                       <div style={labelStyle}>الأثر المتوقع</div>
-                      <div style={valueStyle}>{d.expectedImpact}</div>
+                      <RichTextView html={d.expectedImpact} style={valueStyle} />
                     </div>
                   )}
                   {!!d.aiModels && (
@@ -538,21 +535,15 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 </div>
                 <div>
                   <div style={labelStyle}>رحلة المتعامل الحالية</div>
-                  <div style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}>
-                    {d.currentJourney}
-                  </div>
+                  <RichTextView html={d.currentJourney} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
                 </div>
                 <div>
                   <div style={labelStyle}>نقاط الألم</div>
-                  <div style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}>
-                    {d.painPoints}
-                  </div>
+                  <RichTextView html={d.painPoints} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
                 </div>
                 <div>
                   <div style={labelStyle}>التحسين المتوقع</div>
-                  <div style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}>
-                    {d.expectedImprovement}
-                  </div>
+                  <RichTextView html={d.expectedImprovement} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
                 </div>
               </>
             )}
@@ -739,7 +730,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   </div>
                   <div>
                     <div style={labelStyle}>الأثر المتوقع</div>
-                    <div style={valueStyle}>{d.expectedImpact}</div>
+                    <RichTextView html={d.expectedImpact} style={valueStyle} />
                   </div>
                 </div>
               </div>
@@ -822,7 +813,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 marginBottom: 14,
               }}
             >
-              نطاق العمل والميزانية
+              نطاق العمل والميزانية المتوقعة
             </div>
 
             {/* Editable */}
@@ -832,29 +823,20 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <div
                     style={{ fontSize: 12, fontWeight: 700, color: '#54627B', marginBottom: 6 }}
                   >
-                    نطاق العمل التفصيلي
+                    نطاق العمل التفصيلي <span style={{ color: '#D23B45' }}>*</span>
                   </div>
-                  <textarea
+                  <RichTextEditor
                     value={d.scopeOfWork}
-                    onChange={(e) => d.onScopeWork(e.target.value)}
-                    style={{
-                      width: '100%',
-                      border: '1px solid #DCE3EE',
-                      background: '#fff',
-                      borderRadius: 11,
-                      padding: '11px 13px',
-                      fontSize: 13.5,
-                      outline: 'none',
-                      minHeight: 90,
-                      resize: 'vertical',
-                    }}
+                    onChange={(v) => d.onScopeWork(v)}
+                    placeholder="صف نطاق العمل: المكوّنات، المخرجات، التكاملات، والاستثناءات"
+                    minHeight={110}
                   />
                 </div>
                 <div>
                   <div
                     style={{ fontSize: 12, fontWeight: 700, color: '#54627B', marginBottom: 6 }}
                   >
-                    الميزانية التقديرية
+                    الميزانية التقديرية <span style={{ color: '#D23B45' }}>*</span>
                   </div>
                   <input
                     value={d.budget}
@@ -951,9 +933,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <div style={labelStyle}>نطاق العمل التفصيلي</div>
-                  <div style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}>
-                    {d.scopeOfWork}
-                  </div>
+                  <RichTextView html={d.scopeOfWork} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
                 </div>
                 <div>
                   <div style={labelStyle}>الميزانية التقديرية</div>
@@ -1290,7 +1270,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                     boxShadow: '0 10px 22px -10px rgba(11,138,75,.6)',
                   }}
                 >
-                  إنهاء وإغلاق العنصر
+                  الإنهاء والإغلاق
                 </button>
               )}
             </div>

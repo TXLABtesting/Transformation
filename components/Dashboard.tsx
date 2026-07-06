@@ -25,7 +25,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     sel: '[data-tour="stages"]',
     title: 'بطاقات مراحل الإطلاق',
-    desc: 'لكل مرحلة إطلاق بطاقة تعرض إجمالي التكلفة التقديرية. اضغطوا على أيقونة التفاصيل لاستعراض خطط الإطلاق والبنود المرتبطة بكل خطة.',
+    desc: 'لكل مرحلة إطلاق بطاقة تعرض إجمالي التكلفة التقديرية. اضغطوا على أيقونة التفاصيل لاستعراض خطط الإطلاق وما يرتبط بكل خطة.',
   },
   {
     sel: '[data-tour="actions"]',
@@ -35,12 +35,12 @@ const TOUR_STEPS: TourStep[] = [
   {
     sel: '[data-tour="basket"]',
     title: 'السلة',
-    desc: 'تجمع البنود الجاهزة للاعتماد أو الترشيح في مكان واحد قبل إرسالها، وتظهر عليها إشارة عند وجود بنود بانتظاركم.',
+    desc: 'تجمع المشاريع والعمليات والخدمات الجاهزة للاعتماد أو الترشيح في مكان واحد قبل إرسالها، وتظهر عليها إشارة عند وجود ما ينتظركم.',
   },
   {
     sel: '[data-tour="cards"]',
-    title: 'بطاقات البنود',
-    desc: 'كل بطاقة تمثّل مشروعاً أو عملية أو خدمة مع حالتها ونسبة إنجازها. اضغطوا على أي بطاقة لاستعراض التفاصيل واستكمال البيانات.',
+    title: 'بطاقات المشاريع والعمليات والخدمات',
+    desc: 'كل بطاقة تمثّل مشروعاً أو مبادرة أو عملية أو خدمة مع حالتها ونسبة إنجازها. اضغطوا على أي بطاقة لاستعراض التفاصيل واستكمال البيانات.',
   },
 ];
 
@@ -106,6 +106,68 @@ const stop = (e: React.MouseEvent) => e.stopPropagation();
 // shared brand gradient: deep navy (right, RTL reading start) → vivid blue
 const BLUE_GRAD = 'linear-gradient(270deg,#0F2C66 0%,#2563EB 100%)';
 
+// small ⓘ affordance: hover / tap reveals a plain-language explanation
+function InfoTip({ text, dark }: { text: string; dark?: boolean }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span
+      style={{ position: 'relative', display: 'inline-flex', flex: 'none', verticalAlign: 'middle' }}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        aria-label="معلومات"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
+        style={{
+          width: 16,
+          height: 16,
+          borderRadius: '50%',
+          border: `1px solid ${dark ? 'rgba(255,255,255,.45)' : '#C7D2E4'}`,
+          background: 'transparent',
+          color: dark ? 'rgba(255,255,255,.85)' : '#8A97AD',
+          fontSize: 10,
+          fontWeight: 800,
+          lineHeight: 1,
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 0,
+          fontFamily: 'inherit',
+        }}
+      >
+        i
+      </button>
+      {open && (
+        <span
+          style={{
+            position: 'absolute',
+            top: 22,
+            right: -8,
+            width: 240,
+            background: '#0F1F3D',
+            color: '#fff',
+            borderRadius: 10,
+            padding: '9px 12px',
+            fontSize: 11.5,
+            fontWeight: 600,
+            lineHeight: 1.8,
+            zIndex: 60,
+            boxShadow: '0 16px 40px -14px rgba(2,12,35,.55)',
+            textAlign: 'right',
+          }}
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
 // One full-width line of statistics: cells separated by vertical dividers,
 // small label on top and a large formatted number underneath
 function StatBand({
@@ -113,7 +175,7 @@ function StatBand({
   items,
 }: {
   dark?: boolean;
-  items: { label: string; value: string; suffix?: string; chip?: string }[];
+  items: { label: string; value: string; suffix?: string; chip?: string; info?: string }[];
 }) {
   return (
     <div
@@ -143,9 +205,13 @@ function StatBand({
               color: dark ? 'rgba(255,255,255,.8)' : '#6B7A93',
               lineHeight: 1.5,
               minHeight: 38,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 6,
             }}
           >
-            {it.label}
+            <span style={{ minWidth: 0 }}>{it.label}</span>
+            {it.info && <InfoTip text={it.info} dark={dark} />}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5 }}>
             <span
@@ -953,7 +1019,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </div>
                 <div style={{ marginTop: 2, textAlign: 'center' }}>
                   <span style={{ fontSize: 9.5, fontWeight: 800, color: labelColor, whiteSpace: 'nowrap' }}>
-                    {st.stepCount} عنصر
+                    {st.stepCount} من {vm.typesPhrase}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: 3 }}>
@@ -1111,26 +1177,28 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <StatBand
                   dark
                   items={[
-                    { label: 'المشاريع / المبادرات', value: String(vm.kpis.projInit) },
-                    ...(vm.showOpsKpi ? [{ label: 'العمليات', value: String(vm.kpis.operations) }] : []),
-                    ...(vm.showSvcKpi ? [{ label: 'الخدمات', value: String(vm.kpis.services) }] : []),
+                    { label: 'المشاريع / المبادرات', value: String(vm.kpis.projInit), info: 'عدد المشاريع والمبادرات المسجّلة ضمن نطاق اطلاعك في مسارات التحول.' },
+                    ...(vm.showOpsKpi ? [{ label: 'العمليات', value: String(vm.kpis.operations), info: 'عدد العمليات التخصصية وعمليات الدعم المؤسسي المسجّلة للتحول.' }] : []),
+                    ...(vm.showSvcKpi ? [{ label: 'الخدمات', value: String(vm.kpis.services), info: 'عدد الخدمات المسجّلة للتحول في مسار الخدمات.' }] : []),
                   ]}
                 />
               </div>
               <StatBand
                 items={[
-                  { label: 'نسبة الإنجاز', value: String(vm.kpis.completion), suffix: '%' },
+                  { label: 'نسبة الإنجاز', value: String(vm.kpis.completion), suffix: '%', info: 'متوسط تقدّم جميع المشاريع والعمليات والخدمات عبر مراحل الدورة، من المسودة حتى الإنجاز.' },
                   {
                     label: 'متوسط نسبة التحول للذكاء الاصطناعي المساعد',
                     value: String(vm.kpis.avgTargetPct),
                     suffix: '%',
+                    info: 'متوسط النسب المستهدفة للتحول باستخدام الذكاء الاصطناعي كما أُدخلت في النتائج المتوقعة.',
                   },
-                  { label: 'متوسط نسبة الأتمتة الحالية', value: String(vm.kpis.avgAutomationPct), suffix: '%' },
+                  { label: 'متوسط نسبة الأتمتة الحالية', value: String(vm.kpis.avgAutomationPct), suffix: '%', info: 'متوسط مستوى الأتمتة الحالي قبل التحول كما أُدخل في البيانات.' },
                   {
                     label: 'المكتمل من ' + vm.typesPhrase,
                     value: String(vm.kpis.completedPct),
                     suffix: '%',
                     chip: String(vm.kpis.completedCount),
+                    info: 'نسبة وعدد ما اكتمل إنجازه وإغلاقه بالكامل.',
                   },
                 ]}
               />
@@ -1138,10 +1206,10 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <StatBand
                   items={[
                     ...(vm.showExecBudget
-                      ? [{ label: 'ميزانية التنفيذ التقديرية', value: vm.execBudgetTotalLabel }]
+                      ? [{ label: 'ميزانية التنفيذ التقديرية', value: vm.execBudgetTotalLabel, info: 'مجموع الميزانيات التقديرية لتنفيذ المشاريع والعمليات والخدمات في نطاقك.' }]
                       : []),
                     ...(vm.showLaunchBudget
-                      ? [{ label: 'ميزانية الإطلاق التقديرية (للاطلاع)', value: vm.launchBudgetTotalLabel }]
+                      ? [{ label: 'ميزانية الإطلاق التقديرية (للاطلاع)', value: vm.launchBudgetTotalLabel, info: 'مجموع ميزانيات الإطلاق لخطط الإطلاق المرتبطة — للاطلاع فقط ولا يدخل في التمويل.' }]
                       : []),
                   ]}
                 />
@@ -1157,10 +1225,10 @@ export function Dashboard({ vm }: { vm: VM }) {
                 data-tour="kpis"
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 13, marginBottom: 4 }}
               >
-                <StatCard value={vm.aiStats.total} label="إجمالي المشاريع والمبادرات والعمليات والخدمات" />
-                <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" />
-                <StatCard value={vm.aiStats.pending} label="بانتظار الاعتماد" dot="#B45309" />
-                <StatCard value={vm.aiStats.funded} label="معتمدة للتمويل" dot="#0B8A4B" />
+                <StatCard value={vm.aiStats.total} label="إجمالي المشاريع والمبادرات والعمليات والخدمات" info="كل ما قدّمته الجهات عبر مسارات التحول ووصل إلى اللجنة الوطنية." />
+                <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" info="عدد الجهات الاتحادية التي قدّمت مشاريع أو عمليات أو خدمات." />
+                <StatCard value={vm.aiStats.pending} label="بانتظار الاعتماد" dot="#B45309" info="ما ينتظر مراجعة واعتماد اللجنة الوطنية." />
+                <StatCard value={vm.aiStats.funded} label="معتمدة للتمويل" dot="#0B8A4B" info="ما اعتمدته اللجنة الوطنية وستتكفّل بتكلفة تحويله." />
                 <div
                   data-tip=""
                   style={{
@@ -1245,7 +1313,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       zIndex: 30,
                     }}
                   >
-                    متوسط درجات التحول لكل العناصر معبّراً عنه كنسبة مئوية. تُحسب درجة كل عنصر (من 5) من: الأثر
+                    متوسط درجات التحول لكل المشاريع والمبادرات والعمليات والخدمات معبّراً عنه كنسبة مئوية. تُحسب الدرجة (من 5) من: الأثر
                     ٢٥٪ · القابلية ٢٠٪ · الجاهزية ١٥٪ · كثافة الاستخدام ١٥٪ · الأولوية ١٠٪ · فرصة الأتمتة ١٠٪ ·
                     سهولة التعقيد ٥٪ ثم تُحوّل النتيجة إلى نسبة مئوية.
                   </span>
@@ -1353,7 +1421,10 @@ export function Dashboard({ vm }: { vm: VM }) {
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: '#33415C' }}>{b.name}</div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#33415C', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>{b.name}</span>
+                        <InfoTip text="إجمالي التكلفة التقديرية لتنفيذ ما هو معيَّن لهذه المرحلة. أيقونة السهم تعرض خطط الإطلاق وتفاصيلها." />
+                      </div>
                       {b.period && (
                         <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 2 }}>{b.period}</div>
                       )}
@@ -1385,7 +1456,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   {isOpen && (
                     <div style={{ marginTop: 9, borderTop: '1px solid #F0F3F8', paddingTop: 8 }}>
                       <div style={{ fontSize: 10.5, color: '#8A97AD', fontWeight: 600, marginBottom: 4 }}>
-                        {b.count} عنصر{b.opsCount ? ' · ' + b.opsCount + ' عملية' : ''}
+                        {b.count} من {vm.typesPhrase}{b.opsCount ? ' · ' + b.opsCount + ' عملية' : ''}
                       </div>
                       {vm.showLaunchCosts &&
                         b.launches.map((l) => {
@@ -1560,7 +1631,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             >
               <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>{'لا توجد ' + vm.typesPhrase + ' للعرض'}</div>
               <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 6, lineHeight: 1.7 }}>
-                لا توجد عناصر مطابقة للمرشحات الحالية — جرّب تغيير المرشحات أو إضافة عنصر جديد.
+                لا توجد نتائج مطابقة للمرشحات الحالية — جرّب تغييرها أو الإضافة من زر «إضافة جديد».
               </div>
             </div>
           ) : viewMode === 'list' ? (
@@ -1733,7 +1804,7 @@ const BLUE_STEPS = ['#2563EB', '#7DA4F2', '#C2D5FA'];
 
 // Percentage tile — label + value only, no decoration.
 
-function StatCard({ value, label, dot }: { value: number; label: string; dot?: string }) {
+function StatCard({ value, label, dot, info }: { value: number; label: string; dot?: string; info?: string }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
       <div
@@ -1748,7 +1819,8 @@ function StatCard({ value, label, dot }: { value: number; label: string; dot?: s
         }}
       >
         {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flex: 'none' }} />}
-        {label}
+        <span style={{ minWidth: 0 }}>{label}</span>
+        {info && <InfoTip text={info} />}
       </div>
       <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', marginTop: 3, lineHeight: 1.25 }}>{value}</div>
     </div>
@@ -1824,7 +1896,7 @@ function ListView({ cards }: { cards: CardVM[] }) {
         <thead>
           <tr>
             <th style={{ ...th, width: 30 }} />
-            <th style={th}>العنصر</th>
+            <th style={th}>العنوان</th>
             <th style={th}>النوع</th>
             <th style={th}>المسار</th>
             <th style={th}>الحالة</th>

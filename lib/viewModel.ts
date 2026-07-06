@@ -18,6 +18,7 @@ import {
   ALOG,
   pathById,
   typeLabel,
+  typeLabelDef,
   availTypes,
   wfOf,
   wfMeta,
@@ -45,6 +46,7 @@ import {
   type Item,
   type RoleKey,
 } from './domain';
+import { stripHtml } from './richtext';
 
 export function useViewModel() {
   const s = useStore();
@@ -643,7 +645,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   return {
     id: i.id,
     title: i.title,
-    desc: i.desc,
+    desc: stripHtml(i.desc || ''),
     typeLabel: t.label,
     typeColor: t.color,
     typeBg: t.bg,
@@ -802,17 +804,17 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
     if (rawRole === 'ai') {
       if (i.nom && !i.funded) push('n-' + i.id, 'info', 'inbox', 'ترشيح جديد في السلة من ' + (i.nom.by || ''), tl + ' · ' + i.title + ' · ' + ent(i), i.id);
     } else if (rawRole === 'entity') {
-      if (w === 'ent1') push('ent1-' + i.id, 'info', 'send', 'عنصر بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
+      if (w === 'ent1') push('ent1-' + i.id, 'info', 'send', typeLabel(i.type) + ' بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
       if (w === 'ent2') push('ent2-' + i.id, 'info', 'wallet', 'ميزانية ونطاق عمل بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
-      if (i.funded && ent(i) === s.entityName) push('f-' + i.id, 'ok', 'wallet', 'ستتكفّل اللجنة الوطنية بتكلفة تحويل هذا العنصر', tl + ' · ' + i.title + ' · يبقى التنفيذ من مسؤولية الجهة', i.id);
-      if (i.fundCancel && !i.funded && ent(i) === s.entityName) push('fc-' + i.id, 'alert', 'wallet', 'أُلغي تمويل اللجنة الوطنية لهذا العنصر', tl + ' · ' + i.title + ' · السبب: ' + i.fundCancel.reason, i.id);
+      if (i.funded && ent(i) === s.entityName) push('f-' + i.id, 'ok', 'wallet', 'ستتكفّل اللجنة الوطنية بتكلفة تحويل ' + typeLabelDef(i.type), tl + ' · ' + i.title + ' · يبقى التنفيذ من مسؤولية الجهة', i.id);
+      if (i.fundCancel && !i.funded && ent(i) === s.entityName) push('fc-' + i.id, 'alert', 'wallet', 'أُلغي تمويل ' + typeLabelDef(i.type) + ' من اللجنة الوطنية', tl + ' · ' + i.title + ' · السبب: ' + i.fundCancel.reason, i.id);
     } else {
       if (i.funded && i.nom && i.nom.by === myName) push('mf-' + i.id, 'ok', 'wallet', 'اعتمدت اللجنة الوطنية تمويل ترشيحك', tl + ' · ' + i.title, i.id);
-      if (i.fyi) push('fy-' + i.id, 'info', 'inbox', 'للعلم: عُدّل العنصر من ممثل الجهة وأُحيل لاعتماد اللجنة الوطنية', tl + ' · ' + i.title, i.id);
-      if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب معلومات إضافية من ' : 'تمت إعادة العنصر من ') + (i.ret.from || ''), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
+      if (i.fyi) push('fy-' + i.id, 'info', 'inbox', 'للعلم: تعديل من ممثل الجهة — بانتظار اعتماد اللجنة الوطنية', tl + ' · ' + i.title, i.id);
+      if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب معلومات إضافية من ' : 'تمت الإعادة من ') + (i.ret.from || ''), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
       if (w === 'budget' && !i.ret) push('bud-' + i.id, 'info', 'wallet', 'اعتُمدت الأولوية — أدخل الميزانية ونطاق العمل', tl + ' · ' + i.title, i.id);
-      if (w === 'exec') push('x-' + i.id, 'ok', 'check', 'العنصر في مرحلة التنفيذ — حدّث الحالة', tl + ' · ' + i.title, i.id);
-      if (w === 'launch') push('l-' + i.id, 'info', 'send', 'العنصر في مرحلة الإطلاق — أكمل خطة الإطلاق', tl + ' · ' + i.title, i.id);
+      if (w === 'exec') push('x-' + i.id, 'ok', 'check', typeLabelDef(i.type) + ' في مرحلة التنفيذ — حدّث الحالة', tl + ' · ' + i.title, i.id);
+      if (w === 'launch') push('l-' + i.id, 'info', 'send', typeLabelDef(i.type) + ' في مرحلة الإطلاق — أكمل خطة الإطلاق', tl + ' · ' + i.title, i.id);
     }
   });
   const readSet = new Set(s.readNotifs);
@@ -872,10 +874,10 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
     isCommittee: isCom,
     title: isCom ? 'سلة اللجنة الوطنية' : 'سلة الترشيحات',
     subtitle: isCom
-      ? 'العناصر المرشّحة من رؤساء المسارات والعناصر المموّلة'
-      : 'العناصر التي رشّحتها لتمويل اللجنة الوطنية',
-    selTabLabel: isCom ? 'العناصر المرشّحة' : 'ترشيحاتي',
-    appTabLabel: 'العناصر المعتمدة',
+      ? 'الترشيحات الواردة من رؤساء المسارات وما تم تمويله'
+      : 'ما رشّحته لتمويل اللجنة الوطنية',
+    selTabLabel: isCom ? 'المرشّحة للتمويل' : 'ترشيحاتي',
+    appTabLabel: 'المعتمدة للتمويل',
     tab: s.ui.basketTab,
     selItems: selSrc.map(mk),
     appItems: appSrc.map(mk),
@@ -1095,7 +1097,7 @@ function buildLogRows(i: Item) {
     if (e.action === 'submit') return 'تم الإرسال للاعتماد';
     if (e.action === 'approve') return 'تم الاعتماد من ' + (e.role || '');
     if (e.action === 'pending') return 'قيد الاعتماد لدى ' + (e.role || '');
-    if (e.action === 'reject') return 'رفض العنصر';
+    if (e.action === 'reject') return 'رفض';
     if (e.action === 'info') return 'طلب معلومات إضافية';
     // fund / nominate / unfund / declineNom / cancelFund / budget … → Arabic
     return ALOG[e.action]?.t || e.action;
@@ -1126,6 +1128,15 @@ function buildLogRows(i: Item) {
   return rows;
 }
 
+// add-panel title lists the types the chosen stream actually offers
+function addTitleFor(p: string): string {
+  const keys = availTypes(p).map((t) => t.key);
+  let title = 'إضافة مشاريع / مبادرات';
+  if (keys.includes('operation')) title += ' أو عمليات';
+  if (keys.includes('service')) title += ' أو خدمات';
+  return title;
+}
+
 function buildModal(s: Store) {
   const ui = s.ui;
   const draft = ui.draft;
@@ -1148,18 +1159,18 @@ function buildModal(s: Store) {
   const step2Label =
     ({ project: 'تقييم المشروع', initiative: 'تقييم المبادرة', operation: 'تقييم العملية', service: 'تقييم الخدمة' } as Record<string, string>)[type] ||
     'التقييم';
-  const fLabels = [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والميزانية', 'خطة التنفيذ والإطلاق'];
-  const fTitles = [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والميزانية', 'خطة التنفيذ والإطلاق'];
+  const fLabels = [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والميزانية المتوقعة', 'خطة التنفيذ والإطلاق'];
+  const fTitles = [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والميزانية المتوقعة', 'خطة التنفيذ والإطلاق'];
   const fHints = [
-    'ابدأ بالمعلومات الأساسية للعنصر',
+    'ابدأ بالمعلومات الأساسية',
     'حدّد الأولوية وقابلية التحول',
     'النتائج والأثر المستهدف',
-    'نطاق العمل والميزانية والمرفقات',
+    'نطاق العمل والميزانية المتوقعة والمرفقات',
     'اختر مرحلة التنفيذ والإطلاق',
   ];
   return {
     mStep: ui.mStep,
-    createTitle: ui.editingId ? 'تعديل عنصر' : mPathName ? 'إضافة في مسار ' + mPathName : 'إضافة عنصر جديد',
+    createTitle: ui.editingId ? 'تعديل ' + typeLabelDef(type) : mPathName ? addTitleFor(draft?.path || path) : 'إضافة جديد',
     mPathName,
     rankBtnLabel: draft?.rank ? 'الأولوية رقم ' + draft.rank : 'اضغط لترتيب الأولوية بالسحب والإفلات',
     // path step

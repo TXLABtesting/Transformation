@@ -30,6 +30,25 @@ select {
   font-family: inherit;
 }
 
+/* ---- rich text (editor + rendered values) ---- */
+[data-rte]:empty::before {
+  content: attr(data-placeholder);
+  color: #9aa6bc;
+  font-weight: 600;
+  pointer-events: none;
+}
+[data-rte] ul,
+[data-rte] ol,
+.rte-view ul,
+.rte-view ol {
+  margin: 4px 20px 4px 0;
+  padding: 0;
+}
+[data-rte] li,
+.rte-view li {
+  margin-bottom: 2px;
+}
+
 /* ---- keyframes (verbatim from prototype) ---- */
 @keyframes fadeUp {
   from {
@@ -58,6 +77,16 @@ select {
 @keyframes slideIn {
   from {
     transform: translateX(-40px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes slideInRight {
+  from {
+    transform: translateX(40px);
     opacity: 0;
   }
   to {

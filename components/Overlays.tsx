@@ -37,14 +37,14 @@ export function Overlays({ vm }: { vm: VM }) {
               position: 'absolute',
               top: 0,
               bottom: 0,
-              left: 0,
+              right: 0,
               width: 560,
               maxWidth: '96vw',
               background: '#F4F7FC',
               boxShadow: '-24px 0 70px -24px rgba(2,12,35,.5)',
               display: 'flex',
               flexDirection: 'column',
-              animation: 'slideIn .3s',
+              animation: 'slideInRight .3s',
             }}
           >
             {/* header */}
@@ -358,7 +358,7 @@ export function Overlays({ vm }: { vm: VM }) {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>ترتيب الأولوية</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
-                  اسحب العناصر لإعادة ترتيبها من الأعلى (الأولوية 1) للأسفل
+                  اسحب البطاقات لإعادة ترتيبها من الأعلى (الأولوية 1) للأسفل
                 </div>
               </div>
               <button
@@ -499,7 +499,7 @@ export function Overlays({ vm }: { vm: VM }) {
             <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>
-                  {vm.reqModal.mode === 'info' ? 'طلب معلومات إضافية' : 'رفض العنصر'}
+                  {vm.reqModal.mode === 'info' ? 'طلب معلومات إضافية' : 'رفض الطلب'}
                 </div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
                   {vm.reqModal.mode === 'info'
@@ -548,7 +548,7 @@ export function Overlays({ vm }: { vm: VM }) {
                 }}
               />
               <div style={{ fontSize: 11.5, color: '#9AA6BC', marginTop: 8, lineHeight: 1.7 }}>
-                ستصل هذه الملاحظات إلى رئيس المسار، ولن ينتقل العنصر للمرحلة التالية حتى تتم معالجتها.
+                ستصل هذه الملاحظات إلى رئيس المسار، ولن يتم الانتقال للمرحلة التالية حتى تتم معالجتها.
               </div>
             </div>
             <div style={{ padding: '16px 22px 20px', display: 'flex', gap: 10 }}>
@@ -635,7 +635,7 @@ export function Overlays({ vm }: { vm: VM }) {
             <textarea
               value={vm.cancelFund.note}
               onChange={(e) => s.setCancelFundNote(e.target.value)}
-              placeholder="اذكر سبب إلغاء تمويل هذا العنصر..."
+              placeholder="اذكر سبب إلغاء التمويل..."
               style={{
                 width: '100%',
                 minHeight: 96,
@@ -929,8 +929,8 @@ export function Overlays({ vm }: { vm: VM }) {
                   {vm.assignModal.isChange
                     ? vm.assignModal.currentBatches.length === 1
                       ? 'المرحلة الحالية: ' + vm.assignModal.currentBatches[0] + ' — اختر المرحلة الجديدة.'
-                      : 'العناصر المحددة في دفعات مختلفة — اختر المرحلة الموحّدة الجديدة.'
-                    : 'عيّن مرحلة التنفيذ والإطلاق نفسها للعناصر المحددة.'}
+                      : 'المحدَّد في مراحل مختلفة — اختر المرحلة الموحّدة الجديدة.'
+                    : 'عيّن مرحلة التنفيذ والإطلاق نفسها لكل ما هو محدَّد.'}
                 </div>
               </div>
               <button
@@ -966,7 +966,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   ))}
                 </select>
                 <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 6 }}>
-                  لربط العناصر بخطة إطلاق داخل المرحلة استخدم «إدارة خطط الإطلاق».
+                  لربط المشاريع والعمليات والخدمات بخطة إطلاق داخل المرحلة استخدم «إدارة خطط الإطلاق».
                 </div>
               </div>
             </div>
@@ -1056,7 +1056,7 @@ export function Overlays({ vm }: { vm: VM }) {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>إدارة خطط الإطلاق</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
-                  عرّف خطط الإطلاق لكل مرحلة (الاسم، التاريخ، النوع، الوصف) — تُستخدم عند إنشاء العناصر وتعيينها.
+                  عرّف خطط الإطلاق لكل مرحلة (الاسم، التاريخ، النوع، الوصف) — تُستخدم عند إنشاء المشاريع والعمليات والخدمات وتعيينها.
                 </div>
               </div>
               <button
@@ -1159,7 +1159,7 @@ export function Overlays({ vm }: { vm: VM }) {
                             {p.title.trim() || 'خطة إطلاق جديدة'}
                           </div>
                           <div style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
-                            {[p.date || 'بدون تاريخ', p.ltype, p.budget, selCount + ' عنصر']
+                            {[p.date || 'بدون تاريخ', p.ltype, p.budget, selCount + ' من المشاريع والعمليات والخدمات']
                               .filter(Boolean)
                               .join(' · ')}
                           </div>
@@ -1223,7 +1223,7 @@ export function Overlays({ vm }: { vm: VM }) {
                             </div>
                           </div>
                           <div style={{ marginTop: 10 }}>
-                            <label style={assignLabel}>العناصر التي تُطلق في هذا الإطلاق ({selCount} محدد)</label>
+                            <label style={assignLabel}>ما يُطلق في هذا الإطلاق ({selCount} محدد)</label>
                             <div
                               style={{
                                 border: '1px solid #E7ECF4',
@@ -1235,7 +1235,7 @@ export function Overlays({ vm }: { vm: VM }) {
                             >
                               {p.items.length === 0 && (
                                 <div style={{ padding: '11px 13px', fontSize: 12, color: '#9AA6BC', fontWeight: 600 }}>
-                                  لا توجد عناصر بعد.
+                                  لا توجد إضافات بعد.
                                 </div>
                               )}
                               {p.items.map((x) => (
@@ -1336,11 +1336,11 @@ export function Overlays({ vm }: { vm: VM }) {
                               <input
                                 value={p.budget || ''}
                                 readOnly
-                                placeholder="تُحتسب تلقائياً من العناصر المحددة"
+                                placeholder="تُحتسب تلقائياً مما هو محدَّد"
                                 style={{ ...assignInput, background: '#F4F7FC', cursor: 'default' }}
                               />
                               <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
-                                مجموع ميزانيات التنفيذ للعناصر المحددة — يُحدَّث تلقائياً ويُحتسب في إجماليات اللجنة.
+                                مجموع ميزانيات التنفيذ لما هو محدَّد من المشاريع والعمليات والخدمات — يُحدَّث تلقائياً ويُحتسب في إجماليات اللجنة.
                               </div>
                             </div>
                             <div>

@@ -107,6 +107,15 @@ export const typeLabel = (t: string): string =>
     service: 'خدمة',
   } as Record<string, string>)[t] || 'عنصر';
 
+// definite form for sentences: «تم إرسال المشروع / المبادرة…»
+export const typeLabelDef = (t: string): string =>
+  ({
+    project: 'المشروع / المبادرة',
+    initiative: 'المشروع / المبادرة',
+    operation: 'العملية',
+    service: 'الخدمة',
+  } as Record<string, string>)[t] || 'العنصر';
+
 // project & initiative count as one merged bucket
 export const isProjInit = (t: string): boolean => t === 'project' || t === 'initiative';
 
@@ -135,7 +144,7 @@ export const ROLE: Record<
   },
   ai: {
     label: 'اللجنة الوطنية',
-    sub: 'مراجعة واعتماد العناصر عبر الجهات',
+    sub: 'مراجعة واعتماد المشاريع والعمليات والخدمات عبر الجهات',
     badge: '#6D28D9',
     bg: '#EFEAFE',
   },
@@ -213,13 +222,13 @@ export const NIC: Record<string, string> = {
 
 // Log action map
 export const ALOG: Record<string, { t: string; c: string }> = {
-  submit: { t: 'أرسل العنصر للاعتماد', c: '#2563EB' },
+  submit: { t: 'أرسل للاعتماد', c: '#2563EB' },
   approve: { t: 'اعتمد', c: '#0B8A4B' },
   pending: { t: 'قيد الاعتماد', c: '#B45309' },
-  reject: { t: 'رفض العنصر', c: '#C0303B' },
+  reject: { t: 'رفض', c: '#C0303B' },
   info: { t: 'طلب معلومات إضافية', c: '#B45309' },
   budget: { t: 'أرسل الميزانية ونطاق العمل', c: '#2563EB' },
-  nominate: { t: 'رشّح العنصر للتمويل', c: '#0E7C86' },
+  nominate: { t: 'رشّح للتمويل', c: '#0E7C86' },
   fund: { t: 'اعتمد التمويل', c: '#0B8A4B' },
   unfund: { t: 'ألغى التمويل', c: '#C0303B' },
   declineNom: { t: 'رفض الترشيح', c: '#C0303B' },

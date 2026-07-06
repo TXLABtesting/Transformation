@@ -31,6 +31,7 @@ import {
   availTypes,
   launchesFromPlans,
   parseBudget,
+  typeLabelDef,
 } from './domain';
 import { seedItems, seedLaunchPlans } from './seed';
 import type { LaunchPlan } from './domain';
@@ -40,7 +41,7 @@ import { type ReviewResult } from './ai';
 // importable; a missing description is flagged but still imported.
 const plainVerdict = (r: BulkRow): BulkRow =>
   !(r.title || '').trim()
-    ? { ...r, _v: 'يوجد خطأ', _note: 'اسم العنصر مفقود — لن يُستورد هذا الصف' }
+    ? { ...r, _v: 'يوجد خطأ', _note: 'الاسم مفقود — لن يُستورد هذا الصف' }
     : !(r.desc || '').trim()
       ? { ...r, _v: 'بحاجة إلى مراجعة', _note: 'الوصف غير مكتمل — يمكن استكماله يدوياً بعد الاستيراد' }
       : { ...r, _v: 'جاهز', _note: 'مكتمل وصالح للإرسال' };
@@ -717,7 +718,7 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       // a name is mandatory before leaving step 1 — no nameless cards
       if (s.ui.fStep === 1 && !(s.ui.draft?.title || '').trim()) {
-        return toast('أدخل اسم العنصر قبل المتابعة');
+        return toast('أدخل اسم ' + typeLabelDef(s.ui.draft?.type || '') + ' قبل المتابعة');
       }
       if (s.ui.fStep < 5) {
         setUi({ fStep: s.ui.fStep + 1 });
@@ -830,7 +831,7 @@ export const useStore = create<Store>((set, get) => {
       }));
       set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
-      toast(w === 'ent1' ? 'تم سحب العنصر وحذفه' : 'تم حذف المسودة');
+      toast(w === 'ent1' ? 'تم سحب وحذف ' + typeLabelDef(it.type) : 'تم حذف المسودة');
     },
     submitItem: () => {
       commitDraft(get, set, persist, toast, 'تم الإرسال', false);
@@ -913,7 +914,7 @@ export const useStore = create<Store>((set, get) => {
       set((st) => ({ items: [...toAdd, ...st.items], launchPlans: [...st.launchPlans, ...newPlans] }));
       persist();
       setUi({ mStep: 'done', bulkLaunches: [] });
-      if (newPlans.length) toast('تم استيراد ' + toAdd.length + ' عنصر و' + newPlans.length + ' خطة إطلاق');
+      if (newPlans.length) toast('تم استيراد ' + toAdd.length + ' من المشاريع والعمليات والخدمات و' + newPlans.length + ' خطة إطلاق');
     },
 
     // ---- rank modal ----
@@ -924,7 +925,7 @@ export const useStore = create<Store>((set, get) => {
         .filter((i) => i.path === path)
         .sort((a, b) => (Number(a.rank) || 99) - (Number(b.rank) || 99))
         .map((i) => ({ id: i.id, title: i.title }));
-      if (s.ui.draft && s.ui.draft.title) rows.unshift({ id: s.ui.draft.id, title: s.ui.draft.title || 'العنصر الجديد' });
+      if (s.ui.draft && s.ui.draft.title) rows.unshift({ id: s.ui.draft.id, title: s.ui.draft.title || 'بدون عنوان' });
       setUi({ rankOpen: true, rankRows: rows });
     },
     closeRank: () => setUi({ rankOpen: false }),
@@ -973,7 +974,7 @@ export const useStore = create<Store>((set, get) => {
       if (!it) return;
       if (!execAllDone(it)) return toast('أكمل كل بند أو حدّد سبب التأخير وتاريخاً جديداً قبل الانتقال للإطلاق');
       patchItem(id, { wf: 'launch' });
-      toast('انتقل العنصر إلى مرحلة الإطلاق');
+      toast('تم نقل ' + typeLabelDef(it.type) + ' إلى مرحلة الإطلاق');
     },
     toggleLaunchDone: (id, idx) => {
       const it = findItem(id);
@@ -1003,7 +1004,7 @@ export const useStore = create<Store>((set, get) => {
       if (!it) return;
       if (!launchAllDone(it)) return toast('يجب إكمال جميع بنود خطة الإطلاق');
       patchItem(id, { wf: 'done', progress: 100 });
-      toast('اكتمل الإطلاق — تم إنجاز العنصر');
+      toast('اكتمل الإطلاق — تم إنجاز ' + typeLabelDef(it.type));
     },
     submitScope: (id) => {
       const it = findItem(id);
@@ -1014,8 +1015,9 @@ export const useStore = create<Store>((set, get) => {
     },
     doSubmitScope: (id) => {
       const s = get();
+      const target = findItem(id);
       patchItem(id, (it) => ({ wf: 'exec', ret: null, log: withLog(s, it, 'budget') }));
-      toast('تم إرسال العنصر لاعتماد ممثل الجهة');
+      toast('تم إرسال ' + typeLabelDef(target?.type || '') + ' لاعتماد ممثل الجهة');
     },
     confirmSubReview: () => {
       const s = get();
@@ -1034,10 +1036,10 @@ export const useStore = create<Store>((set, get) => {
       const w = wfOf(it);
       if (w === 'ent1') {
         patchItem(id, (i) => ({ wf: 'exec', ret: null, log: withLog(s, i, 'approve') }));
-        toast('اعتمدت الجهة العنصر — انتقل إلى مرحلة التنفيذ');
+        toast('اعتمدت الجهة ' + typeLabelDef(it.type) + ' — إلى مرحلة التنفيذ');
       } else if (w === 'pm1') {
         patchItem(id, (i) => ({ wf: 'exec', ret: null, log: withLog(s, i, 'approve') }));
-        toast('انتقل العنصر إلى مرحلة التنفيذ');
+        toast('تم نقل ' + typeLabelDef(it.type) + ' إلى مرحلة التنفيذ');
       }
       setUi({ menuOpenId: null, dActionMenuOpen: false });
     },
@@ -1060,7 +1062,7 @@ export const useStore = create<Store>((set, get) => {
         log: withLog(s, i, info ? 'info' : 'reject', rm.note),
       }));
       setUi({ reqModal: null });
-      toast(info ? 'تم طلب معلومات إضافية من رئيس المسار' : 'تمت إعادة العنصر إلى رئيس المسار');
+      toast(info ? 'تم طلب معلومات إضافية من رئيس المسار' : 'تمت إعادة ' + typeLabelDef(it.type) + ' إلى رئيس المسار');
     },
     closeReqModal: () => setUi({ reqModal: null }),
 
@@ -1074,7 +1076,7 @@ export const useStore = create<Store>((set, get) => {
         nom: { by: actorName(s), role: actorRole(s), path: it.path, at: Date.now() },
         log: withLog(s, it, 'nominate'),
       }));
-      toast('تمت إضافة العنصر إلى سلة الترشيح — بانتظار اللجنة الوطنية');
+      toast('تمت الإضافة إلى سلة الترشيح — بانتظار اللجنة الوطنية');
     },
     withdrawNom: (id) => {
       patchItem(id, { nom: null });
@@ -1084,7 +1086,7 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const target = findItem(id);
       if (!target) return;
-      if (!isEntityApproved(target)) return toast('لا يمكن تمويل العنصر قبل اعتماد ممثل الجهة'); // only entity-approved items
+      if (!isEntityApproved(target)) return toast('لا يمكن التمويل قبل اعتماد ممثل الجهة'); // only entity-approved items
       patchItem(id, (it) => ({
         funded: { by: 'اللجنة الوطنية', at: Date.now(), direct: !!direct },
         nom: it.nom || { by: 'اللجنة الوطنية', role: 'اللجنة الوطنية', path: it.path, at: Date.now(), direct: true },
@@ -1171,7 +1173,7 @@ export const useStore = create<Store>((set, get) => {
       }));
       set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
-      toast('تم تعيين المرحلة للعناصر المحددة');
+      toast('تم تعيين المرحلة لكل ما هو محدَّد');
     },
 
     // ---- manage launch plans (إدارة خطط الإطلاق) ----
@@ -1207,7 +1209,7 @@ export const useStore = create<Store>((set, get) => {
       if (
         attached > 0 &&
         typeof window !== 'undefined' &&
-        !window.confirm('هذه الخطة مرتبطة بـ ' + attached + ' عنصر — سيُفصل عنها عند الحذف. متابعة؟')
+        !window.confirm('هذه الخطة مرتبطة بـ ' + attached + ' من المشاريع والعمليات والخدمات — ستُفصل عنها عند الحذف. متابعة؟')
       )
         return;
       set((st) => {
@@ -1223,7 +1225,7 @@ export const useStore = create<Store>((set, get) => {
         };
       });
       persist();
-      toast('تم حذف خطة الإطلاق' + (attached ? ' وفصل ' + attached + ' عنصر عنها' : ''));
+      toast('تم حذف خطة الإطلاق' + (attached ? ' وفصل ' + attached + ' من المشاريع والعمليات والخدمات عنها' : ''));
     },
     selectExecBatch: (batch: string) => {
       const s = get();
@@ -1264,7 +1266,7 @@ export const useStore = create<Store>((set, get) => {
       const wasAttached = (target.launchPlanIds || []).includes(planId);
       // one batch per item: attaching to a plan from another batch is blocked
       if (!wasAttached && target.execBatch && target.execBatch !== plan.batch)
-        return toast('العنصر معيَّن في ' + target.execBatch + ' — المرحلة واحدة لكل عنصر');
+        return toast('تم التعيين مسبقاً في ' + target.execBatch + ' — مرحلة إطلاق واحدة لكل ' + typeLabelDef(target.type));
       set((st) => ({
         items: st.items.map((it) => {
           if (it.id !== itemId) return it;
@@ -1282,7 +1284,7 @@ export const useStore = create<Store>((set, get) => {
       }));
       set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
-      toast(wasAttached ? 'تم فصل العنصر عن خطة الإطلاق' : 'تم ربط العنصر بخطة الإطلاق');
+      toast(wasAttached ? 'تم فصل ' + typeLabelDef(target.type) + ' عن خطة الإطلاق' : 'تم ربط ' + typeLabelDef(target.type) + ' بخطة الإطلاق');
     },
     openCancelFund: (id) => setUi({ cancelFund: { id, note: '' } }),
     setCancelFundNote: (v) => set((s) => (s.ui.cancelFund ? { ui: { ...s.ui, cancelFund: { ...s.ui.cancelFund, note: v } } } : {})),
@@ -1305,7 +1307,7 @@ export const useStore = create<Store>((set, get) => {
     // ---- exports (real client-side file generation) ----
     exportExcel: () => {
       const list = exportScope(get());
-      if (!list.length) return toast('لا توجد عناصر للتصدير');
+      if (!list.length) return toast('لا توجد بيانات للتصدير');
       import('./export')
         .then((m) => m.exportExcel(list, get().entityName))
         .then(() => toast('تم إنشاء ملف Excel'))
@@ -1313,7 +1315,7 @@ export const useStore = create<Store>((set, get) => {
     },
     exportPpt: () => {
       const list = exportScope(get());
-      if (!list.length) return toast('لا توجد عناصر للتصدير');
+      if (!list.length) return toast('لا توجد بيانات للتصدير');
       import('./export')
         .then((m) => m.exportPpt(list, get().entityName))
         .then(() => toast('تم إنشاء ملف PowerPoint'))
@@ -1397,7 +1399,7 @@ function fundSelected(
     ui: { ...st.ui, fundSel: [] },
   }));
   persist();
-  toast('تم اعتماد تمويل ' + n + ' عنصر — أُشعرت الجهات');
+  toast('تم اعتماد تمويل ' + n + ' من المشاريع والعمليات والخدمات — أُشعرت الجهات');
 }
 
 function nominateSelected(
@@ -1422,7 +1424,7 @@ function nominateSelected(
     ui: { ...st.ui, fundSel: [] },
   }));
   persist();
-  toast('تم ترشيح ' + n + ' عنصر إلى اللجنة الوطنية');
+  toast('تم ترشيح ' + n + ' من المشاريع والعمليات والخدمات إلى اللجنة الوطنية');
 }
 
 // convenience re-exports for the view-model
