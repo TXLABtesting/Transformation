@@ -204,6 +204,15 @@ function build(s: Store) {
       opsCount: inBatch.filter((i) => i.type === 'operation').length,
       projCount: inBatch.filter((i) => isProjInit(i.type)).length,
       svcCount: inBatch.filter((i) => i.type === 'service').length,
+      // drill-down into the portfolio pages filtered by this مرحلة
+      composition: [
+        { n: inBatch.filter((i) => isProjInit(i.type)).length, label: 'من المشاريع والمبادرات', section: 'projects' },
+        { n: inBatch.filter((i) => i.type === 'operation').length, label: 'من العمليات', section: 'operations' },
+        { n: inBatch.filter((i) => i.type === 'service').length, label: 'من الخدمات', section: 'services' },
+      ]
+        .filter((c) => c.n > 0)
+        .map((c) => ({ ...c, onOpen: () => s.openBatchItems(b.name, c.section) })),
+      onOpenAll: () => s.openBatchItems(b.name, 'all'),
       costLabel: cost > 0 ? formatMoney(cost) : '—',
       launchCostLabel: launchTotal > 0 ? formatMoney(launchTotal) : '—',
       // delivery mapping: how far this مرحلة's assignments have progressed
@@ -300,7 +309,7 @@ function build(s: Store) {
           { v: 'pending', label: 'قيد الاعتماد' },
           { v: 'review', label: 'للمراجعة' },
           { v: 'inprog', label: 'قيد التنفيذ' },
-          { v: 'done', label: 'مكتمل' },
+          { v: 'done', label: 'تم الإطلاق' },
         ]
       : rawRole === 'entity'
         ? [
@@ -308,12 +317,12 @@ function build(s: Store) {
             { v: 'draft', label: 'مسودة' },
             { v: 'approve', label: 'للاعتماد' },
             { v: 'inprog', label: 'قيد التنفيذ' },
-            { v: 'done', label: 'مكتمل' },
+            { v: 'done', label: 'تم الإطلاق' },
           ]
         : [
             { v: 'all', label: 'كل الحالات' },
             { v: 'inprog', label: 'قيد التنفيذ' },
-            { v: 'done', label: 'مكتمل' },
+            { v: 'done', label: 'تم الإطلاق' },
           ];
 
   // committee-funding filter (entity rep)
@@ -332,6 +341,7 @@ function build(s: Store) {
   // ---- sidebar navigation (§redesign v2) ----
   const navSection = ui.navSection || 'overview';
   const navStream = ui.navStream; // selected stream summary card ('all' = null)
+  const batchFilter = ui.batchFilter; // drill-down from a مرحلة card
   const devStatusOf = devStatusOfItem;
   const agentifiable = (i: Item) => (i.transformability || '') !== 'غير قابل';
   const bucketOf = (section: string) => (i: Item) =>
@@ -395,7 +405,10 @@ function build(s: Store) {
           .map((p) => ({ id: p.id as string | null, name: p.name })),
       ].map((st) => {
         const inScope = portfolioBase.filter(
-          (i) => bucketOf(navSection)(i) && (st.id ? i.path === st.id : true)
+          (i) =>
+            bucketOf(navSection)(i) &&
+            (st.id ? i.path === st.id : true) &&
+            (batchFilter ? i.execBatch === batchFilter : true)
         );
         return {
           ...st,
@@ -410,7 +423,12 @@ function build(s: Store) {
   // recap strip for the active selection
   const portfolioScope = !isTypeSection
     ? []
-    : portfolioBase.filter((i) => bucketOf(navSection)(i) && (navStream ? i.path === navStream : true));
+    : portfolioBase.filter(
+        (i) =>
+          bucketOf(navSection)(i) &&
+          (navStream ? i.path === navStream : true) &&
+          (batchFilter ? i.execBatch === batchFilter : true)
+      );
   const recap = {
     total: portfolioScope.length,
     notCapable: portfolioScope.filter((i) => !agentifiable(i)).length,
@@ -443,10 +461,10 @@ function build(s: Store) {
           return {
             name: e,
             total: inEnt.length,
-            awaiting: inEnt.filter((i) => devStatusOf(i) === null).length,
             underDev: inEnt.filter((i) => devStatusOf(i) === 'underDev').length,
             developed: inEnt.filter((i) => devStatusOf(i) === 'developed').length,
             launched: inEnt.filter((i) => devStatusOf(i) === 'launched').length,
+            funded: inEnt.filter((i) => !!i.funded).length,
             budgetLabel: budget > 0 ? formatMoney(budget) : '—',
             onOpen: () => {
               s.setNavSection('all');
@@ -627,6 +645,10 @@ function build(s: Store) {
     recap,
     sectionCards,
     entityCards,
+    // active مرحلة drill-down chip on portfolio pages
+    batchChip: batchFilter
+      ? { label: batchFilter.replace(/^إطلاق /, ''), onClear: () => s.setBatchFilter(null) }
+      : null,
     launchedCount: roleBase.filter((i) => devStatusOfItem(i) === 'launched').length,
     fundOptions,
     fundFilterValue: ui.fundFilter,
@@ -760,8 +782,11 @@ function statusMatch(i: Item, f: string, rawRole: RoleKey, s: Store): boolean {
   return w === f;
 }
 
-// simplified delivery status; null = not yet in the delivery pipeline
+// simplified delivery status; null = not yet in the delivery pipeline.
+// «غير قابل للتحول» items never enter the pipeline — they count under
+// غير قابل للتحول only, unless their transformability is changed.
 function devStatusOfItem(i: Item): 'underDev' | 'developed' | 'launched' | null {
+  if ((i.transformability || '') === 'غير قابل') return null;
   const w = wfOf(i);
   if (w === 'done') return 'launched';
   if (w === 'launch') return 'developed';

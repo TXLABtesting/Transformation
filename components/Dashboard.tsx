@@ -112,6 +112,15 @@ const stop = (e: React.MouseEvent) => e.stopPropagation();
 // shared brand gradient: deep navy (right, RTL reading start) → vivid blue
 const BLUE_GRAD = 'linear-gradient(270deg,#0B1B3A 0%,#16408F 100%)';
 
+// small heading naming each line/section of a page
+function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <div className="hd" style={{ fontSize: 13, fontWeight: 800, color: '#33415C', marginBottom: -4 }}>
+      {children}
+    </div>
+  );
+}
+
 // small ⓘ affordance: hover / tap reveals a plain-language explanation
 function InfoTip({ text, dark }: { text: string; dark?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -660,15 +669,14 @@ export function Dashboard({ vm }: { vm: VM }) {
                   key={p.key}
                   onClick={p.onClick}
                   style={{
-                    border: 'none',
                     borderRadius: 9,
                     padding: '8px 13px',
                     fontWeight: 700,
                     fontSize: 11.5,
                     cursor: 'pointer',
                     ...(p.active
-                      ? { background: '#0F1F3D', color: '#fff' }
-                      : { background: 'transparent', color: '#54627B' }),
+                      ? { background: '#fff', color: '#1D4ED8', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #D8E3F5' }
+                      : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }),
                   }}
                 >
                   {p.label}
@@ -688,19 +696,18 @@ export function Dashboard({ vm }: { vm: VM }) {
                 height: 38,
                 padding: '0 15px',
                 borderRadius: 11,
-                border: 'none',
-                background: BLUE_GRAD,
-                color: '#fff',
+                border: '1px solid #E7ECF4',
+                background: '#fff',
+                color: '#54627B',
                 fontSize: 12,
-                boxShadow: '0 8px 18px -10px rgba(11,27,58,.6)',
               }}
             >
-              <Icon d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" size={15} color="rgba(255,255,255,.8)" />
-              <span style={{ fontWeight: 400, color: 'rgba(255,255,255,.85)' }}>مرحلة {vm.banner.firstMsName}</span>
-              <span style={{ fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>
+              <Icon d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" size={15} color="#8B99B0" />
+              <span style={{ fontWeight: 400, color: '#6B7A93' }}>مرحلة {vm.banner.firstMsName}</span>
+              <span style={{ fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
                 {vm.banner.cd.days} يوم
               </span>
-              <span dir="ltr" style={{ fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>
+              <span dir="ltr" style={{ fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
                 {vm.banner.cd.hh}:{vm.banner.cd.mm}:{vm.banner.cd.ss}
               </span>
             </div>
@@ -1129,14 +1136,15 @@ export function Dashboard({ vm }: { vm: VM }) {
               key={n.key}
               onClick={n.onClick}
               style={{
+                position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
                 padding: '11px 13px',
                 borderRadius: 11,
                 border: 'none',
-                background: n.active ? '#0F1F3D' : 'transparent',
-                color: n.active ? '#fff' : '#42506B',
+                background: n.active ? '#EAF1FE' : 'transparent',
+                color: n.active ? '#1D4ED8' : '#42506B',
                 fontWeight: n.active ? 800 : 400,
                 fontSize: 13,
                 cursor: 'pointer',
@@ -1144,7 +1152,20 @@ export function Dashboard({ vm }: { vm: VM }) {
                 textAlign: 'right',
               }}
             >
-              <Icon d={n.icon} size={16} color={n.active ? '#fff' : '#8A97AD'} />
+              {n.active && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    right: -12,
+                    top: 9,
+                    bottom: 9,
+                    width: 3.5,
+                    borderRadius: 999,
+                    background: '#2563EB',
+                  }}
+                />
+              )}
+              <Icon d={n.icon} size={16} color={n.active ? '#2563EB' : '#8A97AD'} />
               {n.label}
             </button>
           ))}
@@ -1218,98 +1239,62 @@ export function Dashboard({ vm }: { vm: VM }) {
               </HoverButton>
             )}
           </div>
-          {/* progress ring: launched share */}
-          {(() => {
-            const total = vm.kpis.total || 0;
-            const pct = total ? Math.round((vm.launchedCount / total) * 100) : 0;
-            const R = 44;
-            const C = 2 * Math.PI * R;
-            return (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 'none' }}>
-                <svg viewBox="0 0 110 110" width={128} height={128}>
-                  <circle cx="55" cy="55" r={R} fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="11" />
-                  <circle
-                    cx="55"
-                    cy="55"
-                    r={R}
-                    fill="none"
-                    stroke="#27C2F0"
-                    strokeWidth="11"
-                    strokeLinecap="round"
-                    strokeDasharray={`${(pct / 100) * C} ${C}`}
-                    transform="rotate(-90 55 55)"
-                  />
-                  <text x="55" y="56" textAnchor="middle" style={{ fontSize: 22, fontWeight: 800, fill: '#fff', fontFamily: 'inherit' }}>
-                    {pct}%
-                  </text>
-                  <text x="55" y="72" textAnchor="middle" style={{ fontSize: 8.5, fill: '#AFC6E8', fontFamily: 'inherit' }}>
-                    أُطلق
-                  </text>
-                </svg>
-              </div>
-            );
-          })()}
         </div>
 
-        {/* four tiles */}
-        <div
-          style={{
-            position: 'relative',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))',
-            gap: 12,
-            marginTop: 18,
-          }}
-        >
-          <div style={{ background: 'rgba(255,255,255,.09)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 15, padding: '14px 18px' }}>
-            <div style={{ fontSize: 11.5, fontWeight: 400, color: '#C7D9F5' }}>{'إجمالي ' + vm.typesPhrase}</div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginTop: 6, lineHeight: 1.15 }}>{vm.kpis.total}</div>
-          </div>
-          {vm.programSteps.map((st) => (
+        {/* icon stat cards */}
+        {(() => {
+          const step = (n: number) => Number(vm.programSteps[n]?.stepCount || 0);
+          const underExec = Math.max(0, step(2) - vm.launchedCount);
+          const cards = [
+            { label: 'الإجمالي', v: vm.kpis.total, icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z' },
+            { label: 'تم حصرها', v: step(0), icon: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+            { label: 'بانتظار الاعتماد', v: step(1), icon: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2' },
+            { label: 'قيد التنفيذ', v: underExec, icon: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
+            { label: 'تم الإطلاق', v: vm.launchedCount, icon: 'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z' },
+          ];
+          return (
             <div
-              key={st.num}
-              onClick={st.onStepFilter}
               style={{
-                background: 'rgba(255,255,255,.06)',
-                border: '1px solid rgba(255,255,255,.13)',
-                borderRadius: 15,
-                padding: '14px 18px',
-                cursor: 'pointer',
+                position: 'relative',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))',
+                gap: 12,
+                marginTop: 18,
               }}
             >
-              <div style={{ fontSize: 11.5, fontWeight: 400, color: '#C7D9F5' }}>
-                {['', 'تم حصرها', 'بانتظار الاعتماد', 'قيد التنفيذ'][Number(st.num)] || st.label}
-              </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginTop: 6, lineHeight: 1.15 }}>{st.stepCount}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* distribution bar + legend */}
-        {(() => {
-          const seg = [
-            { label: 'تم حصرها', v: Number(vm.programSteps[0]?.stepCount || 0), c: '#5B8DEF' },
-            { label: 'بانتظار الاعتماد', v: Number(vm.programSteps[1]?.stepCount || 0), c: '#8FB3F5' },
-            { label: 'قيد التنفيذ', v: Math.max(0, Number(vm.programSteps[2]?.stepCount || 0) - vm.launchedCount), c: '#27C2F0' },
-            { label: 'تم الإطلاق', v: vm.launchedCount, c: '#FFFFFF' },
-          ];
-          const tot = seg.reduce((a, x) => a + x.v, 0);
-          if (!tot) return null;
-          return (
-            <div style={{ position: 'relative', marginTop: 18 }}>
-              <div style={{ display: 'flex', height: 10, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,.1)' }}>
-                {seg.filter((x) => x.v > 0).map((x) => (
-                  <div key={x.label} style={{ width: `${(x.v / tot) * 100}%`, background: x.c }} />
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 18, marginTop: 9, flexWrap: 'wrap' }}>
-                {seg.map((x) => (
-                  <span key={x.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, color: '#C7D9F5', fontWeight: 400 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 3, background: x.c, display: 'inline-block' }} />
-                    {x.label} <b style={{ color: '#fff' }}>{x.v}</b>
-                  </span>
-                ))}
-              </div>
+              {cards.map((c) => (
+                <div
+                  key={c.label}
+                  style={{
+                    background: 'rgba(255,255,255,.08)',
+                    border: '1px solid rgba(255,255,255,.14)',
+                    borderRadius: 15,
+                    padding: '13px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      flex: 'none',
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                      background: 'rgba(255,255,255,.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Icon d={c.icon} size={18} color="#fff" strokeWidth={1.8} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{c.v}</div>
+                    <div style={{ fontSize: 11, fontWeight: 400, color: '#C7D9F5', marginTop: 2 }}>{c.label}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           );
         })()}
@@ -1321,6 +1306,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               line — counts (dark band), percentages, then budgets */}
           {vm.notAiRole && (
             <div data-tour="kpis" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <SectionLabel>الأعداد الإجمالية</SectionLabel>
               <div data-r="kpirow">
                 <StatBand
                   items={[
@@ -1360,6 +1346,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                 />
               </div>
               {vm.role === 'entity' && vm.pathFilterValue === 'all' && (vm.showExecBudget || vm.showLaunchBudget) && (
+                <>
+                <SectionLabel>الميزانيات التقديرية</SectionLabel>
                 <StatBand
                   items={[
                     ...(vm.showExecBudget
@@ -1370,6 +1358,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       : []),
                   ]}
                 />
+                </>
               )}
             </div>
           )}
@@ -1377,6 +1366,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           {/* Committee analytics (ai) */}
           {vm.isAiRole && (
             <>
+              <SectionLabel>مؤشرات عامة</SectionLabel>
               <div
                 data-r="kpi"
                 data-tour="kpis"
@@ -1396,6 +1386,9 @@ export function Dashboard({ vm }: { vm: VM }) {
               {/* Distribution charts (all-streams view) or plain type totals */}
               {vm.pathFilterValue === 'all' ? (
                 <>
+                  <div style={{ marginTop: 13 }}>
+                    <SectionLabel>التوزيع على مسارات التحول</SectionLabel>
+                  </div>
                   <div
                     style={{
                       display: 'grid',
@@ -1432,6 +1425,9 @@ export function Dashboard({ vm }: { vm: VM }) {
               )}
 
               {/* Budget overview: approved · spent · remaining + utilization bar */}
+              <div style={{ marginTop: 13 }}>
+                <SectionLabel>الميزانية والاستخدام</SectionLabel>
+              </div>
               <div
                 style={{
                   background: '#fff',
@@ -1550,8 +1546,44 @@ export function Dashboard({ vm }: { vm: VM }) {
           {vm.sectionTitle && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ flex: 1, minWidth: 200, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                   <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{vm.sectionTitle}</div>
+                  {vm.batchChip && (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        background: '#EEF3FC',
+                        border: '1px solid #D8E3F5',
+                        borderRadius: 999,
+                        padding: '5px 7px 5px 12px',
+                        fontSize: 12,
+                        color: '#16408F',
+                        fontWeight: 400,
+                      }}
+                    >
+                      ضمن {vm.batchChip.label}
+                      <button
+                        onClick={vm.batchChip.onClear}
+                        aria-label="إزالة تصفية المرحلة"
+                        style={{
+                          background: '#fff',
+                          border: '1px solid #D8E3F5',
+                          borderRadius: '50%',
+                          width: 20,
+                          height: 20,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          padding: 0,
+                        }}
+                      >
+                        <Icon d="M18 6L6 18M6 6l12 12" size={10} color="#16408F" />
+                      </button>
+                    </span>
+                  )}
                 </div>
                 {vm.showAddBtn && (
                   <button
@@ -1579,14 +1611,16 @@ export function Dashboard({ vm }: { vm: VM }) {
 
               {/* stream summary cards — الكل first, click filters the page */}
               {vm.portfolioStreams.length > 2 && (
+                <>
+                <SectionLabel>مسارات التحول</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
                   {vm.portfolioStreams.map((st) => (
                     <HoverDiv
                       key={st.id || 'all'}
                       onClick={st.onClick}
                       base={{
-                        background: st.active ? '#0F1F3D' : '#fff',
-                        border: '1px solid ' + (st.active ? '#0F1F3D' : '#E7ECF4'),
+                        background: st.active ? '#EAF1FE' : '#fff',
+                        border: '1px solid ' + (st.active ? '#B9CFF7' : '#E7ECF4'),
                         borderRadius: 14,
                         padding: '12px 14px',
                         cursor: 'pointer',
@@ -1597,22 +1631,24 @@ export function Dashboard({ vm }: { vm: VM }) {
                         style={{
                           fontSize: 11,
                           fontWeight: 400,
-                          color: st.active ? 'rgba(255,255,255,.8)' : '#6B7A93',
+                          color: st.active ? '#1D4ED8' : '#6B7A93',
                           lineHeight: 1.5,
                           minHeight: 32,
                         }}
                       >
                         {st.name}
                       </div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: st.active ? '#fff' : '#13213C', marginTop: 4 }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: st.active ? '#1D4ED8' : '#13213C', marginTop: 4 }}>
                         {st.total}
                       </div>
                     </HoverDiv>
                   ))}
                 </div>
+                </>
               )}
 
               {/* recap strip for the current selection */}
+              <SectionLabel>ملخص حالة التنفيذ</SectionLabel>
               <StatBand
                 items={[
                   { label: 'الإجمالي', value: String(vm.recap.total), info: 'إجمالي ما هو مسجّل ضمن هذا الاختيار.' },
@@ -1624,6 +1660,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               />
 
               {/* filters + search */}
+              <SectionLabel>القائمة التفصيلية</SectionLabel>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <select value={vm.statusFilterValue} onChange={(e) => s.setStatusFilter(e.target.value)} style={selectStyle}>
                   {vm.statusOptions.map((o) => (
@@ -1739,10 +1776,10 @@ export function Dashboard({ vm }: { vm: VM }) {
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 14 }}>
                         {[
-                          { label: 'بانتظار الاعتماد', v: e2.awaiting },
                           { label: 'قيد التطوير', v: e2.underDev },
                           { label: 'تم التطوير', v: e2.developed },
                           { label: 'تم الإطلاق', v: e2.launched },
+                          { label: 'معتمد للتمويل', v: e2.funded },
                         ].map((x) => (
                           <div key={x.label} style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '9px 11px' }}>
                             <div style={{ fontSize: 10, color: '#6B7A93', fontWeight: 400, lineHeight: 1.5 }}>{x.label}</div>
@@ -1794,18 +1831,66 @@ export function Dashboard({ vm }: { vm: VM }) {
                         <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.launchCostLabel}</div>
                       </div>
                     </div>
-                    {/* composition */}
-                    <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 400, marginTop: 12 }}>
-                      {b.count === 0
-                        ? 'لا توجد تعيينات لهذه المرحلة بعد.'
-                        : [
-                            b.projCount ? b.projCount + ' من المشاريع والمبادرات' : '',
-                            b.opsCount ? b.opsCount + ' من العمليات' : '',
-                            b.svcCount ? b.svcCount + ' من الخدمات' : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' · ')}
-                    </div>
+                    {/* composition — clickable drill-down into the portfolio pages */}
+                    {b.count === 0 ? (
+                      <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 400, marginTop: 12 }}>
+                        لا توجد تعيينات لهذه المرحلة بعد.
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: 8,
+                          marginTop: 12,
+                        }}
+                      >
+                        {b.composition.map((c) => (
+                          <button
+                            key={c.section}
+                            onClick={c.onOpen}
+                            title="عرض البطاقات التفصيلية"
+                            style={{
+                              background: '#F7F9FD',
+                              border: '1px solid #E3E9F3',
+                              borderRadius: 999,
+                              padding: '5px 12px',
+                              fontSize: 11.5,
+                              color: '#16408F',
+                              fontWeight: 400,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                            }}
+                          >
+                            <span>
+                              <b style={{ fontWeight: 800 }}>{c.n}</b> {c.label}
+                            </span>
+                            <Icon d="M15 18l-6-6 6-6" size={11} color="#16408F" />
+                          </button>
+                        ))}
+                        {b.composition.length > 1 && (
+                          <button
+                            onClick={b.onOpenAll}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: '5px 4px',
+                              fontSize: 11.5,
+                              color: '#6B7A93',
+                              fontWeight: 400,
+                              cursor: 'pointer',
+                              textDecoration: 'underline',
+                              textUnderlineOffset: 3,
+                            }}
+                          >
+                            عرض الكل
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {/* delivery mapping: status of this مرحلة's assignments */}
                     {b.count > 0 && (
                       <>

@@ -115,6 +115,7 @@ export type UiState = {
   // sidebar navigation
   navSection: string; // 'overview' | 'projects' | 'operations' | 'services' | 'launchplans'
   navStream: string | null; // drill-down stream inside a type section
+  batchFilter: string | null; // drill-down from a مرحلة card into its items
   filter: string; // type filter
   statusFilter: string;
   fundFilter: string; // 'all' | 'funded' | 'notfunded'
@@ -185,6 +186,8 @@ type Actions = {
   setDevStage: (id: string, stage: string) => void;
   setNavSection: (v: string) => void;
   setNavStream: (v: string | null) => void;
+  setBatchFilter: (v: string | null) => void;
+  openBatchItems: (batch: string, section: string) => void;
   setFundFilter: (v: string) => void;
   setSearch: (v: string) => void;
   setEntFilter: (v: string) => void;
@@ -347,6 +350,7 @@ function defaultUi(): UiState {
     dViewStep: null,
     navSection: 'overview',
     navStream: null,
+    batchFilter: null,
     filter: 'all',
     statusFilter: 'all',
     fundFilter: 'all',
@@ -618,7 +622,7 @@ export const useStore = create<Store>((set, get) => {
     setRole: (r) => {
       set((s) => ({
         role: r,
-        ui: { ...s.ui, activePath: 'all', entFilter: 'all', stepFilter: null, statusFilter: 'all', fundFilter: 'all', search: '', navSection: 'overview', navStream: null },
+        ui: { ...s.ui, activePath: 'all', entFilter: 'all', stepFilter: null, statusFilter: 'all', fundFilter: 'all', search: '', navSection: 'overview', navStream: null, batchFilter: null },
       }));
       persist();
     },
@@ -707,8 +711,11 @@ export const useStore = create<Store>((set, get) => {
             : typeLabelDef(target.type) + ' قيد التطوير'
       );
     },
-    setNavSection: (v) => setUi({ navSection: v, navStream: null, search: '', statusFilter: 'all' }),
+    setNavSection: (v) => setUi({ navSection: v, navStream: null, batchFilter: null, search: '', statusFilter: 'all' }),
     setNavStream: (v) => setUi({ navStream: v }),
+    setBatchFilter: (v) => setUi({ batchFilter: v }),
+    openBatchItems: (batch, section) =>
+      setUi({ navSection: section, navStream: null, batchFilter: batch, search: '', statusFilter: 'all' }),
     setFundFilter: (v) => setUi({ fundFilter: v }),
     setSearch: (v) => setUi({ search: v }),
     setEntFilter: (v) => setUi({ entFilter: v }),

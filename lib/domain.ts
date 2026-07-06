@@ -374,7 +374,7 @@ export const WFMETA: Record<string, WfMeta> = {
   pm1: { step: 2, label: 'بانتظار اعتماد اللجنة الوطنية', who: 'ai', chip: '#B45309', bg: '#FFF3DE' },
   exec: { step: 3, label: 'قيد التنفيذ', who: 'path', chip: '#2563EB', bg: '#EAF0FE' },
   launch: { step: 3, label: 'قيد الإطلاق', who: 'path', chip: '#2563EB', bg: '#EAF0FE' },
-  done: { step: 3, label: 'مكتمل', who: '-', chip: '#0B8A4B', bg: '#E3F6EC' },
+  done: { step: 3, label: 'تم الإطلاق', who: '-', chip: '#0B8A4B', bg: '#E3F6EC' },
 };
 export const wfMeta = (i: Item): WfMeta => WFMETA[wfOf(i)] || WFMETA.draft;
 export const stepIndexOf = (i: Item): number => wfMeta(i).step;
