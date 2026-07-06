@@ -326,7 +326,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                             cursor: 'pointer',
                           }}
                         >
-                          رفض
+                          عدم الاعتماد
                         </button>
                       </div>
                     ) : (

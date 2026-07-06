@@ -499,12 +499,12 @@ export function Overlays({ vm }: { vm: VM }) {
             <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>
-                  {vm.reqModal.mode === 'info' ? 'طلب معلومات إضافية' : 'رفض الطلب'}
+                  {vm.reqModal.mode === 'info' ? 'طلب معلومات إضافية' : 'الاعتذار عن الاعتماد'}
                 </div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
                   {vm.reqModal.mode === 'info'
-                    ? 'حدّد ما يجب استكماله أو توضيحه قبل المتابعة'
-                    : 'وضّح أسباب الرفض والنقاط الواجب معالجتها'}
+                    ? 'نرجو تحديد ما يلزم استكماله أو توضيحه قبل المتابعة'
+                    : 'نرجو التكرم بتوضيح أسباب عدم الاعتماد والنقاط المطلوب معالجتها'}
                 </div>
               </div>
               <button
@@ -534,7 +534,7 @@ export function Overlays({ vm }: { vm: VM }) {
               <textarea
                 value={vm.reqModal.note}
                 onChange={(e) => s.setReqNote(e.target.value)}
-                placeholder="اكتب بوضوح النقاط أو الحقول المطلوب استكمالها أو تصحيحها قبل الاعتماد…"
+                placeholder="نرجو التكرم بتوضيح النقاط أو الحقول المطلوب استكمالها أو تصحيحها قبل الاعتماد…"
                 style={{
                   width: '100%',
                   minHeight: 130,
@@ -588,7 +588,7 @@ export function Overlays({ vm }: { vm: VM }) {
                 }}
               >
                 <Icon d={IC_SEND} size={17} color="#fff" />
-                {vm.reqModal.mode === 'info' ? 'إرسال الطلب' : 'تأكيد الرفض'}
+                {vm.reqModal.mode === 'info' ? 'إرسال الطلب' : 'تأكيد عدم الاعتماد'}
               </button>
             </div>
           </div>
@@ -635,7 +635,7 @@ export function Overlays({ vm }: { vm: VM }) {
             <textarea
               value={vm.cancelFund.note}
               onChange={(e) => s.setCancelFundNote(e.target.value)}
-              placeholder="اذكر سبب إلغاء التمويل..."
+              placeholder="نرجو توضيح سبب إلغاء التمويل…"
               style={{
                 width: '100%',
                 minHeight: 96,

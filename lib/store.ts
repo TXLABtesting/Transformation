@@ -570,10 +570,10 @@ export const useStore = create<Store>((set, get) => {
       // including the email (used for official notifications)
       if (n > 1) {
         const r = get().setup.rep;
-        if (!(r.name || '').trim()) return toast('أدخل اسم ممثل الجهة');
+        if (!(r.name || '').trim()) return toast('نرجو إدخال اسم ممثل الجهة');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((r.email || '').trim()))
-          return toast('أدخل بريداً إلكترونياً صحيحاً لممثل الجهة');
-        if (!(r.phone || '').trim()) return toast('أدخل رقم هاتف ممثل الجهة');
+          return toast('نرجو إدخال بريد إلكتروني صحيح لممثل الجهة');
+        if (!(r.phone || '').trim()) return toast('نرجو إدخال رقم هاتف ممثل الجهة');
       }
       setUi({ setupStep: n });
     },
@@ -726,7 +726,7 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       // a name is mandatory before leaving step 1 — no nameless cards
       if (s.ui.fStep === 1 && !(s.ui.draft?.title || '').trim()) {
-        return toast('أدخل اسم ' + typeLabelDef(s.ui.draft?.type || '') + ' قبل المتابعة');
+        return toast('نرجو إدخال اسم ' + typeLabelDef(s.ui.draft?.type || '') + ' قبل المتابعة');
       }
       if (s.ui.fStep < 5) {
         setUi({ fStep: s.ui.fStep + 1 });
@@ -737,10 +737,10 @@ export const useStore = create<Store>((set, get) => {
       // scope + budget are mandatory again at submission
       if (d && (!(d.scopeOfWork || '').trim() || !(d.budget || '').trim())) {
         setUi({ fStep: 4 });
-        return toast('أدخل نطاق العمل وميزانية التنفيذ قبل الإرسال للاعتماد');
+        return toast('نرجو استكمال نطاق العمل وميزانية التنفيذ قبل الإرسال للاعتماد');
       }
       if (d && !(d.execBatch || '').trim()) {
-        return toast('اختر خطة التنفيذ والإطلاق (المرحلة) قبل الإرسال للاعتماد');
+        return toast('نرجو اختيار مرحلة التنفيذ والإطلاق قبل الإرسال للاعتماد');
       }
       get().submitItem();
     },
@@ -980,7 +980,7 @@ export const useStore = create<Store>((set, get) => {
     goToLaunch: (id) => {
       const it = findItem(id);
       if (!it) return;
-      if (!execAllDone(it)) return toast('أكمل كل بند أو حدّد سبب التأخير وتاريخاً جديداً قبل الانتقال للإطلاق');
+      if (!execAllDone(it)) return toast('نرجو إكمال جميع البنود أو تحديد سبب التأخير وتاريخ جديد قبل الانتقال للإطلاق');
       patchItem(id, { wf: 'launch' });
       toast('تم نقل ' + typeLabelDef(it.type) + ' إلى مرحلة الإطلاق');
     },
@@ -1010,7 +1010,7 @@ export const useStore = create<Store>((set, get) => {
     finishLaunch: (id) => {
       const it = findItem(id);
       if (!it) return;
-      if (!launchAllDone(it)) return toast('يجب إكمال جميع بنود خطة الإطلاق');
+      if (!launchAllDone(it)) return toast('نرجو إكمال جميع بنود خطة الإطلاق أولاً');
       patchItem(id, { wf: 'done', progress: 100 });
       toast('اكتمل الإطلاق — تم إنجاز ' + typeLabelDef(it.type));
     },
@@ -1018,7 +1018,7 @@ export const useStore = create<Store>((set, get) => {
       const it = findItem(id);
       if (!it) return;
       if (!(it.scopeOfWork || '').trim() || !(it.budget || '').trim())
-        return toast('الرجاء إدخال نطاق العمل والميزانية أولاً');
+        return toast('نرجو استكمال نطاق العمل والميزانية أولاً');
       get().doSubmitScope(id);
     },
     doSubmitScope: (id) => {
@@ -1058,7 +1058,7 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const rm = s.ui.reqModal;
       if (!rm) return;
-      if (!rm.note.trim()) return toast('يرجى كتابة الملاحظات المطلوب معالجتها');
+      if (!rm.note.trim()) return toast('نرجو التكرم بكتابة الملاحظات المطلوب معالجتها');
       const it = findItem(rm.id);
       if (!it) return;
       const w = wfOf(it);
@@ -1300,7 +1300,7 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const cf = s.ui.cancelFund;
       if (!cf) return;
-      if (!cf.note.trim()) return toast('يرجى كتابة سبب إلغاء التمويل');
+      if (!cf.note.trim()) return toast('نرجو التكرم بتوضيح سبب إلغاء التمويل');
       patchItem(cf.id, (it) => ({
         funded: null,
         nom: it.funded?.direct ? null : it.nom,

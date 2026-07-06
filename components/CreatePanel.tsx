@@ -113,7 +113,7 @@ export function CreatePanel({ vm }: { vm: VM }) {
           >
             <Icon d={IC.plus} size={20} color="#fff" />
           </div>
-          <div style={{ flex: 1, fontSize: 15, fontWeight: 800, color: '#13213C' }}>{m.createTitle}</div>
+          <div className="hd" style={{ flex: 1, fontSize: 15, fontWeight: 800, color: '#13213C' }}>{m.createTitle}</div>
           <button
             onClick={() => s.closeModal()}
             style={{

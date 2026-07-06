@@ -1,20 +1,20 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, IBM_Plex_Sans_Arabic } from 'next/font/google';
+import { Noto_Kufi_Arabic, Alexandria } from 'next/font/google';
 import './globals.css';
 
-// Plus Jakarta Sans carries Latin + numerals; Arabic glyphs fall through to
-// IBM Plex Sans Arabic (Jakarta has no Arabic set) — same modern geometric feel
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  display: 'swap',
-  variable: '--font-latin',
-});
-const plexArabic = IBM_Plex_Sans_Arabic({
+// Brand type: Noto Kufi Arabic is the base for all content; Alexandria is
+// reserved for headings and titles (see globals.css)
+const kufi = Noto_Kufi_Arabic({
   subsets: ['arabic'],
   weight: ['400', '500', '600', '700'],
   display: 'swap',
-  variable: '--font-arabic',
+  variable: '--font-base',
+});
+const alexandria = Alexandria({
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '600', '700', '800'],
+  display: 'swap',
+  variable: '--font-heading',
 });
 
 export const metadata: Metadata = {
@@ -31,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl" className={`${jakarta.variable} ${plexArabic.variable}`}>
+    <html lang="ar" dir="rtl" className={`${kufi.variable} ${alexandria.variable}`}>
       <body>{children}</body>
     </html>
   );

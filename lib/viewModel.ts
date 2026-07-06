@@ -255,6 +255,18 @@ function build(s: Store) {
         (streamHasType(effActivePath, 'operation') ? ' والعمليات' : '') +
         (streamHasType(effActivePath, 'service') ? ' والخدمات' : '');
 
+  // ---- empty-state copy: nothing entered yet (role-specific) vs filters ----
+  const emptyDesc =
+    scope.length === 0
+      ? rawRole === 'entity'
+        ? 'لم يقم منسقو المسارات في جهتكم بإضافة أي من ' + typesPhrase + ' حتى الآن.'
+        : rawRole === 'ai' || rawRole === 'path'
+          ? 'لم تقم الجهات بإضافة أي من ' + typesPhrase + ' حتى الآن.'
+          : 'يمكنكم البدء بالإضافة من زر «إضافة جديد» أو عبر رفع ملف خطة العمل.'
+      : rawRole === 'coord'
+        ? 'لا توجد نتائج مطابقة للمرشحات الحالية — يمكنكم تعديل المرشحات أو الإضافة من زر «إضافة جديد».'
+        : 'لا توجد نتائج مطابقة للمرشحات الحالية — يمكنكم تعديل المرشحات أو البحث.';
+
   // ---- type filter tabs ----
   const tabs = tabDefs(effActivePath, scope);
 
@@ -459,6 +471,7 @@ function build(s: Store) {
     filterValue: ui.filter,
     statusOptions,
     statusFilterValue: ui.statusFilter,
+    emptyDesc,
     fundOptions,
     fundFilterValue: ui.fundFilter,
     showFundFilter: rawRole === 'entity',

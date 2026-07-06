@@ -98,6 +98,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 {d.typeLabel}
               </span>
               <span
+                className="hd"
                 style={{
                   fontSize: 18,
                   fontWeight: 800,
@@ -1124,7 +1125,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                               <textarea
                                 value={x.reason}
                                 onChange={(e) => x.onReason(e.target.value)}
-                                placeholder="اذكر السبب"
+                                placeholder="نرجو توضيح السبب"
                                 style={{
                                   width: '100%',
                                   border: '1px solid #DCE3EE',
@@ -1348,7 +1349,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                         style={{ ...menuItemStyle('#D23B45'), borderTop: '1px solid #F0F3F8' }}
                       >
                         <Icon d="M18 6 6 18M6 6l12 12" size={15} color="#D23B45" />
-                        رفض
+                        عدم الاعتماد
                       </button>
                     </div>
                   )}

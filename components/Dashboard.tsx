@@ -856,7 +856,7 @@ export function Dashboard({ vm }: { vm: VM }) {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 800 }}>{vm.banner.title}</div>
+              <div className="hd" style={{ fontSize: 18, fontWeight: 800 }}>{vm.banner.title}</div>
               <div
                 style={{
                   fontSize: 11.5,
@@ -1067,7 +1067,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             }}
           >
             <div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{vm.activePathName}</div>
+              <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{vm.activePathName}</div>
               <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
                 {vm.streamSummary}
               </div>
@@ -1220,7 +1220,6 @@ export function Dashboard({ vm }: { vm: VM }) {
             <>
               <div data-r="kpirow" data-tour="kpis">
                 <StatBand
-                  dark
                   items={[
                     { label: 'المشاريع / المبادرات', value: String(vm.kpis.projInit), info: 'عدد المشاريع والمبادرات المسجّلة ضمن نطاق اطلاعك في مسارات التحول.' },
                     ...(vm.showOpsKpi ? [{ label: 'العمليات', value: String(vm.kpis.operations), info: 'عدد العمليات التخصصية وعمليات الدعم المؤسسي المسجّلة للتحول.' }] : []),
@@ -1618,7 +1617,7 @@ export function Dashboard({ vm }: { vm: VM }) {
 
           {/* List section title + view switcher */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
+            <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
               {'قائمة ' + vm.typesPhrase + ' المقدَّمة'}
             </div>
             <div style={{ flex: 1, height: 1, background: '#E1E7F1' }} />
@@ -1676,7 +1675,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             >
               <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>{'لا توجد ' + vm.typesPhrase + ' للعرض'}</div>
               <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 6, lineHeight: 1.7 }}>
-                لا توجد نتائج مطابقة للمرشحات الحالية — جرّب تغييرها أو الإضافة من زر «إضافة جديد».
+                {vm.emptyDesc}
               </div>
             </div>
           ) : viewMode === 'list' ? (

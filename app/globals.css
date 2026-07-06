@@ -12,14 +12,21 @@ body {
   padding: 0;
 }
 body {
-  /* Jakarta first so Latin + digits use it; Arabic glyphs fall through */
-  font-family: var(--font-latin), var(--font-arabic), 'Cairo', system-ui, sans-serif;
+  /* Noto Kufi Arabic is the base for all content */
+  font-family: var(--font-base), 'Cairo', system-ui, sans-serif;
   direction: rtl;
   color: #0f1f3d;
   background: #eef2f9;
   /* global content scale — the whole UI reads larger (Tour.tsx compensates
      for this factor when measuring spotlight coordinates) */
   zoom: 1.15;
+}
+/* Alexandria carries headings and titles */
+h1,
+h2,
+h3,
+.hd {
+  font-family: var(--font-heading), var(--font-base), system-ui, sans-serif;
 }
 button {
   font-family: inherit;
