@@ -496,7 +496,7 @@ function StatBand({
   );
 }
 
-// «تصدير» dropdown next to the view switcher: one button, Excel / PowerPoint
+// «تنزيل التقرير» dropdown next to the view switcher: Excel / PowerPoint
 function ExportMenu({ onExcel, onPpt }: { onExcel: () => void; onPpt: () => void }) {
   const [open, setOpen] = useState(false);
   const items = [
@@ -537,7 +537,7 @@ function ExportMenu({ onExcel, onPpt }: { onExcel: () => void; onPpt: () => void
         hover={{ borderColor: '#C7D6EE' }}
       >
         <Icon d="M12 3v12M7 10l5 5 5-5M5 21h14" size={15} />
-        تصدير
+        تنزيل التقرير
         <Icon d={open ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={13} color="#8A97AD" />
       </HoverButton>
       {open && (
