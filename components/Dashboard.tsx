@@ -104,7 +104,7 @@ function HoverButton({
 const stop = (e: React.MouseEvent) => e.stopPropagation();
 
 // shared brand gradient: deep navy (right, RTL reading start) → vivid blue
-const BLUE_GRAD = 'linear-gradient(270deg,#0F2C66 0%,#2563EB 100%)';
+const BLUE_GRAD = 'linear-gradient(270deg,#0B1B3A 0%,#16408F 100%)';
 
 // small ⓘ affordance: hover / tap reveals a plain-language explanation
 function InfoTip({ text, dark }: { text: string; dark?: boolean }) {
@@ -168,6 +168,151 @@ function InfoTip({ text, dark }: { text: string; dark?: boolean }) {
   );
 }
 
+// Clean SVG donut: distribution of one type across the streams (blue family)
+const CHART_COLORS = ['#2563EB', '#0F2C66', '#27C2F0', '#7EA6F4', '#B9CDF5'];
+
+function PieCard({ title, data }: { title: string; data: { label: string; value: number }[] }) {
+  const total = data.reduce((a, d) => a + d.value, 0);
+  const R = 34;
+  const C = 2 * Math.PI * R;
+  let acc = 0;
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '15px 17px' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7A93', lineHeight: 1.5 }}>{title}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
+        <svg viewBox="0 0 90 90" width={104} height={104} style={{ flex: 'none' }}>
+          <circle cx="45" cy="45" r={R} fill="none" stroke="#EDF1F8" strokeWidth="13" />
+          {total > 0 &&
+            data
+              .filter((d) => d.value > 0)
+              .map((d, i) => {
+                const frac = d.value / total;
+                const seg = (
+                  <circle
+                    key={d.label}
+                    cx="45"
+                    cy="45"
+                    r={R}
+                    fill="none"
+                    stroke={CHART_COLORS[data.indexOf(d) % CHART_COLORS.length]}
+                    strokeWidth="13"
+                    strokeDasharray={`${frac * C} ${C}`}
+                    strokeDashoffset={-acc * C}
+                    transform="rotate(-90 45 45)"
+                    strokeLinecap="butt"
+                  />
+                );
+                acc += frac;
+                return seg;
+              })}
+          <text
+            x="45"
+            y="50"
+            textAnchor="middle"
+            style={{ fontSize: 20, fontWeight: 800, fill: '#13213C', fontFamily: 'inherit' }}
+          >
+            {total}
+          </text>
+        </svg>
+        <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {data.map((d, i) => (
+            <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 3,
+                  background: CHART_COLORS[i % CHART_COLORS.length],
+                  flex: 'none',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  color: '#54627B',
+                  flex: 1,
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {d.label}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#13213C', flex: 'none' }}>{d.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Ranked horizontal bars: entities ordered by number of submissions
+function RankBars({ title, rows }: { title: string; rows: { label: string; value: number }[] }) {
+  const max = rows.reduce((a, r) => Math.max(a, r.value), 0) || 1;
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '15px 17px' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7A93', lineHeight: 1.5 }}>{title}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 12 }}>
+        {rows.map((r, i) => (
+          <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 7,
+                background: i === 0 ? '#2563EB' : '#0F2C66',
+                color: '#fff',
+                fontSize: 11,
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 'none',
+              }}
+            >
+              {i + 1}
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#33415C',
+                width: 200,
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 'none',
+              }}
+            >
+              {r.label}
+            </span>
+            <div style={{ flex: 1, height: 16, background: '#EDF1F8', borderRadius: 999, overflow: 'hidden' }}>
+              <div
+                style={{
+                  width: `${Math.round((r.value / max) * 100)}%`,
+                  height: '100%',
+                  borderRadius: 999,
+                  background: i === 0 ? 'linear-gradient(270deg,#2563EB,#5B8DEF)' : '#0F2C66',
+                }}
+              />
+            </div>
+            <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', flex: 'none', minWidth: 22, textAlign: 'left' }}>
+              {r.value}
+            </span>
+          </div>
+        ))}
+        {rows.length === 0 && (
+          <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600 }}>لا توجد بيانات بعد.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // One full-width line of statistics: cells separated by vertical dividers,
 // small label on top and a large formatted number underneath
 function StatBand({
@@ -175,8 +320,16 @@ function StatBand({
   items,
 }: {
   dark?: boolean;
-  items: { label: string; value: string; suffix?: string; chip?: string; info?: string }[];
+  items: {
+    label: string;
+    value: string;
+    suffix?: string;
+    chip?: string;
+    info?: string;
+    dist?: { label: string; value: number }[];
+  }[];
 }) {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
   return (
     <div
       style={{
@@ -191,11 +344,13 @@ function StatBand({
       {items.map((it, i) => (
         <div
           key={it.label}
+          onClick={it.dist ? () => setOpenIdx(openIdx === i ? null : i) : undefined}
           style={{
             flex: 1,
             minWidth: 0,
             padding: '15px 20px',
             borderLeft: i < items.length - 1 ? `1px solid ${dark ? 'rgba(255,255,255,.16)' : '#EBEFF6'}` : 'none',
+            cursor: it.dist ? 'pointer' : 'default',
           }}
         >
           <div
@@ -240,7 +395,50 @@ function StatBand({
                 {it.chip}
               </span>
             )}
+            {it.dist && (
+              <span style={{ marginRight: 'auto', display: 'flex', flex: 'none' }}>
+                <Icon
+                  d={openIdx === i ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}
+                  size={15}
+                  color={dark ? 'rgba(255,255,255,.7)' : '#8A97AD'}
+                />
+              </span>
+            )}
           </div>
+          {it.dist && openIdx === i && (
+            <div
+              style={{
+                marginTop: 10,
+                paddingTop: 10,
+                borderTop: `1px dashed ${dark ? 'rgba(255,255,255,.25)' : '#E1E7F1'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+              }}
+            >
+              {it.dist.map((d) => (
+                <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: dark ? 'rgba(255,255,255,.8)' : '#54627B',
+                      flex: 1,
+                      minWidth: 0,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {d.label}
+                  </span>
+                  <span style={{ fontSize: 12.5, fontWeight: 800, color: dark ? '#fff' : '#13213C', flex: 'none' }}>
+                    {d.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -1207,7 +1405,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
                     }}
                   >
-                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديد
+                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديدة
                   </button>
                 </>
               )}
@@ -1221,9 +1419,32 @@ export function Dashboard({ vm }: { vm: VM }) {
               <div data-r="kpirow" data-tour="kpis">
                 <StatBand
                   items={[
-                    { label: 'المشاريع / المبادرات', value: String(vm.kpis.projInit), info: 'عدد المشاريع والمبادرات المسجّلة ضمن نطاق اطلاعك في مسارات التحول.' },
-                    ...(vm.showOpsKpi ? [{ label: 'العمليات', value: String(vm.kpis.operations), info: 'عدد العمليات التخصصية وعمليات الدعم المؤسسي المسجّلة للتحول.' }] : []),
-                    ...(vm.showSvcKpi ? [{ label: 'الخدمات', value: String(vm.kpis.services), info: 'عدد الخدمات المسجّلة للتحول في مسار الخدمات.' }] : []),
+                    {
+                      label: 'المشاريع / المبادرات',
+                      value: String(vm.kpis.projInit),
+                      info: 'عدد المشاريع والمبادرات المسجّلة ضمن نطاق اطلاعك في مسارات التحول. اضغطوا على البطاقة لاستعراض التوزيع على المسارات.',
+                      dist: vm.showStreamDist ? vm.kpiDist.projInit : undefined,
+                    },
+                    ...(vm.showOpsKpi
+                      ? [
+                          {
+                            label: 'العمليات',
+                            value: String(vm.kpis.operations),
+                            info: 'عدد العمليات التخصصية وعمليات الدعم المؤسسي المسجّلة للتحول. اضغطوا على البطاقة لاستعراض التوزيع على المسارات.',
+                            dist: vm.showStreamDist ? vm.kpiDist.operations : undefined,
+                          },
+                        ]
+                      : []),
+                    ...(vm.showSvcKpi
+                      ? [
+                          {
+                            label: 'الخدمات',
+                            value: String(vm.kpis.services),
+                            info: 'عدد الخدمات المسجّلة للتحول في مسار الخدمات.',
+                            dist: vm.showStreamDist ? vm.kpiDist.services : undefined,
+                          },
+                        ]
+                      : []),
                   ]}
                 />
               </div>
@@ -1363,29 +1584,43 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </span>
                 </div>
               </div>
-              {/* Type totals with per-stream distribution (same as the entity view) */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
-                  gap: 13,
-                  marginTop: 13,
-                }}
-              >
-                <KpiCard
-                  value={vm.kpis.projInit}
-                  label="المشاريع / المبادرات"
-                  iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
-                  rows={vm.pathFilterValue === 'all' ? vm.kpiDist.projInit : undefined}
-                />
-                <KpiCard
-                  value={vm.kpis.operations}
-                  label="العمليات"
-                  iconD="M3 6h18M3 12h18M3 18h18"
-                  rows={vm.pathFilterValue === 'all' ? vm.kpiDist.operations : undefined}
-                />
-                <KpiCard value={vm.kpis.services} label="الخدمات" grid />
-              </div>
+              {/* Distribution charts (all-streams view) or plain type totals */}
+              {vm.pathFilterValue === 'all' ? (
+                <>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))',
+                      gap: 13,
+                      marginTop: 13,
+                    }}
+                  >
+                    <PieCard title="توزيع المشاريع / المبادرات على المسارات" data={vm.kpiDist.projInit} />
+                    <PieCard title="توزيع العمليات على المسارات" data={vm.kpiDist.operations} />
+                    <PieCard title="توزيع الخدمات على المسارات" data={vm.kpiDist.services} />
+                  </div>
+                  <div style={{ marginTop: 13 }}>
+                    <RankBars title="ترتيب الجهات حسب عدد المشاريع والعمليات والخدمات المقدَّمة" rows={vm.entityRank} />
+                  </div>
+                </>
+              ) : (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
+                    gap: 13,
+                    marginTop: 13,
+                  }}
+                >
+                  <KpiCard
+                    value={vm.kpis.projInit}
+                    label="المشاريع / المبادرات"
+                    iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
+                  />
+                  <KpiCard value={vm.kpis.operations} label="العمليات" iconD="M3 6h18M3 12h18M3 18h18" />
+                  <KpiCard value={vm.kpis.services} label="الخدمات" grid />
+                </div>
+              )}
 
               {/* Budget overview: approved · spent · remaining + utilization bar */}
               <div

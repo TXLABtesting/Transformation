@@ -560,18 +560,6 @@ function F1({
         />
       </div>
 
-      {m.mIsProjectish && (
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>المخرجات المتوقعة</label>
-          <RichTextEditor
-            value={gv('expectedOutputs')}
-            onChange={(v) => setField('expectedOutputs', v)}
-            placeholder="مثال: منصة موحّدة، تطبيق ذكي، لوحة تحكم"
-            minHeight={96}
-          />
-        </div>
-      )}
-
       {m.mIsOp && (
         <>
           <div style={{ marginBottom: 14 }}>
@@ -803,6 +791,15 @@ function FOutcome({
 }) {
   return (
     <div style={cardStyle}>
+      <div style={{ marginBottom: 14 }}>
+        <label style={labelStyle}>المخرجات المتوقعة</label>
+        <RichTextEditor
+          value={gv('expectedOutputs')}
+          onChange={(v) => setField('expectedOutputs', v)}
+          placeholder="مثال: منصة موحّدة، تطبيق ذكي، لوحة تحكم"
+          minHeight={96}
+        />
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <label style={labelStyle}>نسبة التحول المستهدفة باستخدام الذكاء الاصطناعي</label>

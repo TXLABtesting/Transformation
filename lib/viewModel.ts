@@ -181,6 +181,13 @@ function build(s: Store) {
       .map((r) => ({ label: r.name, value: r.services })),
   };
 
+  // ---- entity ranking (committee dashboard): submissions per entity ----
+  const entCountMap = new Map<string, number>();
+  roleBase.forEach((i) => entCountMap.set(ent(i), (entCountMap.get(ent(i)) || 0) + 1));
+  const entityRank = [...entCountMap.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+
   // ---- per-batch (مرحلة) summary: items + total execution cost ----
   const batchSummary = launchBatches().map((b) => {
     const inBatch = roleBase.filter((i) => i.execBatch === b.name);
@@ -262,9 +269,9 @@ function build(s: Store) {
         ? 'لم يقم منسقو المسارات في جهتكم بإضافة أي من ' + typesPhrase + ' حتى الآن.'
         : rawRole === 'ai' || rawRole === 'path'
           ? 'لم تقم الجهات بإضافة أي من ' + typesPhrase + ' حتى الآن.'
-          : 'يمكنكم البدء بالإضافة من زر «إضافة جديد» أو عبر رفع ملف خطة العمل.'
+          : 'يمكنكم البدء بالإضافة من زر «إضافة جديدة» أو عبر رفع ملف خطة العمل.'
       : rawRole === 'coord'
-        ? 'لا توجد نتائج مطابقة للمرشحات الحالية — يمكنكم تعديل المرشحات أو الإضافة من زر «إضافة جديد».'
+        ? 'لا توجد نتائج مطابقة للمرشحات الحالية — يمكنكم تعديل المرشحات أو الإضافة من زر «إضافة جديدة».'
         : 'لا توجد نتائج مطابقة للمرشحات الحالية — يمكنكم تعديل المرشحات أو البحث.';
 
   // ---- type filter tabs ----
@@ -474,6 +481,9 @@ function build(s: Store) {
     emptyDesc,
     fundOptions,
     fundFilterValue: ui.fundFilter,
+    entityRank,
+    // entity rep, all-streams view: type counts expand to per-stream totals
+    showStreamDist: rawRole === 'entity' && effActivePath === 'all',
     showFundFilter: rawRole === 'entity',
     searchValue: ui.search,
     pathOptions,
@@ -1221,7 +1231,7 @@ function buildModal(s: Store) {
   ];
   return {
     mStep: ui.mStep,
-    createTitle: ui.editingId ? 'تعديل ' + typeLabelDef(type) : mPathName ? addTitleFor(draft?.path || path) : 'إضافة جديد',
+    createTitle: ui.editingId ? 'تعديل ' + typeLabelDef(type) : mPathName ? addTitleFor(draft?.path || path) : 'إضافة جديدة',
     mPathName,
     rankBtnLabel: draft?.rank ? 'الأولوية رقم ' + draft.rank : 'اضغط لترتيب الأولوية بالسحب والإفلات',
     // path step

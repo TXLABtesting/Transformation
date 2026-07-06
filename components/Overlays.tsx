@@ -214,7 +214,7 @@ export function Overlays({ vm }: { vm: VM }) {
               animation: 'fadeUp .3s',
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: '86vh',
+              maxHeight: '74vh',
             }}
           >
             <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -345,7 +345,7 @@ export function Overlays({ vm }: { vm: VM }) {
               position: 'relative',
               width: '100%',
               maxWidth: 520,
-              maxHeight: '82vh',
+              maxHeight: '71vh',
               background: '#fff',
               borderRadius: 20,
               boxShadow: '0 30px 70px -24px rgba(2,12,35,.5)',
@@ -523,7 +523,7 @@ export function Overlays({ vm }: { vm: VM }) {
                 ✕
               </button>
             </div>
-            <div style={{ padding: '0 22px', maxHeight: '60vh', overflowY: 'auto' }}>
+            <div style={{ padding: '0 22px', maxHeight: '52vh', overflowY: 'auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB' }} />
                 <span style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B' }}>
@@ -725,7 +725,7 @@ export function Overlays({ vm }: { vm: VM }) {
               animation: 'fadeUp .3s',
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: '86vh',
+              maxHeight: '74vh',
             }}
           >
             <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -917,7 +917,7 @@ export function Overlays({ vm }: { vm: VM }) {
               animation: 'fadeUp .3s',
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: '88vh',
+              maxHeight: '76vh',
             }}
           >
             <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -1039,7 +1039,7 @@ export function Overlays({ vm }: { vm: VM }) {
               animation: 'fadeUp .3s',
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: '90vh',
+              maxHeight: '78vh',
             }}
           >
             <div
@@ -1056,7 +1056,7 @@ export function Overlays({ vm }: { vm: VM }) {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>إدارة خطط الإطلاق</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
-                  عرّف خطط الإطلاق لكل مرحلة (الاسم، التاريخ، النوع، الوصف) — تُستخدم عند إنشاء المشاريع والعمليات والخدمات وتعيينها.
+                  يمكنكم تعريف خطط الإطلاق لكل مرحلة، وتُستخدم عند إنشاء المشاريع والعمليات والخدمات وتعيينها.
                 </div>
               </div>
               <button
@@ -1340,7 +1340,7 @@ export function Overlays({ vm }: { vm: VM }) {
                                 style={{ ...assignInput, background: '#F4F7FC', cursor: 'default' }}
                               />
                               <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
-                                مجموع ميزانيات التنفيذ لما هو محدَّد من المشاريع والعمليات والخدمات — يُحدَّث تلقائياً ويُحتسب في إجماليات اللجنة.
+                                تُحتسب تلقائياً من ميزانيات التنفيذ المحدَّدة وتدخل في إجماليات اللجنة.
                               </div>
                             </div>
                             <div>
@@ -1352,7 +1352,7 @@ export function Overlays({ vm }: { vm: VM }) {
                                 style={assignInput}
                               />
                               <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
-                                للاطلاع فقط (ممثل الجهة) — لا تدخل في إجماليات التمويل.
+                                للاطلاع فقط — لا تدخل في إجماليات التمويل.
                               </div>
                             </div>
                           </div>
