@@ -344,7 +344,7 @@ function RankBars({ title, rows }: { title: string; rows: { label: string; value
           </div>
         ))}
         {rows.length === 0 && (
-          <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600 }}>لا توجد بيانات بعد.</div>
+          <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>لا توجد بيانات بعد.</div>
         )}
       </div>
     </div>
@@ -788,7 +788,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                           style={{
                             fontSize: 11,
                             color: '#9AA6BC',
-                            fontWeight: 600,
+                            fontWeight: 400,
                             marginTop: 2,
                             lineHeight: 1.5,
                           }}
@@ -1019,7 +1019,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       style={{
                         fontSize: 11,
                         color: '#9AA6BC',
-                        fontWeight: 600,
+                        fontWeight: 400,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                       }}
@@ -1317,7 +1317,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           >
             <div>
               <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{vm.activePathName}</div>
-              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
+              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                 {vm.streamSummary}
               </div>
             </div>
@@ -1400,7 +1400,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     borderRadius: 11,
                     padding: '0 36px 0 13px',
                     fontSize: 12.5,
-                    fontWeight: 600,
+                    fontWeight: 400,
                     color: '#13213C',
                     outline: 'none',
                     fontFamily: 'inherit',
@@ -1678,7 +1678,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                         <InfoTip text="إجمالي التكلفة التقديرية لتنفيذ ما هو معيَّن لهذه المرحلة. أيقونة السهم تعرض خطط الإطلاق وتفاصيلها." />
                       </div>
                       {b.period && (
-                        <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 2 }}>{b.period}</div>
+                        <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 2 }}>{b.period}</div>
                       )}
                     </div>
                     {hasDetails && (
@@ -1748,7 +1748,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                                 <span style={{ fontSize: 10.5, fontWeight: 700, color: '#33415C', flex: 'none' }}>
                                   {l.execLabel}
                                   {l.launchLabel && (
-                                    <span style={{ color: '#9AA6BC', fontWeight: 600 }}> · إطلاق {l.launchLabel}</span>
+                                    <span style={{ color: '#9AA6BC', fontWeight: 400 }}> · إطلاق {l.launchLabel}</span>
                                   )}
                                 </span>
                               </div>
@@ -1915,7 +1915,7 @@ const selectStyle: CSSProperties = {
   background: '#fff',
   borderRadius: 11,
   padding: '0 13px',
-  fontWeight: 700,
+  fontWeight: 400,
   fontSize: 13,
   color: '#42506B',
   outline: 'none',
@@ -2519,7 +2519,7 @@ function CardItem({ c }: { c: CardVM }) {
           </span>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: c.scoreColor }}>{c.scoreLabel}</div>
-            <div style={{ fontSize: 10, color: '#9AA6BC', fontWeight: 600, lineHeight: 1.4 }}>{c.scoreExpl}</div>
+            <div style={{ fontSize: 10, color: '#9AA6BC', fontWeight: 400, lineHeight: 1.4 }}>{c.scoreExpl}</div>
           </div>
         </div>
       )}

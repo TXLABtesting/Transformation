@@ -12,7 +12,7 @@ const SPEECH = 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z';
 
 const labelStyle: React.CSSProperties = {
   fontSize: 11,
-  fontWeight: 700,
+  fontWeight: 400,
   color: '#8A97AD',
   marginBottom: 4,
 };
@@ -641,7 +641,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 600, marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 400, marginTop: 2 }}>
                       {l.ltype} · التسليم المتوقع {l.dateFmt}
                     </div>
                   </div>
@@ -822,7 +822,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <div
-                    style={{ fontSize: 12, fontWeight: 700, color: '#54627B', marginBottom: 6 }}
+                    style={{ fontSize: 12, fontWeight: 400, color: '#54627B', marginBottom: 6 }}
                   >
                     نطاق العمل التفصيلي <span style={{ color: '#D23B45' }}>*</span>
                   </div>
@@ -835,7 +835,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 </div>
                 <div>
                   <div
-                    style={{ fontSize: 12, fontWeight: 700, color: '#54627B', marginBottom: 6 }}
+                    style={{ fontSize: 12, fontWeight: 400, color: '#54627B', marginBottom: 6 }}
                   >
                     الميزانية التقديرية <span style={{ color: '#D23B45' }}>*</span>
                   </div>
@@ -856,7 +856,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 </div>
                 <div>
                   <div
-                    style={{ fontSize: 12, fontWeight: 700, color: '#54627B', marginBottom: 6 }}
+                    style={{ fontSize: 12, fontWeight: 400, color: '#54627B', marginBottom: 6 }}
                   >
                     إرفاق مستند نطاق العمل
                   </div>

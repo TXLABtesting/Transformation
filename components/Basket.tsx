@@ -209,7 +209,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{b.title}</div>
-              <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, lineHeight: 1.5, marginTop: 2 }}>
+              <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, lineHeight: 1.5, marginTop: 2 }}>
                 {b.subtitle}
               </div>
             </div>
@@ -290,7 +290,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                       <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', lineHeight: 1.4, marginTop: 10 }}>
                         {it.title}
                       </div>
-                      <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
+                      <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>
                         {it.entity} · {it.pathName}
                       </div>
                     </div>
@@ -423,7 +423,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                   <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', lineHeight: 1.4, marginTop: 10 }}>
                     {it.title}
                   </div>
-                  <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
+                  <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>
                     {it.entity} · {it.pathName}
                   </div>
                   <div

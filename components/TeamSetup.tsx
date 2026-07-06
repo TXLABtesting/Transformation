@@ -20,7 +20,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
   };
   const labelStyle: CSSProperties = {
     fontSize: 12.5,
-    fontWeight: 700,
+    fontWeight: 400,
     color: '#54627B',
     display: 'block',
     marginBottom: 7,

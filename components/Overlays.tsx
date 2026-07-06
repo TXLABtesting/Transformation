@@ -75,7 +75,7 @@ export function Overlays({ vm }: { vm: VM }) {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>فريق العمل</div>
-                <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600 }}>
+                <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>
                   الفريق المسؤول عن التحول بالذكاء الاصطناعي
                 </div>
               </div>
@@ -140,7 +140,7 @@ export function Overlays({ vm }: { vm: VM }) {
                       <div style={{ width: 10, height: 38, borderRadius: 6, background: o.color, flex: 'none' }} />
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49' }}>{o.name}</div>
-                        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600 }}>
+                        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>
                           {o.ownerName} · {o.ownerPos}
                         </div>
                       </div>
@@ -626,7 +626,7 @@ export function Overlays({ vm }: { vm: VM }) {
             }}
           >
             <div style={{ fontSize: 15.5, fontWeight: 800, color: '#13213C' }}>إلغاء تمويل اللجنة الوطنية</div>
-            <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3, marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3, marginBottom: 16 }}>
               {vm.cancelFundTitle}
             </div>
             <div style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', marginBottom: 8 }}>
@@ -965,7 +965,7 @@ export function Overlays({ vm }: { vm: VM }) {
                     </option>
                   ))}
                 </select>
-                <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 6 }}>
+                <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 6 }}>
                   لربط المشاريع والعمليات والخدمات بخطة إطلاق داخل المرحلة استخدم «إدارة خطط الإطلاق».
                 </div>
               </div>
@@ -1032,7 +1032,7 @@ export function Overlays({ vm }: { vm: VM }) {
             style={{
               position: 'relative',
               width: '100%',
-              maxWidth: 760,
+              maxWidth: 880,
               background: '#F4F7FC',
               borderRadius: 20,
               boxShadow: '0 30px 70px -24px rgba(2,12,35,.5)',
@@ -1122,7 +1122,7 @@ export function Overlays({ vm }: { vm: VM }) {
                         textAlign: 'center',
                         fontSize: 12,
                         color: '#9AA6BC',
-                        fontWeight: 600,
+                        fontWeight: 400,
                       }}
                     >
                       لا توجد خطط إطلاق لهذه المرحلة بعد.
@@ -1185,9 +1185,9 @@ export function Overlays({ vm }: { vm: VM }) {
                       {/* expanded editor */}
                       {isOpen && (
                         <div style={{ padding: '0 13px 13px', borderTop: '1px solid #F0F3F8' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 150px 150px', gap: 8, marginTop: 12 }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 210px 175px', gap: 10, marginTop: 12 }}>
                             <div>
-                              <label style={assignLabel}>اسم الإطلاق</label>
+                              <label style={assignLabel}>عنوان الإطلاق</label>
                               <input
                                 value={p.title}
                                 onChange={(e) => s.updLaunchPlan(p.id, 'title', e.target.value)}
@@ -1208,7 +1208,7 @@ export function Overlays({ vm }: { vm: VM }) {
                               </select>
                             </div>
                             <div>
-                              <label style={assignLabel}>التاريخ</label>
+                              <label style={assignLabel}>تاريخ الإطلاق</label>
                               <input
                                 type="date"
                                 value={p.date}
@@ -1229,7 +1229,7 @@ export function Overlays({ vm }: { vm: VM }) {
                               }}
                             >
                               {p.items.length === 0 && (
-                                <div style={{ padding: '11px 13px', fontSize: 12, color: '#9AA6BC', fontWeight: 600 }}>
+                                <div style={{ padding: '11px 13px', fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>
                                   لا توجد إضافات بعد.
                                 </div>
                               )}
@@ -1334,7 +1334,7 @@ export function Overlays({ vm }: { vm: VM }) {
                                 placeholder="تُحتسب تلقائياً مما هو محدَّد"
                                 style={{ ...assignInput, background: '#F4F7FC', cursor: 'default' }}
                               />
-                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
+                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>
                                 تُحتسب تلقائياً من ميزانيات التنفيذ المحدَّدة.
                               </div>
                             </div>
@@ -1346,7 +1346,7 @@ export function Overlays({ vm }: { vm: VM }) {
                                 placeholder="تكلفة الإطلاق / الفعالية"
                                 style={assignInput}
                               />
-                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
+                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>
                                 للاطلاع فقط — لا تدخل في إجماليات التمويل.
                               </div>
                             </div>
@@ -1399,7 +1399,7 @@ export function Overlays({ vm }: { vm: VM }) {
 const assignLabel: CSSProperties = {
   display: 'block',
   fontSize: 12,
-  fontWeight: 700,
+  fontWeight: 400,
   color: '#54627B',
   marginBottom: 6,
 };
