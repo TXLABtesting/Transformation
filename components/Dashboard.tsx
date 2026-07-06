@@ -1510,25 +1510,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                   ]}
                 />
               </div>
-              <StatBand
-                items={[
-                  { label: 'نسبة الإنجاز', value: String(vm.kpis.completion), suffix: '%', info: 'متوسط تقدّم جميع المشاريع والعمليات والخدمات عبر مراحل الدورة، من المسودة حتى الإنجاز.' },
-                  {
-                    label: 'متوسط نسبة التحول للذكاء الاصطناعي المساعد',
-                    value: String(vm.kpis.avgTargetPct),
-                    suffix: '%',
-                    info: 'متوسط النسب المستهدفة للتحول باستخدام الذكاء الاصطناعي كما أُدخلت في النتائج المتوقعة.',
-                  },
-                  { label: 'متوسط نسبة الأتمتة الحالية', value: String(vm.kpis.avgAutomationPct), suffix: '%', info: 'متوسط مستوى الأتمتة الحالي قبل التحول كما أُدخل في البيانات.' },
-                  {
-                    label: 'المكتمل من ' + vm.typesPhrase,
-                    value: String(vm.kpis.completedPct),
-                    suffix: '%',
-                    chip: String(vm.kpis.completedCount),
-                    info: 'نسبة وعدد ما اكتمل إنجازه وإغلاقه بالكامل.',
-                  },
-                ]}
-              />
               {vm.role === 'entity' && vm.pathFilterValue === 'all' && (vm.showExecBudget || vm.showLaunchBudget) && (
                 <StatBand
                   items={[
