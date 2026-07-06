@@ -768,7 +768,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? 'demo1' : 'v1';
+export const SEED_V = process.env.NEXT_PUBLIC_DEMO_DATA === '1' ? 'demo1' : 'v1';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 

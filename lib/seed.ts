@@ -1,23 +1,24 @@
 // ============================================================================
 // Seed data. PRODUCTION ships EMPTY — items and launch plans are created by
-// the coordinators through the UI. Set NEXT_PUBLIC_DEMO_MODE=1 at build time
+// the coordinators through the UI. Set NEXT_PUBLIC_DEMO_DATA=1 at build time
 // to load a rich mock portfolio (for management demos / walkthroughs only).
+// NEXT_PUBLIC_DEMO_MODE only controls the role-switcher tabs, not the data.
 // Bump SEED_V in domain.ts to force local storage to reseed.
 // ============================================================================
 import type { Item } from './domain';
 import type { LaunchPlan } from './domain';
 
-export const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
+export const DEMO_DATA = process.env.NEXT_PUBLIC_DEMO_DATA === '1';
 
 const T = (s: string) => Date.parse(s); // fixed, deterministic timestamps
 
 export function seedItems(): Item[] {
-  if (!DEMO_MODE) return [];
+  if (!DEMO_DATA) return [];
   return demoItems();
 }
 
 export function seedLaunchPlans(): LaunchPlan[] {
-  if (!DEMO_MODE) return [];
+  if (!DEMO_DATA) return [];
   return demoLaunchPlans();
 }
 
