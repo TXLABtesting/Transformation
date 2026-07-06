@@ -1332,7 +1332,7 @@ export function Overlays({ vm }: { vm: VM }) {
                                 value={p.budget || ''}
                                 readOnly
                                 placeholder="تُحتسب تلقائياً مما هو محدَّد"
-                                style={{ ...assignInput, background: '#F4F7FC', cursor: 'default' }}
+                                style={{ ...assignInput, backgroundColor: '#F4F7FC', cursor: 'default' }}
                               />
                               <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>
                                 تُحتسب تلقائياً من ميزانيات التنفيذ المحدَّدة.
@@ -1407,7 +1407,7 @@ const assignInput: CSSProperties = {
   width: '100%',
   height: 46,
   border: '1px solid #DCE3EE',
-  background: '#fff',
+  backgroundColor: '#fff',
   borderRadius: 11,
   padding: '0 13px',
   fontSize: 13.5,

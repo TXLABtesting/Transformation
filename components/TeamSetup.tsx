@@ -12,7 +12,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
   const inputStyle: CSSProperties = {
     width: '100%',
     border: '1px solid #DCE3EE',
-    background: '#fff',
+    backgroundColor: '#fff',
     borderRadius: 12,
     padding: '12px 14px',
     fontSize: 13.5,

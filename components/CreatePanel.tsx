@@ -13,7 +13,7 @@ import { BULK_VERDICT_STYLE } from '@/lib/ai';
 const inputStyle: React.CSSProperties = {
   width: '100%',
   border: '1px solid #DCE3EE',
-  background: '#fff',
+  backgroundColor: '#fff',
   borderRadius: 11,
   padding: '11px 13px',
   fontSize: 13.5,
@@ -513,7 +513,7 @@ function F1({
   gv: (k: string) => string;
 }) {
   const m = vm.modal;
-  const disabledStyle: React.CSSProperties = { ...inputStyle, background: '#F1F4F9', cursor: 'not-allowed' };
+  const disabledStyle: React.CSSProperties = { ...inputStyle, backgroundColor: '#F1F4F9', cursor: 'not-allowed' };
   return (
     <div style={cardStyle}>
       {m.mIsOp && (

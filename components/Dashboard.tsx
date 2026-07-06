@@ -1133,7 +1133,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           >
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 10.5, color: '#9FC4F2', fontWeight: 700 }}>
-                المرحلة الأولى · {vm.banner.firstMsName}
+                مرحلة {vm.banner.firstMsName}
               </div>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', marginTop: 4 }}>
                 {vm.banner.curPhaseDeadlineFmt}
@@ -1912,7 +1912,7 @@ const selectStyle: CSSProperties = {
   width: 170,
   minWidth: 170,
   border: '1px solid #E7ECF4',
-  background: '#fff',
+  backgroundColor: '#fff',
   borderRadius: 11,
   padding: '0 13px',
   fontWeight: 400,
