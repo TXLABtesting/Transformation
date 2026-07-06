@@ -280,27 +280,28 @@ function build(s: Store) {
   // status filter options — ai/path (oversight roles) drop the action/pending
   // options they can't act on
   const statusOptions =
-    rawRole === 'entity'
+    rawRole === 'coord'
       ? [
           { v: 'all', label: 'كل الحالات' },
           { v: 'draft', label: 'مسودة' },
+          { v: 'pending', label: 'قيد الاعتماد' },
           { v: 'review', label: 'للمراجعة' },
-          { v: 'approve', label: 'للاعتماد' },
           { v: 'inprog', label: 'قيد التنفيذ' },
           { v: 'done', label: 'مكتمل' },
         ]
-      : [
-          { v: 'all', label: 'كل الحالات' },
-          ...(rawRole === 'ai' || rawRole === 'path'
-            ? []
-            : [
-                { v: 'mine', label: 'بحاجة لإجرائي' },
-                { v: 'pending', label: 'بانتظار الاعتماد' },
-              ]),
-          { v: 'planned', label: 'مخطط (معتمد)' },
-          { v: 'done', label: 'مكتمل' },
-          { v: 'draft', label: 'مسودة' },
-        ];
+      : rawRole === 'entity'
+        ? [
+            { v: 'all', label: 'كل الحالات' },
+            { v: 'draft', label: 'مسودة' },
+            { v: 'approve', label: 'للاعتماد' },
+            { v: 'inprog', label: 'قيد التنفيذ' },
+            { v: 'done', label: 'مكتمل' },
+          ]
+        : [
+            { v: 'all', label: 'كل الحالات' },
+            { v: 'inprog', label: 'قيد التنفيذ' },
+            { v: 'done', label: 'مكتمل' },
+          ];
 
   // committee-funding filter (entity rep)
   const fundOptions = [
@@ -600,8 +601,9 @@ function statusMatch(i: Item, f: string, rawRole: RoleKey, s: Store): boolean {
   }
   if (f === 'pending') return ['ent1', 'pm1', 'ent2', 'pm2'].includes(w);
   if (f === 'planned') return ['exec', 'launch', 'budget'].includes(w);
-  // entity-rep simplified statuses
-  if (f === 'review') return ['pm1', 'pm2', 'ent2'].includes(w) || !!i.ret;
+  // simplified role statuses
+  if (f === 'review')
+    return rawRole === 'coord' ? !!i.ret : ['pm1', 'pm2', 'ent2'].includes(w) || !!i.ret;
   if (f === 'approve') return w === 'ent1';
   if (f === 'inprog') return ['budget', 'exec', 'launch'].includes(w);
   return w === f;
