@@ -802,33 +802,47 @@ function FOutcome({
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
-          <label style={labelStyle}>نسبة التحول المستهدفة باستخدام الذكاء الاصطناعي</label>
-          <div style={{ position: 'relative' }}>
+          <label style={{ ...labelStyle, minHeight: 38 }}>نسبة التحول المستهدفة باستخدام الذكاء الاصطناعي</label>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              border: '1px solid #E7ECF4',
+              borderRadius: 12,
+              backgroundColor: '#fff',
+              padding: '0 14px',
+              height: 46,
+            }}
+          >
             <input
-              type="number"
+              type="range"
               min={0}
               max={100}
-              value={gv('targetPct')}
+              step={5}
+              value={Number(gv('targetPct')) || 0}
               onChange={(e) => setField('targetPct', e.target.value)}
-              style={{ ...inputStyle, padding: '11px 36px 11px 13px' }}
+              style={{ flex: 1, accentColor: '#2563EB', cursor: 'pointer' }}
             />
             <span
               style={{
-                position: 'absolute',
-                left: 13,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#9AA6BC',
+                flex: 'none',
+                minWidth: 48,
+                textAlign: 'center',
+                fontSize: 13.5,
+                fontWeight: 800,
+                color: '#13213C',
+                background: '#F0F4FB',
+                borderRadius: 8,
+                padding: '4px 8px',
               }}
             >
-              %
+              {Number(gv('targetPct')) || 0}%
             </span>
           </div>
         </div>
         <div>
-          <label style={labelStyle}>عدد نماذج وأنظمة الذكاء الاصطناعي المتوقعة</label>
+          <label style={{ ...labelStyle, minHeight: 38 }}>عدد نماذج وأنظمة الذكاء الاصطناعي المتوقعة</label>
           <div style={{ position: 'relative' }}>
             <input
               type="number"
@@ -896,7 +910,7 @@ function FBudget({
       </div>
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>
-          الميزانية التقديرية <span style={{ color: '#D23B45' }}>*</span>
+          الميزانية التقديرية
         </label>
         <input
           value={gv('budget')}
@@ -1024,6 +1038,13 @@ function FPhases({ vm }: { vm: VM }) {
 
   return (
     <div>
+      {(draft?.transformability || '') === 'غير قابل' ? (
+        <div style={cardStyle}>
+          <div style={{ fontSize: 12.5, color: '#8A97AD', lineHeight: 1.8 }}>
+            هذا البند غير قابل للتحول بالذكاء الاصطناعي — لا تنطبق عليه خطة إطلاق، ويمكنكم الإرسال للاعتماد مباشرة.
+          </div>
+        </div>
+      ) : (
       <div style={cardStyle}>
         <label style={labelStyle}>
           اختر مرحلة الإطلاق <span style={{ color: '#D23B45' }}>*</span>
@@ -1045,6 +1066,7 @@ function FPhases({ vm }: { vm: VM }) {
           «إدارة خطط الإطلاق» أو من لوحة المتابعة.
         </div>
       </div>
+      )}
     </div>
   );
 }

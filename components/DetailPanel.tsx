@@ -837,7 +837,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <div
                     style={{ fontSize: 12, fontWeight: 400, color: '#54627B', marginBottom: 6 }}
                   >
-                    الميزانية التقديرية <span style={{ color: '#D23B45' }}>*</span>
+                    الميزانية التقديرية
                   </div>
                   <input
                     value={d.budget}
@@ -967,313 +967,57 @@ export function DetailPanel({ vm }: { vm: VM }) {
             )}
           </div>
 
-          {/* ===== EXECUTION CHECKLIST ===== */}
-          {d.showExecView && (
-            <div
-              style={{
-                background: '#fff',
-                border: '1px solid #E7ECF4',
-                borderRadius: 16,
-                padding: 16,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>
-                تنفيذ واختبار التحول
+          {/* ===== SIMPLIFIED DELIVERY STATUS ===== */}
+          {d.showExecView && !d.isAgentifiable && (
+            <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>حالة التطوير</div>
+              <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginTop: 6 }}>
+                هذا البند غير قابل للتحول بالذكاء الاصطناعي — لا تنطبق عليه خطة إطلاق أو حالة تنفيذ.
               </div>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: '#8A97AD',
-                  lineHeight: 1.7,
-                  margin: '6px 0 14px',
-                }}
-              >
-                حدّث حالة كل بند — أكمِل البند أو حدّد سبب التأخير وتاريخاً جديداً قبل الانتقال للإطلاق.
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {d.execRows.map((x) => {
-                  const dotColor =
-                    x.status === 'مكتمل'
-                      ? '#0B8A4B'
-                      : x.status === 'متأخر'
-                        ? '#C0303B'
-                        : '#C2CCDC';
-                  return (
-                    <div
-                      key={x.key}
-                      style={{
-                        border: '1px solid #EBEFF6',
-                        borderRadius: 12,
-                        padding: 13,
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: '50%',
-                            background: dotColor,
-                            flex: 'none',
-                          }}
-                        />
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49' }}>
-                          {x.label}
-                        </div>
-                      </div>
-
-                      {d.execEditable ? (
-                        <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-                          {EXEC_STATUS_OPTS.map((opt) => {
-                            const active = x.status === opt;
-                            const sc = SC[opt];
-                            return (
-                              <button
-                                key={opt}
-                                onClick={() => x.onStatus(opt)}
-                                style={{
-                                  border: 'none',
-                                  borderRadius: 7,
-                                  padding: '6px 11px',
-                                  fontSize: 11.5,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  whiteSpace: 'nowrap',
-                                  background: active ? '#fff' : '#F1F4F9',
-                                  color: active ? sc.c : '#8A97AD',
-                                  boxShadow: active
-                                    ? '0 2px 6px -2px rgba(15,31,61,.15)'
-                                    : 'none',
-                                }}
-                              >
-                                {opt}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div style={{ marginTop: 10 }}>
-                          <span
-                            style={{
-                              display: 'inline-block',
-                              fontSize: 12,
-                              fontWeight: 800,
-                              padding: '4px 11px',
-                              borderRadius: 999,
-                              background: (SC[x.status] || SC['لم تبدأ']).bg,
-                              color: (SC[x.status] || SC['لم تبدأ']).c,
-                            }}
-                          >
-                            {x.status}
-                          </span>
-                        </div>
-                      )}
-
-                      {x.isDelayed && (
-                        <div
-                          style={{
-                            marginTop: 10,
-                            paddingTop: 10,
-                            borderTop: '1px dashed #E1E7F1',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 10,
-                          }}
-                        >
-                          <div>
-                            <div
-                              style={{
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: '#54627B',
-                                marginBottom: 6,
-                              }}
-                            >
-                              تاريخ انتهاء جديد
-                            </div>
-                            {d.execEditable ? (
-                              <input
-                                type="date"
-                                value={x.newDate}
-                                onChange={(e) => x.onNewDate(e.target.value)}
-                                style={{
-                                  width: '100%',
-                                  border: '1px solid #DCE3EE',
-                                  background: '#fff',
-                                  borderRadius: 11,
-                                  padding: '10px 13px',
-                                  fontSize: 13.5,
-                                  outline: 'none',
-                                }}
-                              />
-                            ) : (
-                              <div style={valueStyle}>{x.newDateFmt}</div>
-                            )}
-                          </div>
-                          <div>
-                            <div
-                              style={{
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: '#54627B',
-                                marginBottom: 6,
-                              }}
-                            >
-                              سبب التأخير
-                            </div>
-                            {d.execEditable ? (
-                              <textarea
-                                value={x.reason}
-                                onChange={(e) => x.onReason(e.target.value)}
-                                placeholder="نرجو توضيح السبب"
-                                style={{
-                                  width: '100%',
-                                  border: '1px solid #DCE3EE',
-                                  background: '#fff',
-                                  borderRadius: 11,
-                                  padding: '10px 13px',
-                                  fontSize: 13.5,
-                                  outline: 'none',
-                                  minHeight: 64,
-                                  resize: 'vertical',
-                                }}
-                              />
-                            ) : (
-                              <div
-                                style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }}
-                              >
-                                {x.reason}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {d.showGoLaunch && (
-                <button
-                  onClick={d.onGoLaunch}
-                  disabled={d.execBlocked}
-                  style={{
-                    width: '100%',
-                    marginTop: 14,
-                    background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 12,
-                    padding: '13px 20px',
-                    fontWeight: 800,
-                    fontSize: 14,
-                    cursor: d.execBlocked ? 'not-allowed' : 'pointer',
-                    opacity: d.execOpacity,
-                    boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
-                  }}
-                >
-                  الانتقال إلى مرحلة الإطلاق
-                </button>
-              )}
             </div>
           )}
-
-          {/* ===== LAUNCH CHECKLIST ===== */}
-          {d.showLaunchView && (
-            <div
-              style={{
-                background: '#fff',
-                border: '1px solid #E7ECF4',
-                borderRadius: 16,
-                padding: 16,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>خطة الإطلاق</div>
+          {d.showExecView && d.isAgentifiable && (
+            <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>حالة التطوير</div>
+              <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, margin: '6px 0 14px' }}>
+                حدّدوا الحالة الحالية — قيد التطوير، ثم تم التطوير، وصولاً إلى تم الإطلاق.
+              </div>
               <div
                 style={{
-                  fontSize: 12,
-                  color: '#8A97AD',
-                  lineHeight: 1.7,
-                  margin: '6px 0 14px',
+                  display: 'flex',
+                  background: '#F4F7FC',
+                  border: '1px solid #E7ECF4',
+                  borderRadius: 12,
+                  padding: 4,
+                  gap: 4,
                 }}
               >
-                علّم بنود خطة الإطلاق عند إنجازها.
+                {[
+                  { k: 'underDev', label: 'قيد التطوير' },
+                  { k: 'developed', label: 'تم التطوير' },
+                  { k: 'launched', label: 'تم الإطلاق' },
+                ].map((st) => (
+                  <button
+                    key={st.k}
+                    onClick={() => d.onSetStage(st.k)}
+                    disabled={!d.canEditStage}
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      borderRadius: 9,
+                      padding: '10px 8px',
+                      fontWeight: d.devStage === st.k ? 800 : 400,
+                      fontSize: 12.5,
+                      cursor: d.canEditStage ? 'pointer' : 'default',
+                      fontFamily: 'inherit',
+                      background: d.devStage === st.k ? '#0F1F3D' : 'transparent',
+                      color: d.devStage === st.k ? '#fff' : '#54627B',
+                    }}
+                  >
+                    {st.label}
+                  </button>
+                ))}
               </div>
-
-              {d.hasLaunchChk ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {d.launchChk.map((l) => (
-                    <div
-                      key={l.idx}
-                      onClick={d.launchEditable ? l.onToggle : undefined}
-                      style={{
-                        display: 'flex',
-                        gap: 11,
-                        alignItems: 'flex-start',
-                        border: '1px solid #EBEFF6',
-                        borderRadius: 12,
-                        padding: 13,
-                        cursor: d.launchEditable ? 'pointer' : 'default',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 22,
-                          height: 22,
-                          borderRadius: 7,
-                          flex: 'none',
-                          marginTop: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: l.done ? '#0B8A4B' : '#fff',
-                          border: l.done ? 'none' : '1.5px solid #C2CCDC',
-                        }}
-                      >
-                        {l.done && <Icon d={CHECK} size={14} color="#fff" strokeWidth={3} />}
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49' }}>
-                          {l.title}
-                        </div>
-                        <div style={{ fontSize: 11.5, color: '#9AA6BC', marginTop: 2 }}>
-                          {l.ltype} · التسليم المتوقع {l.dateFmt}
-                        </div>
-                        {l.done && (
-                          <div style={{ fontSize: 11.5, color: '#0B8A4B', marginTop: 2 }}>
-                            الإنجاز الفعلي {l.actualFmt}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ fontSize: 13, color: '#8A97AD', lineHeight: 1.7 }}>
-                  لم تُعرّف بنود خطة إطلاق عند الإنشاء.
-                </div>
-              )}
-
-              {d.showFinishLaunch && (
-                <button
-                  onClick={d.onFinishLaunch}
-                  style={{
-                    width: '100%',
-                    marginTop: 14,
-                    background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 12,
-                    padding: '13px 20px',
-                    fontWeight: 800,
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    boxShadow: '0 10px 22px -10px rgba(11,138,75,.6)',
-                  }}
-                >
-                  الإنهاء والإغلاق
-                </button>
-              )}
             </div>
           )}
         </div>

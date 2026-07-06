@@ -873,6 +873,34 @@ export function Dashboard({ vm }: { vm: VM }) {
             )}
           </div>
 
+          {/* Phase countdown (moved out of the banner) */}
+          {vm.showProgramBanner && (
+            <div
+              title={'الموعد النهائي: ' + vm.banner.curPhaseDeadlineFmt}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                height: 38,
+                padding: '0 13px',
+                borderRadius: 11,
+                border: '1px solid #E7ECF4',
+                background: '#fff',
+                color: '#42506B',
+                fontSize: 12,
+              }}
+            >
+              <Icon d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" size={15} color="#8A97AD" />
+              <span style={{ fontWeight: 400, color: '#6B7A93' }}>مرحلة {vm.banner.firstMsName}</span>
+              <span style={{ fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
+                {vm.banner.cd.days} يوم
+              </span>
+              <span dir="ltr" style={{ fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
+                {vm.banner.cd.hh}:{vm.banner.cd.mm}:{vm.banner.cd.ss}
+              </span>
+            </div>
+          )}
+
           {/* Replay the onboarding tour */}
           <HoverButton
             title="جولة تعريفية"
@@ -1124,41 +1152,18 @@ export function Dashboard({ vm }: { vm: VM }) {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 14,
+              gap: 16,
               background: 'rgba(255,255,255,.07)',
               border: '1px solid rgba(255,255,255,.12)',
               borderRadius: 15,
-              padding: '13px 18px',
+              padding: '14px 22px',
             }}
           >
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 10.5, color: '#9FC4F2', fontWeight: 700 }}>
-                مرحلة {vm.banner.firstMsName}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: '#9FC4F2', fontWeight: 400 }}>{'إجمالي ' + vm.typesPhrase}</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginTop: 4 }}>
+                {vm.kpis.total}
               </div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', marginTop: 4 }}>
-                {vm.banner.curPhaseDeadlineFmt}
-              </div>
-            </div>
-            <div style={{ width: 1, height: 46, background: 'rgba(255,255,255,.14)' }} />
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
-              {(
-                [
-                  { v: vm.banner.cd.days, label: 'يوم', min: 38 },
-                  { v: vm.banner.cd.hh, label: 'ساعة', min: 32 },
-                  { v: vm.banner.cd.mm, label: 'دقيقة', min: 32 },
-                  { v: vm.banner.cd.ss, label: 'ثانية', min: 32 },
-                ] as { v: string; label: string; min: number }[]
-              ).map((u, i) => (
-                <div key={u.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
-                  {i > 0 && (
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#5E7BA8', lineHeight: 1.1 }}>:</div>
-                  )}
-                  <div style={{ textAlign: 'center', minWidth: u.min }}>
-                    <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1, color: '#fff' }}>{u.v}</div>
-                    <div style={{ fontSize: 9.5, fontWeight: 700, color: '#9FC4F2', marginTop: 4 }}>{u.label}</div>
-                  </div>
-                </div>
-              ))}
             </div>
             {vm.isAiRole && (
               <HoverButton
@@ -1166,7 +1171,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                 base={{
                   position: 'relative',
                   zIndex: 3,
-                  marginRight: 4,
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 7,
@@ -1188,112 +1192,38 @@ export function Dashboard({ vm }: { vm: VM }) {
           </div>
         </div>
 
-        {/* Program stepper */}
+        {/* Three phase-summary cards (parallel tracks) */}
         <div
           style={{
             position: 'relative',
-            display: 'flex',
-            alignItems: 'flex-start',
-            overflowX: 'auto',
-            paddingBottom: 2,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))',
+            gap: 12,
           }}
         >
-          {vm.programSteps.map((st) => {
-            // the three phases are parallel tracks, not sequential steps —
-            // everything renders uniformly in white
-            const lineBg = '#fff';
-            const circleBg = '#fff';
-            const circleColor = '#123f93';
-            const circleBorder = 'none';
-            const colGlow = 'none';
-            const labelColor = '#fff';
-            const done = false;
-            return (
-              <div
-                key={st.num}
-                onClick={st.onStepFilter}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 9,
-                  minWidth: 108,
-                  flex: 1,
-                  position: 'relative',
-                  cursor: 'pointer',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <span style={{ flex: 1, height: 3, borderRadius: 3, background: lineBg }} />
-                  <span
-                    style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: '50%',
-                      flex: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 12,
-                      fontWeight: 800,
-                      background: circleBg,
-                      color: circleColor,
-                      border: circleBorder,
-                      boxShadow: colGlow,
-                    }}
-                  >
-                    {done ? (
-                      <Icon d="M20 6 9 17l-5-5" size={15} strokeWidth={3} />
-                    ) : (
-                      st.num
-                    )}
-                  </span>
-                  <span style={{ flex: 1, height: 3, borderRadius: 3, background: lineBg }} />
-                </div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 800,
-                    color: labelColor,
-                    textAlign: 'center',
-                    lineHeight: 1.4,
-                    padding: '0 4px',
-                    minHeight: 34,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {st.label}
-                </div>
-                <div style={{ marginTop: 2, textAlign: 'center' }}>
-                  <span style={{ fontSize: 11.5, fontWeight: 400, color: labelColor, whiteSpace: 'nowrap' }}>
-                    {st.stepCount} من {vm.typesPhrase}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 3 }}>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      background: 'rgba(255,255,255,.1)',
-                      border: '1px solid rgba(255,255,255,.16)',
-                      backdropFilter: 'blur(6px)',
-                      WebkitBackdropFilter: 'blur(6px)',
-                      borderRadius: 999,
-                      padding: '4px 12px',
-                      fontSize: 10.5,
-                      fontWeight: 800,
-                      color: '#9FC4F2',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {st.resp}
-                  </span>
-                </div>
+          {vm.programSteps.map((st) => (
+            <div
+              key={st.num}
+              onClick={st.onStepFilter}
+              style={{
+                background: 'rgba(255,255,255,.07)',
+                border: '1px solid rgba(255,255,255,.14)',
+                borderRadius: 15,
+                padding: '15px 18px',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{ fontSize: 12.5, fontWeight: 400, color: '#C7D9F5', lineHeight: 1.6 }}>
+                {['', 'تم حصرها', 'بانتظار الاعتماد', 'قيد التنفيذ'][Number(st.num)] || st.label}
               </div>
-            );
-          })}
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginTop: 8, lineHeight: 1.15 }}>
+                {st.stepCount}
+              </div>
+              <div style={{ fontSize: 10.5, fontWeight: 400, color: '#9FC4F2', marginTop: 5 }}>
+                من {vm.typesPhrase}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
       )}
@@ -1303,8 +1233,53 @@ export function Dashboard({ vm }: { vm: VM }) {
         data-r="work"
         style={{ display: 'flex', gap: 16, padding: '16px 24px 44px', alignItems: 'flex-start' }}
       >
+        {/* Sidebar navigation */}
+        <aside
+          data-r="rail"
+          style={{
+            width: 226,
+            flex: 'none',
+            position: 'sticky',
+            top: 100,
+            background: '#fff',
+            border: '1px solid #E7ECF4',
+            borderRadius: 16,
+            padding: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+          }}
+        >
+          {vm.navItems.map((n) => (
+            <button
+              key={n.key}
+              onClick={n.onClick}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '11px 13px',
+                borderRadius: 11,
+                border: 'none',
+                background: n.active ? '#0F1F3D' : 'transparent',
+                color: n.active ? '#fff' : '#42506B',
+                fontWeight: n.active ? 800 : 400,
+                fontSize: 13,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'right',
+              }}
+            >
+              <Icon d={n.icon} size={16} color={n.active ? '#fff' : '#8A97AD'} />
+              {n.label}
+            </button>
+          ))}
+        </aside>
+
         {/* Main column */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {vm.navSection === 'overview' && (
+          <>
           {/* Subheader */}
           <div
             style={{
@@ -1640,13 +1615,246 @@ export function Dashboard({ vm }: { vm: VM }) {
             </>
           )}
 
-          {/* Per-batch (مرحلة) summary: clean total + expand icon for details */}
-          {vm.batchSummary.some((b) => b.count > 0 || (vm.showLaunchCosts && b.launches.length > 0)) && (
+
+          {/* List section title + view switcher */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
+            <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
+              {'قائمة ' + vm.typesPhrase + ' المقدَّمة'}
+            </div>
+            <div style={{ flex: 1, height: 1, background: '#E1E7F1' }} />
+            <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} />
+            <div
+              style={{
+                display: 'flex',
+                background: '#fff',
+                border: '1px solid #E7ECF4',
+                borderRadius: 10,
+                padding: 3,
+                gap: 2,
+                flex: 'none',
+              }}
+            >
+              {(
+                [
+                  { k: 'cards' as const, d: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z', t: 'بطاقات' },
+                  { k: 'list' as const, d: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', t: 'قائمة' },
+                ]
+              ).map((o) => (
+                <button
+                  key={o.k}
+                  title={o.t}
+                  onClick={() => setViewMode(o.k)}
+                  style={{
+                    width: 32,
+                    height: 28,
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: viewMode === o.k ? '#0F1F3D' : 'transparent',
+                  }}
+                >
+                  <Icon d={o.d} size={15} color={viewMode === o.k ? '#fff' : '#8A97AD'} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Cards grid */}
+          {vm.cards.length === 0 ? (
+            <div
+              data-tour="cards"
+              style={{
+                border: '1.5px dashed #D5DEEC',
+                background: '#FAFCFF',
+                borderRadius: 16,
+                padding: '38px 20px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>{'لا توجد ' + vm.typesPhrase + ' للعرض'}</div>
+              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 6, lineHeight: 1.7 }}>
+                {vm.emptyDesc}
+              </div>
+            </div>
+          ) : viewMode === 'list' ? (
+            <div data-tour="cards">
+              <ListView cards={vm.cards} />
+            </div>
+          ) : (
+            <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+              {vm.cards.map((c) => (
+                <CardItem key={c.id} c={c} />
+              ))}
+            </div>
+          )}
+          </>
+          )}
+
+          {/* ===== TYPE SECTIONS: big stream cards → drill into the list ===== */}
+          {vm.sectionTitle && !vm.navStream && (
+            <>
+              <div>
+                <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{vm.sectionTitle}</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
+                  اختر المسار لاستعراض {vm.sectionTitle}
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(330px,1fr))', gap: 14 }}>
+                {vm.sectionStreams.map((st) => (
+                  <HoverDiv
+                    key={st.id}
+                    onClick={st.onOpen}
+                    base={{
+                      background: '#fff',
+                      border: '1px solid #E7ECF4',
+                      borderRadius: 18,
+                      padding: '20px 22px',
+                      cursor: 'pointer',
+                      transition: 'box-shadow .15s,border-color .15s',
+                    }}
+                    hover={{ borderColor: '#C7D6EE', boxShadow: '0 18px 40px -22px rgba(15,31,61,.35)' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div className="hd" style={{ fontSize: 15.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5 }}>
+                          {st.name}
+                        </div>
+                        <div style={{ fontSize: 30, fontWeight: 800, color: '#13213C', marginTop: 8 }}>{st.total}</div>
+                      </div>
+                      <span
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: 10,
+                          border: '1px solid #E7ECF4',
+                          background: '#F7F9FD',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flex: 'none',
+                        }}
+                      >
+                        <Icon d="M15 18l-6-6 6-6" size={15} color="#54627B" />
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 16 }}>
+                      {[
+                        { label: 'قيد التطوير', v: st.underDev },
+                        { label: 'تم التطوير', v: st.developed },
+                        { label: 'تم الإطلاق', v: st.launched },
+                      ].map((x) => (
+                        <div
+                          key={x.label}
+                          style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '10px 12px' }}
+                        >
+                          <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>{x.label}</div>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: '#13213C', marginTop: 3 }}>{x.v}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </HoverDiv>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* drill-down: the stream's items */}
+          {vm.sectionTitle && vm.navStream && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <button
+                  onClick={vm.onNavBack}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    height: 38,
+                    padding: '0 14px',
+                    border: '1px solid #E7ECF4',
+                    background: '#fff',
+                    borderRadius: 11,
+                    color: '#42506B',
+                    fontWeight: 400,
+                    fontSize: 12.5,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <Icon d="M9 6l6 6-6 6" size={14} color="#8A97AD" />
+                  عودة
+                </button>
+                <div>
+                  <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>
+                    {vm.sectionTitle} — {vm.navStreamName}
+                  </div>
+                </div>
+                <div style={{ flex: 1 }} />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    value={vm.searchValue}
+                    onChange={(e) => s.setSearch(e.target.value)}
+                    placeholder="ابحث بالاسم أو الوصف…"
+                    style={{
+                      height: 38,
+                      width: 220,
+                      border: '1px solid #E7ECF4',
+                      background: '#fff',
+                      borderRadius: 11,
+                      padding: '0 34px 0 13px',
+                      fontSize: 12.5,
+                      fontWeight: 400,
+                      color: '#13213C',
+                      outline: 'none',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                  <span style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex', pointerEvents: 'none' }}>
+                    <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" size={14} color="#9AA6BC" />
+                  </span>
+                </div>
+              </div>
+              {vm.sectionCards.length === 0 ? (
+                <div
+                  style={{
+                    border: '1.5px dashed #D5DEEC',
+                    background: '#FAFCFF',
+                    borderRadius: 16,
+                    padding: '38px 20px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>لا توجد نتائج للعرض</div>
+                  <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 6, lineHeight: 1.7 }}>
+                    لا توجد إضافات في هذا المسار بعد.
+                  </div>
+                </div>
+              ) : (
+                <div data-r="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+                  {vm.sectionCards.map((c) => (
+                    <CardItem key={c.id} c={c} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ===== LAUNCH PLANS: four big مرحلة cards ===== */}
+          {vm.navSection === 'launchplans' && (
+            <>
+              <div>
+                <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>خطط الإطلاق</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
+                  المراحل الأربع مع إجمالي ما هو معيَّن لكل مرحلة وتكلفته التقديرية
+                </div>
+              </div>
             <div
               data-tour="stages"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))',
+                gridTemplateColumns: 'repeat(auto-fit,minmax(340px,1fr))',
                 gap: 12,
               }}
             >
@@ -1656,7 +1864,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 return (
                 <div
                   key={b.name}
-                  style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}
+                  style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '20px 22px' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                     <div style={{ minWidth: 0 }}>
@@ -1808,82 +2016,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                 );
               })}
             </div>
+            </>
           )}
 
-          {/* List section title + view switcher */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
-            <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
-              {'قائمة ' + vm.typesPhrase + ' المقدَّمة'}
-            </div>
-            <div style={{ flex: 1, height: 1, background: '#E1E7F1' }} />
-            <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} />
-            <div
-              style={{
-                display: 'flex',
-                background: '#fff',
-                border: '1px solid #E7ECF4',
-                borderRadius: 10,
-                padding: 3,
-                gap: 2,
-                flex: 'none',
-              }}
-            >
-              {(
-                [
-                  { k: 'cards' as const, d: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z', t: 'بطاقات' },
-                  { k: 'list' as const, d: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', t: 'قائمة' },
-                ]
-              ).map((o) => (
-                <button
-                  key={o.k}
-                  title={o.t}
-                  onClick={() => setViewMode(o.k)}
-                  style={{
-                    width: 32,
-                    height: 28,
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: viewMode === o.k ? '#0F1F3D' : 'transparent',
-                  }}
-                >
-                  <Icon d={o.d} size={15} color={viewMode === o.k ? '#fff' : '#8A97AD'} />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Cards grid */}
-          {vm.cards.length === 0 ? (
-            <div
-              data-tour="cards"
-              style={{
-                border: '1.5px dashed #D5DEEC',
-                background: '#FAFCFF',
-                borderRadius: 16,
-                padding: '38px 20px',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>{'لا توجد ' + vm.typesPhrase + ' للعرض'}</div>
-              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 6, lineHeight: 1.7 }}>
-                {vm.emptyDesc}
-              </div>
-            </div>
-          ) : viewMode === 'list' ? (
-            <div data-tour="cards">
-              <ListView cards={vm.cards} />
-            </div>
-          ) : (
-            <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
-              {vm.cards.map((c) => (
-                <CardItem key={c.id} c={c} />
-              ))}
-            </div>
-          )}
         </div>
       </div>
 

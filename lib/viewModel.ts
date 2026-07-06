@@ -317,6 +317,79 @@ function build(s: Store) {
   const entOptions = [{ v: 'all', label: 'كل الجهات' }, ...entValues.map((e) => ({ v: e, label: e }))];
 
   // ---- cards ----
+  // ---- sidebar navigation (§redesign) ----
+  const navSection = ui.navSection || 'overview';
+  const navStream = ui.navStream;
+  // simplified development status; null = not yet in the delivery pipeline
+  const devStatusOf = (i: Item): 'underDev' | 'developed' | 'launched' | null => {
+    const w = wfOf(i);
+    if (w === 'done') return 'launched';
+    if (w === 'launch') return 'developed';
+    if (w === 'budget' || w === 'exec') return 'underDev';
+    return null;
+  };
+  // items that cannot be agentified carry no launch plan or execution status
+  const agentifiable = (i: Item) => (i.transformability || '') !== 'غير قابل';
+  const bucketOf = (section: string) => (i: Item) =>
+    section === 'projects' ? isProjInit(i.type) : section === 'operations' ? i.type === 'operation' : i.type === 'service';
+  // nav items limited to what this role's scope actually contains
+  const roleStreams =
+    rawRole === 'coord' || rawRole === 'path' ? PATHS.filter((p) => p.id === myPath) : PATHS;
+  const navItems = [
+    { key: 'overview', label: 'نظرة عامة', icon: 'M3 13h8V3H3v10zm10 8h8V11h-8v10zM3 21h8v-6H3v6zm10-18v6h8V3h-8z' },
+    { key: 'projects', label: 'المشاريع والمبادرات', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7' },
+    ...(roleStreams.some((p) => streamHasType(p.id, 'operation'))
+      ? [{ key: 'operations', label: 'العمليات', icon: 'M3 6h18M3 12h18M3 18h18' }]
+      : []),
+    ...(roleStreams.some((p) => streamHasType(p.id, 'service'))
+      ? [{ key: 'services', label: 'الخدمات', icon: 'M3 5h18v14H3zM3 9h18M6.2 7h.01' }]
+      : []),
+    { key: 'launchplans', label: 'خطط الإطلاق', icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z' },
+  ].map((n) => ({ ...n, active: navSection === n.key, onClick: () => s.setNavSection(n.key) }));
+  // big stream cards for the active type section
+  const typeSections: Record<string, string> = {
+    projects: 'المشاريع والمبادرات',
+    operations: 'العمليات',
+    services: 'الخدمات',
+  };
+  const isTypeSection = navSection in typeSections;
+  const sectionStreams = !isTypeSection
+    ? []
+    : roleStreams
+        .filter((p) =>
+          navSection === 'projects'
+            ? true
+            : navSection === 'operations'
+              ? streamHasType(p.id, 'operation')
+              : streamHasType(p.id, 'service')
+        )
+        .map((p) => {
+          const inStream = roleBase.filter((i) => i.path === p.id && bucketOf(navSection)(i));
+          const cnt2 = (st: string) => inStream.filter((i) => devStatusOf(i) === st).length;
+          return {
+            id: p.id,
+            name: p.name,
+            desc: p.desc,
+            total: inStream.length,
+            underDev: cnt2('underDev'),
+            developed: cnt2('developed'),
+            launched: cnt2('launched'),
+            onOpen: () => s.setNavStream(p.id),
+          };
+        });
+  // drill-down list inside a stream
+  const sectionCards =
+    isTypeSection && navStream
+      ? roleBase
+          .filter((i) => i.path === navStream && bucketOf(navSection)(i))
+          .filter((i) => {
+            const q2 = (ui.search || '').trim().toLowerCase();
+            if (!q2) return true;
+            return (i.title || '').toLowerCase().includes(q2) || stripHtml(i.desc || '').toLowerCase().includes(q2);
+          })
+          .map((i) => mkCard(i, s, { rawRole, role, myName, ent }))
+      : [];
+
   const cards = visible.map((i) => mkCard(i, s, { rawRole, role, myName, ent }));
 
   // bulk-assign selection state (change vs first assignment)
@@ -481,6 +554,14 @@ function build(s: Store) {
     statusOptions,
     statusFilterValue: ui.statusFilter,
     emptyDesc,
+    navItems,
+    navSection,
+    navStream,
+    navStreamName: navStream ? pathById(navStream).name : '',
+    sectionTitle: (navSection in typeSections ? typeSections[navSection] : '') || '',
+    sectionStreams,
+    sectionCards,
+    onNavBack: () => s.setNavStream(null),
     fundOptions,
     fundFilterValue: ui.fundFilter,
     entityRank,
@@ -536,8 +617,11 @@ function build(s: Store) {
         .filter((p) => p.batch === b.name)
         .map((p) => ({
           ...p,
-          // items that can be launched in this plan (operations / projects-initiatives / services)
-          items: roleBase.map((i) => ({
+          // items that can be launched in this plan — non-agentifiable
+          // (غير قابل) items carry no launch plan
+          items: roleBase
+            .filter((i) => (i.transformability || '') !== 'غير قابل')
+            .map((i) => ({
             id: i.id,
             title: i.title,
             typeLabel: typeLabel(i.type),
@@ -1152,6 +1236,11 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     onDownloadScope: () => s.toast('جاري تحميل المرفق…'),
     onGoLaunch: () => s.goToLaunch(i.id),
     onFinishLaunch: () => s.finishLaunch(i.id),
+    // simplified 3-state delivery status
+    isAgentifiable: (i.transformability || '') !== 'غير قابل',
+    devStage: w === 'done' ? 'launched' : w === 'launch' ? 'developed' : 'underDev',
+    canEditStage: rawRole === 'coord' && ['exec', 'launch', 'done'].includes(w),
+    onSetStage: (stage: string) => s.setDevStage(i.id, stage),
   };
 }
 

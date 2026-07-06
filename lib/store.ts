@@ -112,6 +112,9 @@ export type UiState = {
   // detail view
   dViewStep: number | null;
   // filters
+  // sidebar navigation
+  navSection: string; // 'overview' | 'projects' | 'operations' | 'services' | 'launchplans'
+  navStream: string | null; // drill-down stream inside a type section
   filter: string; // type filter
   statusFilter: string;
   fundFilter: string; // 'all' | 'funded' | 'notfunded'
@@ -179,6 +182,9 @@ type Actions = {
   setActivePath: (p: string) => void;
   setFilter: (v: string) => void;
   setStatusFilter: (v: string) => void;
+  setDevStage: (id: string, stage: string) => void;
+  setNavSection: (v: string) => void;
+  setNavStream: (v: string | null) => void;
   setFundFilter: (v: string) => void;
   setSearch: (v: string) => void;
   setEntFilter: (v: string) => void;
@@ -339,6 +345,8 @@ function defaultUi(): UiState {
     rankRows: [],
     rankDragFrom: null,
     dViewStep: null,
+    navSection: 'overview',
+    navStream: null,
     filter: 'all',
     statusFilter: 'all',
     fundFilter: 'all',
@@ -610,7 +618,7 @@ export const useStore = create<Store>((set, get) => {
     setRole: (r) => {
       set((s) => ({
         role: r,
-        ui: { ...s.ui, activePath: 'all', entFilter: 'all', stepFilter: null, statusFilter: 'all', fundFilter: 'all', search: '' },
+        ui: { ...s.ui, activePath: 'all', entFilter: 'all', stepFilter: null, statusFilter: 'all', fundFilter: 'all', search: '', navSection: 'overview', navStream: null },
       }));
       persist();
     },
@@ -655,6 +663,23 @@ export const useStore = create<Store>((set, get) => {
     setActivePath: (p) => setUi({ activePath: p, filter: 'all', stepFilter: null }),
     setFilter: (v) => setUi({ filter: v }),
     setStatusFilter: (v) => setUi({ statusFilter: v }),
+    // simplified delivery status: قيد التطوير / تم التطوير / تم الإطلاق
+    setDevStage: (id, stage) => {
+      const target = findItem(id);
+      if (!target) return;
+      const wf = stage === 'launched' ? 'done' : stage === 'developed' ? 'launch' : 'exec';
+      patchItem(id, () => ({ wf: wf as WfState }));
+      persist();
+      toast(
+        stage === 'launched'
+          ? 'تم الإطلاق — أُغلق ' + typeLabelDef(target.type)
+          : stage === 'developed'
+            ? 'تم التطوير — ' + typeLabelDef(target.type) + ' جاهز للإطلاق'
+            : typeLabelDef(target.type) + ' قيد التطوير'
+      );
+    },
+    setNavSection: (v) => setUi({ navSection: v, navStream: null, search: '', statusFilter: 'all' }),
+    setNavStream: (v) => setUi({ navStream: v }),
     setFundFilter: (v) => setUi({ fundFilter: v }),
     setSearch: (v) => setUi({ search: v }),
     setEntFilter: (v) => setUi({ entFilter: v }),
@@ -733,13 +758,12 @@ export const useStore = create<Store>((set, get) => {
         return;
       }
       const d = s.ui.draft;
-      // the item's execution cost feeds the plan totals automatically, so
-      // scope + budget are mandatory again at submission
-      if (d && (!(d.scopeOfWork || '').trim() || !(d.budget || '').trim())) {
+      // scope stays mandatory at submission — the estimated budget is optional
+      if (d && !(d.scopeOfWork || '').trim()) {
         setUi({ fStep: 4 });
-        return toast('نرجو استكمال نطاق العمل وميزانية التنفيذ قبل الإرسال للاعتماد');
+        return toast('نرجو استكمال نطاق العمل قبل الإرسال للاعتماد');
       }
-      if (d && !(d.execBatch || '').trim()) {
+      if (d && (d.transformability || '') !== 'غير قابل' && !(d.execBatch || '').trim()) {
         return toast('نرجو اختيار مرحلة التنفيذ والإطلاق قبل الإرسال للاعتماد');
       }
       get().submitItem();
@@ -1017,8 +1041,8 @@ export const useStore = create<Store>((set, get) => {
     submitScope: (id) => {
       const it = findItem(id);
       if (!it) return;
-      if (!(it.scopeOfWork || '').trim() || !(it.budget || '').trim())
-        return toast('نرجو استكمال نطاق العمل والميزانية أولاً');
+      if (!(it.scopeOfWork || '').trim())
+        return toast('نرجو استكمال نطاق العمل أولاً');
       get().doSubmitScope(id);
     },
     doSubmitScope: (id) => {
