@@ -97,6 +97,19 @@ function build(s: Store) {
     );
   // status filter
   if (ui.statusFilter !== 'all') visible = visible.filter((i) => statusMatch(i, ui.statusFilter, rawRole, s));
+  // committee-funding filter
+  if (ui.fundFilter === 'funded') visible = visible.filter((i) => !!i.funded);
+  else if (ui.fundFilter === 'notfunded') visible = visible.filter((i) => !i.funded);
+  // free-text search over the title and description
+  const q = (ui.search || '').trim();
+  if (q) {
+    const qq = q.toLowerCase();
+    visible = visible.filter(
+      (i) =>
+        (i.title || '').toLowerCase().includes(qq) ||
+        stripHtml(i.desc || '').toLowerCase().includes(qq)
+    );
+  }
   // entity filter (ai/path)
   if ((rawRole === 'ai' || rawRole === 'path') && ui.entFilter !== 'all')
     visible = visible.filter((i) => ent(i) === ui.entFilter);
@@ -247,17 +260,34 @@ function build(s: Store) {
 
   // status filter options — ai/path (oversight roles) drop the action/pending
   // options they can't act on
-  const statusOptions = [
-    { v: 'all', label: 'كل الحالات' },
-    ...(rawRole === 'ai' || rawRole === 'path'
-      ? []
+  const statusOptions =
+    rawRole === 'entity'
+      ? [
+          { v: 'all', label: 'كل الحالات' },
+          { v: 'draft', label: 'مسودة' },
+          { v: 'review', label: 'للمراجعة' },
+          { v: 'approve', label: 'للاعتماد' },
+          { v: 'inprog', label: 'قيد التنفيذ' },
+          { v: 'done', label: 'مكتمل' },
+        ]
       : [
-          { v: 'mine', label: 'بحاجة لإجرائي' },
-          { v: 'pending', label: 'بانتظار الاعتماد' },
-        ]),
-    { v: 'planned', label: 'مخطط (معتمد)' },
-    { v: 'done', label: 'مكتمل' },
-    { v: 'draft', label: 'مسودة' },
+          { v: 'all', label: 'كل الحالات' },
+          ...(rawRole === 'ai' || rawRole === 'path'
+            ? []
+            : [
+                { v: 'mine', label: 'بحاجة لإجرائي' },
+                { v: 'pending', label: 'بانتظار الاعتماد' },
+              ]),
+          { v: 'planned', label: 'مخطط (معتمد)' },
+          { v: 'done', label: 'مكتمل' },
+          { v: 'draft', label: 'مسودة' },
+        ];
+
+  // committee-funding filter (entity rep)
+  const fundOptions = [
+    { v: 'all', label: 'التمويل: الكل' },
+    { v: 'funded', label: 'معتمد للتمويل من اللجنة' },
+    { v: 'notfunded', label: 'غير معتمد للتمويل' },
   ];
 
   // path filter (ai only) + entity filter options
@@ -429,6 +459,10 @@ function build(s: Store) {
     filterValue: ui.filter,
     statusOptions,
     statusFilterValue: ui.statusFilter,
+    fundOptions,
+    fundFilterValue: ui.fundFilter,
+    showFundFilter: rawRole === 'entity',
+    searchValue: ui.search,
     pathOptions,
     pathFilterValue: ui.activePath,
     showEntFilter,
@@ -543,6 +577,10 @@ function statusMatch(i: Item, f: string, rawRole: RoleKey, s: Store): boolean {
   }
   if (f === 'pending') return ['ent1', 'pm1', 'ent2', 'pm2'].includes(w);
   if (f === 'planned') return ['exec', 'launch', 'budget'].includes(w);
+  // entity-rep simplified statuses
+  if (f === 'review') return ['pm1', 'pm2', 'ent2'].includes(w) || !!i.ret;
+  if (f === 'approve') return w === 'ent1';
+  if (f === 'inprog') return ['budget', 'exec', 'launch'].includes(w);
   return w === f;
 }
 

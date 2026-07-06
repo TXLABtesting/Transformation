@@ -114,6 +114,8 @@ export type UiState = {
   // filters
   filter: string; // type filter
   statusFilter: string;
+  fundFilter: string; // 'all' | 'funded' | 'notfunded'
+  search: string;
   entFilter: string;
   activePath: string; // 'all' | pathId
   stepFilter: number | null;
@@ -177,6 +179,8 @@ type Actions = {
   setActivePath: (p: string) => void;
   setFilter: (v: string) => void;
   setStatusFilter: (v: string) => void;
+  setFundFilter: (v: string) => void;
+  setSearch: (v: string) => void;
   setEntFilter: (v: string) => void;
   toggleStepFilter: (n: number) => void;
   // create wizard
@@ -337,6 +341,8 @@ function defaultUi(): UiState {
     dViewStep: null,
     filter: 'all',
     statusFilter: 'all',
+    fundFilter: 'all',
+    search: '',
     entFilter: 'all',
     activePath: 'all',
     stepFilter: null,
@@ -604,7 +610,7 @@ export const useStore = create<Store>((set, get) => {
     setRole: (r) => {
       set((s) => ({
         role: r,
-        ui: { ...s.ui, activePath: 'all', entFilter: 'all', stepFilter: null, statusFilter: 'all' },
+        ui: { ...s.ui, activePath: 'all', entFilter: 'all', stepFilter: null, statusFilter: 'all', fundFilter: 'all', search: '' },
       }));
       persist();
     },
@@ -649,6 +655,8 @@ export const useStore = create<Store>((set, get) => {
     setActivePath: (p) => setUi({ activePath: p, filter: 'all', stepFilter: null }),
     setFilter: (v) => setUi({ filter: v }),
     setStatusFilter: (v) => setUi({ statusFilter: v }),
+    setFundFilter: (v) => setUi({ fundFilter: v }),
+    setSearch: (v) => setUi({ search: v }),
     setEntFilter: (v) => setUi({ entFilter: v }),
     toggleStepFilter: (n) => set((s) => ({ ui: { ...s.ui, stepFilter: s.ui.stepFilter === n ? null : n } })),
 

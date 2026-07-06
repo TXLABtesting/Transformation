@@ -1095,6 +1095,51 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </option>
                 ))}
               </select>
+              {vm.showFundFilter && (
+                <select
+                  value={vm.fundFilterValue}
+                  onChange={(e) => s.setFundFilter(e.target.value)}
+                  style={{ ...selectStyle, width: 200 }}
+                >
+                  {vm.fundOptions.map((o) => (
+                    <option key={o.v} value={o.v}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <div style={{ position: 'relative' }}>
+                <input
+                  value={vm.searchValue}
+                  onChange={(e) => s.setSearch(e.target.value)}
+                  placeholder="ابحث بالاسم أو الوصف…"
+                  style={{
+                    height: 40,
+                    width: 210,
+                    border: '1px solid #E7ECF4',
+                    background: '#fff',
+                    borderRadius: 11,
+                    padding: '0 36px 0 13px',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    color: '#13213C',
+                    outline: 'none',
+                    fontFamily: 'inherit',
+                  }}
+                />
+                <span
+                  style={{
+                    position: 'absolute',
+                    right: 11,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    display: 'flex',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" size={15} color="#9AA6BC" />
+                </span>
+              </div>
               {vm.isAiRole && (
                 <select
                   value={vm.pathFilterValue}
