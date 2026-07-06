@@ -159,7 +159,7 @@ function InfoTip({ text, dark }: { text: string; dark?: boolean }) {
             borderRadius: 10,
             padding: '9px 12px',
             fontSize: 11.5,
-            fontWeight: 600,
+            fontWeight: 400,
             lineHeight: 1.8,
             zIndex: 60,
             boxShadow: '0 16px 40px -14px rgba(2,12,35,.55)',
@@ -1110,7 +1110,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 style={{
                   fontSize: 11.5,
                   color: '#AFC6E8',
-                  fontWeight: 500,
+                  fontWeight: 400,
                   marginTop: 4,
                   maxWidth: 520,
                   lineHeight: 1.6,
@@ -1267,7 +1267,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   {st.label}
                 </div>
                 <div style={{ marginTop: 2, textAlign: 'center' }}>
-                  <span style={{ fontSize: 11.5, fontWeight: 800, color: labelColor, whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 400, color: labelColor, whiteSpace: 'nowrap' }}>
                     {st.stepCount} من {vm.typesPhrase}
                   </span>
                 </div>
@@ -1361,6 +1361,32 @@ export function Dashboard({ vm }: { vm: VM }) {
                   ))}
                 </select>
               )}
+              {vm.isAiRole && (
+                <select
+                  value={vm.pathFilterValue}
+                  onChange={(e) => s.setActivePath(e.target.value)}
+                  style={selectStyle}
+                >
+                  {vm.pathOptions.map((p) => (
+                    <option key={p.v} value={p.v}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {vm.showEntFilter && (
+                <select
+                  value={vm.entFilterValue}
+                  onChange={(e) => s.setEntFilter(e.target.value)}
+                  style={selectStyle}
+                >
+                  {vm.entOptions.map((e2) => (
+                    <option key={e2.v} value={e2.v}>
+                      {e2.label}
+                    </option>
+                  ))}
+                </select>
+              )}
               <div style={{ position: 'relative' }}>
                 <input
                   value={vm.searchValue}
@@ -1393,32 +1419,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                   <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" size={15} color="#9AA6BC" />
                 </span>
               </div>
-              {vm.isAiRole && (
-                <select
-                  value={vm.pathFilterValue}
-                  onChange={(e) => s.setActivePath(e.target.value)}
-                  style={selectStyle}
-                >
-                  {vm.pathOptions.map((p) => (
-                    <option key={p.v} value={p.v}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {vm.showEntFilter && (
-                <select
-                  value={vm.entFilterValue}
-                  onChange={(e) => s.setEntFilter(e.target.value)}
-                  style={selectStyle}
-                >
-                  {vm.entOptions.map((e2) => (
-                    <option key={e2.v} value={e2.v}>
-                      {e2.label}
-                    </option>
-                  ))}
-                </select>
-              )}
               </div>
               {vm.showAddBtn && (
                 <div data-tour="add" style={{ display: 'flex', gap: 8 }}>
@@ -1882,7 +1882,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               }}
             >
               <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>{'لا توجد ' + vm.typesPhrase + ' للعرض'}</div>
-              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 6, lineHeight: 1.7 }}>
+              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 6, lineHeight: 1.7 }}>
                 {vm.emptyDesc}
               </div>
             </div>
@@ -2467,7 +2467,7 @@ function CardItem({ c }: { c: CardVM }) {
           fontSize: 12,
           color: '#7A879E',
           lineHeight: 1.6,
-          fontWeight: 500,
+          fontWeight: 400,
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',

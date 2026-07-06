@@ -220,7 +220,7 @@ export function Overlays({ vm }: { vm: VM }) {
             <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>ضبط مهل المراحل</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                   حدّد الموعد النهائي لكل مرحلة من مراحل البرنامج
                 </div>
               </div>
@@ -357,7 +357,7 @@ export function Overlays({ vm }: { vm: VM }) {
             <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>ترتيب الأولوية</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                   اسحب البطاقات لإعادة ترتيبها من الأعلى (الأولوية 1) للأسفل
                 </div>
               </div>
@@ -501,7 +501,7 @@ export function Overlays({ vm }: { vm: VM }) {
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>
                   {vm.reqModal.mode === 'info' ? 'طلب معلومات إضافية' : 'الاعتذار عن الاعتماد'}
                 </div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                   {vm.reqModal.mode === 'info'
                     ? 'نرجو تحديد ما يلزم استكماله أو توضيحه قبل المتابعة'
                     : 'نرجو التكرم بتوضيح أسباب عدم الاعتماد والنقاط المطلوب معالجتها'}
@@ -925,7 +925,7 @@ export function Overlays({ vm }: { vm: VM }) {
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>
                   {vm.assignModal.isChange ? 'تغيير خطة التنفيذ والإطلاق' : 'تعيين خطة التنفيذ والإطلاق'}
                 </div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                   {vm.assignModal.isChange
                     ? vm.assignModal.currentBatches.length === 1
                       ? 'المرحلة الحالية: ' + vm.assignModal.currentBatches[0] + ' — اختر المرحلة الجديدة.'
@@ -1055,7 +1055,7 @@ export function Overlays({ vm }: { vm: VM }) {
             >
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>إدارة خطط الإطلاق</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                   يمكنكم تعريف خطط الإطلاق لكل مرحلة، وتُستخدم عند إنشاء المشاريع والعمليات والخدمات وتعيينها.
                 </div>
               </div>

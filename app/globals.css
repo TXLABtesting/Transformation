@@ -36,20 +36,38 @@ textarea,
 select {
   font-family: inherit;
 }
+/* RTL selects: replace the native arrow (which sticks to the border) with a
+   padded chevron on the left */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238A97AD' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 14px center;
+  background-size: 15px;
+  padding-left: 38px !important;
+}
 
 /* ---- rich text (editor + rendered values) ---- */
 [data-rte]:empty::before {
   content: attr(data-placeholder);
   color: #9aa6bc;
-  font-weight: 600;
+  font-weight: 400;
   pointer-events: none;
 }
 [data-rte] ul,
+.rte-view ul {
+  list-style: disc;
+  list-style-position: outside;
+  margin: 4px 0;
+  padding-right: 24px;
+}
 [data-rte] ol,
-.rte-view ul,
 .rte-view ol {
-  margin: 4px 20px 4px 0;
-  padding: 0;
+  list-style: decimal;
+  list-style-position: outside;
+  margin: 4px 0;
+  padding-right: 24px;
 }
 [data-rte] li,
 .rte-view li {

@@ -1040,7 +1040,7 @@ function FPhases({ vm }: { vm: VM }) {
             </option>
           ))}
         </select>
-        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 600, marginTop: 7, lineHeight: 1.7 }}>
+        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 7, lineHeight: 1.7 }}>
           حدّد مرحلة التنفيذ والإطلاق — يتم الربط بخطة إطلاق لاحقاً من
           «إدارة خطط الإطلاق» أو من لوحة المتابعة.
         </div>

@@ -108,7 +108,7 @@ export function RichTextEditor({
           minHeight,
           padding: '11px 13px',
           fontSize: 13.5,
-          fontWeight: 600,
+          fontWeight: 400,
           color: '#13213C',
           lineHeight: 1.8,
           outline: 'none',

@@ -172,7 +172,7 @@ export function Tour({ steps }: { steps: TourStep[] }) {
             ))}
           </div>
         </div>
-        <div style={{ fontSize: 12.5, color: '#54627B', fontWeight: 600, lineHeight: 1.85, marginTop: 8 }}>
+        <div style={{ fontSize: 12.5, color: '#54627B', fontWeight: 400, lineHeight: 1.85, marginTop: 8 }}>
           {step.desc}
         </div>
         <div
