@@ -770,10 +770,12 @@ export function parseBudget(b?: string): number {
 
 // Format a currency amount for display (abbreviates millions).
 export function formatMoney(n: number): string {
-  if (n >= 1_000_000) {
-    const m = n / 1_000_000;
-    return (Number.isInteger(m) ? String(m) : m.toFixed(1)) + ' مليون درهم';
-  }
+  const fmt = (v: number) => {
+    const r = Math.round(v * 10) / 10;
+    return Number.isInteger(r) ? r.toLocaleString('en-US') : r.toFixed(1);
+  };
+  if (n >= 1_000_000_000) return fmt(n / 1_000_000_000) + ' مليار درهم';
+  if (n >= 1_000_000) return fmt(n / 1_000_000) + ' مليون درهم';
   return n.toLocaleString('en-US') + ' درهم';
 }
 

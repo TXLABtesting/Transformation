@@ -193,12 +193,19 @@ function build(s: Store) {
   const batchSummary = launchBatches().map((b) => {
     const inBatch = roleBase.filter((i) => i.execBatch === b.name);
     const cost = inBatch.reduce((a, i) => a + parseBudget(i.budget), 0);
+    const launchTotal = s.launchPlans
+      .filter((p) => p.batch === b.name)
+      .reduce((a, p) => a + parseBudget(p.launchBudget), 0);
     return {
       name: b.name,
+      displayName: b.name.replace(/^إطلاق /, ''),
       period: b.period || '',
       count: inBatch.length,
       opsCount: inBatch.filter((i) => i.type === 'operation').length,
+      projCount: inBatch.filter((i) => isProjInit(i.type)).length,
+      svcCount: inBatch.filter((i) => i.type === 'service').length,
       costLabel: cost > 0 ? formatMoney(cost) : '—',
+      launchCostLabel: launchTotal > 0 ? formatMoney(launchTotal) : '—',
       // each launch in the مرحلة with its costs (entity rep + coordinator)
       launches: s.launchPlans
         .filter((p) => p.batch === b.name)

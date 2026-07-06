@@ -604,8 +604,6 @@ export function Dashboard({ vm }: { vm: VM }) {
   const s = vm.store;
   // which launch row (in the مرحلة summary) is expanded to show its items
   const [openLaunch, setOpenLaunch] = useState<string | null>(null);
-  // which مرحلة card is expanded to show its details
-  const [openBatch, setOpenBatch] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
 
   return (
@@ -1847,175 +1845,126 @@ export function Dashboard({ vm }: { vm: VM }) {
               <div>
                 <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>خطط الإطلاق</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
-                  المراحل الأربع مع إجمالي ما هو معيَّن لكل مرحلة وتكلفته التقديرية
+                  المراحل الأربع — تكلفة التنفيذ والإطلاق التقديرية، والإطلاقات وما يندرج تحت كل منها
                 </div>
               </div>
-            <div
-              data-tour="stages"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit,minmax(340px,1fr))',
-                gap: 12,
-              }}
-            >
-              {vm.batchSummary.map((b) => {
-                const isOpen = openBatch === b.name;
-                const hasDetails = b.count > 0 || (vm.showLaunchCosts && b.launches.length > 0);
-                return (
-                <div
-                  key={b.name}
-                  style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '20px 22px' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: '#33415C', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span>{b.name}</span>
-                        <InfoTip text="إجمالي التكلفة التقديرية لتنفيذ ما هو معيَّن لهذه المرحلة. أيقونة السهم تعرض خطط الإطلاق وتفاصيلها." />
+              <div
+                data-tour="stages"
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(430px,1fr))', gap: 14 }}
+              >
+                {vm.batchSummary.map((b) => (
+                  <div
+                    key={b.name}
+                    style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '20px 22px' }}
+                  >
+                    {/* header */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                      <div>
+                        <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{b.displayName}</div>
+                        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>{b.period}</div>
                       </div>
-                      {b.period && (
-                        <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 2 }}>{b.period}</div>
-                      )}
+                      <InfoTip text="تكلفة التنفيذ تُجمع من ميزانيات ما هو معيَّن لهذه المرحلة، وتكلفة الإطلاق من ميزانيات إطلاقاتها. اضغطوا على أي إطلاق لاستعراض ما يندرج تحته." />
                     </div>
-                    {hasDetails && (
-                      <button
-                        title="عرض التفاصيل"
-                        onClick={() => setOpenBatch(isOpen ? null : b.name)}
-                        style={{
-                          width: 26,
-                          height: 26,
-                          flex: 'none',
-                          borderRadius: 8,
-                          border: '1px solid #E7ECF4',
-                          background: isOpen ? '#EAF0FE' : '#fff',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Icon d={isOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#2563EB" />
-                      </button>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 9 }}>{b.costLabel}</div>
-
-                  {/* details: counts + launches (click a launch for its items) */}
-                  {isOpen && (
-                    <div style={{ marginTop: 9, borderTop: '1px solid #F0F3F8', paddingTop: 8 }}>
-                      <div style={{ fontSize: 10.5, color: '#8A97AD', fontWeight: 600, marginBottom: 4 }}>
-                        {b.count} من {vm.typesPhrase}{b.opsCount ? ' · ' + b.opsCount + ' عملية' : ''}
+                    {/* cost tiles */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+                      <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
+                        <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية التنفيذ التقديرية</div>
+                        <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.costLabel}</div>
                       </div>
-                      {vm.showLaunchCosts &&
-                        b.launches.map((l) => {
-                          const lOpen = openLaunch === l.id;
-                          return (
-                            <div key={l.id}>
-                              <div
-                                onClick={() => l.items.length && setOpenLaunch(lOpen ? null : l.id)}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'baseline',
-                                  justifyContent: 'space-between',
-                                  gap: 8,
-                                  padding: '2.5px 0',
-                                  cursor: l.items.length ? 'pointer' : 'default',
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    display: 'inline-flex',
+                      <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
+                        <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية الإطلاق التقديرية</div>
+                        <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.launchCostLabel}</div>
+                      </div>
+                    </div>
+                    {/* composition */}
+                    <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 400, marginTop: 12 }}>
+                      {b.count === 0
+                        ? 'لا توجد تعيينات لهذه المرحلة بعد.'
+                        : [
+                            b.projCount ? b.projCount + ' من المشاريع والمبادرات' : '',
+                            b.opsCount ? b.opsCount + ' من العمليات' : '',
+                            b.svcCount ? b.svcCount + ' من الخدمات' : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                    </div>
+                    {/* launches with their items */}
+                    {b.launches.length > 0 && (
+                      <div style={{ borderTop: '1px solid #F0F3F8', marginTop: 14, paddingTop: 12 }}>
+                        <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400, marginBottom: 8 }}>الإطلاقات</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {b.launches.map((l) => {
+                            const lOpen = openLaunch === b.name + '|' + l.id;
+                            return (
+                              <div key={l.id} style={{ border: '1px solid #EBEFF6', borderRadius: 12, overflow: 'hidden' }}>
+                                <HoverDiv
+                                  onClick={() => setOpenLaunch(lOpen ? null : b.name + '|' + l.id)}
+                                  base={{
+                                    display: 'flex',
                                     alignItems: 'center',
-                                    gap: 4,
-                                    fontSize: 10.5,
-                                    color: '#8A97AD',
-                                    fontWeight: 600,
-                                    overflow: 'hidden',
-                                    minWidth: 0,
+                                    gap: 10,
+                                    padding: '10px 13px',
+                                    cursor: 'pointer',
+                                    background: '#FAFCFF',
                                   }}
+                                  hover={{ background: '#F2F6FD' }}
                                 >
-                                  {l.items.length > 0 && (
-                                    <Icon d={lOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={11} color="#B9C3D4" />
-                                  )}
-                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  <Icon d={lOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#8A97AD" />
+                                  <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>
                                     {l.title}
                                   </span>
-                                </span>
-                                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#33415C', flex: 'none' }}>
-                                  {l.execLabel}
-                                  {l.launchLabel && (
-                                    <span style={{ color: '#9AA6BC', fontWeight: 400 }}> · إطلاق {l.launchLabel}</span>
-                                  )}
-                                </span>
-                              </div>
-                              {lOpen && (
-                                <div
-                                  style={{
-                                    margin: '2px 0 6px',
-                                    background: '#F7F9FD',
-                                    border: '1px solid #EEF1F7',
-                                    borderRadius: 9,
-                                    padding: '4px 8px',
-                                  }}
-                                >
-                                  {l.items.map((x) => (
-                                    <div
-                                      key={x.id}
-                                      onClick={(e) => {
-                                        stop(e);
-                                        x.onOpen();
-                                      }}
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        gap: 8,
-                                        padding: '3px 0',
-                                        cursor: 'pointer',
-                                      }}
-                                    >
-                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                                        <span
-                                          style={{
-                                            fontSize: 9,
-                                            fontWeight: 700,
-                                            color: '#54627B',
-                                            background: '#EEF1F7',
-                                            borderRadius: 999,
-                                            padding: '1px 6px',
-                                            flex: 'none',
-                                          }}
-                                        >
-                                          {x.typeLabel}
-                                        </span>
+                                  <span style={{ flex: 'none', fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>
+                                    تنفيذ: <b style={{ color: '#13213C' }}>{l.execLabel}</b>
+                                    {l.launchLabel ? <> · إطلاق: <b style={{ color: '#13213C' }}>{l.launchLabel}</b></> : null}
+                                  </span>
+                                </HoverDiv>
+                                {lOpen && (
+                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    {l.items.map((it) => (
+                                      <HoverDiv
+                                        key={it.id}
+                                        onClick={it.onOpen}
+                                        base={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 9,
+                                          padding: '9px 13px',
+                                          borderTop: '1px solid #F0F3F8',
+                                          cursor: 'pointer',
+                                          background: '#fff',
+                                        }}
+                                        hover={{ background: '#F7F9FD' }}
+                                      >
                                         <span
                                           style={{
                                             fontSize: 10,
-                                            fontWeight: 700,
-                                            color: '#33415C',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap',
+                                            fontWeight: 800,
+                                            padding: '2px 8px',
+                                            borderRadius: 999,
+                                            background: '#E5EEFF',
+                                            color: '#2563EB',
+                                            flex: 'none',
                                           }}
                                         >
-                                          {x.title}
+                                          {it.typeLabel}
                                         </span>
-                                      </span>
-                                      <span style={{ fontSize: 9.5, fontWeight: 600, color: '#8A97AD', flex: 'none' }}>
-                                        {x.budgetLabel}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
-                </div>
-                );
-              })}
-            </div>
+                                        <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                          {it.title}
+                                        </span>
+                                        <span style={{ flex: 'none', fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>{it.budgetLabel}</span>
+                                      </HoverDiv>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </>
           )}
 
