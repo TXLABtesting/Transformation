@@ -2,6 +2,47 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
+import { Tour, TOUR_EVENT, type TourStep } from './Tour';
+
+// first-login walkthrough: sections are matched by [data-tour] anchors and
+// steps whose anchor is not rendered for the current role are skipped
+const TOUR_STEPS: TourStep[] = [
+  {
+    sel: '[data-tour="profile"]',
+    title: 'الملف الشخصي وفريق العمل',
+    desc: 'من الصورة الرمزية تُفتح قائمة الملف الشخصي، ومنها الوصول إلى «فريق العمل» لتشكيل فريق جهتكم ودعوة منسّقي المسارات لكل مسار من مسارات التحول.',
+  },
+  {
+    sel: '[data-tour="banner"]',
+    title: 'نظرة عامة على المشروع',
+    desc: 'يعرض هذا القسم المرحلة الحالية من المشروع وموعدها النهائي مع عدّ تنازلي، إلى جانب مراحل البرنامج الرئيسية.',
+  },
+  {
+    sel: '[data-tour="kpis"]',
+    title: 'مؤشرات الأداء',
+    desc: 'بطاقات تلخّص أعداد المشاريع والعمليات والخدمات، ونسب الإنجاز والتحول والأتمتة، والميزانيات التقديرية — وتتحدّث تلقائياً كلما اكتملت البيانات.',
+  },
+  {
+    sel: '[data-tour="stages"]',
+    title: 'بطاقات مراحل الإطلاق',
+    desc: 'لكل مرحلة إطلاق بطاقة تعرض إجمالي التكلفة التقديرية. اضغطوا على أيقونة التفاصيل لاستعراض خطط الإطلاق والبنود المرتبطة بكل خطة.',
+  },
+  {
+    sel: '[data-tour="actions"]',
+    title: 'الإجراءات والمرشحات',
+    desc: 'من هنا تتم إضافة مشروع أو عملية أو خدمة جديدة، وإدارة خطط الإطلاق، وتصفية القائمة حسب النوع والحالة، وتصدير البيانات إلى Excel وPowerPoint.',
+  },
+  {
+    sel: '[data-tour="basket"]',
+    title: 'السلة',
+    desc: 'تجمع البنود الجاهزة للاعتماد أو الترشيح في مكان واحد قبل إرسالها، وتظهر عليها إشارة عند وجود بنود بانتظاركم.',
+  },
+  {
+    sel: '[data-tour="cards"]',
+    title: 'بطاقات البنود',
+    desc: 'كل بطاقة تمثّل مشروعاً أو عملية أو خدمة مع حالتها ونسبة إنجازها. اضغطوا على أي بطاقة لاستعراض التفاصيل واستكمال البيانات.',
+  },
+];
 
 // ---------------------------------------------------------------------------
 // Small hover-aware wrappers (the prototype used `style-hover`).
@@ -335,9 +376,33 @@ export function Dashboard({ vm }: { vm: VM }) {
             )}
           </div>
 
+          {/* Replay the onboarding tour */}
+          <HoverButton
+            title="جولة تعريفية"
+            onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
+            base={{
+              width: 38,
+              height: 38,
+              borderRadius: 11,
+              border: '1px solid #E7ECF4',
+              background: '#fff',
+              color: '#54627B',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: 15,
+              fontFamily: 'inherit',
+            }}
+            hover={{ borderColor: '#C7D6EE' }}
+          >
+            ؟
+          </HoverButton>
+
           {/* Basket */}
           {vm.showBasket && (
-            <div style={{ position: 'relative' }}>
+            <div data-tour="basket" style={{ position: 'relative' }}>
               <HoverButton
                 onClick={s.openBasket}
                 base={{
@@ -390,7 +455,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           )}
 
           {/* Avatar / profile */}
-          <div style={{ position: 'relative' }}>
+          <div data-tour="profile" style={{ position: 'relative' }}>
             <div
               onClick={s.toggleProfile}
               style={{
@@ -509,6 +574,7 @@ export function Dashboard({ vm }: { vm: VM }) {
       {/* ===================== BANNER + STEPPER (entity/coord only) ===================== */}
       {vm.showProgramBanner && (
       <div
+        data-tour="banner"
         style={{
           margin: '16px 24px 0',
           background: 'linear-gradient(110deg,#0B2A66,#0E2C66 50%,#123f93)',
@@ -758,7 +824,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {vm.streamSummary}
               </div>
             </div>
-            <div data-r="actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div data-r="actions" data-tour="actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', gap: 8 }}>
                 <HoverButton
                   onClick={s.exportExcel}
@@ -945,6 +1011,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               <>
                 <div
                   data-r="kpirow"
+                  data-tour="kpis"
                   style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}
                 >
                   <CompositionCard
@@ -1002,6 +1069,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             ) : (
               <div
                 data-r="kpirow"
+                data-tour="kpis"
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 }}
               >
                 <CompositionCard
@@ -1025,6 +1093,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             <>
               <div
                 data-r="kpi"
+                data-tour="kpis"
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 13, marginBottom: 4 }}
               >
                 <StatCard value={vm.aiStats.total} label="إجمالي المشاريع والمبادرات والعمليات والخدمات" />
@@ -1206,6 +1275,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           {/* Per-batch (مرحلة) summary: clean total + expand icon for details */}
           {vm.batchSummary.some((b) => b.count > 0 || (vm.showLaunchCosts && b.launches.length > 0)) && (
             <div
+              data-tour="stages"
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))',
@@ -1417,6 +1487,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           {/* Cards grid */}
           {vm.cards.length === 0 ? (
             <div
+              data-tour="cards"
               style={{
                 border: '1.5px dashed #D5DEEC',
                 background: '#FAFCFF',
@@ -1431,9 +1502,11 @@ export function Dashboard({ vm }: { vm: VM }) {
               </div>
             </div>
           ) : viewMode === 'list' ? (
-            <ListView cards={vm.cards} />
+            <div data-tour="cards">
+              <ListView cards={vm.cards} />
+            </div>
           ) : (
-            <div data-r="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+            <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
               {vm.cards.map((c) => (
                 <CardItem key={c.id} c={c} />
               ))}
@@ -1441,6 +1514,9 @@ export function Dashboard({ vm }: { vm: VM }) {
           )}
         </div>
       </div>
+
+      {/* First-login onboarding walkthrough */}
+      <Tour steps={TOUR_STEPS} />
     </div>
   );
 }
