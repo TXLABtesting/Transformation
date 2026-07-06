@@ -64,6 +64,8 @@ const stop = (e: React.MouseEvent) => e.stopPropagation();
 
 export function Dashboard({ vm }: { vm: VM }) {
   const s = vm.store;
+  // which launch row (in the مرحلة summary) is expanded to show its items
+  const [openLaunch, setOpenLaunch] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
 
   return (
@@ -1232,41 +1234,113 @@ export function Dashboard({ vm }: { vm: VM }) {
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{b.costLabel}</span>
                   </div>
-                  {/* per-launch budgets (entity rep + coordinator) */}
+                  {/* per-launch budgets (entity rep + coordinator) — click a launch to see its items */}
                   {vm.showLaunchCosts && b.launches.length > 0 && (
                     <div style={{ marginTop: 8, borderTop: '1px solid #F0F3F8', paddingTop: 7 }}>
-                      {b.launches.map((l, li) => (
-                        <div
-                          key={li}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'baseline',
-                            justifyContent: 'space-between',
-                            gap: 8,
-                            padding: '2.5px 0',
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: 10.5,
-                              color: '#8A97AD',
-                              fontWeight: 600,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              minWidth: 0,
-                            }}
-                          >
-                            {l.title}
-                          </span>
-                          <span style={{ fontSize: 10.5, fontWeight: 700, color: '#33415C', flex: 'none' }}>
-                            {l.execLabel}
-                            {l.launchLabel && (
-                              <span style={{ color: '#9AA6BC', fontWeight: 600 }}> · إطلاق {l.launchLabel}</span>
+                      {b.launches.map((l) => {
+                        const isOpen = openLaunch === l.id;
+                        return (
+                          <div key={l.id}>
+                            <div
+                              onClick={() => l.items.length && setOpenLaunch(isOpen ? null : l.id)}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'baseline',
+                                justifyContent: 'space-between',
+                                gap: 8,
+                                padding: '2.5px 0',
+                                cursor: l.items.length ? 'pointer' : 'default',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  fontSize: 10.5,
+                                  color: '#8A97AD',
+                                  fontWeight: 600,
+                                  overflow: 'hidden',
+                                  minWidth: 0,
+                                }}
+                              >
+                                {l.items.length > 0 && (
+                                  <Icon d={isOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={11} color="#B9C3D4" />
+                                )}
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {l.title}
+                                </span>
+                              </span>
+                              <span style={{ fontSize: 10.5, fontWeight: 700, color: '#33415C', flex: 'none' }}>
+                                {l.execLabel}
+                                {l.launchLabel && (
+                                  <span style={{ color: '#9AA6BC', fontWeight: 600 }}> · إطلاق {l.launchLabel}</span>
+                                )}
+                              </span>
+                            </div>
+                            {isOpen && (
+                              <div
+                                style={{
+                                  margin: '2px 0 6px',
+                                  background: '#F7F9FD',
+                                  border: '1px solid #EEF1F7',
+                                  borderRadius: 9,
+                                  padding: '4px 8px',
+                                }}
+                              >
+                                {l.items.map((x) => (
+                                  <div
+                                    key={x.id}
+                                    onClick={(e) => {
+                                      stop(e);
+                                      x.onOpen();
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      gap: 8,
+                                      padding: '3px 0',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                                      <span
+                                        style={{
+                                          fontSize: 9,
+                                          fontWeight: 700,
+                                          color: '#54627B',
+                                          background: '#EEF1F7',
+                                          borderRadius: 999,
+                                          padding: '1px 6px',
+                                          flex: 'none',
+                                        }}
+                                      >
+                                        {x.typeLabel}
+                                      </span>
+                                      <span
+                                        style={{
+                                          fontSize: 10,
+                                          fontWeight: 700,
+                                          color: '#33415C',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: 'nowrap',
+                                        }}
+                                      >
+                                        {x.title}
+                                      </span>
+                                    </span>
+                                    <span style={{ fontSize: 9.5, fontWeight: 600, color: '#8A97AD', flex: 'none' }}>
+                                      {x.budgetLabel}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             )}
-                          </span>
-                        </div>
-                      ))}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

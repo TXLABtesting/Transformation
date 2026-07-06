@@ -177,9 +177,20 @@ function build(s: Store) {
       launches: s.launchPlans
         .filter((p) => p.batch === b.name)
         .map((p) => ({
+          id: p.id,
           title: p.title || 'خطة إطلاق جديدة',
           execLabel: parseBudget(p.budget) > 0 ? formatMoney(parseBudget(p.budget)) : '—',
           launchLabel: parseBudget(p.launchBudget) > 0 ? formatMoney(parseBudget(p.launchBudget)) : '',
+          // the items behind the launch cost — expandable on click
+          items: roleBase
+            .filter((i) => (i.launchPlanIds || []).includes(p.id))
+            .map((i) => ({
+              id: i.id,
+              title: i.title,
+              typeLabel: typeLabel(i.type),
+              budgetLabel: (i.budget || '').trim() || 'لم يتم تحديد الميزانية',
+              onOpen: () => s.openDetail(i.id),
+            })),
         })),
     };
   });
