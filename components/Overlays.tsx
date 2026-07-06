@@ -1158,11 +1158,6 @@ export function Overlays({ vm }: { vm: VM }) {
                           <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49' }}>
                             {p.title.trim() || 'خطة إطلاق جديدة'}
                           </div>
-                          <div style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 600, marginTop: 3 }}>
-                            {[p.date || 'بدون تاريخ', p.ltype, p.budget, selCount + ' من المشاريع والعمليات والخدمات']
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </div>
                         </div>
                         <button
                           onClick={(e) => {
@@ -1340,7 +1335,7 @@ export function Overlays({ vm }: { vm: VM }) {
                                 style={{ ...assignInput, background: '#F4F7FC', cursor: 'default' }}
                               />
                               <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 600, marginTop: 4 }}>
-                                تُحتسب تلقائياً من ميزانيات التنفيذ المحدَّدة وتدخل في إجماليات اللجنة.
+                                تُحتسب تلقائياً من ميزانيات التنفيذ المحدَّدة.
                               </div>
                             </div>
                             <div>
@@ -1363,7 +1358,7 @@ export function Overlays({ vm }: { vm: VM }) {
                               onChange={(e) => s.updLaunchPlan(p.id, 'scope', e.target.value)}
                               placeholder="نطاق تحويل المجموعة التي تُطلق معاً"
                               rows={3}
-                              style={{ ...assignInput, resize: 'vertical', minHeight: 74 }}
+                              style={{ ...assignInput, height: 'auto', padding: '11px 13px', resize: 'vertical', minHeight: 74 }}
                             />
                           </div>
                         </div>
@@ -1410,10 +1405,11 @@ const assignLabel: CSSProperties = {
 };
 const assignInput: CSSProperties = {
   width: '100%',
+  height: 46,
   border: '1px solid #DCE3EE',
   background: '#fff',
   borderRadius: 11,
-  padding: '11px 13px',
+  padding: '0 13px',
   fontSize: 13.5,
   outline: 'none',
   fontFamily: 'inherit',
