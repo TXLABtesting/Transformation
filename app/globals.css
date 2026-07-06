@@ -122,12 +122,6 @@ select {
   background-clip: content-box;
 }
 
-/* ---- tooltip ---- */
-[data-tip]:hover [data-tipbox] {
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
 /* ---- responsive (verbatim keys from prototype) ---- */
 @media (max-width: 900px) {
   [data-r='work'] {

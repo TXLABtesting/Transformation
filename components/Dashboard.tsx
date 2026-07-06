@@ -28,9 +28,14 @@ const TOUR_STEPS: TourStep[] = [
     desc: 'لكل مرحلة إطلاق بطاقة تعرض إجمالي التكلفة التقديرية. اضغطوا على أيقونة التفاصيل لاستعراض خطط الإطلاق وما يرتبط بكل خطة.',
   },
   {
-    sel: '[data-tour="actions"]',
-    title: 'الإجراءات والمرشحات',
-    desc: 'من هنا تتم إضافة مشروع أو عملية أو خدمة جديدة، وإدارة خطط الإطلاق، وتصفية القائمة حسب النوع والحالة، وتصدير البيانات إلى Excel وPowerPoint.',
+    sel: '[data-tour="filters"]',
+    title: 'المرشحات والبحث',
+    desc: 'من هنا يمكنكم تصفية القائمة حسب النوع والحالة، والبحث بالاسم أو الوصف للوصول السريع إلى أي مشروع أو مبادرة أو عملية أو خدمة.',
+  },
+  {
+    sel: '[data-tour="add"]',
+    title: 'الإضافة وخطط الإطلاق',
+    desc: 'من هنا تتم إضافة مشروع أو مبادرة أو عملية أو خدمة جديدة، وإدارة خطط الإطلاق لكل مرحلة.',
   },
   {
     sel: '[data-tour="basket"]',
@@ -251,12 +256,45 @@ function PieCard({ title, data }: { title: string; data: { label: string; value:
 
 // Ranked horizontal bars: entities ordered by number of submissions
 function RankBars({ title, rows }: { title: string; rows: { label: string; value: number }[] }) {
+  // dozens of entities may participate — show the top five and expand on demand
+  const TOP = 5;
+  const [showAll, setShowAll] = useState(false);
   const max = rows.reduce((a, r) => Math.max(a, r.value), 0) || 1;
+  const shown = showAll ? rows : rows.slice(0, TOP);
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '15px 17px' }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7A93', lineHeight: 1.5 }}>{title}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 12 }}>
-        {rows.map((r, i) => (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7A93', lineHeight: 1.5 }}>{title}</div>
+        {rows.length > TOP && (
+          <button
+            onClick={() => setShowAll((v) => !v)}
+            style={{
+              border: '1px solid #E7ECF4',
+              background: '#fff',
+              color: '#54627B',
+              borderRadius: 9,
+              padding: '5px 11px',
+              fontSize: 11,
+              fontWeight: 800,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              flex: 'none',
+            }}
+          >
+            {showAll ? 'عرض الأعلى فقط' : 'عرض الكل (' + rows.length + ')'}
+          </button>
+        )}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 9,
+          marginTop: 12,
+          ...(showAll ? { maxHeight: 300, overflowY: 'auto', paddingLeft: 4 } : {}),
+        }}
+      >
+        {shown.map((r, i) => (
           <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span
               style={{
@@ -335,7 +373,6 @@ function StatBand({
       style={{
         display: 'flex',
         borderRadius: 16,
-        overflow: 'hidden',
         ...(dark
           ? { background: BLUE_GRAD, color: '#fff' }
           : { background: '#fff', border: '1px solid #E7ECF4' }),
@@ -396,11 +433,25 @@ function StatBand({
               </span>
             )}
             {it.dist && (
-              <span style={{ marginRight: 'auto', display: 'flex', flex: 'none' }}>
+              <span
+                title="عرض التوزيع على المسارات"
+                style={{
+                  marginRight: 'auto',
+                  width: 28,
+                  height: 28,
+                  borderRadius: 9,
+                  border: `1px solid ${dark ? 'rgba(255,255,255,.35)' : '#E7ECF4'}`,
+                  background: dark ? 'rgba(255,255,255,.1)' : '#F7F9FD',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flex: 'none',
+                }}
+              >
                 <Icon
                   d={openIdx === i ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}
                   size={15}
-                  color={dark ? 'rgba(255,255,255,.7)' : '#8A97AD'}
+                  color={dark ? 'rgba(255,255,255,.85)' : '#54627B'}
                 />
               </span>
             )}
@@ -1201,13 +1252,13 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </div>
                 <div
                   style={{
-                    fontSize: 10.5,
+                    fontSize: 13,
                     fontWeight: 800,
                     color: labelColor,
                     textAlign: 'center',
-                    lineHeight: 1.35,
+                    lineHeight: 1.4,
                     padding: '0 4px',
-                    minHeight: 30,
+                    minHeight: 34,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1216,7 +1267,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   {st.label}
                 </div>
                 <div style={{ marginTop: 2, textAlign: 'center' }}>
-                  <span style={{ fontSize: 9.5, fontWeight: 800, color: labelColor, whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 800, color: labelColor, whiteSpace: 'nowrap' }}>
                     {st.stepCount} من {vm.typesPhrase}
                   </span>
                 </div>
@@ -1230,8 +1281,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                       backdropFilter: 'blur(6px)',
                       WebkitBackdropFilter: 'blur(6px)',
                       borderRadius: 999,
-                      padding: '3px 10px',
-                      fontSize: 9,
+                      padding: '4px 12px',
+                      fontSize: 10.5,
                       fontWeight: 800,
                       color: '#9FC4F2',
                       whiteSpace: 'nowrap',
@@ -1270,7 +1321,11 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {vm.streamSummary}
               </div>
             </div>
-            <div data-r="actions" data-tour="actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div data-r="actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <div
+                data-tour="filters"
+                style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
+              >
               <select
                 value={vm.filterValue}
                 onChange={(e) => s.setFilter(e.target.value)}
@@ -1364,8 +1419,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                   ))}
                 </select>
               )}
+              </div>
               {vm.showAddBtn && (
-                <>
+                <div data-tour="add" style={{ display: 'flex', gap: 8 }}>
                   <button
                     onClick={() => s.openLaunchPlans()}
                     style={{
@@ -1407,7 +1463,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   >
                     <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديدة
                   </button>
-                </>
+                </div>
               )}
             </div>
           </div>
@@ -1415,8 +1471,8 @@ export function Dashboard({ vm }: { vm: VM }) {
           {/* KPI bands (non-ai): each family of statistics gets its own full
               line — counts (dark band), percentages, then budgets */}
           {vm.notAiRole && (
-            <>
-              <div data-r="kpirow" data-tour="kpis">
+            <div data-tour="kpis" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div data-r="kpirow">
                 <StatBand
                   items={[
                     {
@@ -1479,7 +1535,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   ]}
                 />
               )}
-            </>
+            </div>
           )}
 
           {/* Committee analytics (ai) */}
@@ -1494,95 +1550,12 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" info="عدد الجهات الاتحادية التي قدّمت مشاريع أو عمليات أو خدمات." />
                 <StatCard value={vm.aiStats.pending} label="بانتظار الاعتماد" dot="#B45309" info="ما ينتظر مراجعة واعتماد اللجنة الوطنية." />
                 <StatCard value={vm.aiStats.funded} label="معتمدة للتمويل" dot="#0B8A4B" info="ما اعتمدته اللجنة الوطنية وستتكفّل بتكلفة تحويله." />
-                <div
-                  data-tip=""
-                  style={{
-                    position: 'relative',
-                    background: '#fff',
-                    border: '1px solid #E7ECF4',
-                    borderRadius: 14,
-                    padding: '13px 15px',
-                    cursor: 'help',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 11.5,
-                      color: '#6B7A93',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    متوسط درجة التحول
-                    <span
-                      style={{
-                        width: 15,
-                        height: 15,
-                        borderRadius: '50%',
-                        background: '#EAF0FE',
-                        color: '#2563EB',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flex: 'none',
-                      }}
-                    >
-                      <svg
-                        width={10}
-                        height={10}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2.4}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M12 16v-4M12 8h.01" />
-                        <circle cx="12" cy="12" r="9" />
-                      </svg>
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', marginTop: 3, lineHeight: 1.25 }}>
-                    {vm.aiStats.avgPct}
-                    <span style={{ fontSize: 13, color: '#9AA6BC' }}>%</span>
-                  </div>
-                  {/* tooltip anchored to the card's inner-left edge so it always
-                      opens toward the page center and never clips the viewport */}
-                  <span
-                    data-tipbox=""
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 6px)',
-                      left: 8,
-                      right: 'auto',
-                      transform: 'none',
-                      width: 250,
-                      maxWidth: '76vw',
-                      background: '#0F1F3D',
-                      color: '#fff',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      lineHeight: 1.7,
-                      padding: '11px 13px',
-                      borderRadius: 10,
-                      boxShadow: '0 16px 40px -14px rgba(2,12,35,.5)',
-                      opacity: 0,
-                      visibility: 'hidden',
-                      transition: 'opacity .15s',
-                      pointerEvents: 'none',
-                      textAlign: 'right',
-                      zIndex: 30,
-                    }}
-                  >
-                    متوسط درجات التحول لكل المشاريع والمبادرات والعمليات والخدمات معبّراً عنه كنسبة مئوية. تُحسب الدرجة (من 5) من: الأثر
-                    ٢٥٪ · القابلية ٢٠٪ · الجاهزية ١٥٪ · كثافة الاستخدام ١٥٪ · الأولوية ١٠٪ · فرصة الأتمتة ١٠٪ ·
-                    سهولة التعقيد ٥٪ ثم تُحوّل النتيجة إلى نسبة مئوية.
-                  </span>
-                </div>
+                <StatCard
+                  value={vm.aiStats.avgPct}
+                  suffix="%"
+                  label="متوسط درجة التحول"
+                  info="متوسط درجات التحول لكل المشاريع والمبادرات والعمليات والخدمات معبّراً عنه كنسبة مئوية. تُحسب الدرجة (من 5) من: الأثر ٢٥٪ · القابلية ٢٠٪ · الجاهزية ١٥٪ · كثافة الاستخدام ١٥٪ · الأولوية ١٠٪ · فرصة الأتمتة ١٠٪ · سهولة التعقيد ٥٪ ثم تُحوّل النتيجة إلى نسبة مئوية."
+                />
               </div>
               {/* Distribution charts (all-streams view) or plain type totals */}
               {vm.pathFilterValue === 'all' ? (
@@ -2083,7 +2056,7 @@ const BLUE_STEPS = ['#2563EB', '#7DA4F2', '#C2D5FA'];
 
 // Percentage tile — label + value only, no decoration.
 
-function StatCard({ value, label, dot, info }: { value: number; label: string; dot?: string; info?: string }) {
+function StatCard({ value, label, dot, info, suffix }: { value: number; label: string; dot?: string; info?: string; suffix?: string }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
       <div
@@ -2101,7 +2074,10 @@ function StatCard({ value, label, dot, info }: { value: number; label: string; d
         <span style={{ minWidth: 0 }}>{label}</span>
         {info && <InfoTip text={info} />}
       </div>
-      <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', marginTop: 3, lineHeight: 1.25 }}>{value}</div>
+      <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', marginTop: 3, lineHeight: 1.25 }}>
+        {value}
+        {suffix && <span style={{ fontSize: 13, color: '#9AA6BC' }}>{suffix}</span>}
+      </div>
     </div>
   );
 }
