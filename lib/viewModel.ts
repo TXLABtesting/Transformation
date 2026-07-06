@@ -138,6 +138,22 @@ function build(s: Store) {
     completedPct: scope.length ? Math.round((completedCount / scope.length) * 100) : 0,
   };
 
+  // ---- per-type delivery breakdown for the overview counts band ----
+  const deliveryBreak = (pick: (i: Item) => boolean) => {
+    const set = scope.filter(pick);
+    return [
+      { label: 'غير قابل للتحول', v: set.filter((i) => (i.transformability || '') === 'غير قابل').length },
+      { label: 'قيد التطوير', v: set.filter((i) => devStatusOfItem(i) === 'underDev').length },
+      { label: 'تم التطوير', v: set.filter((i) => devStatusOfItem(i) === 'developed').length },
+      { label: 'تم الإطلاق', v: set.filter((i) => devStatusOfItem(i) === 'launched').length },
+    ];
+  };
+  const kpiBreak = {
+    projInit: deliveryBreak((i) => isProjInit(i.type)),
+    operations: deliveryBreak((i) => i.type === 'operation'),
+    services: deliveryBreak((i) => i.type === 'service'),
+  };
+
   // ---- entity totals breakdown: type × stream ----
   const breakdown = PATHS.map((p) => {
     const inStream = roleBase.filter((i) => i.path === p.id);
@@ -355,7 +371,7 @@ function build(s: Store) {
   const roleStreams =
     rawRole === 'coord' || rawRole === 'path' ? PATHS.filter((p) => p.id === myPath) : PATHS;
   const navItems = [
-    { key: 'overview', label: 'نظرة عامة', icon: 'M3 13h8V3H3v10zm10 8h8V11h-8v10zM3 21h8v-6H3v6zm10-18v6h8V3h-8z' },
+    { key: 'overview', label: 'نظرة عامة', icon: 'M3 10.5 12 3l9 7.5M5 9.5V21h5v-6h4v6h5V9.5' },
     { key: 'all', label: 'الكل', icon: 'M4 6h16M4 12h16M4 18h16' },
     { key: 'projects', label: 'المشاريع والمبادرات', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7' },
     ...(roleStreams.some((p) => streamHasType(p.id, 'operation'))
@@ -495,7 +511,8 @@ function build(s: Store) {
   const aiStats = {
     entCount: new Set(base.map((i) => ent(i))).size,
     total: base.length,
-    pending: base.filter((i) => i.approval === 'تم الإرسال' || i.approval === 'قيد المراجعة').length,
+    // the committee acts only on stream-head nominations, not on raw submissions
+    nominated: base.filter((i) => !!i.nom && !i.funded).length,
     funded: base.filter((i) => i.funded).length,
     avg: Math.round((sumV / n) * 10) / 10,
     avgPct: Math.round((sumV / n / 5) * 100),
@@ -640,6 +657,7 @@ function build(s: Store) {
     navItems,
     navSection,
     navStream,
+    kpiBreak,
     sectionTitle: (navSection in typeSections ? typeSections[navSection] : '') || '',
     portfolioStreams,
     recap,

@@ -375,6 +375,7 @@ function StatBand({
     chip?: string;
     info?: string;
     dist?: { label: string; value: number }[];
+    mini?: { label: string; v: number }[];
   }[];
 }) {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
@@ -496,6 +497,33 @@ function StatBand({
                   <span style={{ fontSize: 12.5, fontWeight: 800, color: dark ? '#fff' : '#13213C', flex: 'none' }}>
                     {d.value}
                   </span>
+                </div>
+              ))}
+            </div>
+          )}
+          {it.mini && (
+            <div
+              style={{
+                marginTop: 12,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2,1fr)',
+                gap: 6,
+              }}
+            >
+              {it.mini.map((m) => (
+                <div
+                  key={m.label}
+                  style={{
+                    background: dark ? 'rgba(255,255,255,.08)' : '#F7F9FD',
+                    border: `1px solid ${dark ? 'rgba(255,255,255,.14)' : '#EBEFF6'}`,
+                    borderRadius: 10,
+                    padding: '7px 10px',
+                  }}
+                >
+                  <div style={{ fontSize: 10, fontWeight: 400, color: dark ? 'rgba(255,255,255,.75)' : '#6B7A93', lineHeight: 1.5 }}>
+                    {m.label}
+                  </div>
+                  <div style={{ fontSize: 14.5, fontWeight: 800, color: dark ? '#fff' : '#13213C', marginTop: 1 }}>{m.v}</div>
                 </div>
               ))}
             </div>
@@ -692,10 +720,10 @@ export function Dashboard({ vm }: { vm: VM }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                height: 38,
-                padding: '0 15px',
-                borderRadius: 11,
+                gap: 10,
+                height: 44,
+                padding: '0 13px',
+                borderRadius: 12,
                 border: '1px solid #E7ECF4',
                 background: '#fff',
                 color: '#54627B',
@@ -703,13 +731,22 @@ export function Dashboard({ vm }: { vm: VM }) {
               }}
             >
               <Icon d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" size={15} color="#8B99B0" />
-              <span style={{ fontWeight: 400, color: '#6B7A93' }}>مرحلة {vm.banner.firstMsName}</span>
-              <span style={{ fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
-                {vm.banner.cd.days} يوم
-              </span>
-              <span dir="ltr" style={{ fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
-                {vm.banner.cd.hh}:{vm.banner.cd.mm}:{vm.banner.cd.ss}
-              </span>
+              <span style={{ fontWeight: 400, color: '#6B7A93', whiteSpace: 'nowrap' }}>مرحلة {vm.banner.firstMsName}</span>
+              {[
+                { v: String(vm.banner.cd.days), l: 'يوم' },
+                { v: vm.banner.cd.hh, l: 'ساعة' },
+                { v: vm.banner.cd.mm, l: 'دقيقة' },
+                { v: vm.banner.cd.ss, l: 'ثانية' },
+              ].map((seg, si) => (
+                <span key={seg.l} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                  {si > 0 && <span style={{ width: 1, height: 20, background: '#EBEFF6' }} />}
+                  <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
+                    <span dir="ltr" style={{ fontWeight: 800, color: '#13213C', fontSize: 13 }}>{seg.v}</span>
+                    <span style={{ fontSize: 9, color: '#9AA6BC', fontWeight: 400 }}>{seg.l}</span>
+                  </span>
+                </span>
+              ))}
+              <InfoTip text={'الوقت المتبقي على الموعد النهائي لهذه المرحلة — يُرجى استكمال حصر وإدخال جميع المشاريع والمبادرات والعمليات والخدمات قبل انتهائه (' + vm.banner.curPhaseDeadlineFmt + ').'} />
             </div>
           )}
 
@@ -1109,23 +1146,29 @@ export function Dashboard({ vm }: { vm: VM }) {
         data-r="work"
         style={{ display: 'flex', gap: 16, padding: '16px 24px 44px', alignItems: 'flex-start' }}
       >
-        {/* Sidebar navigation */}
+        {/* rail placeholder keeps the layout while the rail itself is fixed */}
+        <div style={{ width: 248, flex: 'none' }} />
+        {/* Sidebar navigation — pinned to the right edge, top to bottom */}
         <aside
           data-r="rail"
           style={{
             width: 248,
-            flex: 'none',
-            alignSelf: 'stretch',
-            minHeight: 'calc(100vh - 150px)',
-            position: 'sticky',
-            top: 96,
-            background: '#fff',
-            border: '1px solid #E7ECF4',
-            borderRadius: 18,
+            position: 'fixed',
+            top: 92,
+            bottom: 14,
+            right: 14,
+            zIndex: 20,
+            background: 'rgba(255,255,255,.78)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,.85)',
+            boxShadow: '0 18px 44px -22px rgba(11,27,58,.28)',
+            borderRadius: 20,
             padding: '18px 12px',
             display: 'flex',
             flexDirection: 'column',
             gap: 4,
+            overflowY: 'auto',
           }}
         >
           <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, padding: '0 13px 10px', letterSpacing: '.04em' }}>
@@ -1321,6 +1364,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       value: String(vm.kpis.projInit),
                       info: 'عدد المشاريع والمبادرات المسجّلة ضمن نطاق اطلاعك في مسارات التحول. اضغطوا على البطاقة لاستعراض التوزيع على المسارات.',
                       dist: vm.showStreamDist ? vm.kpiDist.projInit : undefined,
+                      mini: vm.kpiBreak.projInit,
                     },
                     ...(vm.showOpsKpi
                       ? [
@@ -1329,6 +1373,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                             value: String(vm.kpis.operations),
                             info: 'عدد العمليات التخصصية وعمليات الدعم المؤسسي المسجّلة للتحول. اضغطوا على البطاقة لاستعراض التوزيع على المسارات.',
                             dist: vm.showStreamDist ? vm.kpiDist.operations : undefined,
+                            mini: vm.kpiBreak.operations,
                           },
                         ]
                       : []),
@@ -1339,6 +1384,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                             value: String(vm.kpis.services),
                             info: 'عدد الخدمات المسجّلة للتحول في مسار الخدمات.',
                             dist: vm.showStreamDist ? vm.kpiDist.services : undefined,
+                            mini: vm.kpiBreak.services,
                           },
                         ]
                       : []),
@@ -1370,18 +1416,12 @@ export function Dashboard({ vm }: { vm: VM }) {
               <div
                 data-r="kpi"
                 data-tour="kpis"
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 13, marginBottom: 4 }}
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 13, marginBottom: 4 }}
               >
                 <StatCard value={vm.aiStats.total} label="إجمالي المشاريع والمبادرات والعمليات والخدمات" info="كل ما قدّمته الجهات عبر مسارات التحول ووصل إلى اللجنة الوطنية." />
                 <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" info="عدد الجهات الاتحادية التي قدّمت مشاريع أو عمليات أو خدمات." />
-                <StatCard value={vm.aiStats.pending} label="بانتظار الاعتماد" dot="#B45309" info="ما ينتظر مراجعة واعتماد اللجنة الوطنية." />
+                <StatCard value={vm.aiStats.nominated} label="مرشح من قبل رؤساء المسارات" dot="#B45309" info="ما رشّحه رؤساء المسارات لاعتماد التمويل — تنظر اللجنة الوطنية في الترشيحات فقط." />
                 <StatCard value={vm.aiStats.funded} label="معتمدة للتمويل" dot="#0B8A4B" info="ما اعتمدته اللجنة الوطنية وستتكفّل بتكلفة تحويله." />
-                <StatCard
-                  value={vm.aiStats.avgPct}
-                  suffix="%"
-                  label="متوسط درجة التحول"
-                  info="متوسط درجات التحول لكل المشاريع والمبادرات والعمليات والخدمات معبّراً عنه كنسبة مئوية. تُحسب الدرجة (من 5) من: الأثر ٢٥٪ · القابلية ٢٠٪ · الجاهزية ١٥٪ · كثافة الاستخدام ١٥٪ · الأولوية ١٠٪ · فرصة الأتمتة ١٠٪ · سهولة التعقيد ٥٪ ثم تُحوّل النتيجة إلى نسبة مئوية."
-                />
               </div>
               {/* Distribution charts (all-streams view) or plain type totals */}
               {vm.pathFilterValue === 'all' ? (
@@ -1534,8 +1574,21 @@ export function Dashboard({ vm }: { vm: VM }) {
             </div>
           ) : (
             <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+              {/* overview is view-only: recent cards carry no selection or actions */}
               {vm.cards.slice(0, 6).map((c) => (
-                <CardItem key={c.id} c={c} />
+                <CardItem
+                  key={c.id}
+                  c={{
+                    ...c,
+                    showSelectCheck: false,
+                    showAssignCheck: false,
+                    canApprove: false,
+                    showPathCta: false,
+                    canDelete: false,
+                    canWithdrawNom: false,
+                    canDeclineNom: false,
+                  }}
+                />
               ))}
             </div>
           )}
@@ -1957,10 +2010,12 @@ export function Dashboard({ vm }: { vm: VM }) {
                           </button>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          {(vm.launchPlanMgr.find((g) => g.batch === b.name)?.plans || []).map((p) => {
+                          {(vm.launchPlanMgr.find((g) => g.batch === b.name)?.plans || []).map((p, pi) => {
                             const key = b.name + '|' + p.id;
                             const pOpen = openLaunch === key;
                             const selCount = p.items.filter((x) => x.checked).length;
+                            const ord =
+                              ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة'][pi] || String(pi + 1);
                             return (
                               <div key={p.id} style={{ border: '1px solid #EBEFF6', borderRadius: 12, overflow: 'hidden' }}>
                                 <HoverDiv
@@ -1969,8 +2024,11 @@ export function Dashboard({ vm }: { vm: VM }) {
                                   hover={{ background: '#F2F6FD' }}
                                 >
                                   <Icon d={pOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#8A97AD" />
-                                  <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {p.title.trim() || 'خطة إطلاق جديدة'}
+                                  <span className="hd" style={{ flex: 'none', fontSize: 13, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
+                                    خطة الإطلاق {ord}
+                                  </span>
+                                  <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#6B7A93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {p.title.trim()}
                                   </span>
                                   <span style={{ flex: 'none', fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>{selCount} محدد</span>
                                   <button
@@ -1996,10 +2054,11 @@ export function Dashboard({ vm }: { vm: VM }) {
                                   </button>
                                 </HoverDiv>
                                 {pOpen && (
-                                  <div style={{ padding: '12px 13px', borderTop: '1px solid #F0F3F8', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                  <div style={{ padding: '14px 13px', borderTop: '1px solid #F0F3F8', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                    {/* 1) name / type / date */}
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 170px 150px', gap: 8 }}>
                                       <div>
-                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>عنوان الإطلاق</label>
+                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>اسم الإطلاق</label>
                                         <input
                                           value={p.title}
                                           onChange={(e) => s.updLaunchPlan(p.id, 'title', e.target.value)}
@@ -2016,14 +2075,59 @@ export function Dashboard({ vm }: { vm: VM }) {
                                         </select>
                                       </div>
                                       <div>
-                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>تاريخ الإطلاق</label>
+                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>التاريخ</label>
                                         <input type="date" value={p.date} onChange={(e) => s.updLaunchPlan(p.id, 'date', e.target.value)} style={mgrInput} />
                                       </div>
                                     </div>
+                                    {/* 2) what the launch includes */}
+                                    <div>
+                                      <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', marginBottom: 7 }}>
+                                        ماذا سيشمل الإطلاق؟
+                                      </div>
+                                      <div style={{ border: '1px solid #EBEFF6', borderRadius: 10, maxHeight: 260, overflowY: 'auto' }}>
+                                        {p.items.length === 0 && (
+                                          <div style={{ padding: '12px 13px', fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>لا توجد إضافات بعد.</div>
+                                        )}
+                                        {p.items.map((x, xi) => (
+                                          <div
+                                            key={x.id}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 11px', borderTop: xi ? '1px solid #F0F3F8' : 'none' }}
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={x.checked}
+                                              onChange={() => s.togglePlanItem(p.id, x.id)}
+                                              style={{ width: 15, height: 15, accentColor: '#2563EB', cursor: 'pointer', flex: 'none' }}
+                                            />
+                                            <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#F1F4F9', color: '#54627B', flex: 'none' }}>
+                                              {x.typeLabel}
+                                            </span>
+                                            <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                              {x.title}
+                                            </span>
+                                            {x.otherBatch && (
+                                              <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 7px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
+                                                في مرحلة أخرى
+                                              </span>
+                                            )}
+                                            <span style={{ flex: 'none', fontSize: 11.5, fontWeight: 400, color: '#9AA6BC' }}>
+                                              {x.hasBudget ? x.budget : 'لم يتم تحديد الميزانية'}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    {/* 3) budgets: exec = dynamic total of the checked items */}
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                                       <div>
                                         <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>الميزانية التقديرية للتنفيذ</label>
-                                        <input value={p.budget} readOnly placeholder="تُحتسب تلقائياً مما هو محدَّد" style={{ ...mgrInput, backgroundColor: '#F4F7FC', cursor: 'default' }} />
+                                        <input
+                                          value={p.budget}
+                                          readOnly
+                                          placeholder="تُحتسب تلقائياً من ميزانيات ما هو محدَّد"
+                                          title="مجموع ميزانيات ما هو محدَّد أعلاه — يتحدّث تلقائياً"
+                                          style={{ ...mgrInput, backgroundColor: '#F4F7FC', cursor: 'default' }}
+                                        />
                                       </div>
                                       <div>
                                         <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>الميزانية التقديرية للإطلاق</label>
@@ -2035,60 +2139,16 @@ export function Dashboard({ vm }: { vm: VM }) {
                                         />
                                       </div>
                                     </div>
+                                    {/* 4) launch-level scope */}
                                     <div>
-                                      <div style={{ fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 6 }}>
-                                        ما يُطلق في هذا الإطلاق ({selCount} محدد)
-                                      </div>
-                                      <div style={{ border: '1px solid #EBEFF6', borderRadius: 10, maxHeight: 240, overflowY: 'auto' }}>
-                                        {p.items.length === 0 && (
-                                          <div style={{ padding: '12px 13px', fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>لا توجد إضافات بعد.</div>
-                                        )}
-                                        {p.items.map((x, xi) => (
-                                          <div
-                                            key={x.id}
-                                            style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 11px', borderTop: xi ? '1px solid #F0F3F8' : 'none' }}
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              checked={x.checked}
-                                              onChange={() => s.togglePlanItem(p.id, x.id)}
-                                              style={{ width: 15, height: 15, accentColor: '#2563EB', cursor: 'pointer', flex: 'none' }}
-                                            />
-                                            <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 7px', borderRadius: 999, background: '#E5EEFF', color: '#2563EB', flex: 'none' }}>
-                                              {x.typeLabel}
-                                            </span>
-                                            <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                              {x.title}
-                                            </span>
-                                            {x.otherBatch && (
-                                              <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 7px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
-                                                في مرحلة أخرى
-                                              </span>
-                                            )}
-                                            <input
-                                              value={x.budget}
-                                              onChange={(e) => s.setItemBudget(x.id, e.target.value)}
-                                              placeholder="أضف الميزانية…"
-                                              style={{
-                                                flex: 'none',
-                                                width: 130,
-                                                height: 30,
-                                                border: x.hasBudget ? '1px solid #E7ECF4' : '1.5px dashed #C7D2E4',
-                                                borderRadius: 8,
-                                                padding: '0 9px',
-                                                fontSize: 11,
-                                                fontWeight: 400,
-                                                color: '#13213C',
-                                                outline: 'none',
-                                                fontFamily: 'inherit',
-                                                direction: 'ltr',
-                                                textAlign: 'right',
-                                                backgroundColor: '#fff',
-                                              }}
-                                            />
-                                          </div>
-                                        ))}
-                                      </div>
+                                      <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>نطاق العمل (على مستوى الإطلاق)</label>
+                                      <textarea
+                                        value={p.scope || ''}
+                                        onChange={(e) => s.updLaunchPlan(p.id, 'scope', e.target.value)}
+                                        placeholder="وصف موجز لما سيتم تحويله ضمن هذا الإطلاق…"
+                                        rows={3}
+                                        style={{ ...mgrInput, height: 'auto', padding: '9px 11px', resize: 'vertical', lineHeight: 1.7 }}
+                                      />
                                     </div>
                                   </div>
                                 )}

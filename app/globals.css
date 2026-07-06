@@ -16,7 +16,14 @@ body {
   font-family: var(--font-base), 'Cairo', system-ui, sans-serif;
   direction: rtl;
   color: #0f1f3d;
-  background: #eef2f9;
+  /* subtle futuristic backdrop: soft blue mesh over a light base */
+  background-color: #eef2f9;
+  background-image:
+    radial-gradient(900px 520px at 92% -6%, rgba(39, 194, 240, 0.10), transparent 60%),
+    radial-gradient(1100px 640px at -12% 22%, rgba(37, 99, 235, 0.08), transparent 62%),
+    radial-gradient(760px 480px at 55% 118%, rgba(22, 64, 143, 0.07), transparent 58%),
+    linear-gradient(180deg, #f2f6fc 0%, #eef2f9 42%, #eaf0f9 100%);
+  background-attachment: fixed;
   /* global content scale — the whole UI reads larger (Tour.tsx compensates
      for this factor when measuring spotlight coordinates) */
   zoom: 1.15;
