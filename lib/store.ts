@@ -105,6 +105,16 @@ export type UiState = {
   assign: AssignState | null;
   cancelFund: { id: string; note: string } | null;
   reqModal: { id: string; mode: 'reject' | 'info'; note: string } | null;
+  // in-app confirmation dialog (replaces window.confirm)
+  confirmModal: {
+    kind: 'launchAll' | 'deleteItem' | 'deletePlan' | 'crossMove' | 'moveBatch';
+    title: string;
+    body: string;
+    okLabel: string;
+    altLabel?: string;
+    cancelLabel: string;
+    payload: Record<string, string>;
+  } | null;
   subReview: { id: string; phase: string; loading: boolean; result: { ready: string[]; improve: string[] } | null } | null;
   // rank modal
   rankRows: { id: string; title: string }[];
@@ -183,7 +193,10 @@ type Actions = {
   setActivePath: (p: string) => void;
   setFilter: (v: string) => void;
   setStatusFilter: (v: string) => void;
-  setDevStage: (id: string, stage: string) => void;
+  setDevStage: (id: string, stage: string, mode?: 'all' | 'single') => void;
+  confirmOk: () => void;
+  confirmAlt: () => void;
+  closeConfirm: () => void;
   setNavSection: (v: string) => void;
   setNavStream: (v: string | null) => void;
   setBatchFilter: (v: string | null) => void;
@@ -214,7 +227,7 @@ type Actions = {
   updLaunch: (i: number, k: string, v: string) => void;
   removeLaunch: (i: number) => void;
   submitItem: () => void;
-  deleteItem: (id: string) => void;
+  deleteItem: (id: string, force?: boolean) => void;
   bulkDemo: () => Promise<void>;
   importWorkplan: (buf: ArrayBuffer) => Promise<void>;
   submitBulk: () => void;
@@ -271,9 +284,10 @@ type Actions = {
   closeLaunchPlans: () => void;
   addLaunchPlan: (batch: string) => void;
   updLaunchPlan: (id: string, k: keyof LaunchPlan, v: string) => void;
-  removeLaunchPlan: (id: string) => void;
+  removeLaunchPlan: (id: string, force?: boolean) => void;
   selectExecBatch: (batch: string) => void;
-  togglePlanItem: (planId: string, itemId: string) => void;
+  togglePlanItem: (planId: string, itemId: string, forceMove?: boolean) => void;
+  setItemBatch: (itemId: string, batch: string | null, force?: boolean) => void;
   setItemBudget: (itemId: string, v: string) => void;
   openCancelFund: (id: string) => void;
   setCancelFundNote: (v: string) => void;
@@ -344,6 +358,7 @@ function defaultUi(): UiState {
     assign: null,
     cancelFund: null,
     reqModal: null,
+    confirmModal: null,
     subReview: null,
     rankRows: [],
     rankDragFrom: null,
@@ -668,13 +683,13 @@ export const useStore = create<Store>((set, get) => {
     setFilter: (v) => setUi({ filter: v }),
     setStatusFilter: (v) => setUi({ statusFilter: v }),
     // simplified delivery status: قيد التطوير / تم التطوير / تم الإطلاق
-    setDevStage: (id, stage) => {
+    setDevStage: (id, stage, mode) => {
       const s = get();
       const target = findItem(id);
       if (!target) return;
       const wf = stage === 'launched' ? 'done' : stage === 'developed' ? 'launch' : 'exec';
       // launching syncs with the launch plan: offer to confirm the whole launch
-      if (stage === 'launched' && (target.launchPlanIds || []).length) {
+      if (stage === 'launched' && (target.launchPlanIds || []).length && mode !== 'single') {
         const planIds = target.launchPlanIds || [];
         const siblings = s.items.filter(
           (it) =>
@@ -685,11 +700,7 @@ export const useStore = create<Store>((set, get) => {
         );
         if (siblings.length) {
           const planTitle = s.launchPlans.find((p) => planIds.includes(p.id))?.title || 'الإطلاق';
-          const all = window.confirm(
-            'هذا البند ضمن «' + planTitle + '» مع ' + siblings.length +
-              ' من البنود الأخرى — هل تودّون تأكيد الإطلاق للجميع حتى تبقى الحالات متزامنة؟ (إلغاء = هذا البند فقط)'
-          );
-          if (all) {
+          if (mode === 'all') {
             set((st) => ({
               items: st.items.map((it) =>
                 it.id === id || siblings.some((sb) => sb.id === it.id) ? { ...it, wf: 'done' as WfState } : it
@@ -699,6 +710,21 @@ export const useStore = create<Store>((set, get) => {
             toast('تم تأكيد الإطلاق لجميع بنود «' + planTitle + '»');
             return;
           }
+          // ask via the in-app confirmation dialog
+          setUi({
+            confirmModal: {
+              kind: 'launchAll',
+              title: 'تأكيد الإطلاق',
+              body:
+                'هذا البند ضمن «' + planTitle + '» مع ' + siblings.length +
+                ' من البنود الأخرى. هل تودّون تأكيد الإطلاق لجميع البنود حتى تبقى الحالات متزامنة؟',
+              okLabel: 'تأكيد الإطلاق للجميع',
+              altLabel: 'هذا البند فقط',
+              cancelLabel: 'إلغاء',
+              payload: { id },
+            },
+          });
+          return;
         }
       }
       patchItem(id, () => ({ wf: wf as WfState }));
@@ -710,6 +736,24 @@ export const useStore = create<Store>((set, get) => {
             ? 'تم التطوير — ' + typeLabelDef(target.type) + ' جاهز للإطلاق'
             : typeLabelDef(target.type) + ' قيد التطوير'
       );
+    },
+    // ---- in-app confirmation dialog ----
+    closeConfirm: () => setUi({ confirmModal: null }),
+    confirmOk: () => {
+      const cm = get().ui.confirmModal;
+      if (!cm) return;
+      setUi({ confirmModal: null });
+      if (cm.kind === 'launchAll') get().setDevStage(cm.payload.id, 'launched', 'all');
+      else if (cm.kind === 'deleteItem') get().deleteItem(cm.payload.id, true);
+      else if (cm.kind === 'deletePlan') get().removeLaunchPlan(cm.payload.id, true);
+      else if (cm.kind === 'crossMove') get().togglePlanItem(cm.payload.planId, cm.payload.itemId, true);
+      else if (cm.kind === 'moveBatch') get().setItemBatch(cm.payload.itemId, cm.payload.batch, true);
+    },
+    confirmAlt: () => {
+      const cm = get().ui.confirmModal;
+      if (!cm) return;
+      setUi({ confirmModal: null });
+      if (cm.kind === 'launchAll') get().setDevStage(cm.payload.id, 'launched', 'single');
     },
     setNavSection: (v) => setUi({ navSection: v, navStream: null, batchFilter: null, search: '', statusFilter: 'all' }),
     setNavStream: (v) => setUi({ navStream: v }),
@@ -881,18 +925,30 @@ export const useStore = create<Store>((set, get) => {
         const launches = (s.ui.draft.launches || []).filter((_, j) => j !== i);
         return { ui: { ...s.ui, draft: { ...s.ui.draft, launches } } };
       }),
-    deleteItem: (id) => {
+    deleteItem: (id, force) => {
       const it = get().items.find((x) => x.id === id);
       if (!it) return;
       const w = wfOf(it);
       const deletable = (w === 'draft' && !it.ret) || w === 'ent1';
       if (!deletable)
         return toast('يمكن حذف المسودات أو ما أُرسل ولم يُعتمد بعد فقط');
-      const msg =
-        w === 'ent1'
-          ? '"' + it.title + '" مُرسل لممثل الجهة ولم يُعتمد بعد — سيُسحب ويُحذف نهائياً. متابعة؟'
-          : 'حذف "' + it.title + '" نهائياً؟';
-      if (typeof window !== 'undefined' && !window.confirm(msg)) return;
+      if (!force) {
+        setUi({
+          confirmModal: {
+            kind: 'deleteItem',
+            title: w === 'ent1' ? 'سحب وحذف' : 'حذف المسودة',
+            body:
+              w === 'ent1'
+                ? '«' + it.title + '» مُرسل لممثل الجهة ولم يُعتمد بعد — سيُسحب ويُحذف نهائياً.'
+                : 'سيتم حذف «' + it.title + '» نهائياً.',
+            okLabel: w === 'ent1' ? 'سحب وحذف' : 'حذف نهائياً',
+            cancelLabel: 'إلغاء',
+            payload: { id },
+          },
+          menuOpenId: null,
+        });
+        return;
+      }
       set((st) => ({
         items: st.items.filter((x) => x.id !== id),
         ui: { ...st.ui, detailId: st.ui.detailId === id ? null : st.ui.detailId, menuOpenId: null },
@@ -1271,15 +1327,24 @@ export const useStore = create<Store>((set, get) => {
         return { launchPlans, items };
       });
     },
-    removeLaunchPlan: (id: string) => {
+    removeLaunchPlan: (id: string, force?: boolean) => {
       const s = get();
       const attached = s.items.filter((it) => (it.launchPlanIds || []).includes(id)).length;
-      if (
-        attached > 0 &&
-        typeof window !== 'undefined' &&
-        !window.confirm('هذه الخطة مرتبطة بـ ' + attached + ' من المشاريع والعمليات والخدمات — ستُفصل عنها عند الحذف. متابعة؟')
-      )
+      if (attached > 0 && !force) {
+        setUi({
+          confirmModal: {
+            kind: 'deletePlan',
+            title: 'حذف خطة الإطلاق',
+            body:
+              'هذه الخطة مرتبطة بـ ' + attached +
+              ' من المشاريع والعمليات والخدمات — ستُفصل عنها عند الحذف.',
+            okLabel: 'حذف الخطة',
+            cancelLabel: 'إلغاء',
+            payload: { id },
+          },
+        });
         return;
+      }
       set((st) => {
         const launchPlans = st.launchPlans.filter((p) => p.id !== id);
         return {
@@ -1325,7 +1390,58 @@ export const useStore = create<Store>((set, get) => {
       set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
     },
-    togglePlanItem: (planId: string, itemId: string) => {
+    // assign/unassign an item to a مرحلة from the stage items manager
+    setItemBatch: (itemId, batch, force) => {
+      const s = get();
+      const it = s.items.find((x) => x.id === itemId);
+      if (!it) return;
+      if (batch && it.execBatch === batch) return;
+      if (batch && it.execBatch && it.execBatch !== batch && !force) {
+        setUi({
+          confirmModal: {
+            kind: 'moveBatch',
+            title: 'نقل بين المراحل',
+            body:
+              typeLabelDef(it.type) + ' «' + it.title + '» معيَّن في ' + it.execBatch +
+              ' — هل تودّون نقله إلى ' + batch +
+              '؟ سيُفصل عن إطلاقات مرحلته السابقة وسيصل إشعار بالنقل لجميع المعنيين.',
+            okLabel: 'نقل وإشعار المعنيين',
+            cancelLabel: 'إلغاء',
+            payload: { itemId, batch },
+          },
+        });
+        return;
+      }
+      const moved = !!(batch && it.execBatch && it.execBatch !== batch);
+      const from = it.execBatch || '';
+      const by = actorName(s);
+      set((st) => ({
+        items: st.items.map((x) => {
+          if (x.id !== itemId) return x;
+          if (!batch) return { ...x, execBatch: '', launchPlanIds: [], launches: [] };
+          const keptIds = (x.launchPlanIds || []).filter(
+            (pid) => st.launchPlans.find((p) => p.id === pid)?.batch === batch
+          );
+          return {
+            ...x,
+            execBatch: batch,
+            launchPlanIds: keptIds,
+            launches: launchesFromPlans(keptIds, st.launchPlans),
+            ...(moved ? { stageMove: { from, to: batch, at: Date.now(), by } } : {}),
+          };
+        }),
+      }));
+      set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
+      persist();
+      toast(
+        !batch
+          ? 'أُزيلت ' + typeLabelDef(it.type) + ' من المرحلة'
+          : moved
+            ? 'تم النقل إلى ' + batch + ' — سيصل إشعار لجميع المعنيين'
+            : 'تمت الإضافة إلى ' + batch
+      );
+    },
+    togglePlanItem: (planId: string, itemId: string, forceMove?: boolean) => {
       const s = get();
       const plan = s.launchPlans.find((p) => p.id === planId);
       if (!plan) return;
@@ -1336,12 +1452,22 @@ export const useStore = create<Store>((set, get) => {
       // the item (with its launches) and notifies every stakeholder
       let crossMove = false;
       if (!wasAttached && target.execBatch && target.execBatch !== plan.batch) {
-        const okMove = window.confirm(
-          typeLabelDef(target.type) +
-            ' «' + target.title + '» معيَّن في ' + target.execBatch +
-            ' — هل تودّون نقله إلى ' + plan.batch + '؟ سيُفصل عن إطلاقات مرحلته السابقة وسيُشعر جميع المعنيين بالنقل.'
-        );
-        if (!okMove) return;
+        if (!forceMove) {
+          setUi({
+            confirmModal: {
+              kind: 'crossMove',
+              title: 'نقل بين المراحل',
+              body:
+                typeLabelDef(target.type) + ' «' + target.title + '» معيَّن في ' + target.execBatch +
+                ' — هل تودّون نقله إلى ' + plan.batch +
+                '؟ سيُفصل عن إطلاقات مرحلته السابقة وسيصل إشعار بالنقل لجميع المعنيين.',
+              okLabel: 'نقل وإشعار المعنيين',
+              cancelLabel: 'إلغاء',
+              payload: { planId, itemId },
+            },
+          });
+          return;
+        }
         crossMove = true;
       }
       set((st) => ({

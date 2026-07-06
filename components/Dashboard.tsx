@@ -640,8 +640,11 @@ function ExportMenu({ onExcel, onPpt }: { onExcel: () => void; onPpt: () => void
 
 export function Dashboard({ vm }: { vm: VM }) {
   const s = vm.store;
-  // which launch row (in the مرحلة summary) is expanded to show its items
+  // which launch row (in the launch manager popup) is expanded to show its items
   const [openLaunch, setOpenLaunch] = useState<string | null>(null);
+  // مرحلة manage popups: assign items / manage launches for a given batch
+  const [itemsMgrFor, setItemsMgrFor] = useState<string | null>(null);
+  const [launchMgrFor, setLaunchMgrFor] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
 
   return (
@@ -653,6 +656,8 @@ export function Dashboard({ vm }: { vm: VM }) {
         // prevent an absolutely-positioned tooltip / wide analytics row from
         // introducing a horizontal scroll that clips content in RTL
         overflowX: 'hidden',
+        // the fixed navigation rail owns the right edge of the screen
+        paddingRight: 248,
       }}
     >
       {/* ===================== HEADER ===================== */}
@@ -670,15 +675,9 @@ export function Dashboard({ vm }: { vm: VM }) {
           zIndex: 20,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="assets/uae-crest.png" alt="UAE" style={{ height: 72 }} />
-          <div style={{ width: 1, height: 54, background: '#E7ECF4' }} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="assets/logo.png" alt="logo" style={{ height: 60 }} />
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img src="assets/uae-crest.png" alt="UAE" style={{ height: 46 }} />
           {/* Role switcher: demo builds only (production role comes from the
               UAE PASS / IdP mapping wired by IT). */}
           {vm.showRoleSwitcher && (
@@ -712,7 +711,9 @@ export function Dashboard({ vm }: { vm: VM }) {
               ))}
             </div>
           )}
+        </div>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Phase countdown (moved out of the banner) */}
           {vm.showProgramBanner && (
             <div
@@ -945,30 +946,6 @@ export function Dashboard({ vm }: { vm: VM }) {
             )}
           </div>
 
-          {/* Replay the onboarding tour */}
-          <HoverButton
-            title="جولة تعريفية"
-            onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
-            base={{
-              width: 38,
-              height: 38,
-              borderRadius: 11,
-              border: '1px solid #E7ECF4',
-              background: '#fff',
-              color: '#54627B',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: 15,
-              fontFamily: 'inherit',
-            }}
-            hover={{ borderColor: '#C7D6EE' }}
-          >
-            ؟
-          </HoverButton>
-
           {/* Basket */}
           {vm.showBasket && (
             <div data-tour="basket" style={{ position: 'relative' }}>
@@ -1146,31 +1123,37 @@ export function Dashboard({ vm }: { vm: VM }) {
         data-r="work"
         style={{ display: 'flex', gap: 16, padding: '16px 24px 44px', alignItems: 'flex-start' }}
       >
-        {/* rail placeholder keeps the layout while the rail itself is fixed */}
-        <div style={{ width: 248, flex: 'none' }} />
-        {/* Sidebar navigation — pinned to the right edge, top to bottom */}
+        {/* Sidebar navigation — full-height panel on the right edge */}
         <aside
           data-r="rail"
           style={{
             width: 248,
             position: 'fixed',
-            top: 92,
-            bottom: 14,
-            right: 14,
-            zIndex: 20,
-            background: 'rgba(255,255,255,.78)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255,255,255,.85)',
-            boxShadow: '0 18px 44px -22px rgba(11,27,58,.28)',
-            borderRadius: 20,
-            padding: '18px 12px',
+            top: 0,
+            bottom: 0,
+            right: 0,
+            zIndex: 30,
+            background: '#fff',
+            borderLeft: '1px solid #E7ECF4',
             display: 'flex',
             flexDirection: 'column',
-            gap: 4,
-            overflowY: 'auto',
           }}
         >
+          {/* brand */}
+          <div
+            style={{
+              padding: '16px 16px 14px',
+              borderBottom: '1px solid #F0F3F8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="assets/logo.png" alt="logo" style={{ height: 52, maxWidth: '100%', objectFit: 'contain' }} />
+          </div>
+          {/* navigation */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, padding: '0 13px 10px', letterSpacing: '.04em' }}>
             القائمة
           </div>
@@ -1183,13 +1166,17 @@ export function Dashboard({ vm }: { vm: VM }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
-                padding: '11px 13px',
+                padding: n.sub ? '9px 13px' : '11px 13px',
+                marginRight: n.sub ? 22 : 0,
                 borderRadius: 11,
                 border: 'none',
+                borderRight: n.sub ? '2px solid #EBEFF6' : 'none',
+                borderTopRightRadius: n.sub ? 0 : 11,
+                borderBottomRightRadius: n.sub ? 0 : 11,
                 background: n.active ? '#EAF1FE' : 'transparent',
                 color: n.active ? '#1D4ED8' : '#42506B',
                 fontWeight: n.active ? 800 : 400,
-                fontSize: 13,
+                fontSize: n.sub ? 12.5 : 13,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
                 textAlign: 'right',
@@ -1208,10 +1195,32 @@ export function Dashboard({ vm }: { vm: VM }) {
                   }}
                 />
               )}
-              <Icon d={n.icon} size={16} color={n.active ? '#2563EB' : '#8A97AD'} />
+              <Icon d={n.icon} size={n.sub ? 14 : 16} color={n.active ? '#2563EB' : '#8A97AD'} />
               {n.label}
             </button>
           ))}
+          </div>
+          {/* bottom: onboarding guide */}
+          <div style={{ borderTop: '1px solid #F0F3F8', padding: '10px 12px' }}>
+            <HoverDiv
+              onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
+              base={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '11px 13px',
+                borderRadius: 11,
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 400,
+                color: '#42506B',
+              }}
+              hover={{ background: '#F7F9FD' }}
+            >
+              <Icon d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" size={16} color="#8A97AD" />
+              دليل الاستخدام
+            </HoverDiv>
+          </div>
         </aside>
 
         {/* Main column */}
@@ -1358,6 +1367,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       value: String(vm.kpis.total),
                       info: 'إجمالي ' + vm.typesPhrase + ' المسجّلة ضمن نطاق اطلاعك.',
                       dist: vm.showStreamDist ? vm.kpiDist.total : undefined,
+                      mini: vm.kpiBreak.total,
                     },
                     {
                       label: 'المشاريع / المبادرات',
@@ -1396,12 +1406,21 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <SectionLabel>الميزانيات التقديرية</SectionLabel>
                 <StatBand
                   items={[
-                    ...(vm.showExecBudget
-                      ? [{ label: 'ميزانية التنفيذ التقديرية', value: vm.execBudgetTotalLabel, info: 'مجموع الميزانيات التقديرية لتنفيذ المشاريع والعمليات والخدمات في نطاقك.' }]
-                      : []),
-                    ...(vm.showLaunchBudget
-                      ? [{ label: 'ميزانية الإطلاق التقديرية (للاطلاع)', value: vm.launchBudgetTotalLabel, info: 'مجموع ميزانيات الإطلاق لخطط الإطلاق المرتبطة — للاطلاع فقط ولا يدخل في التمويل.' }]
-                      : []),
+                    {
+                      label: 'الميزانية الإجمالية التقديرية',
+                      value: vm.grandBudgetTotalLabel,
+                      info: 'مجموع ميزانيتي التنفيذ والإطلاق التقديريتين لجميع المشاريع والمبادرات والعمليات والخدمات في نطاقكم.',
+                    },
+                    {
+                      label: 'ميزانية التنفيذ التقديرية',
+                      value: vm.execBudgetTotalLabel,
+                      info: 'مجموع الميزانيات التقديرية لتنفيذ المشاريع والعمليات والخدمات في نطاقكم.',
+                    },
+                    {
+                      label: 'ميزانية الإطلاق التقديرية (للاطلاع)',
+                      value: vm.launchBudgetTotalLabel,
+                      info: 'مجموع ميزانيات الإطلاق لخطط الإطلاق المرتبطة — للاطلاع فقط ولا يدخل في التمويل.',
+                    },
                   ]}
                 />
                 </>
@@ -1418,9 +1437,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                 data-tour="kpis"
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 13, marginBottom: 4 }}
               >
-                <StatCard value={vm.aiStats.total} label="إجمالي المشاريع والمبادرات والعمليات والخدمات" info="كل ما قدّمته الجهات عبر مسارات التحول ووصل إلى اللجنة الوطنية." />
                 <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" info="عدد الجهات الاتحادية التي قدّمت مشاريع أو عمليات أو خدمات." />
-                <StatCard value={vm.aiStats.nominated} label="مرشح من قبل رؤساء المسارات" dot="#B45309" info="ما رشّحه رؤساء المسارات لاعتماد التمويل — تنظر اللجنة الوطنية في الترشيحات فقط." />
+                <StatCard value={vm.aiStats.total} label="إجمالي المشاريع والمبادرات والعمليات والخدمات" info="كل ما قدّمته الجهات عبر مسارات التحول ووصل إلى اللجنة الوطنية." />
+                <StatCard value={vm.aiStats.nominated} label="مرشح من قبل رؤساء المسارات" dot="#B45309" info="ما رشّحه رؤساء المسارات لاعتماد التمويل." />
                 <StatCard value={vm.aiStats.funded} label="معتمدة للتمويل" dot="#0B8A4B" info="ما اعتمدته اللجنة الوطنية وستتكفّل بتكلفة تحويله." />
               </div>
               {/* Distribution charts (all-streams view) or plain type totals */}
@@ -1440,9 +1459,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                     <PieCard title="توزيع المشاريع / المبادرات على المسارات" data={vm.kpiDist.projInit} />
                     <PieCard title="توزيع العمليات على المسارات" data={vm.kpiDist.operations} />
                     <PieCard title="توزيع الخدمات على المسارات" data={vm.kpiDist.services} />
-                  </div>
-                  <div style={{ marginTop: 13 }}>
-                    <RankBars title="ترتيب الجهات حسب عدد المشاريع والعمليات والخدمات المقدَّمة" rows={vm.entityRank} />
                   </div>
                 </>
               ) : (
@@ -1526,72 +1542,6 @@ export function Dashboard({ vm }: { vm: VM }) {
           )}
 
 
-          {/* Recent additions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
-            <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
-              آخر الإضافات
-            </div>
-            <div style={{ flex: 1, height: 1, background: '#E1E7F1' }} />
-            <button
-              onClick={() => s.setNavSection('all')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 7,
-                height: 36,
-                padding: '0 14px',
-                border: '1px solid #E7ECF4',
-                background: '#fff',
-                borderRadius: 11,
-                color: '#42506B',
-                fontWeight: 800,
-                fontSize: 12,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              عرض الكل
-              <Icon d="M15 18l-6-6 6-6" size={13} color="#8A97AD" />
-            </button>
-          </div>
-
-          {/* Recent cards (latest six) */}
-          {vm.cards.length === 0 ? (
-            <div
-              data-tour="cards"
-              style={{
-                border: '1.5px dashed #D5DEEC',
-                background: '#FAFCFF',
-                borderRadius: 16,
-                padding: '38px 20px',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>{'لا توجد ' + vm.typesPhrase + ' للعرض'}</div>
-              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 6, lineHeight: 1.7 }}>
-                {vm.emptyDesc}
-              </div>
-            </div>
-          ) : (
-            <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
-              {/* overview is view-only: recent cards carry no selection or actions */}
-              {vm.cards.slice(0, 6).map((c) => (
-                <CardItem
-                  key={c.id}
-                  c={{
-                    ...c,
-                    showSelectCheck: false,
-                    showAssignCheck: false,
-                    canApprove: false,
-                    showPathCta: false,
-                    canDelete: false,
-                    canWithdrawNom: false,
-                    canDeclineNom: false,
-                  }}
-                />
-              ))}
-            </div>
-          )}
           </>
           )}
 
@@ -1884,70 +1834,121 @@ export function Dashboard({ vm }: { vm: VM }) {
                         <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.launchCostLabel}</div>
                       </div>
                     </div>
-                    {/* composition — clickable drill-down into the portfolio pages */}
+                    {/* محتوى المرحلة: composition + delivery status in one block */}
                     {b.count === 0 ? (
-                      <div style={{ fontSize: 11.5, color: '#6B7A93', fontWeight: 400, marginTop: 12 }}>
-                        لا توجد تعيينات لهذه المرحلة بعد.
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+                        <div style={{ flex: 1, fontSize: 11.5, color: '#6B7A93', fontWeight: 400 }}>
+                          لا توجد تعيينات لهذه المرحلة بعد.
+                        </div>
+                        {vm.showAddBtn && (
+                          <button
+                            onClick={() => setItemsMgrFor(b.name)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              background: '#fff',
+                              border: '1px solid #E3E9F3',
+                              borderRadius: 999,
+                              padding: '5px 12px',
+                              fontSize: 11,
+                              color: '#16408F',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            + إضافة
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <div
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          gap: 8,
+                          background: '#FAFCFF',
+                          border: '1px solid #EBEFF6',
+                          borderRadius: 14,
+                          padding: '12px 14px',
                           marginTop: 12,
                         }}
                       >
-                        {b.composition.map((c) => (
-                          <button
-                            key={c.section}
-                            onClick={c.onOpen}
-                            title="عرض البطاقات التفصيلية"
-                            style={{
-                              background: '#F7F9FD',
-                              border: '1px solid #E3E9F3',
-                              borderRadius: 999,
-                              padding: '5px 12px',
-                              fontSize: 11.5,
-                              color: '#16408F',
-                              fontWeight: 400,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 6,
-                            }}
-                          >
-                            <span>
-                              <b style={{ fontWeight: 800 }}>{c.n}</b> {c.label}
+                        {/* header: title + one action (coord manages, others view) */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div className="hd" style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>
+                            محتوى المرحلة
+                          </div>
+                          {vm.showAddBtn ? (
+                            <button
+                              onClick={() => setItemsMgrFor(b.name)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                background: '#fff',
+                                border: '1px solid #E3E9F3',
+                                borderRadius: 999,
+                                padding: '5px 12px',
+                                fontSize: 11,
+                                color: '#16408F',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                              }}
+                            >
+                              <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={11} color="#16408F" />
+                              إدارة
+                            </button>
+                          ) : (
+                            <button
+                              onClick={b.onOpenAll}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                background: '#fff',
+                                border: '1px solid #E3E9F3',
+                                borderRadius: 999,
+                                padding: '5px 12px',
+                                fontSize: 11,
+                                color: '#16408F',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                              }}
+                            >
+                              عرض البطاقات
+                              <Icon d="M15 18l-6-6 6-6" size={11} color="#16408F" />
+                            </button>
+                          )}
+                        </div>
+                        {/* quiet composition line — each type opens its filtered page */}
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                          {b.composition.map((c, ci) => (
+                            <span key={c.section} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              {ci > 0 && <span style={{ color: '#C2CCDC', fontSize: 11 }}>·</span>}
+                              <button
+                                onClick={c.onOpen}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  padding: '2px 3px',
+                                  fontSize: 11.5,
+                                  color: '#54627B',
+                                  fontWeight: 400,
+                                  cursor: 'pointer',
+                                  fontFamily: 'inherit',
+                                  textDecoration: 'underline',
+                                  textDecorationColor: '#C7D6EE',
+                                  textUnderlineOffset: 3,
+                                }}
+                              >
+                                <b style={{ fontWeight: 800, color: '#13213C' }}>{c.n}</b> {c.label}
+                              </button>
                             </span>
-                            <Icon d="M15 18l-6-6 6-6" size={11} color="#16408F" />
-                          </button>
-                        ))}
-                        {b.composition.length > 1 && (
-                          <button
-                            onClick={b.onOpenAll}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              padding: '5px 4px',
-                              fontSize: 11.5,
-                              color: '#6B7A93',
-                              fontWeight: 400,
-                              cursor: 'pointer',
-                              textDecoration: 'underline',
-                              textUnderlineOffset: 3,
-                            }}
-                          >
-                            عرض الكل
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {/* delivery mapping: status of this مرحلة's assignments */}
-                    {b.count > 0 && (
-                      <>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 12 }}>
+                          ))}
+                        </div>
+                        {/* delivery mapping of the same items */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 10 }}>
                           {[
                             { label: 'قيد التطوير', v: b.underDev },
                             { label: 'تم التطوير', v: b.developed },
@@ -1955,7 +1956,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                           ].map((x) => (
                             <div
                               key={x.label}
-                              style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '9px 12px' }}
+                              style={{ background: '#fff', border: '1px solid #EBEFF6', borderRadius: 12, padding: '9px 12px' }}
                             >
                               <div style={{ fontSize: 10.5, color: '#6B7A93', fontWeight: 400 }}>{x.label}</div>
                               <div style={{ fontSize: 16, fontWeight: 800, color: '#13213C', marginTop: 2 }}>{x.v}</div>
@@ -1982,15 +1983,15 @@ export function Dashboard({ vm }: { vm: VM }) {
                             {b.awaiting} بانتظار الاعتماد قبل بدء التطوير
                           </div>
                         )}
-                      </>
+                      </div>
                     )}
                     {/* launches: coordinator manages in place, others read */}
                     {vm.showAddBtn ? (
                       <div style={{ borderTop: '1px solid #F0F3F8', marginTop: 14, paddingTop: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
-                          <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400 }}>الإطلاقات</div>
+                          <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>الإطلاقات</div>
                           <button
-                            onClick={() => s.addLaunchPlan(b.name)}
+                            onClick={() => setLaunchMgrFor(b.name)}
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -1998,45 +1999,73 @@ export function Dashboard({ vm }: { vm: VM }) {
                               background: '#EAF0FE',
                               color: '#2563EB',
                               border: '1px solid #D9E4FD',
-                              borderRadius: 10,
-                              padding: '6px 11px',
-                              fontSize: 11.5,
-                              fontWeight: 800,
+                              borderRadius: 999,
+                              padding: '5px 12px',
+                              fontSize: 11,
+                              fontWeight: 700,
                               cursor: 'pointer',
                               fontFamily: 'inherit',
                             }}
                           >
-                            + إضافة إطلاق
+                            {(vm.launchPlanMgr.find((g) => g.batch === b.name)?.plans || []).length ? 'إدارة الإطلاقات' : '+ إضافة إطلاق'}
                           </button>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          {(vm.launchPlanMgr.find((g) => g.batch === b.name)?.plans || []).map((p, pi) => {
-                            const key = b.name + '|' + p.id;
-                            const pOpen = openLaunch === key;
-                            const selCount = p.items.filter((x) => x.checked).length;
-                            const ord =
-                              ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة'][pi] || String(pi + 1);
-                            return (
-                              <div key={p.id} style={{ border: '1px solid #EBEFF6', borderRadius: 12, overflow: 'hidden' }}>
-                                <HoverDiv
-                                  onClick={() => setOpenLaunch(pOpen ? null : key)}
-                                  base={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', cursor: 'pointer', background: '#FAFCFF' }}
-                                  hover={{ background: '#F2F6FD' }}
+                        {(vm.launchPlanMgr.find((g) => g.batch === b.name)?.plans || []).length === 0 ? (
+                          <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>لا توجد إطلاقات لهذه المرحلة بعد.</div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {(vm.launchPlanMgr.find((g) => g.batch === b.name)?.plans || []).map((p, pi) => {
+                              const selCount = p.items.filter((x) => x.checked).length;
+                              const ord =
+                                ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة'][pi] || String(pi + 1);
+                              return (
+                                <div
+                                  key={p.id}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    border: '1px solid #EBEFF6',
+                                    borderRadius: 12,
+                                    padding: '10px 13px',
+                                    background: '#fff',
+                                  }}
                                 >
-                                  <Icon d={pOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#8A97AD" />
-                                  <span className="hd" style={{ flex: 'none', fontSize: 13, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
+                                  <span className="hd" style={{ flex: 'none', fontSize: 12.5, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
                                     خطة الإطلاق {ord}
                                   </span>
-                                  <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#6B7A93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: 400, color: '#6B7A93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {p.title.trim()}
                                   </span>
-                                  <span style={{ flex: 'none', fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>{selCount} محدد</span>
+                                  {p.date && (
+                                    <span dir="ltr" style={{ flex: 'none', fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>{p.date}</span>
+                                  )}
+                                  <span style={{ flex: 'none', fontSize: 10.5, color: '#6B7A93', fontWeight: 400 }}>{selCount} محدد</span>
                                   <button
-                                    onClick={(e) => {
-                                      stop(e);
-                                      s.removeLaunchPlan(p.id);
+                                    title="تعديل الإطلاق"
+                                    onClick={() => {
+                                      setLaunchMgrFor(b.name);
+                                      setOpenLaunch(b.name + '|' + p.id);
                                     }}
+                                    style={{
+                                      flex: 'none',
+                                      width: 26,
+                                      height: 26,
+                                      borderRadius: 8,
+                                      border: '1px solid #E3E9F3',
+                                      background: '#fff',
+                                      color: '#54627B',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                    }}
+                                  >
+                                    <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={12} color="#54627B" />
+                                  </button>
+                                  <button
                                     title="حذف الإطلاق"
+                                    onClick={() => s.removeLaunchPlan(p.id)}
                                     style={{
                                       flex: 'none',
                                       width: 26,
@@ -2046,118 +2075,20 @@ export function Dashboard({ vm }: { vm: VM }) {
                                       background: '#FCEEEF',
                                       color: '#C0303B',
                                       cursor: 'pointer',
-                                      fontSize: 13,
-                                      fontFamily: 'inherit',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
                                     }}
                                   >
-                                    ✕
+                                    <Icon d="M18 6L6 18M6 6l12 12" size={12} color="#C0303B" />
                                   </button>
-                                </HoverDiv>
-                                {pOpen && (
-                                  <div style={{ padding: '14px 13px', borderTop: '1px solid #F0F3F8', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                                    {/* 1) name / type / date */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 170px 150px', gap: 8 }}>
-                                      <div>
-                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>اسم الإطلاق</label>
-                                        <input
-                                          value={p.title}
-                                          onChange={(e) => s.updLaunchPlan(p.id, 'title', e.target.value)}
-                                          placeholder="مثال: إطلاق خدمات المرحلة الأولى"
-                                          style={mgrInput}
-                                        />
-                                      </div>
-                                      <div>
-                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>نوع الإطلاق</label>
-                                        <select value={p.ltype} onChange={(e) => s.updLaunchPlan(p.id, 'ltype', e.target.value)} style={mgrInput}>
-                                          {LAUNCH_TYPES.map((t) => (
-                                            <option key={t}>{t}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                      <div>
-                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>التاريخ</label>
-                                        <input type="date" value={p.date} onChange={(e) => s.updLaunchPlan(p.id, 'date', e.target.value)} style={mgrInput} />
-                                      </div>
-                                    </div>
-                                    {/* 2) what the launch includes */}
-                                    <div>
-                                      <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', marginBottom: 7 }}>
-                                        ماذا سيشمل الإطلاق؟
-                                      </div>
-                                      <div style={{ border: '1px solid #EBEFF6', borderRadius: 10, maxHeight: 260, overflowY: 'auto' }}>
-                                        {p.items.length === 0 && (
-                                          <div style={{ padding: '12px 13px', fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>لا توجد إضافات بعد.</div>
-                                        )}
-                                        {p.items.map((x, xi) => (
-                                          <div
-                                            key={x.id}
-                                            style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 11px', borderTop: xi ? '1px solid #F0F3F8' : 'none' }}
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              checked={x.checked}
-                                              onChange={() => s.togglePlanItem(p.id, x.id)}
-                                              style={{ width: 15, height: 15, accentColor: '#2563EB', cursor: 'pointer', flex: 'none' }}
-                                            />
-                                            <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#F1F4F9', color: '#54627B', flex: 'none' }}>
-                                              {x.typeLabel}
-                                            </span>
-                                            <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                              {x.title}
-                                            </span>
-                                            {x.otherBatch && (
-                                              <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 7px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
-                                                في مرحلة أخرى
-                                              </span>
-                                            )}
-                                            <span style={{ flex: 'none', fontSize: 11.5, fontWeight: 400, color: '#9AA6BC' }}>
-                                              {x.hasBudget ? x.budget : 'لم يتم تحديد الميزانية'}
-                                            </span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                    {/* 3) budgets: exec = dynamic total of the checked items */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                                      <div>
-                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>الميزانية التقديرية للتنفيذ</label>
-                                        <input
-                                          value={p.budget}
-                                          readOnly
-                                          placeholder="تُحتسب تلقائياً من ميزانيات ما هو محدَّد"
-                                          title="مجموع ميزانيات ما هو محدَّد أعلاه — يتحدّث تلقائياً"
-                                          style={{ ...mgrInput, backgroundColor: '#F4F7FC', cursor: 'default' }}
-                                        />
-                                      </div>
-                                      <div>
-                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>الميزانية التقديرية للإطلاق</label>
-                                        <input
-                                          value={p.launchBudget || ''}
-                                          onChange={(e) => s.updLaunchPlan(p.id, 'launchBudget', e.target.value)}
-                                          placeholder="تكلفة الإطلاق / الفعالية"
-                                          style={mgrInput}
-                                        />
-                                      </div>
-                                    </div>
-                                    {/* 4) launch-level scope */}
-                                    <div>
-                                      <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>نطاق العمل (على مستوى الإطلاق)</label>
-                                      <textarea
-                                        value={p.scope || ''}
-                                        onChange={(e) => s.updLaunchPlan(p.id, 'scope', e.target.value)}
-                                        placeholder="وصف موجز لما سيتم تحويله ضمن هذا الإطلاق…"
-                                        rows={3}
-                                        style={{ ...mgrInput, height: 'auto', padding: '9px 11px', resize: 'vertical', lineHeight: 1.7 }}
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    ) : (
+                                        ) : (
                       b.launches.length > 0 && (
                       <div style={{ borderTop: '1px solid #F0F3F8', marginTop: 14, paddingTop: 12 }}>
                         <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400, marginBottom: 8 }}>الإطلاقات</div>
@@ -2208,6 +2139,287 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                 ))}
               </div>
+
+              {/* ===== stage items manager popup ===== */}
+              {itemsMgrFor && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                  <div
+                    onClick={() => setItemsMgrFor(null)}
+                    style={{ position: 'absolute', inset: 0, background: 'rgba(8,17,35,.55)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', animation: 'fadeIn .2s' }}
+                  />
+                  <div
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      maxWidth: 620,
+                      maxHeight: '70vh',
+                      background: '#fff',
+                      borderRadius: 20,
+                      boxShadow: '0 30px 70px -24px rgba(2,12,35,.5)',
+                      animation: 'fadeUp .3s',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div style={{ padding: '18px 22px 12px', display: 'flex', alignItems: 'flex-start', gap: 12, borderBottom: '1px solid #F0F3F8' }}>
+                      <div style={{ flex: 1 }}>
+                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>محتوى {itemsMgrFor}</div>
+                        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3, lineHeight: 1.7 }}>
+                          حدِّدوا ما يندرج ضمن هذه المرحلة — نقل بند من مرحلة أخرى يتطلب تأكيداً ويصل إشعار به لجميع المعنيين.
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setItemsMgrFor(null)}
+                        style={{ width: 34, height: 34, borderRadius: 10, border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', cursor: 'pointer', fontSize: 16 }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div style={{ padding: '12px 22px 18px', overflowY: 'auto' }}>
+                      {vm.stageAssignItems.length === 0 && (
+                        <div style={{ padding: '18px 0', fontSize: 12, color: '#9AA6BC', fontWeight: 400, textAlign: 'center' }}>
+                          لا توجد مشاريع أو عمليات أو خدمات قابلة للتحول بعد.
+                        </div>
+                      )}
+                      {vm.stageAssignItems.map((x, xi) => (
+                        <div
+                          key={x.id}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 4px', borderTop: xi ? '1px solid #F4F6FA' : 'none' }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={x.batch === itemsMgrFor}
+                            onChange={() => s.setItemBatch(x.id, x.batch === itemsMgrFor ? null : itemsMgrFor)}
+                            style={{ width: 15, height: 15, accentColor: '#2563EB', cursor: 'pointer', flex: 'none' }}
+                          />
+                          <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#F1F4F9', color: '#54627B', flex: 'none' }}>
+                            {x.typeLabel}
+                          </span>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {x.title}
+                          </span>
+                          {x.batch && x.batch !== itemsMgrFor && (
+                            <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
+                              في {x.batch}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ===== launch manager popup ===== */}
+              {launchMgrFor && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                  <div
+                    onClick={() => setLaunchMgrFor(null)}
+                    style={{ position: 'absolute', inset: 0, background: 'rgba(8,17,35,.55)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', animation: 'fadeIn .2s' }}
+                  />
+                  <div
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      maxWidth: 760,
+                      maxHeight: '74vh',
+                      background: '#fff',
+                      borderRadius: 20,
+                      boxShadow: '0 30px 70px -24px rgba(2,12,35,.5)',
+                      animation: 'fadeUp .3s',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div style={{ padding: '18px 22px 12px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #F0F3F8' }}>
+                      <div style={{ flex: 1 }}>
+                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>إطلاقات {launchMgrFor}</div>
+                        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
+                          أضيفوا الإطلاقات وحدِّدوا ما يشمله كل إطلاق — تنعكس التغييرات مباشرة على بطاقة المرحلة.
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => s.addLaunchPlan(launchMgrFor)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          background: '#EAF0FE',
+                          color: '#2563EB',
+                          border: '1px solid #D9E4FD',
+                          borderRadius: 10,
+                          padding: '8px 13px',
+                          fontSize: 12,
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          flex: 'none',
+                        }}
+                      >
+                        + إضافة إطلاق
+                      </button>
+                      <button
+                        onClick={() => setLaunchMgrFor(null)}
+                        style={{ width: 34, height: 34, borderRadius: 10, border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', cursor: 'pointer', fontSize: 16, flex: 'none' }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div style={{ padding: '14px 22px 18px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {(vm.launchPlanMgr.find((g) => g.batch === launchMgrFor)?.plans || []).length === 0 && (
+                        <div style={{ padding: '18px 0', fontSize: 12, color: '#9AA6BC', fontWeight: 400, textAlign: 'center' }}>
+                          لا توجد إطلاقات بعد — ابدؤوا بإضافة إطلاق.
+                        </div>
+                      )}
+                      {(vm.launchPlanMgr.find((g) => g.batch === launchMgrFor)?.plans || []).map((p, pi) => {
+                        const key = launchMgrFor + '|' + p.id;
+                        const pOpen = openLaunch === key;
+                        const selCount = p.items.filter((x) => x.checked).length;
+                        const ord =
+                          ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة'][pi] || String(pi + 1);
+                        return (
+                          <div key={p.id} style={{ border: '1px solid #EBEFF6', borderRadius: 12, overflow: 'hidden' }}>
+                            <HoverDiv
+                              onClick={() => setOpenLaunch(pOpen ? null : key)}
+                              base={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', cursor: 'pointer', background: '#FAFCFF' }}
+                              hover={{ background: '#F2F6FD' }}
+                            >
+                              <Icon d={pOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#8A97AD" />
+                              <span className="hd" style={{ flex: 'none', fontSize: 13, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
+                                خطة الإطلاق {ord}
+                              </span>
+                              <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#6B7A93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {p.title.trim()}
+                              </span>
+                              <span style={{ flex: 'none', fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>{selCount} محدد</span>
+                              <button
+                                onClick={(e) => {
+                                  stop(e);
+                                  s.removeLaunchPlan(p.id);
+                                }}
+                                title="حذف الإطلاق"
+                                style={{
+                                  flex: 'none',
+                                  width: 26,
+                                  height: 26,
+                                  borderRadius: 8,
+                                  border: 'none',
+                                  background: '#FCEEEF',
+                                  color: '#C0303B',
+                                  cursor: 'pointer',
+                                  fontSize: 13,
+                                  fontFamily: 'inherit',
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </HoverDiv>
+                            {pOpen && (
+                              <div style={{ padding: '14px 13px', borderTop: '1px solid #F0F3F8', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                {/* 1) name / type / date */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 170px 150px', gap: 8 }}>
+                                  <div>
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>اسم الإطلاق</label>
+                                    <input
+                                      value={p.title}
+                                      onChange={(e) => s.updLaunchPlan(p.id, 'title', e.target.value)}
+                                      placeholder="مثال: إطلاق خدمات المرحلة الأولى"
+                                      style={mgrInput}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>نوع الإطلاق</label>
+                                    <select value={p.ltype} onChange={(e) => s.updLaunchPlan(p.id, 'ltype', e.target.value)} style={mgrInput}>
+                                      {LAUNCH_TYPES.map((t) => (
+                                        <option key={t}>{t}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>التاريخ</label>
+                                    <input type="date" value={p.date} onChange={(e) => s.updLaunchPlan(p.id, 'date', e.target.value)} style={mgrInput} />
+                                  </div>
+                                </div>
+                                {/* 2) what the launch includes */}
+                                <div>
+                                  <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', marginBottom: 7 }}>
+                                    ماذا سيشمل الإطلاق؟
+                                  </div>
+                                  <div style={{ border: '1px solid #EBEFF6', borderRadius: 10, maxHeight: 220, overflowY: 'auto' }}>
+                                    {p.items.length === 0 && (
+                                      <div style={{ padding: '12px 13px', fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>لا توجد إضافات بعد.</div>
+                                    )}
+                                    {p.items.map((x, xi) => (
+                                      <div
+                                        key={x.id}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 11px', borderTop: xi ? '1px solid #F0F3F8' : 'none' }}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={x.checked}
+                                          onChange={() => s.togglePlanItem(p.id, x.id)}
+                                          style={{ width: 15, height: 15, accentColor: '#2563EB', cursor: 'pointer', flex: 'none' }}
+                                        />
+                                        <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#F1F4F9', color: '#54627B', flex: 'none' }}>
+                                          {x.typeLabel}
+                                        </span>
+                                        <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                          {x.title}
+                                        </span>
+                                        {x.otherBatch && (
+                                          <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 7px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
+                                            في مرحلة أخرى
+                                          </span>
+                                        )}
+                                        <span style={{ flex: 'none', fontSize: 11.5, fontWeight: 400, color: '#9AA6BC' }}>
+                                          {x.hasBudget ? x.budget : 'لم يتم تحديد الميزانية'}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                {/* 3) budgets: exec = dynamic total of the checked items */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                  <div>
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>الميزانية التقديرية للتنفيذ</label>
+                                    <input
+                                      value={p.budget}
+                                      readOnly
+                                      placeholder="تُحتسب تلقائياً من ميزانيات ما هو محدَّد"
+                                      title="مجموع ميزانيات ما هو محدَّد أعلاه — يتحدّث تلقائياً"
+                                      style={{ ...mgrInput, backgroundColor: '#F4F7FC', cursor: 'default' }}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>الميزانية التقديرية للإطلاق</label>
+                                    <input
+                                      value={p.launchBudget || ''}
+                                      onChange={(e) => s.updLaunchPlan(p.id, 'launchBudget', e.target.value)}
+                                      placeholder="تكلفة الإطلاق / الفعالية"
+                                      style={mgrInput}
+                                    />
+                                  </div>
+                                </div>
+                                {/* 4) launch-level scope */}
+                                <div>
+                                  <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>نطاق العمل (على مستوى الإطلاق)</label>
+                                  <textarea
+                                    value={p.scope || ''}
+                                    onChange={(e) => s.updLaunchPlan(p.id, 'scope', e.target.value)}
+                                    placeholder="وصف موجز لما سيتم تحويله ضمن هذا الإطلاق…"
+                                    rows={3}
+                                    style={{ ...mgrInput, height: 'auto', padding: '9px 11px', resize: 'vertical', lineHeight: 1.7 }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -2949,6 +3161,7 @@ function CardItem({ c }: { c: CardVM }) {
             paddingTop: 11,
           }}
         >
+          {/* all three decisions visible — no action is implied as the default */}
           <button
             onClick={(e) => {
               stop(e);
@@ -2960,10 +3173,11 @@ function CardItem({ c }: { c: CardVM }) {
               color: '#fff',
               border: 'none',
               borderRadius: 9,
-              padding: '8px 0',
+              padding: '8px 6px',
               fontWeight: 800,
               fontSize: 12,
               cursor: 'pointer',
+              fontFamily: 'inherit',
             }}
           >
             اعتماد
@@ -2971,67 +3185,47 @@ function CardItem({ c }: { c: CardVM }) {
           <button
             onClick={(e) => {
               stop(e);
-              c.onMenu();
+              c.onReqInfo();
             }}
             style={{
-              width: 40,
-              flex: 'none',
+              flex: 1,
               background: '#fff',
-              color: '#54627B',
+              color: '#33405A',
               border: '1px solid #E7ECF4',
               borderRadius: 9,
-              padding: '8px 0',
-              fontWeight: 800,
-              fontSize: 14,
+              padding: '8px 6px',
+              fontWeight: 700,
+              fontSize: 11.5,
               cursor: 'pointer',
+              fontFamily: 'inherit',
+              whiteSpace: 'nowrap',
             }}
           >
-            ⋯
+            طلب معلومات إضافية
           </button>
-          {c.menuOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 46,
-                left: 0,
-                width: 180,
-                background: '#fff',
-                border: '1px solid #E7ECF4',
-                borderRadius: 11,
-                boxShadow: '0 16px 40px -14px rgba(2,12,35,.4)',
-                overflow: 'hidden',
-                zIndex: 5,
-              }}
-            >
-              <HoverDiv
-                onClick={(e) => {
-                  stop(e);
-                  c.onReqInfo();
-                }}
-                base={{ padding: '11px 13px', fontSize: 12.5, fontWeight: 700, color: '#33405A', cursor: 'pointer' }}
-                hover={{ background: '#F5F8FD' }}
-              >
-                طلب معلومات إضافية
-              </HoverDiv>
-              <HoverDiv
-                onClick={(e) => {
-                  stop(e);
-                  c.onReject();
-                }}
-                base={{
-                  padding: '11px 13px',
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  color: '#C0303B',
-                  cursor: 'pointer',
-                  borderTop: '1px solid #F0F3F8',
-                }}
-                hover={{ background: '#FBF3F4' }}
-              >
-                رفض
-              </HoverDiv>
-            </div>
-          )}
+          <button
+            title="رفض"
+            aria-label="رفض"
+            onClick={(e) => {
+              stop(e);
+              c.onReject();
+            }}
+            style={{
+              width: 38,
+              flex: 'none',
+              background: '#FCEEEF',
+              color: '#C0303B',
+              border: '1px solid #F5D8DB',
+              borderRadius: 9,
+              padding: 0,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon d="M18 6L6 18M6 6l12 12" size={14} color="#C0303B" strokeWidth={2.4} />
+          </button>
         </div>
       )}
 

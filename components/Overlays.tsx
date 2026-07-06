@@ -595,6 +595,126 @@ export function Overlays({ vm }: { vm: VM }) {
         </div>
       )}
 
+      {/* ================= CONFIRMATION MODAL (replaces window.confirm) ================= */}
+      {vm.confirmModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 80,
+            direction: 'rtl',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={() => s.closeConfirm()}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(8,17,35,.55)',
+              backdropFilter: 'blur(3px)',
+              WebkitBackdropFilter: 'blur(3px)',
+              animation: 'fadeIn .2s',
+            }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: 480,
+              background: '#fff',
+              borderRadius: 20,
+              boxShadow: '0 30px 70px -24px rgba(2,12,35,.5)',
+              animation: 'fadeUp .3s',
+            }}
+          >
+            <div style={{ padding: '20px 22px 12px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <div className="hd" style={{ flex: 1, fontSize: 17, fontWeight: 800, color: '#13213C' }}>
+                {vm.confirmModal.title}
+              </div>
+              <button
+                onClick={() => s.closeConfirm()}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
+                  border: '1px solid #E7ECF4',
+                  background: '#fff',
+                  color: '#54627B',
+                  cursor: 'pointer',
+                  fontSize: 16,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '0 22px', fontSize: 13.5, color: '#42506B', fontWeight: 400, lineHeight: 1.9 }}>
+              {vm.confirmModal.body}
+            </div>
+            <div style={{ padding: '18px 22px 20px', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => s.closeConfirm()}
+                style={{
+                  flex: 'none',
+                  background: '#EEF1F7',
+                  color: '#54627B',
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '13px 22px',
+                  fontWeight: 800,
+                  fontSize: 13.5,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {vm.confirmModal.cancelLabel}
+              </button>
+              {vm.confirmModal.altLabel && (
+                <button
+                  onClick={() => s.confirmAlt()}
+                  style={{
+                    flex: 'none',
+                    background: '#fff',
+                    color: '#1D4ED8',
+                    border: '1px solid #C9D8F5',
+                    borderRadius: 12,
+                    padding: '13px 20px',
+                    fontWeight: 800,
+                    fontSize: 13.5,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {vm.confirmModal.altLabel}
+                </button>
+              )}
+              <button
+                onClick={() => s.confirmOk()}
+                style={{
+                  flex: 1,
+                  minWidth: 150,
+                  background: BLUE_GRAD,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '13px 22px',
+                  fontWeight: 800,
+                  fontSize: 13.5,
+                  cursor: 'pointer',
+                  boxShadow: BLUE_SHADOW,
+                  fontFamily: 'inherit',
+                }}
+              >
+                {vm.confirmModal.okLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ================= CANCEL-FUNDING MODAL ================= */}
       {vm.cancelFund && (
         <div

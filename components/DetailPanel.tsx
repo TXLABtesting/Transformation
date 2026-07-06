@@ -1058,68 +1058,67 @@ export function DetailPanel({ vm }: { vm: VM }) {
           >
             {d.canApproveGateView ? (
               <>
-                <div style={{ position: 'relative', flex: 'none' }}>
+                {/* all three decisions visible so no action feels forced */}
+                <button
+                  title="عدم الاعتماد"
+                  aria-label="عدم الاعتماد"
+                  onClick={d.onReject}
+                  style={{
+                    width: 48,
+                    height: 48,
+                    flex: 'none',
+                    borderRadius: 12,
+                    border: '1px solid #F5D8DB',
+                    background: '#FCEEEF',
+                    color: '#C0303B',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon d="M18 6L6 18M6 6l12 12" size={17} color="#C0303B" strokeWidth={2.4} />
+                </button>
+                {d.showMenuEdit && (
                   <button
-                    onClick={d.onToggleMenu}
+                    title="تعديل البيانات"
+                    aria-label="تعديل البيانات"
+                    onClick={d.onEdit}
                     style={{
                       width: 48,
                       height: 48,
+                      flex: 'none',
                       borderRadius: 12,
                       border: '1px solid #E7ECF4',
                       background: '#fff',
                       color: '#54627B',
-                      fontSize: 18,
-                      fontWeight: 800,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <Icon d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={2.5} />
+                    <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={16} />
                   </button>
-                  {d.dActionMenuOpen && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        bottom: 52,
-                        right: 0,
-                        width: 200,
-                        background: '#fff',
-                        border: '1px solid #E7ECF4',
-                        borderRadius: 14,
-                        boxShadow: '0 24px 60px -20px rgba(2,12,35,.45)',
-                        overflow: 'hidden',
-                        zIndex: 5,
-                        animation: 'fadeUp .2s',
-                      }}
-                    >
-                      {d.showMenuEdit && (
-                        <button
-                          onClick={d.onEdit}
-                          style={menuItemStyle('#33405A')}
-                        >
-                          <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={15} />
-                          تعديل البيانات
-                        </button>
-                      )}
-                      <button
-                        onClick={d.onReqInfo}
-                        style={{ ...menuItemStyle('#33405A'), borderTop: '1px solid #F0F3F8' }}
-                      >
-                        <Icon d="M12 8h.01M11 12h1v4h1M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" size={15} />
-                        طلب معلومات إضافية
-                      </button>
-                      <button
-                        onClick={d.onReject}
-                        style={{ ...menuItemStyle('#D23B45'), borderTop: '1px solid #F0F3F8' }}
-                      >
-                        <Icon d="M18 6 6 18M6 6l12 12" size={15} color="#D23B45" />
-                        عدم الاعتماد
-                      </button>
-                    </div>
-                  )}
-                </div>
+                )}
+                <button
+                  onClick={d.onReqInfo}
+                  style={{
+                    flex: 1,
+                    background: '#fff',
+                    color: '#33405A',
+                    border: '1px solid #E7ECF4',
+                    borderRadius: 12,
+                    padding: '13px 14px',
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  طلب معلومات إضافية
+                </button>
                 <button
                   onClick={d.onApprove}
                   style={{
@@ -1133,6 +1132,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                     fontSize: 14,
                     cursor: 'pointer',
                     boxShadow: '0 10px 22px -10px rgba(11,138,75,.6)',
+                    fontFamily: 'inherit',
                   }}
                 >
                   اعتماد
@@ -1169,19 +1169,3 @@ export function DetailPanel({ vm }: { vm: VM }) {
   );
 }
 
-function menuItemStyle(color: string): React.CSSProperties {
-  return {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 9,
-    width: '100%',
-    textAlign: 'right',
-    background: '#fff',
-    border: 'none',
-    padding: '12px 14px',
-    fontSize: 13,
-    fontWeight: 700,
-    color,
-    cursor: 'pointer',
-  };
-}

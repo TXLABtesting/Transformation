@@ -149,6 +149,7 @@ function build(s: Store) {
     ];
   };
   const kpiBreak = {
+    total: deliveryBreak(() => true),
     projInit: deliveryBreak((i) => isProjInit(i.type)),
     operations: deliveryBreak((i) => i.type === 'operation'),
     services: deliveryBreak((i) => i.type === 'service'),
@@ -373,12 +374,13 @@ function build(s: Store) {
   const navItems = [
     { key: 'overview', label: 'نظرة عامة', icon: 'M3 10.5 12 3l9 7.5M5 9.5V21h5v-6h4v6h5V9.5' },
     { key: 'all', label: 'الكل', icon: 'M4 6h16M4 12h16M4 18h16' },
-    { key: 'projects', label: 'المشاريع والمبادرات', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7' },
+    // type pages sit one level under «الكل»
+    { key: 'projects', label: 'المشاريع والمبادرات', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7', sub: true },
     ...(roleStreams.some((p) => streamHasType(p.id, 'operation'))
-      ? [{ key: 'operations', label: 'العمليات', icon: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 3v2M12 19v2M4.6 4.6 6 6M18 18l1.4 1.4M3 12h2M19 12h2M4.6 19.4 6 18M18 6l1.4-1.4' }]
+      ? [{ key: 'operations', label: 'العمليات', icon: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 3v2M12 19v2M4.6 4.6 6 6M18 18l1.4 1.4M3 12h2M19 12h2M4.6 19.4 6 18M18 6l1.4-1.4', sub: true }]
       : []),
     ...(roleStreams.some((p) => streamHasType(p.id, 'service'))
-      ? [{ key: 'services', label: 'الخدمات', icon: 'M3 5h18v14H3zM3 9h18M6.2 7h.01' }]
+      ? [{ key: 'services', label: 'الخدمات', icon: 'M3 5h18v14H3zM3 9h18M6.2 7h.01', sub: true }]
       : []),
     { key: 'launchplans', label: 'مراحل التنفيذ والإطلاق', icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z' },
     ...(rawRole === 'ai'
@@ -388,6 +390,7 @@ function build(s: Store) {
       ? [{ key: 'team', label: 'فريق العمل', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' }]
       : []),
   ].map((n) => ({
+    sub: false,
     ...n,
     active: navSection === n.key,
     onClick: n.key === 'team' ? () => s.openTeam() : () => s.setNavSection(n.key),
@@ -645,6 +648,7 @@ function build(s: Store) {
     showLaunchBudget: launchBudgetTotal > 0,
     execBudgetTotalLabel: formatMoney(execBudgetTotal),
     showExecBudget: execBudgetTotal > 0,
+    grandBudgetTotalLabel: formatMoney(execBudgetTotal + launchBudgetTotal),
     showOpsKpi: effActivePath === 'all' || streamHasType(effActivePath, 'operation'),
     showSvcKpi: effActivePath === 'all' || streamHasType(effActivePath, 'service'),
     notAiRole: !isAiRole,
@@ -663,6 +667,15 @@ function build(s: Store) {
     recap,
     sectionCards,
     entityCards,
+    // stage items manager: role-visible items that can be assigned to a مرحلة
+    stageAssignItems: roleBase
+      .filter((i) => agentifiable(i))
+      .map((i) => ({
+        id: i.id,
+        title: i.title,
+        typeLabel: typeLabel(i.type),
+        batch: i.execBatch || '',
+      })),
     // active مرحلة drill-down chip on portfolio pages
     batchChip: batchFilter
       ? { label: batchFilter.replace(/^إطلاق /, ''), onClear: () => s.setBatchFilter(null) }
@@ -767,6 +780,7 @@ function build(s: Store) {
     })),
     // reject/req modal
     reqModal: ui.reqModal,
+    confirmModal: ui.confirmModal,
     // cancel fund modal
     cancelFund: ui.cancelFund,
     cancelFundTitle: ui.cancelFund ? (s.items.find((i) => i.id === ui.cancelFund!.id)?.title || '') : '',
