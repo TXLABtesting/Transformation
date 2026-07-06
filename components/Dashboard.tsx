@@ -464,7 +464,7 @@ function StatBand({
                 gap: 6,
               }}
             >
-              <div style={{ fontSize: 10.5, fontWeight: 800, color: dark ? 'rgba(255,255,255,.7)' : '#8A97AD' }}>
+              <div style={{ fontSize: 10.5, fontWeight: 400, color: dark ? 'rgba(255,255,255,.7)' : '#8A97AD' }}>
                 التوزيع حسب المسار
               </div>
               {it.dist.map((d) => (
@@ -473,7 +473,7 @@ function StatBand({
                     style={{
                       fontSize: 11,
                       fontWeight: 700,
-                      color: dark ? 'rgba(255,255,255,.8)' : '#54627B',
+                      color: dark ? '#fff' : '#13213C',
                       flex: 1,
                       minWidth: 0,
                       overflow: 'hidden',
@@ -498,7 +498,7 @@ function StatBand({
                 borderTop: `1px solid ${dark ? 'rgba(255,255,255,.2)' : '#EBEFF6'}`,
               }}
             >
-              <div style={{ fontSize: 10.5, fontWeight: 800, color: dark ? 'rgba(255,255,255,.7)' : '#8A97AD', marginBottom: 7 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 400, color: dark ? 'rgba(255,255,255,.7)' : '#8A97AD', marginBottom: 7 }}>
                 التوزيع حسب الحالة
               </div>
               <div
@@ -518,7 +518,7 @@ function StatBand({
                     padding: '7px 10px',
                   }}
                 >
-                  <div style={{ fontSize: 10, fontWeight: 400, color: dark ? 'rgba(255,255,255,.75)' : '#6B7A93', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: dark ? '#fff' : '#13213C', lineHeight: 1.5 }}>
                     {m.label}
                   </div>
                   <div style={{ fontSize: 14.5, fontWeight: 800, color: dark ? '#fff' : '#13213C', marginTop: 1 }}>{m.v}</div>
