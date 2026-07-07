@@ -3236,7 +3236,7 @@ function ListView({ cards }: { cards: CardVM[] }) {
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '')}
             >
               <td style={td}>
-                {(c.showSelectCheck || c.showAssignCheck) && (
+                {(c.showSelectCheck || c.showAssignCheck) ? (
                   <span
                     onClick={(e) => {
                       stop(e);
@@ -3259,7 +3259,24 @@ function ListView({ cards }: { cards: CardVM[] }) {
                       <Icon d="M20 6 9 17l-5-5" size={11} color="#fff" strokeWidth={3} />
                     )}
                   </span>
-                )}
+                ) : c.cardAction === 'funded' ? (
+                  <span
+                    title="معتمد للتمويل"
+                    style={{
+                      display: 'inline-flex',
+                      width: 17,
+                      height: 17,
+                      borderRadius: 5,
+                      border: '2px solid #BAC3D3',
+                      background: '#BAC3D3',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'default',
+                    }}
+                  >
+                    <Icon d="M20 6 9 17l-5-5" size={11} color="#fff" strokeWidth={3} />
+                  </span>
+                ) : null}
               </td>
               <td style={{ ...td, fontWeight: 800, color: '#13213C', maxWidth: 260 }}>{c.title}</td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>{c.typeLabel}</td>
@@ -3491,7 +3508,7 @@ function CardItem({ c }: { c: CardVM }) {
             {c.pillLabel || pill.label}
           </span>
         </div>
-        {showCheckbox && (
+        {showCheckbox ? (
           <span
             onClick={(e) => {
               stop(e);
@@ -3513,7 +3530,26 @@ function CardItem({ c }: { c: CardVM }) {
           >
             {checkboxChecked && <Icon d={CHECK_D} size={12} color="#fff" strokeWidth={3} />}
           </span>
-        )}
+        ) : c.cardAction === 'funded' ? (
+          // already approved for funding: locked, gray, checked, not clickable
+          <span
+            title="معتمد للتمويل"
+            style={{
+              width: 19,
+              height: 19,
+              borderRadius: 6,
+              border: '2px solid #BAC3D3',
+              background: '#BAC3D3',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 'none',
+              cursor: 'default',
+            }}
+          >
+            <Icon d={CHECK_D} size={12} color="#fff" strokeWidth={3} />
+          </span>
+        ) : null}
       </div>
 
       {/* Title */}
