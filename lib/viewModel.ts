@@ -285,7 +285,23 @@ function build(s: Store) {
     const items = roleBase.filter(match);
     return {
       total: items.length,
-      stages: launchBatches().map((b) => ({ label: b.name.replace(/^إطلاق /, ''), n: items.filter((i) => i.execBatch === b.name).length })),
+      stages: launchBatches().map((b) => {
+        const inStage = items.filter((i) => i.execBatch === b.name);
+        return {
+          label: b.name.replace(/^إطلاق /, ''),
+          n: inStage.length,
+          typeBreak: [
+            { label: 'مشروع / مبادرة', n: inStage.filter((i) => isProjInit(i.type)).length },
+            { label: 'عملية', n: inStage.filter((i) => i.type === 'operation').length },
+            { label: 'خدمة', n: inStage.filter((i) => i.type === 'service').length },
+          ],
+          statusBreak: [
+            { label: 'قيد التطوير', n: inStage.filter((i) => devStatusOfItem(i) === 'underDev').length },
+            { label: 'تم التطوير', n: inStage.filter((i) => devStatusOfItem(i) === 'developed').length },
+            { label: 'تم الإطلاق', n: inStage.filter((i) => devStatusOfItem(i) === 'launched').length },
+          ],
+        };
+      }),
     };
   };
   const stageDist = {
@@ -514,6 +530,14 @@ function build(s: Store) {
   const pathOptions = [{ v: 'all', label: 'كل المسارات' }, ...PATHS.map((p) => ({ v: p.id, label: p.name }))];
   const entValues = Array.from(new Set([...s.items.map((i) => ent(i)), entityName]));
   const entOptions = [{ v: 'all', label: 'كل الجهات' }, ...entValues.map((e) => ({ v: e, label: e }))];
+  const typeOptions = [
+    { v: 'all', label: 'كل الأنواع' },
+    { v: 'projinit', label: 'مشروع / مبادرة' },
+    { v: 'operation', label: 'عملية' },
+    { v: 'service', label: 'خدمة' },
+  ];
+  // is any filter currently active (drives the reset button + count)
+  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!(ui.search || '').trim();
 
   // ---- cards ----
   // ---- sidebar navigation (§redesign v2) ----
@@ -720,6 +744,22 @@ function build(s: Store) {
     budgetPct: APPROVED_BUDGET ? Math.min(100, Math.round((spentBudget / APPROVED_BUDGET) * 100)) : 0,
   };
 
+  // participating entities — ranked by number of inputs submitted (committee view).
+  // entities with zero submissions never appear.
+  const entityRanking = (() => {
+    const counts = new Map<string, number>();
+    roleBase.forEach((i) => {
+      const name = ent(i);
+      counts.set(name, (counts.get(name) || 0) + 1);
+    });
+    const rows = [...counts.entries()]
+      .map(([name, n]) => ({ name, n }))
+      .filter((r) => r.n > 0)
+      .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, 'ar'));
+    const max = rows.length ? rows[0].n : 1;
+    return rows.map((r, idx) => ({ ...r, frac: r.n / max, top: idx === 0 }));
+  })();
+
   // ---- program steps + countdown ----
   const programSteps = buildProgramSteps(s, base);
   const firstMs = execMilestones()[0];
@@ -837,6 +877,7 @@ function build(s: Store) {
     showRail,
     pathRail,
     totalCount,
+    shownCount: visible.length,
     activePathAll: ui.activePath === 'all',
     activePathName,
     streamSummary,
@@ -902,12 +943,15 @@ function build(s: Store) {
     searchValue: ui.search,
     pathOptions,
     pathFilterValue: ui.activePath,
+    typeOptions,
+    anyFilterActive,
     showEntFilter,
     entOptions,
     entFilterValue: ui.entFilter,
     showAddBtn,
     // committee
     aiStats,
+    entityRanking,
     // cards
     cards,
     // basket + fund bar

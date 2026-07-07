@@ -314,17 +314,17 @@ function EntityOverview({ vm }: { vm: VM }) {
         {/* --- left card: nominations summary (path) OR cost (entity/coord) --- */}
         {isPath ? (() => {
           const nomItems = [
-            { key: 'nominated', label: 'المرشّحة من قِبلي', v: nc.nominated, dot: '#2563EB', square: true, bold: true },
-            { key: 'funded', label: 'معتمدة للتمويل', v: nc.funded, dot: '#12B76A', square: false, bold: false, sub: true },
-            { key: 'pending', label: 'قيد مراجعة اللجنة', v: nc.pending, dot: '#E68A1E', square: false, bold: false, sub: true },
-            { key: 'notNominated', label: 'غير مرشّحة', v: nc.notNominated, dot: '#C7D9F5', square: true, bold: true, divider: true },
+            { key: 'nominated', label: 'المرشّحة من قِبلي', v: nc.nominated, dot: '#2563EB', square: true, bold: true, numColor: '#2563EB', labelColor: '#13213C' },
+            { key: 'funded', label: 'معتمدة للتمويل', v: nc.funded, dot: '#2563EB', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
+            { key: 'pending', label: 'قيد مراجعة اللجنة', v: nc.pending, dot: '#93B4F5', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
+            { key: 'notNominated', label: 'غير مرشّحة', v: nc.notNominated, dot: '#C7D9F5', square: true, bold: true, divider: true, numColor: '#9AA6BC', labelColor: '#9AA6BC' },
           ];
           const nomHov = nomItems.find((x) => x.key === hovNom);
           const nomCenter = nomHov ? { center: String(nomHov.v), sub: nomHov.label } : { center: String(nc.total), sub: 'إجمالي المدخلات' };
           const t = nc.total || 1;
           const nomSegs = [
-            { key: 'funded', frac: nc.funded / t, color: '#12B76A' },
-            { key: 'pending', frac: nc.pending / t, color: '#E68A1E' },
+            { key: 'funded', frac: nc.funded / t, color: '#2563EB' },
+            { key: 'pending', frac: nc.pending / t, color: '#93B4F5' },
             { key: 'notNominated', frac: nc.notNominated / t, color: '#C7D9F5' },
           ].filter((x) => x.frac > 0.0001);
           return (
@@ -354,9 +354,9 @@ function EntityOverview({ vm }: { vm: VM }) {
                       >
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ width: 10, height: 10, borderRadius: r.square ? 3 : '50%', background: r.dot, flex: 'none' }} />
-                          <span className={r.bold ? 'hd' : undefined} style={{ fontSize: r.bold ? 13.5 : 12.5, fontWeight: r.bold ? 800 : 400, color: r.bold ? '#13213C' : '#6B7A93' }}>{r.label}</span>
+                          <span className={r.bold ? 'hd' : undefined} style={{ fontSize: r.bold ? 13.5 : 12.5, fontWeight: r.bold ? 800 : 400, color: r.labelColor }}>{r.label}</span>
                         </span>
-                        <span style={{ fontSize: r.bold ? 15 : 13, fontWeight: 800, color: '#13213C' }}>{r.v}</span>
+                        <span style={{ fontSize: r.bold ? 15 : 13, fontWeight: 800, color: r.numColor }}>{r.v}</span>
                       </div>
                     </Fragment>
                   ))}
@@ -395,7 +395,6 @@ function EntityOverview({ vm }: { vm: VM }) {
                     </div>
                     <span style={{ width: 11, height: 11, borderRadius: 3, background: r.c, flex: 'none' }} />
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', flex: 'none' }}>{r.pct}%</span>
                 </div>
               ))}
             </div>
@@ -429,7 +428,7 @@ function EntityOverview({ vm }: { vm: VM }) {
                 {(() => {
                   const maxN = Math.max(...st.stages.map((x) => x.n), 1);
                   return st.stages.map((sg) => {
-                    const pct = Math.max(6, Math.round((sg.n / maxN) * 100));
+                    const pct = sg.n === 0 ? 0 : Math.max(6, Math.round((sg.n / maxN) * 100));
                     return (
                       <div key={sg.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400, flex: 'none', minWidth: 82, textAlign: 'right' }}>{sg.label}</span>
@@ -512,15 +511,28 @@ function EntityOverview({ vm }: { vm: VM }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginTop: 18, height: 200 }}>
                 {sd.stages.map((sg) => {
-                  const hpct = Math.max(6, Math.round((sg.n / maxN) * 100));
+                  const hpct = sg.n === 0 ? 0 : Math.max(6, Math.round((sg.n / maxN) * 100));
                   const on = hovBar === sg.label;
                   return (
                     <div
                       key={sg.label}
                       onMouseEnter={() => setHovBar(sg.label)}
                       onMouseLeave={() => setHovBar(null)}
-                      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, height: '100%', cursor: 'default' }}
+                      style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, height: '100%', cursor: 'default' }}
                     >
+                      {on && (
+                        <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 10, background: '#16233F', borderRadius: 14, padding: '11px 16px', boxShadow: '0 14px 30px -10px rgba(11,27,58,.55)', zIndex: 6, minWidth: 150, pointerEvents: 'none' }}>
+                          <div className="hd" style={{ fontSize: 12, fontWeight: 700, color: '#9FB0CC', textAlign: 'center', marginBottom: 9 }}>{sg.label}</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                            {(stageTab === 'all' ? sg.typeBreak : sg.statusBreak).map((r) => (
+                              <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20 }}>
+                                <span style={{ fontSize: 12.5, color: '#DCE4F0', fontWeight: 400 }}>{r.label}</span>
+                                <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{r.n}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <span style={{ fontSize: 15, fontWeight: 800, color: on ? '#1D4ED8' : '#13213C', transition: 'color .12s' }}>{sg.n}</span>
                       <div style={{ position: 'relative', flex: 1, width: '100%', background: '#EEF3FB', borderRadius: 14, overflow: 'hidden', minHeight: 0 }}>
                         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: hpct + '%', background: on ? '#1D4ED8' : '#3B6FE8', borderRadius: 14, transition: 'background .12s' }} />
@@ -592,8 +604,8 @@ function StageCard({ b }: { b: VM['batchSummary'][number] }) {
         <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>نوع المدخلات</span>
         <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
           {b.typeBreak.map((tp) => (
-            <span key={tp.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#13213C', color: '#fff', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
-              {tp.label} <b style={{ color: '#BFD3F5' }}>{tp.n}</b>
+            <span key={tp.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF1F5', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
+              {tp.label} <b style={{ color: '#13213C' }}>{tp.n}</b>
             </span>
           ))}
         </div>
@@ -603,7 +615,7 @@ function StageCard({ b }: { b: VM['batchSummary'][number] }) {
         <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>المسار</span>
         <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
           {b.streamBreak.map((st) => (
-            <span key={st.short} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#F4F7FC', border: '1px solid #E7ECF4', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
+            <span key={st.short} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF1F5', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.color, flex: 'none' }} />
               {st.short} <b style={{ color: '#13213C' }}>{st.n}</b>
             </span>
@@ -1915,7 +1927,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                         {(() => {
                           const maxN = Math.max(...st.byType.map((x) => x.n), 1);
                           return st.byType.map((tp) => {
-                            const pct = Math.max(6, Math.round((tp.n / maxN) * 100));
+                            const pct = tp.n === 0 ? 0 : Math.max(6, Math.round((tp.n / maxN) * 100));
                             return (
                               <div key={tp.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400, flex: 'none', minWidth: 94, textAlign: 'right' }}>{tp.label}</span>
@@ -1939,6 +1951,30 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                 ))}
               </div>
+
+              {/* Section 3: الجهات المشاركة — entities ranked by inputs submitted */}
+              {vm.entityRanking.length > 0 && (
+                <>
+                  <div>
+                    <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>الجهات المشاركة</div>
+                    <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>ترتيب الجهات حسب عدد المدخلات المقدّمة — توسّع القائمة تلقائياً مع مشاركة جهات جديدة</div>
+                  </div>
+                  <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 22px', marginTop: -8, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {vm.entityRanking.map((r) => (
+                      <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <div className="hd" style={{ width: 300, flex: 'none', textAlign: 'right', fontSize: 14, fontWeight: 800, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                        <div style={{ flex: 1, height: 44, background: '#EFF2F7', borderRadius: 12, position: 'relative', overflow: 'hidden', minWidth: 60 }}>
+                          <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: Math.max(8, Math.round(r.frac * 100)) + '%', borderRadius: 12, background: r.top ? 'linear-gradient(90deg,#7DA9F7,#2563EB)' : '#1E2F4F' }} />
+                        </div>
+                        <div style={{ width: 64, flex: 'none', textAlign: 'center' }}>
+                          <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{r.n}</div>
+                          <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>مدخلات</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
 
             </>
           )}
@@ -2030,51 +2066,33 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </>
               )}
 
-              {/* recap strip for the current selection */}
-              <SectionLabel>ملخص حالة التنفيذ</SectionLabel>
-              <StatBand
-                items={[
-                  { label: 'إجمالي المدخلات', value: String(vm.recap.total), info: 'إجمالي المدخلات المسجّلة ضمن هذا الاختيار.' },
-                  { label: 'غير قابل للتحول', value: String(vm.recap.notCapable), info: 'بنود لا تنطبق عليها خطة إطلاق أو حالة تنفيذ.' },
-                  { label: 'قيد التطوير', value: String(vm.recap.underDev), info: 'معتمدة ويجري تطويرها حالياً.' },
-                  { label: 'تم التطوير', value: String(vm.recap.developed), info: 'اكتمل تطويرها وهي جاهزة للإطلاق.' },
-                  { label: 'تم الإطلاق', value: String(vm.recap.launched), info: 'أُطلقت رسمياً.' },
-                ]}
-              />
+              {/* recap strip for the current selection — hidden on the "الكل" view */}
+              {!(vm.activePathAll && vm.filterValue === 'all') && (
+                <>
+                  <SectionLabel>ملخص حالة التنفيذ</SectionLabel>
+                  <StatBand
+                    items={[
+                      { label: 'إجمالي المدخلات', value: String(vm.recap.total), info: 'إجمالي المدخلات المسجّلة ضمن هذا الاختيار.' },
+                      { label: 'غير قابل للتحول', value: String(vm.recap.notCapable), info: 'بنود لا تنطبق عليها خطة إطلاق أو حالة تنفيذ.' },
+                      { label: 'قيد التطوير', value: String(vm.recap.underDev), info: 'معتمدة ويجري تطويرها حالياً.' },
+                      { label: 'تم التطوير', value: String(vm.recap.developed), info: 'اكتمل تطويرها وهي جاهزة للإطلاق.' },
+                      { label: 'تم الإطلاق', value: String(vm.recap.launched), info: 'أُطلقت رسمياً.' },
+                    ]}
+                  />
+                </>
+              )}
 
               {/* filters + search */}
-              <SectionLabel>القائمة التفصيلية</SectionLabel>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>القائمة التفصيلية للمدخلات</div>
+                <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>{vm.shownCount} من {vm.totalCount} عنصر</span>
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <select value={vm.statusFilterValue} onChange={(e) => s.setStatusFilter(e.target.value)} style={selectStyle}>
-                  {vm.statusOptions.map((o) => (
-                    <option key={o.v} value={o.v}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-                {vm.showFundFilter && (
-                  <select value={vm.fundFilterValue} onChange={(e) => s.setFundFilter(e.target.value)} style={{ ...selectStyle, width: 200 }}>
-                    {vm.fundOptions.map((o) => (
-                      <option key={o.v} value={o.v}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {vm.showEntFilter && (
-                  <select value={vm.entFilterValue} onChange={(e) => s.setEntFilter(e.target.value)} style={selectStyle}>
-                    {vm.entOptions.map((e2) => (
-                      <option key={e2.v} value={e2.v}>
-                        {e2.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
                 <div style={{ position: 'relative' }}>
                   <input
                     value={vm.searchValue}
                     onChange={(e) => s.setSearch(e.target.value)}
-                    placeholder="ابحث بالاسم أو الوصف…"
+                    placeholder="ابحث بالاسم…"
                     style={{
                       height: 40,
                       width: 220,
@@ -2093,6 +2111,67 @@ export function Dashboard({ vm }: { vm: VM }) {
                     <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" size={15} color="#9AA6BC" />
                   </span>
                 </div>
+                <select value={vm.pathFilterValue} onChange={(e) => s.setActivePath(e.target.value)} style={selectStyle}>
+                  {vm.pathOptions.map((o) => (
+                    <option key={o.v} value={o.v}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                {vm.showEntFilter && (
+                  <select value={vm.entFilterValue} onChange={(e) => s.setEntFilter(e.target.value)} style={selectStyle}>
+                    {vm.entOptions.map((e2) => (
+                      <option key={e2.v} value={e2.v}>
+                        {e2.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <select value={vm.filterValue} onChange={(e) => s.setFilter(e.target.value)} style={selectStyle}>
+                  {vm.typeOptions.map((o) => (
+                    <option key={o.v} value={o.v}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                <select value={vm.statusFilterValue} onChange={(e) => s.setStatusFilter(e.target.value)} style={selectStyle}>
+                  {vm.statusOptions.map((o) => (
+                    <option key={o.v} value={o.v}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                {vm.showFundFilter && (
+                  <select value={vm.fundFilterValue} onChange={(e) => s.setFundFilter(e.target.value)} style={{ ...selectStyle, width: 200 }}>
+                    {vm.fundOptions.map((o) => (
+                      <option key={o.v} value={o.v}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  onClick={() => s.resetFilters()}
+                  disabled={!vm.anyFilterActive}
+                  style={{
+                    height: 40,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    background: '#fff',
+                    border: '1px solid #E7ECF4',
+                    borderRadius: 11,
+                    padding: '0 14px',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    color: vm.anyFilterActive ? '#42506B' : '#B4BECE',
+                    cursor: vm.anyFilterActive ? 'pointer' : 'default',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <Icon d="M3 2v6h6M3 8a9 9 0 1 0 2.6-4.5L3 8" size={13} color={vm.anyFilterActive ? '#42506B' : '#B4BECE'} />
+                  إعادة تعيين
+                </button>
                 <div style={{ flex: 1 }} />
                 {/* cards / table view switcher */}
                 <div
@@ -3090,13 +3169,13 @@ function CmtStat({ value, label, sub, iconD, info }: { value: number; label: str
 // mini nomination-distribution card
 function CmtMini({ value, label, info, green }: { value: number; label: string; info?: string; green?: boolean }) {
   return (
-    <div style={{ background: green ? '#EAF7F0' : '#fff', border: '1px solid ' + (green ? '#CDEBD9' : '#E7ECF4'), borderRadius: 14, padding: '12px 13px', display: 'flex', flexDirection: 'column', gap: 6, minHeight: 92 }}>
+    <div style={{ background: green ? '#EAF1FE' : '#fff', border: '1px solid ' + (green ? '#D3E3FB' : '#E7ECF4'), borderRadius: 14, padding: '12px 13px', display: 'flex', flexDirection: 'column', gap: 6, minHeight: 92 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 }}>
-        <span style={{ fontSize: 11.5, color: green ? '#0B8A4B' : '#6B7A93', fontWeight: 400, lineHeight: 1.4 }}>{label}</span>
+        <span style={{ fontSize: 11.5, color: green ? '#2563EB' : '#6B7A93', fontWeight: 400, lineHeight: 1.4 }}>{label}</span>
         {info && <InfoTip text={info} />}
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-        <span style={{ fontSize: 27, fontWeight: 800, color: green ? '#0B8A4B' : '#13213C', lineHeight: 1 }}>{value}</span>
+        <span style={{ fontSize: 27, fontWeight: 800, color: green ? '#2563EB' : '#13213C', lineHeight: 1 }}>{value}</span>
       </div>
     </div>
   );

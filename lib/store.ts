@@ -205,6 +205,7 @@ type Actions = {
   setFundFilter: (v: string) => void;
   setSearch: (v: string) => void;
   setEntFilter: (v: string) => void;
+  resetFilters: () => void;
   toggleStepFilter: (n: number) => void;
   // create wizard
   openCreate: () => void;
@@ -764,6 +765,7 @@ export const useStore = create<Store>((set, get) => {
     setFundFilter: (v) => setUi({ fundFilter: v }),
     setSearch: (v) => setUi({ search: v }),
     setEntFilter: (v) => setUi({ entFilter: v }),
+    resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null }),
     toggleStepFilter: (n) => set((s) => ({ ui: { ...s.ui, stepFilter: s.ui.stepFilter === n ? null : n } })),
 
     // ---- create wizard ----
