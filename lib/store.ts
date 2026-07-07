@@ -951,12 +951,12 @@ export const useStore = create<Store>((set, get) => {
         setUi({
           confirmModal: {
             kind: 'deleteItem',
-            title: w === 'ent1' ? 'سحب وحذف' : 'حذف المسودة',
+            title: w === 'ent1' ? 'سحب المدخل وحذفه' : 'حذف المسودة',
             body:
               w === 'ent1'
                 ? '«' + it.title + '» مُرسل لممثل الجهة ولم يُعتمد بعد — سيُسحب ويُحذف نهائياً.'
                 : 'سيتم حذف «' + it.title + '» نهائياً.',
-            okLabel: w === 'ent1' ? 'سحب وحذف' : 'حذف نهائياً',
+            okLabel: w === 'ent1' ? 'سحب المدخل وحذفه' : 'حذف نهائياً',
             cancelLabel: 'إلغاء',
             payload: { id },
           },
@@ -970,7 +970,7 @@ export const useStore = create<Store>((set, get) => {
       }));
       set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
-      toast(w === 'ent1' ? 'تم سحب وحذف ' + typeLabelDef(it.type) : 'تم حذف المسودة');
+      toast(w === 'ent1' ? 'تم سحب المدخل وحذفه: ' + typeLabelDef(it.type) : 'تم حذف المسودة');
     },
     submitItem: () => {
       commitDraft(get, set, persist, toast, 'تم الإرسال', false);

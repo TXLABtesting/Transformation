@@ -142,7 +142,7 @@ function build(s: Store) {
   const deliveryBreak = (pick: (i: Item) => boolean) => {
     const set = scope.filter(pick);
     return [
-      { label: 'غير قابل للتحول', v: set.filter((i) => (i.transformability || '') === 'غير قابل').length },
+      { label: 'غير قابلة للتحويل', v: set.filter((i) => (i.transformability || '') === 'غير قابل').length },
       { label: 'قيد التطوير', v: set.filter((i) => devStatusOfItem(i) === 'underDev').length },
       { label: 'تم التطوير', v: set.filter((i) => devStatusOfItem(i) === 'developed').length },
       { label: 'تم الإطلاق', v: set.filter((i) => devStatusOfItem(i) === 'launched').length },
@@ -499,7 +499,7 @@ function build(s: Store) {
   const statusOptions =
     rawRole === 'coord'
       ? [
-          { v: 'all', label: 'كل الحالات' },
+          { v: 'all', label: 'جميع الحالات' },
           { v: 'draft', label: 'مسودة' },
           { v: 'pending', label: 'قيد الاعتماد' },
           { v: 'review', label: 'للمراجعة' },
@@ -508,13 +508,13 @@ function build(s: Store) {
         ]
       : rawRole === 'entity'
         ? [
-            { v: 'all', label: 'كل الحالات' },
+            { v: 'all', label: 'جميع الحالات' },
             { v: 'approve', label: 'للاعتماد' },
             { v: 'inprog', label: 'قيد التنفيذ' },
             { v: 'done', label: 'تم الإطلاق' },
           ]
         : [
-            { v: 'all', label: 'كل الحالات' },
+            { v: 'all', label: 'جميع الحالات' },
             { v: 'inprog', label: 'قيد التنفيذ' },
             { v: 'done', label: 'تم الإطلاق' },
           ];
@@ -527,11 +527,11 @@ function build(s: Store) {
   ];
 
   // path filter (ai only) + entity filter options
-  const pathOptions = [{ v: 'all', label: 'كل المسارات' }, ...PATHS.map((p) => ({ v: p.id, label: p.name }))];
+  const pathOptions = [{ v: 'all', label: 'جميع المسارات' }, ...PATHS.map((p) => ({ v: p.id, label: p.name }))];
   const entValues = Array.from(new Set([...s.items.map((i) => ent(i)), entityName]));
-  const entOptions = [{ v: 'all', label: 'كل الجهات' }, ...entValues.map((e) => ({ v: e, label: e }))];
+  const entOptions = [{ v: 'all', label: 'جميع الجهات' }, ...entValues.map((e) => ({ v: e, label: e }))];
   const typeOptions = [
-    { v: 'all', label: 'كل الأنواع' },
+    { v: 'all', label: 'جميع الأنواع' },
     { v: 'projinit', label: 'مشروع / مبادرة' },
     { v: 'operation', label: 'عملية' },
     { v: 'service', label: 'خدمة' },
@@ -606,7 +606,7 @@ function build(s: Store) {
   }));
 
   const typeSections: Record<string, string> = {
-    all: 'الكل',
+    all: 'جميع المدخلات',
     projects: 'المشاريع والمبادرات',
     operations: 'العمليات',
     services: 'الخدمات',
@@ -1098,7 +1098,7 @@ function summaryText(activePath: string): string {
 function tabDefs(activePath: string, _scope: Item[]) {
   // project & initiative are one merged bucket
   const defs: { key: string; label: string; optLabel: string }[] = [
-    { key: 'all', label: 'كل الأنواع', optLabel: 'كل الأنواع' },
+    { key: 'all', label: 'جميع الأنواع', optLabel: 'جميع الأنواع' },
     { key: 'projinit', label: 'المشاريع / المبادرات', optLabel: 'المشاريع / المبادرات' },
   ];
   if (activePath === 'all' || activePath === 'ops')
@@ -1169,7 +1169,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfChip = '#B45309';
     wfBg = '#FFF3DE';
   } else if (w === 'exec' || w === 'launch') {
-    wfLabel = batchShort ? 'مخطط · ' + batchShort : 'معتمد';
+    wfLabel = batchShort ? 'مسودة · ' + batchShort : 'معتمد';
     wfChip = '#2563EB';
     wfBg = '#EAF0FE';
   }
@@ -1284,8 +1284,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
 }
 
 function pathCta(w: string, ret: boolean): string {
-  if (w === 'draft') return ret ? 'تعديل وإعادة الإرسال' : 'إكمال وإرسال';
-  if (w === 'exec') return 'تحديث حالة التنفيذ';
+  if (w === 'draft') return ret ? 'تعديل المدخل وإعادة الإرسال' : 'إكمال وإرسال';
+  if (w === 'exec') return 'تحديث حالة التطوير';
   return 'تحديث خطة الإطلاق';
 }
 

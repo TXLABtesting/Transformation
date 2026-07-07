@@ -1136,7 +1136,7 @@ function ExportMenu({ onExcel, onPpt }: { onExcel: () => void; onPpt: () => void
         hover={{ borderColor: '#C7D6EE' }}
       >
         <Icon d="M12 3v12M7 10l5 5 5-5M5 21h14" size={15} />
-        تنزيل التقرير
+        تحميل التقرير
         <Icon d={open ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={13} color="#8A97AD" />
       </HoverButton>
       {open && (
@@ -2058,14 +2058,18 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </div>
               </div>
 
+              {vm.role === 'coord' && (
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: -8 }}>متابعة حالة مدخلات المسار حسب التطوير والاعتماد.</div>
+              )}
+
               {/* recap strip for the current selection — hidden on the "الكل" view */}
               {!(vm.activePathAll && vm.filterValue === 'all') && (
                 <>
-                  <SectionLabel>ملخص حالة التنفيذ</SectionLabel>
+                  <SectionLabel>ملخص حالة المدخلات</SectionLabel>
                   <StatBand
                     items={[
                       { label: 'إجمالي المدخلات', value: String(vm.recap.total), info: 'إجمالي المدخلات المسجّلة ضمن هذا الاختيار.' },
-                      { label: 'غير قابل للتحول', value: String(vm.recap.notCapable), info: 'بنود لا تنطبق عليها خطة إطلاق أو حالة تنفيذ.' },
+                      { label: 'غير قابلة للتحويل', value: String(vm.recap.notCapable), info: 'بنود لا تنطبق عليها خطة إطلاق أو حالة تطوير.' },
                       { label: 'قيد التطوير', value: String(vm.recap.underDev), info: 'معتمدة ويجري تطويرها حالياً.' },
                       { label: 'تم التطوير', value: String(vm.recap.developed), info: 'اكتمل تطويرها وهي جاهزة للإطلاق.' },
                       { label: 'تم الإطلاق', value: String(vm.recap.launched), info: 'أُطلقت رسمياً.' },
@@ -2077,14 +2081,14 @@ export function Dashboard({ vm }: { vm: VM }) {
               {/* filters + search */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>القائمة التفصيلية للمدخلات</div>
-                <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>{vm.shownCount} من {vm.totalCount} عنصر</span>
+                <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>{vm.shownCount} من {vm.totalCount} مدخلات</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <div style={{ position: 'relative' }}>
                   <input
                     value={vm.searchValue}
                     onChange={(e) => s.setSearch(e.target.value)}
-                    placeholder="ابحث بالاسم…"
+                    placeholder="البحث باسم المدخل…"
                     style={{
                       height: 40,
                       width: 220,
@@ -2162,7 +2166,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   }}
                 >
                   <Icon d="M3 2v6h6M3 8a9 9 0 1 0 2.6-4.5L3 8" size={13} color={vm.anyFilterActive ? '#42506B' : '#B4BECE'} />
-                  إعادة تعيين
+                  إعادة ضبط الفلاتر
                 </button>
                 <div style={{ flex: 1 }} />
                 {/* cards / table view switcher */}
@@ -3837,7 +3841,7 @@ function CardItem({ c }: { c: CardVM }) {
           )}
           {c.canDelete && (
             <button
-              title={c.showPathCta ? 'حذف المسودة' : 'سحب وحذف (لم يُعتمد بعد)'}
+              title={c.showPathCta ? 'حذف المسودة' : 'سحب المدخل وحذفه (لم يُعتمد بعد)'}
               onClick={(e) => {
                 stop(e);
                 c.onDelete();
@@ -3859,7 +3863,7 @@ function CardItem({ c }: { c: CardVM }) {
               }}
             >
               <Icon d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" size={15} color="#C0303B" />
-              {!c.showPathCta && 'سحب وحذف'}
+              {!c.showPathCta && 'سحب المدخل وحذفه'}
             </button>
           )}
         </div>
