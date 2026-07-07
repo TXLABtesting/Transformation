@@ -132,6 +132,8 @@ export type UiState = {
   fundFilter: string; // 'all' | 'funded' | 'notfunded'
   search: string;
   entFilter: string;
+  execEnt: string; // مراحل التنفيذ / خطة الإطلاق — entity filter (ai/path), 'all'
+  execStream: string; // مراحل التنفيذ / خطة الإطلاق — stream filter (ai), 'all'
   activePath: string; // 'all' | pathId
   stepFilter: number | null;
   // setup wizard
@@ -205,6 +207,8 @@ type Actions = {
   setFundFilter: (v: string) => void;
   setSearch: (v: string) => void;
   setEntFilter: (v: string) => void;
+  setExecEnt: (v: string) => void;
+  setExecStream: (v: string) => void;
   resetFilters: () => void;
   toggleStepFilter: (n: number) => void;
   // create wizard
@@ -374,6 +378,8 @@ function defaultUi(): UiState {
     fundFilter: 'all',
     search: '',
     entFilter: 'all',
+    execEnt: 'all',
+    execStream: 'all',
     activePath: 'all',
     stepFilter: null,
     setupStep: 1,
@@ -779,6 +785,10 @@ export const useStore = create<Store>((set, get) => {
     setFundFilter: (v) => setUi({ fundFilter: v }),
     setSearch: (v) => setUi({ search: v }),
     setEntFilter: (v) => setUi({ entFilter: v }),
+    // exec/launch page filters — reset the drill-down drawer on change so the
+    // viewer isn't stranded on a now-empty detail view
+    setExecEnt: (v) => setUi({ execEnt: v, detailId: null }),
+    setExecStream: (v) => setUi({ execStream: v, detailId: null }),
     resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null }),
     toggleStepFilter: (n) => set((s) => ({ ui: { ...s.ui, stepFilter: s.ui.stepFilter === n ? null : n } })),
 

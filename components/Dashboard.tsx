@@ -590,7 +590,119 @@ const STAGE_STATUSES = [
   { label: 'تم الإطلاق', c: '#C7D9F5', key: 'launched' as const },
 ];
 
-function StageCard({ b }: { b: VM['batchSummary'][number] }) {
+// ---- title-row filters (مراحل التنفيذ / خطة الإطلاق) ----
+// committee (ai): searchable entity combobox + stream select; stream-head
+// (path): entity combobox only. Filters sit on the LEFT of the title row.
+type FilterOpt = { v: string; label: string };
+
+const FilterChevron = () => (
+  <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, flex: 'none', stroke: '#9AA6BC', fill: 'none', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
+
+function StreamSelect({ value, options, onChange }: { value: string; options: FilterOpt[]; onChange: (v: string) => void }) {
+  return (
+    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #E4ECF7', borderRadius: 11, padding: '8px 13px' }}>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{ font: 'inherit', fontSize: 12.5, fontWeight: 800, color: '#13213C', background: 'transparent', border: 'none', cursor: 'pointer', outline: 'none', WebkitAppearance: 'none', appearance: 'none', padding: 0 }}
+      >
+        {options.map((o) => (
+          <option key={o.v} value={o.v}>{o.label}</option>
+        ))}
+      </select>
+      <FilterChevron />
+    </label>
+  );
+}
+
+function EntityFilter({ value, options, onChange }: { value: string; options: FilterOpt[]; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const label = value === 'all' ? 'كل الجهات' : value;
+  const q = query.trim();
+  const filtered = options.filter((o) => !q || o.label.includes(q));
+  const pick = (v: string) => { onChange(v); setOpen(false); setQuery(''); };
+  return (
+    <div style={{ position: 'relative', flex: 'none' }}>
+      <div
+        onClick={() => { setOpen((o) => !o); setQuery(''); }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 10, justifyContent: 'space-between', minWidth: 160, background: '#fff', border: '1px solid #E4ECF7', borderRadius: 11, padding: '8px 13px', cursor: 'pointer' }}
+      >
+        <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{label}</span>
+        <FilterChevron />
+      </div>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 39 }} />
+          <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 290, background: '#fff', border: '1px solid #E4ECF7', borderRadius: 13, boxShadow: '0 18px 44px -14px rgba(15,31,61,.28)', zIndex: 40, overflow: 'hidden' }}>
+            <div style={{ padding: 10, borderBottom: '1px solid #F0F3F8' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F5F7FB', borderRadius: 9, padding: '8px 11px' }}>
+                <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, flex: 'none', stroke: '#9AA6BC', fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+                </svg>
+                <input
+                  value={query}
+                  autoFocus
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="ابحث عن جهة…"
+                  style={{ border: 'none', background: 'transparent', outline: 'none', font: 'inherit', fontSize: 12.5, fontWeight: 600, color: '#13213C', width: '100%' }}
+                />
+              </div>
+            </div>
+            <div style={{ maxHeight: 264, overflowY: 'auto', padding: 6 }}>
+              {filtered.map((o) => {
+                const sel = o.v === value;
+                return (
+                  <div
+                    key={o.v}
+                    onClick={() => pick(o.v)}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '9px 11px', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: sel ? 800 : 600, color: sel ? '#2563EB' : '#42506B', background: sel ? '#EAF0FE' : 'transparent' }}
+                    onMouseEnter={(e) => { if (!sel) e.currentTarget.style.background = '#F5F7FB'; }}
+                    onMouseLeave={(e) => { if (!sel) e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <span>{o.label}</span>
+                    {sel && (
+                      <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, flex: 'none', stroke: '#2563EB', fill: 'none', strokeWidth: 2.6, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                        <path d="M20 6 9 17l-5-5" />
+                      </svg>
+                    )}
+                  </div>
+                );
+              })}
+              {filtered.length === 0 && (
+                <div style={{ padding: 16, textAlign: 'center', fontSize: 12, color: '#9AA6BC', fontWeight: 600 }}>لا توجد نتائج</div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// title on the right, filters on the left (same row) — replaces the old scope banner
+function StagePageHeader({ title, sub, f }: { title: string; sub: string; f: VM['execFilter'] }) {
+  return (
+    <div style={{ direction: 'rtl', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+      <div style={{ minWidth: 0 }}>
+        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{title}</div>
+        <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 400, marginTop: 6, maxWidth: 720, lineHeight: 1.7 }}>{sub}</div>
+      </div>
+      {(f.showEnt || f.showStream) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 'none', flexWrap: 'wrap' }}>
+          {/* RTL: entity («كل الجهات») on the right, stream («كل المسارات») on the left */}
+          {f.showEnt && <EntityFilter value={f.ent} options={f.entOptions} onChange={f.setEnt} />}
+          {f.showStream && <StreamSelect value={f.stream} options={f.streamOptions} onChange={f.setStream} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StageCard({ b, showStream, onManage }: { b: VM['batchSummary'][number]; showStream: boolean; onManage?: () => void }) {
   const [hov, setHov] = useState<string | null>(null);
   const tot = b.count || 1;
   const segs = STAGE_STATUSES.map((s) => ({ key: s.key, frac: b[s.key] / tot, color: s.c, label: s.label, value: b[s.key] })).filter((x) => x.frac > 0.0001);
@@ -605,40 +717,40 @@ function StageCard({ b }: { b: VM['batchSummary'][number] }) {
             {b.period}
           </div>
         </div>
-        <button onClick={b.onOpenAll} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#1D4ED8', fontWeight: 800, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-          عرض مدخلات المرحلة
-          <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
-        </button>
+        {onManage && (
+          <button
+            onClick={onManage}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#EAF0FE', border: '1px solid #D9E4FD', borderRadius: 999, padding: '5px 12px', fontSize: 11, color: '#2563EB', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}
+          >
+            <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={11} color="#2563EB" />
+            إدارة التنفيذ
+          </button>
+        )}
       </div>
-      {/* donut (right) + status legend (left), with hover */}
-      {b.count === 0 ? (
-        <div style={{ padding: '22px 8px', textAlign: 'center', fontSize: 12.5, fontWeight: 400, color: '#9AA6BC' }}>
-          لا توجد مدخلات في هذه المرحلة
+      {/* donut (right) + status legend (left), with hover — a zero-phase still
+          renders its ring as 0 with the empty breakdown rows below */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+        <EoDonutSeg segs={segs} dim={hov} center={String(b.count)} sub="مدخلات" />
+        <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {STAGE_STATUSES.map((r) => (
+            <div
+              key={r.label}
+              onMouseEnter={() => setHov(r.key)}
+              onMouseLeave={() => setHov(null)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '4px 8px', borderRadius: 8, background: hov === r.key ? '#EEF3FC' : 'transparent', cursor: 'default', transition: 'background .12s' }}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 9, height: 9, borderRadius: '50%', background: r.c, flex: 'none' }} />
+                <span style={{ fontSize: 12.5, color: '#54627B', fontWeight: 400 }}>{r.label}</span>
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{b[r.key]}</span>
+            </div>
+          ))}
         </div>
-      ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
-          <EoDonutSeg segs={segs} dim={hov} center={String(b.count)} sub="مدخلات" />
-          <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {STAGE_STATUSES.map((r) => (
-              <div
-                key={r.label}
-                onMouseEnter={() => setHov(r.key)}
-                onMouseLeave={() => setHov(null)}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '4px 8px', borderRadius: 8, background: hov === r.key ? '#EEF3FC' : 'transparent', cursor: 'default', transition: 'background .12s' }}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: r.c, flex: 'none' }} />
-                  <span style={{ fontSize: 12.5, color: '#54627B', fontWeight: 400 }}>{r.label}</span>
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{b[r.key]}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* أنواع المدخلات */}
+      </div>
+      {/* نوع المدخلات */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>أنواع المدخلات</span>
+        <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>نوع المدخلات</span>
         <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
           {b.typeBreak.map((tp) => (
             <span key={tp.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF1F5', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
@@ -647,39 +759,51 @@ function StageCard({ b }: { b: VM['batchSummary'][number] }) {
           ))}
         </div>
       </div>
-      {/* المسارات */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>المسارات</span>
-        <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-          {b.streamBreak.map((st) => (
-            <span key={st.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF1F5', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.color, flex: 'none' }} />
-              {st.name} <b style={{ color: '#13213C' }}>{st.n}</b>
-            </span>
-          ))}
+      {/* المسار — committee only (spans multiple streams); single-stream roles omit it */}
+      {showStream && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>المسار</span>
+          <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+            {b.streamBreak.map((st) => (
+              <span key={st.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF1F5', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.color, flex: 'none' }} />
+                {st.name} <b style={{ color: '#13213C' }}>{st.n}</b>
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       {/* cost footer */}
-      <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 'auto' }}>
-        <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ التقديرية</span>
+      <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>
+          <Icon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h4" size={13} color="#9AA6BC" />
+          تكلفة التنفيذ التقديرية للمرحلة
+        </span>
         <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{b.costLabel}</span>
       </div>
+      {/* view-inputs button (full width, bottom) */}
+      <button
+        onClick={b.onOpenAll}
+        style={{ marginTop: 'auto', width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#fff', border: '1px solid #E4ECF7', borderRadius: 12, padding: '11px 0', fontSize: 12.5, fontWeight: 800, color: '#1D4ED8', cursor: 'pointer', fontFamily: 'inherit' }}
+      >
+        عرض المدخلات
+        <Icon d="M15 18l-6-6 6-6" size={13} color="#1D4ED8" />
+      </button>
     </div>
   );
 }
 
-function StageDistribution({ vm }: { vm: VM }) {
+function StageDistribution({ vm, onManage }: { vm: VM; onManage?: (batch: string) => void }) {
   return (
     <>
-      <div>
-        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>مراحل التقدم</div>
-        <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3, maxWidth: 720, lineHeight: 1.7 }}>
-          توزيع مدخلات الجهة على مراحل التقدم الأربع حسب المسار، النوع، حالة التطوير، والتكلفة التقديرية.
-        </div>
-      </div>
+      <StagePageHeader
+        title="مراحل التنفيذ"
+        sub="توزيع مدخلات التحول على المراحل الزمنية الأربع مع التكلفة التقديرية للتنفيذ — ضمن نطاق عرضك."
+        f={vm.execFilter}
+      />
       <div data-tour="stages" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(440px,1fr))', gap: 16 }}>
         {vm.batchSummary.map((b) => (
-          <StageCard key={b.name} b={b} />
+          <StageCard key={b.name} b={b} showStream={vm.execFilter.showStreamBreak} onManage={onManage ? () => onManage(b.name) : undefined} />
         ))}
       </div>
     </>
@@ -717,9 +841,16 @@ function LpEntryRow({ e, launched }: { e: VM['batchSummary'][number]['launches']
   );
 }
 
-function LpLaunchCard({ l, idx }: { l: VM['batchSummary'][number]['launches'][number]; idx: number }) {
+function LpLaunchCard({ l, idx, hideMoney }: { l: VM['batchSummary'][number]['launches'][number]; idx: number; hideMoney: boolean }) {
   const [open, setOpen] = useState(false);
   const [hov, setHov] = useState(false);
+  // launch-level rollup for the header status pill (scoped to visible items)
+  const lstatus: 'dev' | 'launch' | 'done' = l.launched
+    ? 'done'
+    : l.items.length > 0 && l.items.every((it) => it.status === 'launch' || it.status === 'done')
+      ? 'launch'
+      : 'dev';
+  const lst = LPE_STATUS[lstatus];
   return (
     <div style={{ border: '1px solid #E6EBF3', borderRadius: 14, background: '#fff', overflow: 'hidden' }}>
       <div
@@ -728,19 +859,26 @@ function LpLaunchCard({ l, idx }: { l: VM['batchSummary'][number]['launches'][nu
         onMouseLeave={() => setHov(false)}
         style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', cursor: 'pointer', background: hov ? '#FAFBFE' : '#fff', transition: 'background .12s' }}
       >
-        <Icon d={open ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} size={17} color="#AEB8C7" />
         <span style={{ width: 38, height: 38, flex: 'none', borderRadius: 11, background: '#EAF0FE', color: '#2563EB', fontWeight: 900, fontSize: 15, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</span>
+        <Icon d={open ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} size={17} color="#AEB8C7" />
         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{l.title}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#5A6B86', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>
-            <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" size={11} color="#5A6B86" />
-            <b style={{ color: '#13213C', fontWeight: 900 }}>{l.count}</b> {l.count === 1 ? 'مدخل' : 'مدخلات'}
+            <Icon d="M3 6h18M3 12h18M3 18h18" size={11} color="#5A6B86" />
+            إجمالي المدخلات <b style={{ color: '#13213C', fontWeight: 900 }}>{l.count}</b>
           </span>
         </div>
-        <div style={{ flex: 'none', textAlign: 'left' }}>
-          <div style={{ fontSize: 10.5, color: '#AEB8C7', fontWeight: 400 }}>تكلفة الإطلاق التقديرية</div>
-          <div style={{ fontSize: 15, fontWeight: 900, color: '#13213C', marginTop: 2 }}>{l.budgetLabel}</div>
-        </div>
+        {hideMoney ? (
+          <span style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: lst.c, background: lst.bg, borderRadius: 999, padding: '5px 12px' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: lst.c, flex: 'none' }} />
+            {lst.label}
+          </span>
+        ) : (
+          <div style={{ flex: 'none', textAlign: 'left' }}>
+            <div style={{ fontSize: 10.5, color: '#AEB8C7', fontWeight: 400 }}>تكلفة الإطلاق التقديرية</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: '#13213C', marginTop: 2 }}>{l.budgetLabel}</div>
+          </div>
+        )}
       </div>
       {open && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 15px 15px', borderTop: '1px solid #ECF0F6' }}>
@@ -754,10 +892,11 @@ function LpLaunchCard({ l, idx }: { l: VM['batchSummary'][number]['launches'][nu
   );
 }
 
-function LpPhaseCard({ b }: { b: VM['batchSummary'][number] }) {
+function LpPhaseCard({ b, hideMoney, onManage }: { b: VM['batchSummary'][number]; hideMoney: boolean; onManage?: () => void }) {
   const [showAll, setShowAll] = useState(false);
   const launches = b.launches;
   const visible = showAll ? launches : launches.slice(0, 3);
+  const launchWord = launches.length === 1 ? 'إطلاق مجدول' : 'إطلاقات مجدولة';
   return (
     <div style={{ background: '#fff', border: '1px solid #EAEEF5', borderRadius: 16, padding: 22 }}>
       {/* phase header */}
@@ -768,28 +907,37 @@ function LpPhaseCard({ b }: { b: VM['batchSummary'][number] }) {
           {b.period}
         </span>
         <div style={{ flex: 1 }} />
-        <span style={{ flex: 'none', fontSize: 12, fontWeight: 800, color: '#2563EB', background: '#EAF0FE', borderRadius: 999, padding: '5px 13px' }}>{launches.length} {launches.length === 1 ? 'مدخل' : 'مدخلات'} للإطلاق</span>
+        {onManage && (
+          <button
+            onClick={onManage}
+            style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, background: '#EAF0FE', border: '1px solid #D9E4FD', borderRadius: 999, padding: '5px 12px', fontSize: 11, color: '#2563EB', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={11} color="#2563EB" />
+            إدارة الإطلاقات
+          </button>
+        )}
+        <span style={{ flex: 'none', fontSize: 12, fontWeight: 800, color: '#2563EB', background: '#EAF0FE', borderRadius: 999, padding: '5px 13px' }}>{launches.length} {launchWord}</span>
       </div>
       {/* section label */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '16px 0 12px' }}>
         <span style={{ width: 3, height: 16, borderRadius: 2, background: '#7C93F5' }} />
-        <span className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>المدخلات المجدولة للإطلاق</span>
+        <span className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>الإطلاقات المجدولة</span>
       </div>
       {launches.length === 0 ? (
         <div style={{ border: '1px dashed #D8DFEB', borderRadius: 12, padding: '20px 16px', textAlign: 'center', fontSize: 12.5, color: '#8A97AD', fontWeight: 400 }}>
-          لا توجد مدخلات مجدولة للإطلاق في هذه المرحلة بعد
+          لا توجد إطلاقات مجدولة ضمن نطاقك في هذه المرحلة
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {visible.map((l, i) => (
-            <LpLaunchCard key={l.id} l={l} idx={i} />
+            <LpLaunchCard key={l.id} l={l} idx={i} hideMoney={hideMoney} />
           ))}
           {launches.length > 3 && (
             <button
               onClick={() => setShowAll((v) => !v)}
               style={{ width: '100%', background: '#F5F8FD', border: '1px solid #E6EBF3', borderRadius: 11, padding: '10px 0', fontSize: 12.5, fontWeight: 800, color: '#1D4ED8', cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              {showAll ? 'عرض أقل' : `عرض مدخلات إضافية (${launches.length - 3})`}
+              {showAll ? 'عرض أقل' : `عرض إطلاقات إضافية (${launches.length - 3})`}
             </button>
           )}
         </div>
@@ -798,18 +946,18 @@ function LpPhaseCard({ b }: { b: VM['batchSummary'][number] }) {
   );
 }
 
-function LaunchPlanEntity({ vm }: { vm: VM }) {
+function LaunchPlan({ vm, onManage }: { vm: VM; onManage?: (batch: string) => void }) {
+  const hideMoney = vm.role === 'path' || vm.role === 'ai';
   return (
     <>
-      <div>
-        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>خطة الإطلاق</div>
-        <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 400, marginTop: 3, maxWidth: 720, lineHeight: 1.7 }}>
-          متابعة مدخلات الجهة المجدولة للإطلاق حسب مراحل التقدم، مع تكلفة الإطلاق التقديرية وحالة التطوير.
-        </div>
-      </div>
+      <StagePageHeader
+        title="خطة الإطلاق"
+        sub="الإطلاقات المجدولة عبر المراحل الزمنية الأربع — ضمن نطاق عرضك."
+        f={vm.execFilter}
+      />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {vm.batchSummary.map((b) => (
-          <LpPhaseCard key={b.name} b={b} />
+          <LpPhaseCard key={b.name} b={b} hideMoney={hideMoney} onManage={onManage ? () => onManage(b.name) : undefined} />
         ))}
       </div>
     </>
@@ -2453,386 +2601,14 @@ export function Dashboard({ vm }: { vm: VM }) {
           )}
 
           {/* ===== LAUNCH PLANS: four big مرحلة cards ===== */}
-          {vm.navSection === 'launchplans' && vm.role === 'entity' && <StageDistribution vm={vm} />}
-          {vm.navSection === 'lplan' && vm.role === 'entity' && <LaunchPlanEntity vm={vm} />}
-          {((vm.navSection === 'launchplans' && vm.role !== 'entity') || (vm.navSection === 'lplan' && vm.role === 'coord')) && (() => { const launchPage = vm.navSection === 'lplan'; return (
-            <>
-              <div>
-                <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{launchPage ? 'خطة الإطلاق' : 'مراحل التنفيذ'}</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
-                  {launchPage
-                    ? 'الإطلاقات المجدولة لكل مرحلة — أضِف الإطلاقات وحدِّد ما يشمله كل إطلاق وميزانيته التقديرية.'
-                    : (vm.role === 'path' || vm.role === 'ai')
-                      ? 'المراحل الأربع — تكلفة التنفيذ التقديرية، وحالة تطوير مدخلاتها.'
-                      : 'المراحل الأربع — توزيع المدخلات وتكلفة التنفيذ التقديرية وحالة التطوير.'}
-                </div>
-              </div>
-              <div
-                data-tour="stages"
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(430px,1fr))', gap: 14 }}
-              >
-                {vm.batchSummary.map((b) => (
-                  <div
-                    key={b.name}
-                    style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '20px 22px' }}
-                  >
-                    {/* header */}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                      <div>
-                        <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{b.displayName}</div>
-                        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>{b.period}</div>
-                      </div>
-                      <InfoTip text={(vm.role === 'path' || vm.role === 'ai') ? 'تكلفة التنفيذ تُجمع من ميزانيات ما هو معيَّن لهذه المرحلة. اضغطوا على أي إطلاق لاستعراض ما يندرج تحته.' : 'تكلفة التنفيذ تُجمع من ميزانيات ما هو معيَّن لهذه المرحلة، وتكلفة الإطلاق من ميزانيات إطلاقاتها. اضغطوا على أي إطلاق لاستعراض ما يندرج تحته.'} />
-                    </div>
-                    {/* محتوى المرحلة: composition + delivery status (Page A — execution) */}
-                    {!launchPage && (b.count === 0 ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-                        <div style={{ flex: 1, fontSize: 11.5, color: '#6B7A93', fontWeight: 400 }}>
-                          لا توجد تعيينات لهذه المرحلة بعد.
-                        </div>
-                        {vm.showAddBtn && (
-                          <button
-                            onClick={() => setItemsMgrFor(b.name)}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 5,
-                              background: '#fff',
-                              border: '1px solid #E3E9F3',
-                              borderRadius: 999,
-                              padding: '5px 12px',
-                              fontSize: 11,
-                              color: '#16408F',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              fontFamily: 'inherit',
-                            }}
-                          >
-                            + إضافة
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          background: '#FAFCFF',
-                          border: '1px solid #EBEFF6',
-                          borderRadius: 14,
-                          padding: '12px 14px',
-                          marginTop: 12,
-                        }}
-                      >
-                        {/* header: title + one action (coord manages, others view) */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div className="hd" style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>
-                            خطة التنفيذ
-                          </div>
-                          {vm.showAddBtn ? (
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                              <button
-                                onClick={() => setItemsMgrFor(b.name)}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 5,
-                                  background: '#EAF0FE',
-                                  border: '1px solid #D9E4FD',
-                                  borderRadius: 999,
-                                  padding: '5px 12px',
-                                  fontSize: 11,
-                                  color: '#2563EB',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  fontFamily: 'inherit',
-                                }}
-                              >
-                                <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={11} color="#2563EB" />
-                                إدارة التنفيذ
-                              </button>
-                              <button
-                                onClick={b.onOpenAll}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 5,
-                                  background: '#fff',
-                                  border: '1px solid #E1E7F1',
-                                  borderRadius: 999,
-                                  padding: '5px 12px',
-                                  fontSize: 11,
-                                  color: '#54627B',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  fontFamily: 'inherit',
-                                }}
-                              >
-                                عرض المدخلات
-                                <Icon d="M15 18l-6-6 6-6" size={11} color="#54627B" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={b.onOpenAll}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 5,
-                                background: '#fff',
-                                border: '1px solid #E3E9F3',
-                                borderRadius: 999,
-                                padding: '5px 12px',
-                                fontSize: 11,
-                                color: '#16408F',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                fontFamily: 'inherit',
-                              }}
-                            >
-                              عرض المدخلات
-                              <Icon d="M15 18l-6-6 6-6" size={11} color="#16408F" />
-                            </button>
-                          )}
-                        </div>
-                        {/* quiet composition line — each type opens its filtered page */}
-                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
-                          {b.composition.map((c, ci) => (
-                            <span key={c.section} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                              {ci > 0 && <span style={{ color: '#C2CCDC', fontSize: 11 }}>·</span>}
-                              <button
-                                onClick={c.onOpen}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  padding: '2px 3px',
-                                  fontSize: 11.5,
-                                  color: '#54627B',
-                                  fontWeight: 400,
-                                  cursor: 'pointer',
-                                  fontFamily: 'inherit',
-                                  textDecoration: 'underline',
-                                  textDecorationColor: '#C7D6EE',
-                                  textUnderlineOffset: 3,
-                                }}
-                              >
-                                <b style={{ fontWeight: 800, color: '#13213C' }}>{c.n}</b> {c.label}
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                        {/* delivery mapping of the same items */}
-                        <div data-r="stagedeliv" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 10 }}>
-                          {[
-                            { label: 'قيد التطوير', v: b.underDev },
-                            { label: 'تم التطوير', v: b.developed },
-                            { label: 'تم الإطلاق', v: b.launched },
-                          ].map((x) => (
-                            <div
-                              key={x.label}
-                              style={{ background: '#fff', border: '1px solid #EBEFF6', borderRadius: 12, padding: '9px 12px' }}
-                            >
-                              <div style={{ fontSize: 10.5, color: '#6B7A93', fontWeight: 400 }}>{x.label}</div>
-                              <div style={{ fontSize: 16, fontWeight: 800, color: '#13213C', marginTop: 2 }}>{x.v}</div>
-                            </div>
-                          ))}
-                        </div>
-                        {b.awaiting > 0 && (
-                          <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 7 }}>
-                            {b.awaiting} بانتظار الاعتماد قبل بدء التطوير
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {/* launch plan section — Page B (coord) or read-only for path/ai */}
-                    {(launchPage || !vm.showAddBtn) && (vm.showAddBtn ? (
-                      <div style={{ background: '#FAFCFF', border: '1px solid #EBEFF6', borderRadius: 14, padding: '12px 14px', marginTop: 12 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
-                          <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>خطة الإطلاق</div>
-                          <button
-                            onClick={() => setLaunchMgrFor(b.name)}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 5,
-                              background: '#EAF0FE',
-                              color: '#2563EB',
-                              border: '1px solid #D9E4FD',
-                              borderRadius: 999,
-                              padding: '5px 12px',
-                              fontSize: 11,
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              fontFamily: 'inherit',
-                            }}
-                          >
-                            {(vm.launchPlanMgr.find((g) => g.batch === b.name)?.plans || []).length ? 'إدارة الإطلاقات' : '+ إضافة إطلاق'}
-                          </button>
-                        </div>
-                        {(vm.launchPlanMgr.find((g) => g.batch === b.name)?.plans || []).length === 0 ? (
-                          <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>لا توجد إطلاقات لهذه المرحلة بعد.</div>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {(vm.launchPlanMgr.find((g) => g.batch === b.name)?.plans || []).map((p, pi) => {
-                              const selCount = p.items.filter((x) => x.checked).length;
-                              const ord =
-                                ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع', 'العاشر'][pi] || String(pi + 1);
-                              return (
-                                <div
-                                  key={p.id}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    border: '1px solid #EBEFF6',
-                                    borderRadius: 12,
-                                    padding: '10px 13px',
-                                    background: '#fff',
-                                  }}
-                                >
-                                  <span className="hd" style={{ flex: 'none', fontSize: 12.5, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
-                                    الإطلاق {ord}
-                                  </span>
-                                  <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: 400, color: '#6B7A93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {p.title.trim()}
-                                  </span>
-                                  {p.date && (
-                                    <span dir="ltr" style={{ flex: 'none', fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>{p.date}</span>
-                                  )}
-                                  {(() => {
-                                    const launchedN = p.items.filter((x) => x.checked && x.launched).length;
-                                    if (selCount > 0 && launchedN === selCount)
-                                      return (
-                                        <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#E3F6EC', color: '#0B8A4B' }}>
-                                          تم الإطلاق
-                                        </span>
-                                      );
-                                    return (
-                                      <span style={{ flex: 'none', fontSize: 10.5, color: '#6B7A93', fontWeight: 400 }}>
-                                        {launchedN > 0 ? launchedN + ' من ' + selCount + ' أُطلق' : selCount + ' محدد'}
-                                      </span>
-                                    );
-                                  })()}
-                                  <button
-                                    title="تعديل الإطلاق"
-                                    onClick={() => {
-                                      setLaunchMgrFor(b.name);
-                                      setOpenLaunch(b.name + '|' + p.id);
-                                    }}
-                                    style={{
-                                      flex: 'none',
-                                      width: 26,
-                                      height: 26,
-                                      borderRadius: 8,
-                                      border: '1px solid #E3E9F3',
-                                      background: '#fff',
-                                      color: '#54627B',
-                                      cursor: 'pointer',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                    }}
-                                  >
-                                    <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={12} color="#54627B" />
-                                  </button>
-                                  <button
-                                    title="حذف الإطلاق"
-                                    onClick={() => s.removeLaunchPlan(p.id)}
-                                    style={{
-                                      flex: 'none',
-                                      width: 26,
-                                      height: 26,
-                                      borderRadius: 8,
-                                      border: 'none',
-                                      background: '#FCEEEF',
-                                      color: '#C0303B',
-                                      cursor: 'pointer',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                    }}
-                                  >
-                                    <Icon d="M18 6L6 18M6 6l12 12" size={12} color="#C0303B" />
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                                        ) : (
-                      b.launches.length > 0 && (
-                      <div style={{ background: '#FAFCFF', border: '1px solid #EBEFF6', borderRadius: 14, padding: '12px 14px', marginTop: 12 }}>
-                        <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', marginBottom: 8 }}>خطة الإطلاق</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          {b.launches.map((l) => {
-                            const lOpen = openLaunch === b.name + '|' + l.id;
-                            return (
-                              <div key={l.id} style={{ border: '1px solid #EBEFF6', borderRadius: 12, overflow: 'hidden' }}>
-                                <HoverDiv
-                                  onClick={() => setOpenLaunch(lOpen ? null : b.name + '|' + l.id)}
-                                  base={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', cursor: 'pointer', background: '#FAFCFF' }}
-                                  hover={{ background: '#F2F6FD' }}
-                                >
-                                  <Icon d={lOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#8A97AD" />
-                                  <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{l.title}</span>
-                                  <span style={{ flex: 'none', fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>
-                                    تنفيذ: <b style={{ color: '#13213C' }}>{l.execLabel}</b>
-                                    {!(vm.role === 'path' || vm.role === 'ai') && l.launchLabel ? <> · إطلاق: <b style={{ color: '#13213C' }}>{l.launchLabel}</b></> : null}
-                                  </span>
-                                </HoverDiv>
-                                {lOpen && (
-                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    {l.items.map((it) => (
-                                      <HoverDiv
-                                        key={it.id}
-                                        onClick={it.onOpen}
-                                        base={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 13px', borderTop: '1px solid #F0F3F8', cursor: 'pointer', background: '#fff' }}
-                                        hover={{ background: '#F7F9FD' }}
-                                      >
-                                        <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#E5EEFF', color: '#2563EB', flex: 'none' }}>
-                                          {it.typeLabel}
-                                        </span>
-                                        <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                          {it.title}
-                                        </span>
-                                        {it.launched && (
-                                          <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#E3F6EC', color: '#0B8A4B' }}>
-                                            تم الإطلاق
-                                          </span>
-                                        )}
-                                        <span style={{ flex: 'none', fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>{it.budgetLabel}</span>
-                                      </HoverDiv>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      )
-                    ))}
-                    {/* cost tile — Page A owns execution cost; Page B owns launch cost */}
-                    {!launchPage && (
-                      <div data-r="form2" style={{ marginTop: 14 }}>
-                        <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
-                          <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ التقديرية</div>
-                          <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.costLabel}</div>
-                        </div>
-                      </div>
-                    )}
-                    {launchPage && (
-                      <div data-r="form2b" style={{ marginTop: 14 }}>
-                        <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
-                          <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>تكلفة الإطلاق التقديرية</div>
-                          <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.launchCostLabel}</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+          {vm.navSection === 'launchplans' && (
+            <StageDistribution vm={vm} onManage={vm.showAddBtn ? setItemsMgrFor : undefined} />
+          )}
+          {vm.navSection === 'lplan' && (
+            <LaunchPlan vm={vm} onManage={vm.showAddBtn ? setLaunchMgrFor : undefined} />
+          )}
 
-              {/* ===== stage items manager popup ===== */}
+          {/* ===== stage items manager popup (coordinator) ===== */}
               {itemsMgrFor && (
                 <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
                   <div
@@ -3117,8 +2893,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                 </div>
               )}
-            </>
-          ); })()}
 
         </div>
       </div>

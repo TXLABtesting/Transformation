@@ -375,8 +375,16 @@ function build(s: Store) {
     capacity: { short: 'بناء القدرات والتدريب', color: '#2563EB' },
     tech: { short: 'تقنيات الذكاء الاصطناعي والبيانات', color: '#8B5CF6' },
   };
+  // مراحل التنفيذ / خطة الإطلاق title-row filters narrow the phase cards + their
+  // contents. Role scope is already baked into roleBase; committee (ai) can
+  // filter by entity AND stream, stream-head (path) by entity only.
+  let batchBase = roleBase;
+  if ((rawRole === 'ai' || rawRole === 'path') && ui.execEnt !== 'all')
+    batchBase = batchBase.filter((i) => ent(i) === ui.execEnt);
+  if (rawRole === 'ai' && ui.execStream !== 'all')
+    batchBase = batchBase.filter((i) => i.path === ui.execStream);
   const batchSummary = launchBatches().map((b) => {
-    const inBatch = roleBase.filter((i) => i.execBatch === b.name);
+    const inBatch = batchBase.filter((i) => i.execBatch === b.name);
     const cost = inBatch.reduce((a, i) => a + parseBudget(i.budget), 0);
     const launchTotal = s.launchPlans
       .filter((p) => p.batch === b.name)
@@ -423,7 +431,7 @@ function build(s: Store) {
         .map((p) => {
           // scoped to the viewer: the launch's execution total is the sum of
           // the items THIS role can see, so it always matches the card totals
-          const visItems = roleBase.filter((i) => (i.launchPlanIds || []).includes(p.id));
+          const visItems = batchBase.filter((i) => (i.launchPlanIds || []).includes(p.id));
           const visCost = visItems.reduce((a, i) => a + parseBudget(i.budget), 0);
           return {
             id: p.id,
@@ -613,7 +621,7 @@ function build(s: Store) {
     { key: 'all', label: streamSub ? 'جميع المسارات' : 'جميع الأنواع', icon: NAV_DOTS, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
     ...subNav,
     { key: 'launchplans', label: 'مراحل التنفيذ', icon: NAV_CAL },
-    ...(rawRole === 'entity' || rawRole === 'coord' ? [{ key: 'lplan', label: 'خطة الإطلاق', icon: NAV_ROCKET }] : []),
+    { key: 'lplan', label: 'خطة الإطلاق', icon: NAV_ROCKET },
     ...(rawRole === 'ai' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
   ].map((n) => ({
@@ -982,6 +990,20 @@ function build(s: Store) {
     showEntFilter,
     entOptions,
     entFilterValue: ui.entFilter,
+    // مراحل التنفيذ / خطة الإطلاق title-row filters
+    execFilter: {
+      ent: ui.execEnt,
+      stream: ui.execStream,
+      entOptions: [{ v: 'all', label: 'كل الجهات' }, ...entValues.map((e) => ({ v: e, label: e }))],
+      streamOptions: [{ v: 'all', label: 'كل المسارات' }, ...PATHS.map((p) => ({ v: p.id, label: p.name }))],
+      showEnt: rawRole === 'ai' || rawRole === 'path',
+      showStream: rawRole === 'ai',
+      // «المسار» breakdown row in exec phase cards is only meaningful across streams
+      // (committee spans all streams; an entity spans several within itself)
+      showStreamBreak: rawRole === 'ai' || rawRole === 'entity',
+      setEnt: (v: string) => s.setExecEnt(v),
+      setStream: (v: string) => s.setExecStream(v),
+    },
     showAddBtn,
     // committee
     aiStats,
