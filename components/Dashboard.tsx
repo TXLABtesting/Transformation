@@ -381,6 +381,7 @@ function StatBand({
 }) {
   return (
     <div
+      data-r="statband"
       style={{
         display: 'flex',
         borderRadius: 16,
@@ -648,6 +649,7 @@ export function Dashboard({ vm }: { vm: VM }) {
 
   return (
     <div
+      data-r="root"
       style={{
         minHeight: '100vh',
         background: 'linear-gradient(180deg,#F7F9FD,#EEF2F9)',
@@ -679,6 +681,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               UAE PASS / IdP mapping wired by IT). */}
           {vm.showRoleSwitcher && (
             <div
+              data-r="hdrpills"
               style={{
                 display: 'flex',
                 background: '#F4F7FC',
@@ -1137,6 +1140,7 @@ export function Dashboard({ vm }: { vm: VM }) {
         >
           {/* brand: both logos side by side */}
           <div
+            data-r="brand"
             style={{
               padding: '14px 14px 12px',
               borderBottom: '1px solid #F0F3F8',
@@ -1152,7 +1156,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             <img src="assets/logo.png" alt="logo" style={{ height: 46, minWidth: 0, objectFit: 'contain' }} />
           </div>
           {/* navigation */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div data-r="navlist" style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
           {vm.navItems.map((n) => (
             <button
               key={n.key}
@@ -1197,7 +1201,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           ))}
           </div>
           {/* bottom: onboarding guide */}
-          <div style={{ borderTop: '1px solid #F0F3F8', padding: '10px 12px' }}>
+          <div data-r="railhelp" style={{ borderTop: '1px solid #F0F3F8', padding: '10px 12px' }}>
             <HoverDiv
               onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
               base={{
@@ -1658,28 +1662,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                     </span>
                   )}
                 </div>
-                {vm.showAddBtn && (
-                  <button
-                    onClick={s.openCreate}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      height: 40,
-                      padding: '0 18px',
-                      background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 11,
-                      fontWeight: 800,
-                      fontSize: 13.5,
-                      cursor: 'pointer',
-                      boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
-                    }}
-                  >
-                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديدة
-                  </button>
-                )}
               </div>
 
               {/* stream summary cards — الكل first, click filters the page */}
@@ -1823,6 +1805,29 @@ export function Dashboard({ vm }: { vm: VM }) {
                   ))}
                 </div>
                 <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} />
+                {vm.showAddBtn && (
+                  <button
+                    onClick={s.openCreate}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      height: 40,
+                      padding: '0 18px',
+                      background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 11,
+                      fontWeight: 800,
+                      fontSize: 13.5,
+                      cursor: 'pointer',
+                      boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديدة
+                  </button>
+                )}
               </div>
 
               {/* cards / table */}
@@ -1867,7 +1872,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>لا توجد جهات مشاركة بعد</div>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(420px,1fr))', gap: 14 }}>
+                <div data-r="entcards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(420px,1fr))', gap: 14 }}>
                   {vm.entityCards.map((e2) => (
                     <HoverDiv
                       key={e2.name}
@@ -1934,7 +1939,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       <InfoTip text="تكلفة التنفيذ تُجمع من ميزانيات ما هو معيَّن لهذه المرحلة، وتكلفة الإطلاق من ميزانيات إطلاقاتها. اضغطوا على أي إطلاق لاستعراض ما يندرج تحته." />
                     </div>
                     {/* cost tiles */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+                    <div data-r="form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
                       <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
                         <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية التنفيذ التقديرية</div>
                         <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.costLabel}</div>
@@ -2058,7 +2063,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                           ))}
                         </div>
                         {/* delivery mapping of the same items */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 10 }}>
+                        <div data-r="stagedeliv" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 10 }}>
                           {[
                             { label: 'قيد التطوير', v: b.underDev },
                             { label: 'تم التطوير', v: b.developed },
@@ -2430,7 +2435,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                             {pOpen && (
                               <div style={{ padding: '14px 13px', borderTop: '1px solid #F0F3F8', display: 'flex', flexDirection: 'column', gap: 14 }}>
                                 {/* 1) name / type / date */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 170px 150px', gap: 8 }}>
+                                <div data-r="form3" style={{ display: 'grid', gridTemplateColumns: '1fr 170px 150px', gap: 8 }}>
                                   <div>
                                     <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>اسم الإطلاق</label>
                                     <input
@@ -2497,7 +2502,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                                   </div>
                                 </div>
                                 {/* 3) budgets: exec = dynamic total of the checked items */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                <div data-r="form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                                   <div>
                                     <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>الميزانية التقديرية للتنفيذ</label>
                                     <input
