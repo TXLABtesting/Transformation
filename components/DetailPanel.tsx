@@ -480,16 +480,16 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   <div>
-                    <div style={labelStyle}>قابلية التحويل</div>
+                    <div style={labelStyle}>قابلية التحول</div>
                     <div style={valueStyle}>{d.transformability}</div>
                   </div>
                   <div>
-                    <div style={labelStyle}>أولوية التحويل</div>
+                    <div style={labelStyle}>أولوية التحول</div>
                     <div style={valueStyle}>{d.transformPriority}</div>
                   </div>
                   <div>
-                    <div style={labelStyle}>جاهزية التحويل</div>
-                    <div style={valueStyle}>{d.readiness}%</div>
+                    <div style={labelStyle}>جاهزية التحول</div>
+                    <div style={valueStyle}>{d.readiness}</div>
                   </div>
                 </div>
               </>
