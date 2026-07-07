@@ -1198,7 +1198,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfChip = '#B45309';
     wfBg = '#FFF3DE';
   } else if (w === 'exec' || w === 'launch') {
-    wfLabel = batchShort ? 'مسودة · ' + batchShort : 'معتمد';
+    wfLabel = batchShort ? 'معتمد · ' + batchShort : 'معتمد';
     wfChip = '#2563EB';
     wfBg = '#EAF0FE';
   }
@@ -1263,7 +1263,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardAction = 'withdraw';
     } else if (isFunded) {
       cardStatus = 'apprFund';
-      cardCaption = 'معتمد للتمويل';
+      cardCaption = '';
       cardAction = 'viewDetails';
     } else if (w === 'done') {
       cardStatus = 'launched';
@@ -1285,7 +1285,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardAction = 'approveInfoReject';
     } else if (isFunded) {
       cardStatus = 'apprFund';
-      cardCaption = 'معتمد للتمويل';
+      cardCaption = '';
       cardAction = 'viewDetails';
     } else if (w === 'done') {
       cardStatus = 'launched';
@@ -1303,7 +1303,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardAction = 'viewDetails';
     } else if (isFunded) {
       cardStatus = 'apprFund';
-      cardCaption = 'معتمد للتمويل';
+      cardCaption = '';
       cardAction = 'viewDetails';
     } else if (i.nom) {
       cardStatus = 'nominated';
@@ -1322,9 +1322,9 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardAction = 'viewDetails';
     } else if (isFunded) {
       cardStatus = 'apprFund';
-      cardCaption = 'معتمد للتمويل';
+      cardCaption = '';
       cardAction = 'funded';
-      pillLabel = 'معتمدة للتمويل';
+      pillLabel = 'معتمد للتمويل';
     } else {
       cardStatus = 'pendFund';
       cardCaption =
@@ -1354,8 +1354,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     typeBg: t.bg,
     pathName: p.name,
     pathColor: p.color,
-    // stream head (رئيس المسار) always shows a «المسار: …» line
-    showPathLine: rawRole === 'path',
+    // stream is already shown once in the footer dot-row — no separate «المسار: …» line
+    showPathLine: false,
     approval: i.approval,
     apprBg: appr.bg,
     apprColor: appr.c,

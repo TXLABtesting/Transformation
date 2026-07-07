@@ -3653,8 +3653,10 @@ function CardItem({ c }: { c: CardVM }) {
           : null),
       }}
     >
-      {/* Caption above the meta */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#9AA6BA', marginBottom: -6 }}>{c.cardCaption}</div>
+      {/* Caption above the meta — hidden when it merely repeats the status pill */}
+      {c.cardCaption && c.cardCaption !== (c.pillLabel || pill.label) && (
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#9AA6BA', marginBottom: -6 }}>{c.cardCaption}</div>
+      )}
 
       {/* Meta row: type chip + status pill + optional checkbox */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
@@ -3736,9 +3738,27 @@ function CardItem({ c }: { c: CardVM }) {
         {c.desc}
       </div>
 
-      {/* Linked launch + stage-move flags */}
-      {((c.launchNames && c.launchNames.length > 0) || c.stageMoved) && (
+      {/* Launch phase + linked launch */}
+      {(c.batchLabel || (c.launchNames && c.launchNames.length > 0)) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {c.batchLabel && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 10,
+                fontWeight: 800,
+                padding: '3px 9px',
+                borderRadius: 999,
+                background: '#EAF0FE',
+                color: '#2563EB',
+              }}
+            >
+              <Icon d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" size={11} color="#2563EB" />
+              التنفيذ ضمن {c.batchLabel.replace('إطلاق ', '')}
+            </span>
+          )}
           {c.launchNames && c.launchNames.length > 0 && (
             <span
               style={{
@@ -3758,20 +3778,6 @@ function CardItem({ c }: { c: CardVM }) {
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {c.launchNames.join('، ')}
               </span>
-            </span>
-          )}
-          {c.stageMoved && (
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                padding: '3px 9px',
-                borderRadius: 999,
-                background: '#FFF3DE',
-                color: '#B45309',
-              }}
-            >
-              نُقل بين المراحل
             </span>
           )}
         </div>
@@ -4073,42 +4079,6 @@ function CardItem({ c }: { c: CardVM }) {
         </div>
       )}
 
-      {c.cardAction === 'funded' && (
-        <span
-          onClick={(e) => {
-            stop(e);
-            c.onCancelFund();
-          }}
-          title="اضغط للإلغاء"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 9,
-            cursor: 'pointer',
-            fontSize: 12.5,
-            fontWeight: 700,
-            color: '#0B8A4B',
-          }}
-        >
-          <span
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: 6,
-              border: '2px solid #0B8A4B',
-              background: '#0B8A4B',
-              flex: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Icon d={CHECK_D} size={13} color="#fff" strokeWidth={3} />
-          </span>
-          معتمد للتمويل
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#9AA6BA' }}>(اضغط للإلغاء)</span>
-        </span>
-      )}
     </div>
   );
 }

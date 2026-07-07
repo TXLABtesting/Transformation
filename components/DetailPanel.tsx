@@ -29,6 +29,77 @@ const sectionCard: React.CSSProperties = {
   padding: '16px 18px',
 };
 
+// ===== grouped detail layout (section header + divided field card) =====
+const IC_SLIDERS = 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6';
+const IC_TREND = 'M23 6l-9.5 9.5-5-5L1 18M17 6h6v6';
+const IC_BOT = 'M9 3h6M12 3v3M5 6h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zM1 13h2M21 13h2M9 12v2M15 12v2';
+const IC_BUILDING = 'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01';
+const IC_TAG = 'M9 3H4a1 1 0 0 0-1 1v5l9 9 6-6-9-9zM7.5 7.5h.01';
+const IC_GRID = 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z';
+const IC_PEOPLE = 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8';
+
+function DetailSecHead({ iconD, title }: { iconD: string; title: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 8, marginBottom: 2 }}>
+      <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{title}</span>
+      <Icon d={iconD} size={16} color="#2563EB" />
+    </div>
+  );
+}
+
+function DetailGrid({ cols, children }: { cols: number; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols},minmax(0,1fr))`, gap: 1, background: '#EAEEF5', border: '1px solid #EAEEF5', borderRadius: 14, overflow: 'hidden' }}>
+      {children}
+    </div>
+  );
+}
+
+function DetailCell({ label, iconD, children }: { label: string; iconD?: string; children: React.ReactNode }) {
+  return (
+    <div style={{ background: '#fff', padding: '13px 15px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 58 }}>
+      <div style={{ minWidth: 0, textAlign: 'right', flex: 1 }}>
+        <div style={labelStyle}>{label}</div>
+        <div style={{ ...valueStyle, lineHeight: 1.6 }}>{children}</div>
+      </div>
+      {iconD && (
+        <span style={{ width: 30, height: 30, flex: 'none', borderRadius: 9, background: '#EEF3FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon d={iconD} size={15} color="#2563EB" />
+        </span>
+      )}
+    </div>
+  );
+}
+
+function TransformPill({ v }: { v?: string }) {
+  const s = (v || '').trim();
+  const bad = s.includes('غير');
+  const partial = s.includes('جزئي');
+  const c = !s ? '#8A97AD' : bad ? '#C0392B' : partial ? '#B45309' : '#0B8A4B';
+  const bg = !s ? '#EEF2F8' : bad ? '#FDECEA' : partial ? '#FFF7EB' : '#EAF7F0';
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: bg, color: c, borderRadius: 999, padding: '3px 11px', fontSize: 12, fontWeight: 800 }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: c, flex: 'none' }} />
+      {s || '—'}
+    </span>
+  );
+}
+
+function AutoLevel({ pct, level }: { pct?: number; level?: string }) {
+  const p = Math.max(0, Math.min(100, pct || 0));
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+        <span style={{ fontSize: 16, fontWeight: 900, color: '#13213C' }}>{p}%</span>
+        {level && <span style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400 }}>{level}</span>}
+      </div>
+      <div style={{ marginTop: 6, height: 6, background: '#EDF1F7', borderRadius: 999, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: p + '%', background: '#2563EB', borderRadius: 999 }} />
+      </div>
+    </div>
+  );
+}
+
 export function DetailPanel({ vm }: { vm: VM }) {
   const d = vm.detail!;
   // drawer tabs: البيانات / التنفيذ والإطلاق / السجل
@@ -368,26 +439,19 @@ export function DetailPanel({ vm }: { vm: VM }) {
           </div>
 
           <div style={{ display: 'contents' }}>
-          {/* Main card */}
+          {/* Main detail — grouped sections (no outer card) */}
           <div
             style={{
-              background: '#fff',
-              border: '1px solid #E7ECF4',
-              borderRadius: 16,
-              padding: 16,
               display: 'flex',
               flexDirection: 'column',
-              gap: 14,
+              gap: 12,
             }}
           >
             <div>
-              <div style={labelStyle}>اسم المدخل</div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{d.title}</div>
+              <div style={labelStyle}>الوصف</div>
+              <RichTextView html={d.desc} style={{ fontSize: 13.5, color: '#54627B', lineHeight: 1.8 }} />
             </div>
-            <div>
-              <div style={labelStyle}>وصف المدخل</div>
-              <RichTextView html={d.desc} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
-            </div>
+            <div style={{ height: 1, background: '#EAEEF5', margin: '2px 0 4px' }} />
 
             {/* --- PROJECT / INITIATIVE --- */}
             {d.isProj && (
@@ -434,78 +498,40 @@ export function DetailPanel({ vm }: { vm: VM }) {
             {/* --- OPERATION --- */}
             {d.isOp && (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                  <div>
-                    <div style={labelStyle}>نوع المدخل</div>
-                    <div style={valueStyle}>{d.opType}</div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>كثافة الاستخدام</div>
-                    <div style={valueStyle}>{d.usageIntensity}</div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>الأنشطة الفرعية</div>
-                    <RichTextView html={d.subActivities} style={valueStyle} />
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                  <div>
-                    <div style={labelStyle}>قابلية التحويل</div>
-                    <div style={valueStyle}>{d.transformability}</div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>أولوية التحويل</div>
-                    <div style={valueStyle}>{d.transformPriority}</div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>جاهزية التحويل</div>
-                    <div style={valueStyle}>{d.readiness}</div>
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                  <div>
-                    <div style={labelStyle}>مستوى الأتمتة</div>
-                    <div style={valueStyle}>
-                      {d.automationLevel} · {d.automationPct}%
-                    </div>
-                  </div>
-                  {d.automationSystem && (
-                    <div>
-                      <div style={labelStyle}>نظام الأتمتة</div>
-                      <div style={valueStyle}>{d.automationSystem}</div>
-                    </div>
-                  )}
-                  {d.complexityLevel && (
-                    <div>
-                      <div style={labelStyle}>مستوى تعقيد الأتمتة</div>
-                      <div style={valueStyle}>{d.complexityLevel}</div>
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-                  <div>
-                    <div style={labelStyle}>الجهة الاتحادية المعنية</div>
-                    <div style={valueStyle}>{d.itemEntityName}</div>
-                  </div>
-                  {d.sector && (
-                    <div>
-                      <div style={labelStyle}>القطاع المعني</div>
-                      <div style={valueStyle}>{d.sector}</div>
-                    </div>
-                  )}
-                  {d.dept && (
-                    <div>
-                      <div style={labelStyle}>الوحدة التنظيمية المعنية</div>
-                      <div style={valueStyle}>{d.dept}</div>
-                    </div>
-                  )}
-                  {d.section && (
-                    <div>
-                      <div style={labelStyle}>القسم المعني</div>
-                      <div style={valueStyle}>{d.section}</div>
-                    </div>
-                  )}
-                </div>
+                <DetailSecHead iconD={IC_SLIDERS} title="خصائص العملية" />
+                <DetailGrid cols={3}>
+                  <DetailCell label="نوع المدخل">{d.opType}</DetailCell>
+                  <DetailCell label="كثافة الاستخدام">{d.usageIntensity}</DetailCell>
+                  <DetailCell label="الأنشطة الفرعية"><RichTextView html={d.subActivities} style={valueStyle} /></DetailCell>
+                </DetailGrid>
+
+                <DetailSecHead iconD={IC_TREND} title="جاهزية التحويل" />
+                <DetailGrid cols={3}>
+                  <DetailCell label="قابلية التحويل"><TransformPill v={d.transformability} /></DetailCell>
+                  <DetailCell label="أولوية التحويل">{d.transformPriority}</DetailCell>
+                  <DetailCell label="جاهزية التحويل">{d.readiness}</DetailCell>
+                </DetailGrid>
+
+                <DetailSecHead iconD={IC_BOT} title="الأتمتة" />
+                {(() => {
+                  const cells = [
+                    <DetailCell key="lvl" label="مستوى الأتمتة"><AutoLevel pct={d.automationPct} level={d.automationLevel} /></DetailCell>,
+                    ...(d.automationSystem ? [<DetailCell key="sys" label="نظام الأتمتة">{d.automationSystem}</DetailCell>] : []),
+                    ...(d.complexityLevel ? [<DetailCell key="cx" label="مستوى تعقيد الأتمتة">{d.complexityLevel}</DetailCell>] : []),
+                  ];
+                  return <DetailGrid cols={Math.min(3, cells.length)}>{cells}</DetailGrid>;
+                })()}
+
+                <DetailSecHead iconD={IC_BUILDING} title="الجهة المعنية" />
+                {(() => {
+                  const cells = [
+                    <DetailCell key="fed" label="الجهة الاتحادية المعنية" iconD={IC_BUILDING}>{d.itemEntityName}</DetailCell>,
+                    ...(d.sector ? [<DetailCell key="sec" label="القطاع المعني" iconD={IC_TAG}>{d.sector}</DetailCell>] : []),
+                    ...(d.dept ? [<DetailCell key="dept" label="الوحدة التنظيمية المعنية" iconD={IC_GRID}>{d.dept}</DetailCell>] : []),
+                    ...(d.section ? [<DetailCell key="sect" label="القسم المعني" iconD={IC_PEOPLE}>{d.section}</DetailCell>] : []),
+                  ];
+                  return <DetailGrid cols={2}>{cells}</DetailGrid>;
+                })()}
               </>
             )}
 
