@@ -572,6 +572,7 @@ function build(s: Store) {
   const NAV_SLIDERS = 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6';
   const NAV_GRID4 = 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z';
   const NAV_CAL = 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z';
+  const NAV_ROCKET = 'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2zM9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5';
   const NAV_BUILDING = 'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01';
   const NAV_PEOPLE = 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75';
 
@@ -604,7 +605,8 @@ function build(s: Store) {
     { key: 'overview', label: 'الرئيسية', icon: NAV_HOME },
     { key: 'all', label: streamSub ? 'جميع المسارات' : 'جميع الأنواع', icon: NAV_DOTS, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
     ...subNav,
-    { key: 'launchplans', label: rawRole === 'entity' ? 'خطة الإطلاق' : 'التنفيذ والإطلاق', icon: NAV_CAL },
+    { key: 'launchplans', label: rawRole === 'entity' ? 'مراحل التنفيذ والإطلاق' : 'التنفيذ والإطلاق', icon: NAV_CAL },
+    ...(rawRole === 'entity' ? [{ key: 'lplan', label: 'خطة الإطلاق', icon: NAV_ROCKET }] : []),
     ...(rawRole === 'ai' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
   ].map((n) => ({

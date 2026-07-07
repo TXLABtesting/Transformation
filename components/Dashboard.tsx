@@ -2446,7 +2446,8 @@ export function Dashboard({ vm }: { vm: VM }) {
           )}
 
           {/* ===== LAUNCH PLANS: four big مرحلة cards ===== */}
-          {vm.navSection === 'launchplans' && vm.role === 'entity' && <LaunchPlanEntity vm={vm} />}
+          {vm.navSection === 'launchplans' && vm.role === 'entity' && <StageDistribution vm={vm} />}
+          {vm.navSection === 'lplan' && vm.role === 'entity' && <LaunchPlanEntity vm={vm} />}
           {vm.navSection === 'launchplans' && vm.role !== 'entity' && (
             <>
               <div>
