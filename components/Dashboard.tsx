@@ -728,11 +728,11 @@ function LpLaunchCard({ l, idx }: { l: VM['batchSummary'][number]['launches'][nu
           <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{l.title}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#5A6B86', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>
             <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" size={11} color="#5A6B86" />
-            إجمالي المدخلات <b style={{ color: '#13213C', fontWeight: 900 }}>{l.count}</b>
+            <b style={{ color: '#13213C', fontWeight: 900 }}>{l.count}</b> {l.count === 1 ? 'مدخل' : 'مدخلات'}
           </span>
         </div>
         <div style={{ flex: 'none', textAlign: 'left' }}>
-          <div style={{ fontSize: 10.5, color: '#AEB8C7', fontWeight: 400 }}>ميزانية الإطلاق</div>
+          <div style={{ fontSize: 10.5, color: '#AEB8C7', fontWeight: 400 }}>تكلفة الإطلاق التقديرية</div>
           <div style={{ fontSize: 15, fontWeight: 900, color: '#13213C', marginTop: 2 }}>{l.budgetLabel}</div>
         </div>
       </div>
@@ -762,16 +762,16 @@ function LpPhaseCard({ b }: { b: VM['batchSummary'][number] }) {
           {b.period}
         </span>
         <div style={{ flex: 1 }} />
-        <span style={{ flex: 'none', fontSize: 12, fontWeight: 800, color: '#2563EB', background: '#EAF0FE', borderRadius: 999, padding: '5px 13px' }}>{launches.length} إطلاق</span>
+        <span style={{ flex: 'none', fontSize: 12, fontWeight: 800, color: '#2563EB', background: '#EAF0FE', borderRadius: 999, padding: '5px 13px' }}>{launches.length} {launches.length === 1 ? 'مدخل' : 'مدخلات'} للإطلاق</span>
       </div>
       {/* section label */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '16px 0 12px' }}>
         <span style={{ width: 3, height: 16, borderRadius: 2, background: '#7C93F5' }} />
-        <span className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>الإطلاقات المجدولة</span>
+        <span className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>المدخلات المجدولة للإطلاق</span>
       </div>
       {launches.length === 0 ? (
         <div style={{ border: '1px dashed #D8DFEB', borderRadius: 12, padding: '20px 16px', textAlign: 'center', fontSize: 12.5, color: '#8A97AD', fontWeight: 400 }}>
-          لا توجد إطلاقات مجدولة في هذه المرحلة بعد
+          لا توجد مدخلات مجدولة للإطلاق في هذه المرحلة بعد
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -783,7 +783,7 @@ function LpPhaseCard({ b }: { b: VM['batchSummary'][number] }) {
               onClick={() => setShowAll((v) => !v)}
               style={{ width: '100%', background: '#F5F8FD', border: '1px solid #E6EBF3', borderRadius: 11, padding: '10px 0', fontSize: 12.5, fontWeight: 800, color: '#1D4ED8', cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              {showAll ? 'عرض أقل' : `عرض المزيد (${launches.length - 3})`}
+              {showAll ? 'عرض أقل' : `عرض مدخلات إضافية (${launches.length - 3})`}
             </button>
           )}
         </div>
@@ -798,7 +798,7 @@ function LaunchPlanEntity({ vm }: { vm: VM }) {
       <div>
         <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>خطة الإطلاق</div>
         <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 400, marginTop: 3, maxWidth: 720, lineHeight: 1.7 }}>
-          جدولة مدخلات الجهة المعتمدة ضمن الإطلاقات عبر مراحل التنفيذ الأربع، مع ميزانية كل إطلاق وحالة مدخلاته.
+          متابعة مدخلات الجهة المجدولة للإطلاق حسب مراحل التقدم، مع تكلفة الإطلاق التقديرية وحالة التطوير.
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1906,7 +1906,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? (vm.navStream ? 'إرشادات مراجعة مدخلات المسار وتحديث حالة الاعتماد.' : 'إرشادات مراجعة مدخلات الجهة وتحديث حالة الاعتماد.') : vm.role === 'coord' ? 'إرشادات متابعة المدخلات وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
+                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? (vm.navSection === 'lplan' ? 'إرشادات مراجعة مدخلات الجهة ومتابعة خطة الإطلاق.' : vm.navStream ? 'إرشادات مراجعة مدخلات المسار وتحديث حالة الاعتماد.' : 'إرشادات مراجعة مدخلات الجهة وتحديث حالة الاعتماد.') : vm.role === 'coord' ? 'إرشادات متابعة المدخلات وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
