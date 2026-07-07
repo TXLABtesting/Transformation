@@ -249,8 +249,8 @@ function EntityOverview({ vm }: { vm: VM }) {
   const [hovNom, setHovNom] = useState<string | null>(null);
   const nc = vm.nomCard;
   const sec2Cards = useTypes ? vm.typeOverviewCards : vm.streamOverviewCards;
-  const sec2Title = useTypes ? 'المدخلات حسب النوع' : 'مسارات الجهة';
-  const sec2Sub = useTypes ? 'تصنيف مدخلات المسار حسب النوع والمرحلة والتكلفة.' : 'متابعة المدخلات والتكاليف ومراحل التقدم لكل مسار.';
+  const sec2Title = useTypes ? 'توزيع المدخلات حسب النوع' : 'مسارات الجهة';
+  const sec2Sub = useTypes ? 'تصنيف مدخلات المسار حسب النوع، مراحل التقدم، والتكلفة التقديرية.' : 'متابعة المدخلات والتكاليف ومراحل التقدم لكل مسار.';
   const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
   const money = (label: string) => {
     const p = label.split(' ');
@@ -293,7 +293,7 @@ function EntityOverview({ vm }: { vm: VM }) {
   const costM = costHov ? money(costHov.val) : costTot;
   const costDonut = costHov
     ? { frac: clampFrac(costHov.frac), light: '#EDF1F8', top: costHov.short, center: costM.num, sub: costM.unit }
-    : { frac: cc.execFrac, light: '#BFD3F5', top: 'الإجمالي', center: costTot.num, sub: costTot.unit };
+    : { frac: cc.execFrac, light: '#BFD3F5', top: isCoord ? 'إجمالي التكلفة' : 'الإجمالي', center: costTot.num, sub: costTot.unit };
   // arc-level hover figures for the cost donut (exec = dark arc, launch = light arc)
   const execM = money(cc.execLabel);
   const launchM = money(cc.launchLabel);
@@ -308,7 +308,7 @@ function EntityOverview({ vm }: { vm: VM }) {
       <div data-r="dash-top" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* --- إجمالي المدخلات (right) --- */}
         <div style={cardStyle}>
-          <EoCardHead title={isPath ? 'إجمالي المدخلات' : isCoord ? 'مدخلات المسار' : 'مدخلات الجهة'} iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
+          <EoCardHead title={isPath ? 'إجمالي المدخلات' : isCoord ? 'ملخص مدخلات المسار' : 'مدخلات الجهة'} iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
             <EoDonutSeg segs={inSegs} dim={hovIn} center={inDonut.center} sub={inDonut.sub} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -398,7 +398,7 @@ function EntityOverview({ vm }: { vm: VM }) {
           );
         })() : (
         <div style={cardStyle}>
-          <EoCardHead title="التكلفة التقديرية" iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
+          <EoCardHead title={isCoord ? 'ملخص التكلفة التقديرية' : 'التكلفة التقديرية'} iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
             <EoDonut frac={costDonut.frac} dark="#2563EB" light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} arcMeta={costArcMeta} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -455,7 +455,7 @@ function EntityOverview({ vm }: { vm: VM }) {
               <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.total}</span>
             </div>
             <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
-              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>{useTypes ? 'حسب المرحلة' : 'المدخلات حسب المرحلة'}</div>
+              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>{useTypes ? 'توزيع مراحل التقدم' : 'المدخلات حسب المرحلة'}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {(() => {
                   const maxN = Math.max(...st.stages.map((x) => x.n), 1);
@@ -499,7 +499,7 @@ function EntityOverview({ vm }: { vm: VM }) {
               onClick={st.onOpen}
               style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              {useTypes ? 'تفاصيل النوع' : 'تفاصيل المسار'}
+              {useTypes ? 'عرض تفاصيل النوع' : 'تفاصيل المسار'}
               <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
             </button>
           </div>
@@ -519,8 +519,8 @@ function EntityOverview({ vm }: { vm: VM }) {
         return (
           <>
             <div>
-              <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>المدخلات حسب المرحلة</div>
-              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع مدخلات المسار حسب مراحل التقدم.</div>
+              <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب مراحل التقدم</div>
+              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>عرض عدد المدخلات في كل مرحلة من مراحل التقدم.</div>
             </div>
             <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', marginTop: -8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
@@ -1758,7 +1758,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           <div data-r="railhelp" style={{ padding: 12 }}>
             <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة' : vm.role === 'entity' ? 'دليل ممثل الجهة' : vm.role === 'coord' ? 'دليل منسق المسار' : 'دليل الاستخدام'}</div>
+                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة' : vm.role === 'entity' ? 'دليل ممثل الجهة' : vm.role === 'coord' ? 'دليل منسق المسار في الجهة' : 'دليل الاستخدام'}</div>
                 <span
                   style={{
                     flex: 'none',
@@ -1776,7 +1776,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? 'إرشادات متابعة المسارات وتحديث حالة المدخلات.' : vm.role === 'coord' ? 'إرشادات متابعة المدخلات وتحديث مراحل التقدم.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
+                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? 'إرشادات متابعة المسارات وتحديث حالة المدخلات.' : vm.role === 'coord' ? 'إرشادات متابعة المدخلات وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
@@ -1794,7 +1794,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   fontFamily: 'inherit',
                 }}
               >
-                فتح الدليل
+                {vm.role === 'coord' ? 'عرض الدليل' : 'فتح الدليل'}
               </button>
             </div>
           </div>
@@ -1836,7 +1836,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               fontFamily: 'inherit',
             }}
           >
-            <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديدة
+            <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة مدخل جديد
           </button>
         )}
       </div>
@@ -2224,7 +2224,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       fontFamily: 'inherit',
                     }}
                   >
-                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديدة
+                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة مدخل جديد
                   </button>
                 )}
               </div>
