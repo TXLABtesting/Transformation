@@ -916,7 +916,7 @@ function LpPhaseCard({ b, hideMoney, onManage }: { b: VM['batchSummary'][number]
             إدارة الإطلاقات
           </button>
         )}
-        <span style={{ flex: 'none', fontSize: 12, fontWeight: 800, color: '#2563EB', background: '#EAF0FE', borderRadius: 999, padding: '5px 13px' }}>{launches.length} {launchWord}</span>
+        <span style={{ flex: 'none', fontSize: 12, fontWeight: 800, color: '#5A6B86', background: '#EEF2F8', borderRadius: 999, padding: '5px 13px' }}>{launches.length} {launchWord}</span>
       </div>
       {/* section label */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '16px 0 12px' }}>
