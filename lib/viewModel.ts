@@ -521,7 +521,7 @@ function build(s: Store) {
 
   // committee-funding filter (entity rep)
   const fundOptions = [
-    { v: 'all', label: 'التمويل: الكل' },
+    { v: 'all', label: 'حالة التمويل: الكل' },
     { v: 'funded', label: 'معتمد للتمويل من اللجنة' },
     { v: 'notfunded', label: 'غير معتمد للتمويل' },
   ];
@@ -920,7 +920,7 @@ function build(s: Store) {
     navSection,
     navStream,
     kpiBreak,
-    sectionTitle: (navSection in typeSections ? typeSections[navSection] : '') || '',
+    sectionTitle: (rawRole === 'entity' && navSection === 'all') ? 'جميع مدخلات الجهة' : ((navSection in typeSections ? typeSections[navSection] : '') || ''),
     portfolioStreams,
     recap,
     sectionCards,

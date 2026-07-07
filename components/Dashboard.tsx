@@ -1776,7 +1776,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? 'إرشادات مراجعة مدخلات الجهة وتوضيح حالة الاعتماد.' : vm.role === 'coord' ? 'إرشادات متابعة المدخلات وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
+                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? 'إرشادات مراجعة مدخلات الجهة وتحديث حالة الاعتماد.' : vm.role === 'coord' ? 'إرشادات متابعة المدخلات وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
@@ -2080,7 +2080,7 @@ export function Dashboard({ vm }: { vm: VM }) {
 
               {/* filters + search */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>القائمة التفصيلية للمدخلات</div>
+                <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{vm.role === 'entity' ? 'قائمة مراجعة مدخلات الجهة' : 'القائمة التفصيلية للمدخلات'}</div>
                 <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>{vm.shownCount} من {vm.totalCount} مدخلات</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -3345,7 +3345,7 @@ function ListView({ cards }: { cards: CardVM[] }) {
                         fontFamily: 'inherit',
                       }}
                     >
-                      اعتماد
+                      اعتماد المدخل
                     </button>
                     <button
                       onClick={(e) => {
@@ -3367,8 +3367,8 @@ function ListView({ cards }: { cards: CardVM[] }) {
                       طلب معلومات إضافية
                     </button>
                     <button
-                      title="رفض"
-                      aria-label="رفض"
+                      title="رفض المدخل"
+                      aria-label="رفض المدخل"
                       onClick={(e) => {
                         stop(e);
                         c.onReject();
@@ -3765,7 +3765,7 @@ function CardItem({ c }: { c: CardVM }) {
               fontFamily: 'inherit',
             }}
           >
-            اعتماد
+            اعتماد المدخل
           </button>
           <button
             onClick={(e) => {
@@ -3789,8 +3789,8 @@ function CardItem({ c }: { c: CardVM }) {
             طلب معلومات إضافية
           </button>
           <button
-            title="رفض"
-            aria-label="رفض"
+            title="رفض المدخل"
+            aria-label="رفض المدخل"
             onClick={(e) => {
               stop(e);
               c.onReject();
