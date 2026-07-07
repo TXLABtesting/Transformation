@@ -1530,7 +1530,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 }}
               >
                 <Icon d="M5 8h14l-1.2 10.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8z M9 8V6a3 3 0 0 1 6 0v2" size={16} color="#2563EB" />
-                السلة
+                سلة التمويل
                 {vm.hasBasketBadge && (
                   <span
                     style={{
@@ -1555,7 +1555,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             </div>
           )}
           {/* bottom: onboarding guide */}
-          <div data-r="railhelp" style={{ borderTop: '1px solid #F0F3F8', padding: 12 }}>
+          <div data-r="railhelp" style={{ padding: 12 }}>
             <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                 <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>دليل الاستخدام</div>
