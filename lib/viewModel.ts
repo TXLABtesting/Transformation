@@ -186,6 +186,61 @@ function build(s: Store) {
   // as the committee: own item budgets + distinct plan execution budgets)
   const execBudgetTotal = roleBase.reduce((a, i) => a + parseBudget(i.budget), 0);
 
+  // ---- entity overview cards (redesigned first + second sections) ----
+  // compact millions formatter ("6.1M") for the dense per-stream cards
+  const compactM = (n: number) => (n > 0 ? (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M' : '—');
+  const grandBudget = execBudgetTotal + launchBudgetTotal;
+  const eoExecPct = grandBudget ? Math.round((execBudgetTotal / grandBudget) * 100) : 0;
+  const money = (n: number) => (n > 0 ? formatMoney(n) : '—');
+  const costCard = {
+    execLabel: money(execBudgetTotal),
+    launchLabel: money(launchBudgetTotal),
+    totalLabel: money(grandBudget),
+    execPct: eoExecPct,
+    launchPct: grandBudget ? 100 - eoExecPct : 0,
+    execFrac: grandBudget ? Math.min(0.92, Math.max(0.08, execBudgetTotal / grandBudget)) : 0.67,
+  };
+  const notCap = roleBase.filter((i) => (i.transformability || '') === 'غير قابل').length;
+  const inputsCard = {
+    total: roleBase.length,
+    capable: roleBase.length - notCap,
+    underDev: roleBase.filter((i) => devStatusOfItem(i) === 'underDev').length,
+    developed: roleBase.filter((i) => devStatusOfItem(i) === 'developed').length,
+    launched: roleBase.filter((i) => devStatusOfItem(i) === 'launched').length,
+    notCapable: notCap,
+    capFrac: roleBase.length ? Math.min(0.94, Math.max(0.06, (roleBase.length - notCap) / roleBase.length)) : 0.75,
+  };
+  // per-stream cards (نظرة عامة حسب المسارات) — all five streams
+  const streamOverviewCards = PATHS.map((p) => {
+    const inStream = roleBase.filter((i) => i.path === p.id);
+    const execCost = inStream.reduce((a, i) => a + parseBudget(i.budget), 0);
+    // attribute each launch plan's launch budget to streams by its items' share
+    let launchCost = 0;
+    s.launchPlans.forEach((pl) => {
+      const planItems = roleBase.filter((i) => (i.launchPlanIds || []).includes(pl.id));
+      if (!planItems.length) return;
+      const share = planItems.filter((i) => i.path === p.id).length / planItems.length;
+      launchCost += parseBudget(pl.launchBudget) * share;
+    });
+    return {
+      id: p.id,
+      name: p.name,
+      icon: PIC[p.id],
+      total: inStream.length,
+      stages: launchBatches().map((b) => ({
+        label: b.name.replace(/^إطلاق /, ''),
+        n: inStream.filter((i) => i.execBatch === b.name).length,
+      })),
+      execLabel: compactM(execCost),
+      launchLabel: compactM(launchCost),
+      totalLabel: compactM(execCost + launchCost),
+      onOpen: () => {
+        s.setNavSection('all');
+        s.setNavStream(p.id);
+      },
+    };
+  });
+
   // per-stream distribution shown INSIDE the type KPI cards (entity view) —
   // every eligible stream is listed, including zeros
   const kpiDist = {
@@ -658,6 +713,9 @@ function build(s: Store) {
     grandBudgetTotalLabel: formatMoney(execBudgetTotal + launchBudgetTotal),
     execBudgetTotal,
     launchBudgetTotal,
+    costCard,
+    inputsCard,
+    streamOverviewCards,
     showOpsKpi: effActivePath === 'all' || streamHasType(effActivePath, 'operation'),
     showSvcKpi: effActivePath === 'all' || streamHasType(effActivePath, 'service'),
     notAiRole: !isAiRole,

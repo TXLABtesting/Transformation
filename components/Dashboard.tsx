@@ -121,6 +121,186 @@ function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
+// ---- entity overview: cost + inputs donut cards, then per-stream cards ----
+const EO_ARROW = 'M17 17 7 7M13 7H7v6';
+const EO_WALLET = 'M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2 2 0 0 0 0 4h4v-4z';
+const EO_GRID = 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z';
+
+function EoDonut({ frac, dark, light, top, center, sub }: { frac: number; dark: string; light: string; top?: string; center: string; sub: string }) {
+  const R = 42;
+  const C = 2 * Math.PI * R;
+  return (
+    <div style={{ position: 'relative', flex: 'none', width: 150, height: 150 }}>
+      <svg viewBox="0 0 110 110" width={150} height={150}>
+        <circle cx="55" cy="55" r={R} fill="none" stroke="#EDF1F8" strokeWidth="13" />
+        <circle cx="55" cy="55" r={R} fill="none" stroke={light} strokeWidth="13"
+          strokeDasharray={`${(1 - frac) * C} ${C}`} strokeDashoffset={-(frac * C)} transform="rotate(-90 55 55)" />
+        <circle cx="55" cy="55" r={R} fill="none" stroke={dark} strokeWidth="13"
+          strokeDasharray={`${frac * C} ${C}`} transform="rotate(-90 55 55)" strokeLinecap="butt" />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 22px' }}>
+        {top && <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, lineHeight: 1.3 }}>{top}</span>}
+        <span style={{ fontSize: 22, fontWeight: 800, color: '#13213C', lineHeight: 1.15 }}>{center}</span>
+        <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, marginTop: 2, lineHeight: 1.3 }}>{sub}</span>
+      </div>
+    </div>
+  );
+}
+
+function EoCardHead({ title, iconD, onArrow }: { title: string; iconD: string; onArrow?: () => void }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{title}</span>
+        <InfoTip text={title} />
+        <span style={{ width: 36, height: 36, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+          <Icon d={iconD} size={18} color="#2563EB" />
+        </span>
+      </div>
+      <button
+        onClick={onArrow}
+        aria-label="عرض التفاصيل"
+        style={{ width: 34, height: 34, borderRadius: 10, background: '#EAF1FE', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+      >
+        <Icon d={EO_ARROW} size={15} color="#2563EB" />
+      </button>
+    </div>
+  );
+}
+
+function EntityOverview({ vm }: { vm: VM }) {
+  const s = vm.store;
+  const cc = vm.costCard;
+  const ic = vm.inputsCard;
+  const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
+  const money = (label: string) => {
+    const p = label.split(' ');
+    return { num: p[0], unit: p.slice(1).join(' ') };
+  };
+  const costTot = money(cc.totalLabel);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+      {/* ===== Section 1: التكلفة الإجمالية + إجمالي المدخلات ===== */}
+      <div data-r="dash-top" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* --- إجمالي المدخلات (right) --- */}
+        <div style={cardStyle}>
+          <EoCardHead title="إجمالي المدخلات" iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{ic.capable}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>قابل للتحويل</span>
+                  <span style={{ width: 11, height: 11, borderRadius: 3, background: '#2563EB', flex: 'none' }} />
+                </span>
+              </div>
+              {[
+                { label: 'قيد التطوير', v: ic.underDev },
+                { label: 'تم التطوير', v: ic.developed },
+                { label: 'تم الإطلاق', v: ic.launched },
+              ].map((r) => (
+                <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingRight: 19 }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{r.v}</span>
+                  <span style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>{r.label}</span>
+                </div>
+              ))}
+              <div style={{ height: 1, background: '#EEF1F6', margin: '3px 0' }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{ic.notCapable}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>غير قابل للتحويل</span>
+                  <span style={{ width: 11, height: 11, borderRadius: 3, background: '#C7D9F5', flex: 'none' }} />
+                </span>
+              </div>
+            </div>
+            <EoDonut frac={ic.capFrac} dark="#2563EB" light="#C7D9F5" center={String(ic.total)} sub="إجمالي المدخلات" />
+          </div>
+        </div>
+
+        {/* --- التكلفة الإجمالية (left) --- */}
+        <div style={cardStyle}>
+          <EoCardHead title="التكلفة الإجمالية" iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { label: 'تكلفة التنفيذ الإجمالية', val: cc.execLabel, pct: cc.execPct, c: '#2563EB' },
+                { label: 'تكلفة الإطلاق الإجمالية', val: cc.launchLabel, pct: cc.launchPct, c: '#BFD3F5' },
+              ].map((r) => (
+                <div key={r.label} style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '11px 13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>{r.label}</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C', marginTop: 2 }}>{r.val}</div>
+                    </div>
+                    <span style={{ width: 11, height: 11, borderRadius: 3, background: r.c, flex: 'none' }} />
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', flex: 'none' }}>{r.pct}%</span>
+                </div>
+              ))}
+            </div>
+            <EoDonut frac={cc.execFrac} dark="#2563EB" light="#BFD3F5" top="الإجمالي" center={costTot.num} sub={costTot.unit} />
+          </div>
+        </div>
+      </div>
+
+      {/* ===== Section 2: نظرة عامة حسب المسارات ===== */}
+      <div>
+        <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>نظرة عامة حسب المسارات</div>
+        <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع المدخلات والتكاليف على المسارات الخمسة</div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
+        {vm.streamOverviewCards.map((st) => (
+          <div key={st.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '16px 16px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+              <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5 }}>{st.name}</div>
+              <span style={{ width: 38, height: 38, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                <Icon d={st.icon} size={18} color="#2563EB" />
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+              <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.total}</span>
+              <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>إجمالي المدخلات</span>
+            </div>
+            <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '10px 12px' }}>
+              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>إجمالي المدخلات حسب المرحلة</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                {st.stages.map((sg) => (
+                  <div key={sg.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{sg.n}</span>
+                    <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400 }}>{sg.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.execLabel}</span>
+                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ الإجمالية</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.launchLabel}</span>
+                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة الإطلاق الإجمالية</span>
+              </div>
+              <div style={{ height: 1, background: '#EEF1F6', margin: '2px 0' }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB' }}>{st.totalLabel}</span>
+                <span className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>التكلفة الإجمالية</span>
+              </div>
+            </div>
+            <button
+              onClick={st.onOpen}
+              style={{ marginTop: 2, width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              عرض المزيد
+              <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // small ⓘ affordance: hover / tap reveals a plain-language explanation
 function InfoTip({ text, dark, flip }: { text: string; dark?: boolean; flip?: boolean }) {
   // flip: the popup grows to the LEFT by default (RTL); near the screen's
@@ -1387,9 +1567,12 @@ export function Dashboard({ vm }: { vm: VM }) {
       </>
       )}
 
-          {/* KPI bands (non-ai): each family of statistics gets its own full
-              line — counts (dark band), percentages, then budgets */}
-          {vm.notAiRole && (
+          {/* Entity overview — redesigned first section (cost + inputs donuts)
+              and second section (per-stream cards) */}
+          {vm.role === 'entity' && <EntityOverview vm={vm} />}
+
+          {/* KPI bands (coord / path): counts band only */}
+          {vm.notAiRole && vm.role !== 'entity' && (
             <div data-tour="kpis" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <SectionLabel>الأعداد الإجمالية</SectionLabel>
               <div data-r="kpirow">
@@ -1438,100 +1621,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                   ]}
                 />
               </div>
-              {vm.role === 'entity' && vm.pathFilterValue === 'all' && (vm.showExecBudget || vm.showLaunchBudget) && (
-                <>
-                <SectionLabel>الميزانيات التقديرية</SectionLabel>
-                {(() => {
-                  const ex = vm.execBudgetTotal;
-                  const ln = vm.launchBudgetTotal;
-                  const tot = ex + ln || 1;
-                  const R = 44;
-                  const C = 2 * Math.PI * R;
-                  // keep both segments visible so the split always reads as two budgets
-                  const exFrac = Math.min(0.92, Math.max(0.08, ex / tot));
-                  return (
-                    <div
-                      style={{
-                        background: '#fff',
-                        border: '1px solid #E7ECF4',
-                        borderRadius: 16,
-                        padding: '18px 24px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 28,
-                        flexWrap: 'wrap',
-                        maxWidth: 640,
-                      }}
-                    >
-                      {/* donut: total in the middle, the two budgets as segments */}
-                      <div style={{ position: 'relative', flex: 'none', width: 150, height: 150 }}>
-                        <svg viewBox="0 0 110 110" width={150} height={150}>
-                          <circle cx="55" cy="55" r={R} fill="none" stroke="#EDF1F8" strokeWidth="13" />
-                          <circle
-                            cx="55"
-                            cy="55"
-                            r={R}
-                            fill="none"
-                            stroke="#16408F"
-                            strokeWidth="13"
-                            strokeDasharray={`${exFrac * C} ${C}`}
-                            transform="rotate(-90 55 55)"
-                          />
-                          <circle
-                            cx="55"
-                            cy="55"
-                            r={R}
-                            fill="none"
-                            stroke="#27C2F0"
-                            strokeWidth="13"
-                            strokeDasharray={`${(1 - exFrac) * C} ${C}`}
-                            strokeDashoffset={-(exFrac * C)}
-                            transform="rotate(-90 55 55)"
-                          />
-                        </svg>
-                        <div
-                          style={{
-                            position: 'absolute',
-                            inset: 0,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            textAlign: 'center',
-                            padding: '0 28px',
-                          }}
-                        >
-                          <span style={{ fontSize: 14, fontWeight: 800, color: '#13213C', lineHeight: 1.35 }}>
-                            {vm.grandBudgetTotalLabel}
-                          </span>
-                          <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, marginTop: 2 }}>الإجمالي</span>
-                        </div>
-                      </div>
-                      {/* the two budgets */}
-                      <div style={{ flex: 1, minWidth: 260, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ width: 10, height: 10, borderRadius: 3, background: '#16408F', flex: 'none' }} />
-                          <span style={{ flex: 1, fontSize: 12.5, color: '#6B7A93', fontWeight: 400, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                            ميزانية التنفيذ التقديرية
-                            <InfoTip text="مجموع الميزانيات التقديرية لتنفيذ المشاريع والعمليات والخدمات في نطاقكم." />
-                          </span>
-                          <span style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{vm.execBudgetTotalLabel}</span>
-                        </div>
-                        <div style={{ height: 1, background: '#F0F3F8' }} />
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ width: 10, height: 10, borderRadius: 3, background: '#27C2F0', flex: 'none' }} />
-                          <span style={{ flex: 1, fontSize: 12.5, color: '#6B7A93', fontWeight: 400, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                            ميزانية الإطلاق التقديرية
-                            <InfoTip text="مجموع ميزانيات الإطلاق لخطط الإطلاق المرتبطة." />
-                          </span>
-                          <span style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{vm.launchBudgetTotalLabel}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-                </>
-              )}
             </div>
           )}
 
