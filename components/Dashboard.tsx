@@ -1920,8 +1920,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                     </div>
                     <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 9 }}>
-                        <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>التصنيف</span>
-                        <span style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 400 }}>الإجمالي <span style={{ fontWeight: 800, color: '#13213C' }}>{st.total}</span></span>
+                        <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>المدخلات حسب النوع</span>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{st.total}</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {(() => {
