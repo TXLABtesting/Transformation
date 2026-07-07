@@ -126,22 +126,36 @@ const EO_ARROW = 'M17 17 7 7M13 7H7v6';
 const EO_WALLET = 'M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2 2 0 0 0 0 4h4v-4z';
 const EO_GRID = 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z';
 
-function EoDonut({ frac, dark, light, top, center, sub }: { frac: number; dark: string; light: string; top?: string; center: string; sub: string }) {
+function EoDonut({ frac, dark, light, top, center, sub, arcMeta }: { frac: number; dark: string; light: string; top?: string; center: string; sub: string; arcMeta?: { exec: { center: string; sub: string; top?: string }; launch: { center: string; sub: string; top?: string } } }) {
   const R = 42;
   const C = 2 * Math.PI * R;
+  // arc-level hover: hovering either arc dims the other and (when arcMeta is
+  // supplied) updates the centre to that arc's figure.
+  const [arcHov, setArcHov] = useState<null | 'exec' | 'launch'>(null);
+  const meta = arcHov && arcMeta ? arcMeta[arcHov] : null;
+  const cCenter = meta ? meta.center : center;
+  const cSub = meta ? meta.sub : sub;
+  const cTop = meta ? meta.top : top;
+  const canHover = !!arcMeta;
   return (
     <div style={{ position: 'relative', flex: 'none', width: 150, height: 150 }}>
       <svg viewBox="0 0 110 110" width={150} height={150}>
         <circle cx="55" cy="55" r={R} fill="none" stroke="#EDF1F8" strokeWidth="13" />
         <circle cx="55" cy="55" r={R} fill="none" stroke={light} strokeWidth="13"
-          strokeDasharray={`${(1 - frac) * C} ${C}`} strokeDashoffset={-(frac * C)} transform="rotate(-90 55 55)" />
+          strokeDasharray={`${(1 - frac) * C} ${C}`} strokeDashoffset={-(frac * C)} transform="rotate(-90 55 55)"
+          onMouseOver={canHover ? () => setArcHov('launch') : undefined}
+          onMouseOut={canHover ? () => setArcHov(null) : undefined}
+          style={{ opacity: arcHov === 'exec' ? 0.28 : 1, transition: 'opacity .12s', cursor: canHover ? 'pointer' : 'default' }} />
         <circle cx="55" cy="55" r={R} fill="none" stroke={dark} strokeWidth="13"
-          strokeDasharray={`${frac * C} ${C}`} transform="rotate(-90 55 55)" strokeLinecap="butt" />
+          strokeDasharray={`${frac * C} ${C}`} transform="rotate(-90 55 55)" strokeLinecap="butt"
+          onMouseOver={canHover ? () => setArcHov('exec') : undefined}
+          onMouseOut={canHover ? () => setArcHov(null) : undefined}
+          style={{ opacity: arcHov === 'launch' ? 0.28 : 1, transition: 'opacity .12s', cursor: canHover ? 'pointer' : 'default' }} />
       </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 22px' }}>
-        {top && <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, lineHeight: 1.3 }}>{top}</span>}
-        <span style={{ fontSize: 22, fontWeight: 800, color: '#13213C', lineHeight: 1.15 }}>{center}</span>
-        <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, marginTop: 2, lineHeight: 1.3 }}>{sub}</span>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 22px', pointerEvents: 'none' }}>
+        {cTop && <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, lineHeight: 1.3 }}>{cTop}</span>}
+        <span style={{ fontSize: 22, fontWeight: 800, color: '#13213C', lineHeight: 1.15 }}>{cCenter}</span>
+        <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, marginTop: 2, lineHeight: 1.3 }}>{cSub}</span>
       </div>
     </div>
   );
@@ -149,10 +163,19 @@ function EoDonut({ frac, dark, light, top, center, sub }: { frac: number; dark: 
 
 // Multi-segment donut: each status is its own arc, coloured to match the
 // legend so the chart and the list read as one system.
-function EoDonutSeg({ segs, dim, top, center, sub }: { segs: { frac: number; color: string; key: string }[]; dim?: string | null; top?: string; center: string; sub: string }) {
+function EoDonutSeg({ segs, dim, top, center, sub }: { segs: { frac: number; color: string; key: string; label?: string; value?: string | number }[]; dim?: string | null; top?: string; center: string; sub: string }) {
   const R = 42;
   const C = 2 * Math.PI * R;
   const GAP = 2.2; // small white gap between segments (viewBox units)
+  // arc-level hover: hovering a segment directly on the ring dims the others and
+  // (when the segment carries a label/value) updates the centre — so the donut
+  // is interactive on its own, even with no legend beside it. Takes precedence
+  // over any legend-driven `dim` coming from the parent.
+  const [arcHov, setArcHov] = useState<string | null>(null);
+  const effDim = arcHov ?? dim ?? null;
+  const aSeg = arcHov ? segs.find((sg) => sg.key === arcHov) : undefined;
+  const cCenter = aSeg && aSeg.value !== undefined ? String(aSeg.value) : center;
+  const cSub = aSeg && aSeg.label !== undefined ? aSeg.label : sub;
   let acc = 0;
   return (
     <div style={{ position: 'relative', flex: 'none', width: 150, height: 150 }}>
@@ -175,15 +198,17 @@ function EoDonutSeg({ segs, dim, top, center, sub }: { segs: { frac: number; col
               strokeDasharray={`${len} ${C}`}
               strokeDashoffset={-(off * C)}
               transform="rotate(-90 55 55)"
-              style={{ opacity: dim && dim !== sgm.key ? 0.28 : 1, transition: 'opacity .12s' }}
+              onMouseOver={() => setArcHov(sgm.key)}
+              onMouseOut={() => setArcHov(null)}
+              style={{ opacity: effDim && effDim !== sgm.key ? 0.28 : 1, transition: 'opacity .12s', cursor: 'pointer' }}
             />
           );
         })}
       </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 22px' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 22px', pointerEvents: 'none' }}>
         {top && <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, lineHeight: 1.3 }}>{top}</span>}
-        <span style={{ fontSize: 22, fontWeight: 800, color: '#13213C', lineHeight: 1.15 }}>{center}</span>
-        <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, marginTop: 2, lineHeight: 1.3 }}>{sub}</span>
+        <span style={{ fontSize: 22, fontWeight: 800, color: '#13213C', lineHeight: 1.15 }}>{cCenter}</span>
+        <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, marginTop: 2, lineHeight: 1.3 }}>{cSub}</span>
       </div>
     </div>
   );
@@ -224,8 +249,8 @@ function EntityOverview({ vm }: { vm: VM }) {
   const [hovNom, setHovNom] = useState<string | null>(null);
   const nc = vm.nomCard;
   const sec2Cards = useTypes ? vm.typeOverviewCards : vm.streamOverviewCards;
-  const sec2Title = useTypes ? 'التوزيع حسب نوع المدخل' : 'مسارات الجهة';
-  const sec2Sub = useTypes ? 'تفاصيل كل نوع: المدخلات، المراحل، والتكاليف' : 'متابعة المدخلات والتكاليف ومراحل التقدم لكل مسار.';
+  const sec2Title = useTypes ? 'المدخلات حسب النوع' : 'مسارات الجهة';
+  const sec2Sub = useTypes ? 'تصنيف مدخلات المسار حسب النوع والمرحلة والتكلفة.' : 'متابعة المدخلات والتكاليف ومراحل التقدم لكل مسار.';
   const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
   const money = (label: string) => {
     const p = label.split(' ');
@@ -251,11 +276,11 @@ function EntityOverview({ vm }: { vm: VM }) {
     const t = ic.total || 1;
     const captured = Math.max(0, ic.capable - ic.underDev - ic.developed - ic.launched);
     return [
-      { key: 'capable', frac: captured / t, color: '#2563EB' },
-      { key: 'underDev', frac: ic.underDev / t, color: '#3B82F6' },
-      { key: 'developed', frac: ic.developed / t, color: '#60A5FA' },
-      { key: 'launched', frac: ic.launched / t, color: '#93C5FD' },
-      { key: 'notCapable', frac: ic.notCapable / t, color: '#C7D9F5' },
+      { key: 'capable', frac: captured / t, color: '#2563EB', label: 'جاهزة للتحويل', value: ic.capable },
+      { key: 'underDev', frac: ic.underDev / t, color: '#3B82F6', label: 'قيد التطوير', value: ic.underDev },
+      { key: 'developed', frac: ic.developed / t, color: '#60A5FA', label: 'تم التطوير', value: ic.developed },
+      { key: 'launched', frac: ic.launched / t, color: '#93C5FD', label: 'تم الإطلاق', value: ic.launched },
+      { key: 'notCapable', frac: ic.notCapable / t, color: '#C7D9F5', label: 'غير قابلة للتحويل', value: ic.notCapable },
     ].filter((x) => x.frac > 0.0001);
   })();
 
@@ -269,6 +294,13 @@ function EntityOverview({ vm }: { vm: VM }) {
   const costDonut = costHov
     ? { frac: clampFrac(costHov.frac), light: '#EDF1F8', top: costHov.short, center: costM.num, sub: costM.unit }
     : { frac: cc.execFrac, light: '#BFD3F5', top: 'الإجمالي', center: costTot.num, sub: costTot.unit };
+  // arc-level hover figures for the cost donut (exec = dark arc, launch = light arc)
+  const execM = money(cc.execLabel);
+  const launchM = money(cc.launchLabel);
+  const costArcMeta = {
+    exec: { center: execM.num, sub: execM.unit, top: 'تكلفة التنفيذ' },
+    launch: { center: launchM.num, sub: launchM.unit, top: 'تكلفة الإطلاق' },
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -276,7 +308,7 @@ function EntityOverview({ vm }: { vm: VM }) {
       <div data-r="dash-top" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* --- إجمالي المدخلات (right) --- */}
         <div style={cardStyle}>
-          <EoCardHead title={isPath ? 'إجمالي المدخلات' : 'مدخلات الجهة'} iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
+          <EoCardHead title={isPath ? 'إجمالي المدخلات' : isCoord ? 'مدخلات المسار' : 'مدخلات الجهة'} iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
             <EoDonutSeg segs={inSegs} dim={hovIn} center={inDonut.center} sub={inDonut.sub} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -323,9 +355,9 @@ function EntityOverview({ vm }: { vm: VM }) {
           const nomCenter = nomHov ? { center: String(nomHov.v), sub: nomHov.label } : { center: String(nc.total), sub: 'إجمالي المدخلات' };
           const t = nc.total || 1;
           const nomSegs = [
-            { key: 'funded', frac: nc.funded / t, color: '#2563EB' },
-            { key: 'pending', frac: nc.pending / t, color: '#93B4F5' },
-            { key: 'notNominated', frac: nc.notNominated / t, color: '#C7D9F5' },
+            { key: 'funded', frac: nc.funded / t, color: '#2563EB', label: 'معتمدة للتمويل', value: nc.funded },
+            { key: 'pending', frac: nc.pending / t, color: '#93B4F5', label: 'قيد مراجعة اللجنة', value: nc.pending },
+            { key: 'notNominated', frac: nc.notNominated / t, color: '#C7D9F5', label: 'غير مرشّحة', value: nc.notNominated },
           ].filter((x) => x.frac > 0.0001);
           return (
             <div style={cardStyle}>
@@ -368,7 +400,7 @@ function EntityOverview({ vm }: { vm: VM }) {
         <div style={cardStyle}>
           <EoCardHead title="التكلفة التقديرية" iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-            <EoDonut frac={costDonut.frac} dark="#2563EB" light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} />
+            <EoDonut frac={costDonut.frac} dark="#2563EB" light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} arcMeta={costArcMeta} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {costItems.map((r) => (
                 <div
@@ -423,7 +455,7 @@ function EntityOverview({ vm }: { vm: VM }) {
               <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.total}</span>
             </div>
             <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
-              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>المدخلات حسب المرحلة</div>
+              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>{useTypes ? 'حسب المرحلة' : 'المدخلات حسب المرحلة'}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {(() => {
                   const maxN = Math.max(...st.stages.map((x) => x.n), 1);
@@ -462,7 +494,7 @@ function EntityOverview({ vm }: { vm: VM }) {
               onClick={st.onOpen}
               style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              تفاصيل المسار
+              {useTypes ? 'تفاصيل النوع' : 'تفاصيل المسار'}
               <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
             </button>
           </div>
@@ -482,17 +514,11 @@ function EntityOverview({ vm }: { vm: VM }) {
         return (
           <>
             <div>
-              <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>التوزيع حسب المرحلة</div>
-              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع المدخلات على المراحل — مرّر فوق الأعمدة للتفاصيل</div>
+              <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>المدخلات حسب المرحلة</div>
+              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع مدخلات المسار حسب مراحل التقدم.</div>
             </div>
             <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', marginTop: -8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ width: 36, height: 36, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-                    <Icon d="M3 3v18h18M8 17V9M13 17V5M18 17v-7" size={17} color="#2563EB" />
-                  </span>
-                  <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>التوزيع حسب المرحلة</span>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ display: 'inline-flex', background: '#F1F5FB', borderRadius: 12, padding: 4, gap: 2, flexWrap: 'wrap' }}>
                   {tabs.map((t) => (
                     <button
@@ -562,7 +588,7 @@ const STAGE_STATUSES = [
 function StageCard({ b }: { b: VM['batchSummary'][number] }) {
   const [hov, setHov] = useState<string | null>(null);
   const tot = b.count || 1;
-  const segs = STAGE_STATUSES.map((s) => ({ key: s.key, frac: b[s.key] / tot, color: s.c })).filter((x) => x.frac > 0.0001);
+  const segs = STAGE_STATUSES.map((s) => ({ key: s.key, frac: b[s.key] / tot, color: s.c, label: s.label, value: b[s.key] })).filter((x) => x.frac > 0.0001);
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* header */}
@@ -1260,7 +1286,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 fontSize: 12,
               }}
             >
-              <span style={{ fontWeight: 400, color: '#6B7A93', whiteSpace: 'nowrap' }}>مرحلة {vm.banner.firstMsName}</span>
+              <span style={{ fontWeight: 400, color: '#6B7A93', whiteSpace: 'nowrap' }}>{vm.banner.countdownLabel}</span>
               {[
                 { v: String(vm.banner.cd.days), l: 'يوم' },
                 { v: vm.banner.cd.hh, l: 'ساعة' },
@@ -1275,7 +1301,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </span>
                 </span>
               ))}
-              <InfoTip flip text={'الوقت المتبقي على الموعد النهائي لهذه المرحلة — يُرجى استكمال حصر وإدخال جميع المشاريع والمبادرات والعمليات والخدمات قبل انتهائه (' + vm.banner.curPhaseDeadlineFmt + ').'} />
+              <InfoTip flip text={vm.banner.countdownCaption + ' — يُرجى استكمال حصر وإدخال جميع المشاريع والمبادرات والعمليات والخدمات قبل انتهائه (' + vm.banner.curPhaseDeadlineFmt + ').'} />
             </div>
           )}
 
@@ -1727,7 +1753,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           <div data-r="railhelp" style={{ padding: 12 }}>
             <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة' : vm.role === 'entity' ? 'دليل ممثل الجهة' : 'دليل الاستخدام'}</div>
+                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة' : vm.role === 'entity' ? 'دليل ممثل الجهة' : vm.role === 'coord' ? 'دليل منسق المسار' : 'دليل الاستخدام'}</div>
                 <span
                   style={{
                     flex: 'none',
@@ -1745,7 +1771,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? 'إرشادات متابعة المسارات وتحديث حالة المدخلات.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
+                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? 'إرشادات متابعة المسارات وتحديث حالة المدخلات.' : vm.role === 'coord' ? 'إرشادات متابعة المدخلات وتحديث مراحل التقدم.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
@@ -2027,44 +2053,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                   )}
                 </div>
               </div>
-
-              {/* stream summary cards — الكل first, click filters the page */}
-              {vm.portfolioStreams.length > 2 && (
-                <>
-                <SectionLabel>مسارات التحول للذكاء الاصطناعي المساعد</SectionLabel>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
-                  {vm.portfolioStreams.map((st) => (
-                    <HoverDiv
-                      key={st.id || 'all'}
-                      onClick={st.onClick}
-                      base={{
-                        background: st.active ? '#EAF1FE' : '#fff',
-                        border: '1px solid ' + (st.active ? '#B9CFF7' : '#E7ECF4'),
-                        borderRadius: 14,
-                        padding: '12px 14px',
-                        cursor: 'pointer',
-                      }}
-                      hover={st.active ? {} : { borderColor: '#C7D6EE' }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 400,
-                          color: st.active ? '#1D4ED8' : '#6B7A93',
-                          lineHeight: 1.5,
-                          minHeight: 32,
-                        }}
-                      >
-                        {st.name}
-                      </div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: st.active ? '#1D4ED8' : '#13213C', marginTop: 4 }}>
-                        {st.total}
-                      </div>
-                    </HoverDiv>
-                  ))}
-                </div>
-                </>
-              )}
 
               {/* recap strip for the current selection — hidden on the "الكل" view */}
               {!(vm.activePathAll && vm.filterValue === 'all') && (

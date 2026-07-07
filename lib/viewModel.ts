@@ -367,11 +367,11 @@ function build(s: Store) {
   // ---- per-batch (مرحلة) summary: items + total execution cost ----
   // short stream names + chip colours for the stage-distribution cards
   const STREAM_META: Record<string, { short: string; color: string }> = {
-    ops: { short: 'العمليات', color: '#14B8A6' },
-    strategy: { short: 'الاستراتيجي', color: '#C2410C' },
+    ops: { short: 'العمليات والدعم المؤسسي', color: '#14B8A6' },
+    strategy: { short: 'العمل الحكومي الاستراتيجي', color: '#C2410C' },
     services: { short: 'الخدمات', color: '#10B981' },
-    capacity: { short: 'بناء القدرات', color: '#2563EB' },
-    tech: { short: 'الذكاء والبيانات', color: '#8B5CF6' },
+    capacity: { short: 'بناء القدرات والتدريب', color: '#2563EB' },
+    tech: { short: 'تقنيات الذكاء الاصطناعي والبيانات', color: '#8B5CF6' },
   };
   const batchSummary = launchBatches().map((b) => {
     const inBatch = roleBase.filter((i) => i.execBatch === b.name);
@@ -779,10 +779,15 @@ function build(s: Store) {
     subtitle:
       rawRole === 'entity'
         ? 'متابعة مدخلات الجهة حسب المسارات ومراحل التقدم.'
-        : rawRole === 'path'
-          ? 'مراجعة مدخلات جميع الجهات ضمن المسار وترشيح الأنسب للتمويل.'
-          : 'رحلة منظمة من الحصر والاختيار إلى التنفيذ وقياس الأثر لضمان تحول فعّال ومؤثر',
+        : rawRole === 'coord'
+          ? 'متابعة مدخلات المسار، مراحل التقدم، والتكلفة التقديرية.'
+          : rawRole === 'path'
+            ? 'مراجعة مدخلات جميع الجهات ضمن المسار وترشيح الأنسب للتمويل.'
+            : 'رحلة منظمة من الحصر والاختيار إلى التنفيذ وقياس الأثر لضمان تحول فعّال ومؤثر',
     firstMsName: firstMs.name,
+    // top-bar countdown display copy (assessment/review phase closing)
+    countdownLabel: 'مرحلة التقييم والمراجعة',
+    countdownCaption: 'المتبقي على إغلاق التقييم',
     firstMsPeriod: firstMs.period,
     curPhaseDeadlineFmt: fmtDate(firstMs.end),
     cd,
