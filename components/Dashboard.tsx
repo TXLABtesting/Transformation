@@ -1324,7 +1324,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           const step = (n: number) => Number(vm.programSteps[n]?.stepCount || 0);
           const underExec = Math.max(0, step(2) - vm.launchedCount);
           const cards = [
-            { label: 'الإجمالي', v: vm.kpis.total, icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z' },
+            { label: 'إجمالي المدخلات', v: vm.kpis.total, icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z' },
             { label: 'تم حصرها', v: step(0), icon: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
             { label: 'بانتظار الاعتماد', v: step(1), icon: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2' },
             { label: 'قيد التنفيذ', v: underExec, icon: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
@@ -1389,7 +1389,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <StatBand
                   items={[
                     {
-                      label: 'الإجمالي',
+                      label: 'إجمالي المدخلات',
                       value: String(vm.kpis.total),
                       info: 'إجمالي ' + vm.typesPhrase + ' المسجّلة ضمن نطاق اطلاعك. اضغطوا على البطاقة لاستعراض البطاقات التفصيلية.',
                       dist: vm.showStreamDist ? vm.kpiDist.total : undefined,
@@ -1538,7 +1538,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 13, marginBottom: 4 }}
               >
                 <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" info="عدد الجهات الاتحادية التي قدّمت مشاريع أو عمليات أو خدمات." />
-                <StatCard value={vm.aiStats.total} label="إجمالي المشاريع والمبادرات والعمليات والخدمات" info="كل ما قدّمته الجهات عبر مسارات التحول ووصل إلى اللجنة الوطنية." />
+                <StatCard value={vm.aiStats.total} label="إجمالي المدخلات" info="كل ما قدّمته الجهات عبر مسارات التحول ووصل إلى اللجنة الوطنية — من مشاريع ومبادرات وعمليات وخدمات." />
                 <StatCard value={vm.aiStats.nominated} label="مرشح من قبل رؤساء المسارات" dot="#B45309" info="ما رشّحه رؤساء المسارات لاعتماد التمويل." />
                 <StatCard value={vm.aiStats.funded} label="معتمدة للتمويل" dot="#0B8A4B" info="ما اعتمدته اللجنة الوطنية وستتكفّل بتكلفة تحويله." />
               </div>
@@ -1732,7 +1732,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               <SectionLabel>ملخص حالة التنفيذ</SectionLabel>
               <StatBand
                 items={[
-                  { label: 'الإجمالي', value: String(vm.recap.total), info: 'إجمالي ما هو مسجّل ضمن هذا الاختيار.' },
+                  { label: 'إجمالي المدخلات', value: String(vm.recap.total), info: 'إجمالي المدخلات المسجّلة ضمن هذا الاختيار.' },
                   { label: 'غير قابل للتحول', value: String(vm.recap.notCapable), info: 'بنود لا تنطبق عليها خطة إطلاق أو حالة تنفيذ.' },
                   { label: 'قيد التطوير', value: String(vm.recap.underDev), info: 'معتمدة ويجري تطويرها حالياً.' },
                   { label: 'تم التطوير', value: String(vm.recap.developed), info: 'اكتمل تطويرها وهي جاهزة للإطلاق.' },
@@ -1915,7 +1915,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                         </div>
                         <div style={{ textAlign: 'center', flex: 'none' }}>
                           <div style={{ fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1.1 }}>{e2.total}</div>
-                          <div style={{ fontSize: 10, color: '#9AA6BC', fontWeight: 400 }}>الإجمالي</div>
+                          <div style={{ fontSize: 10, color: '#9AA6BC', fontWeight: 400 }}>إجمالي المدخلات</div>
                         </div>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 14 }}>
