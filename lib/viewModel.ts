@@ -372,7 +372,7 @@ function build(s: Store) {
   const roleStreams =
     rawRole === 'coord' || rawRole === 'path' ? PATHS.filter((p) => p.id === myPath) : PATHS;
   const navItems = [
-    { key: 'overview', label: 'نظرة عامة', icon: 'M3 10.5 12 3l9 7.5M5 9.5V21h5v-6h4v6h5V9.5' },
+    { key: 'overview', label: 'الرئيسية', icon: 'M3 10.5 12 3l9 7.5M5 9.5V21h5v-6h4v6h5V9.5' },
     { key: 'all', label: 'الكل', icon: 'M4 6h16M4 12h16M4 18h16' },
     // type pages sit one level under «الكل»
     { key: 'projects', label: 'المشاريع والمبادرات', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7', sub: true },
