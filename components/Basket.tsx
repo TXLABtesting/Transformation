@@ -254,7 +254,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                       <Icon d={CHECK_ICON} size={16} color="#0B8A4B" />
                       تم اعتماده للتمويل
                     </div>
-                  ) : (
+                  ) : b.isCommittee ? (
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                       <button
                         onClick={it.onApprove}
@@ -267,6 +267,18 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                         style={{ background: '#fff', color: '#DC2B38', border: '1px solid #F3D3D6', borderRadius: 11, padding: '11px 16px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}
                       >
                         رفض التمويل
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 12 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, padding: '5px 11px', borderRadius: 999, color: '#B45309', background: '#FFF3DE' }}>
+                        بانتظار قرار اللجنة الوطنية
+                      </span>
+                      <button
+                        onClick={it.onWithdraw}
+                        style={{ background: '#fff', color: '#C0303B', border: '1px solid #E7ECF4', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+                      >
+                        سحب الترشيح
                       </button>
                     </div>
                   )}

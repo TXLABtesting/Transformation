@@ -667,11 +667,15 @@ function build(s: Store) {
   // plan budgets are DERIVED from item budgets, so totals sum items directly
   const fundedItems = base.filter((i) => i.funded);
   const spentBudget = fundedItems.reduce((a, i) => a + parseBudget(i.budget), 0);
+  const aiNomByCommittee = (i: Item) =>
+    !!i.nom && (!!i.nom.direct || i.nom.role === 'اللجنة الوطنية' || i.nom.by === 'اللجنة الوطنية');
   const aiStats = {
     entCount: new Set(base.map((i) => ent(i))).size,
     total: base.length,
     // the committee acts only on stream-head nominations, not on raw submissions
     nominated: base.filter((i) => !!i.nom && !i.funded).length,
+    nominatedHeads: base.filter((i) => !!i.nom && !i.funded && !aiNomByCommittee(i)).length,
+    nominatedCommittee: base.filter((i) => !!i.nom && !i.funded && aiNomByCommittee(i)).length,
     funded: base.filter((i) => i.funded).length,
     avg: Math.round((sumV / n) * 10) / 10,
     avgPct: Math.round((sumV / n / 5) * 100),

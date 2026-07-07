@@ -1713,11 +1713,22 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>المؤشرات الوطنية العامة</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>ملخص شامل لحالة مشاركة الجهات والمدخلات المسجلة ضمن المشروع.</div>
               </div>
-              <div data-r="kpi" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 13, marginTop: -8 }}>
-                <CommitteeKpi value={vm.aiStats.entCount} label="الجهات المشاركة" info="عدد الجهات الاتحادية التي قدّمت مشاريع أو عمليات أو خدمات." />
-                <CommitteeKpi value={vm.aiStats.total} label="إجمالي المدخلات المسجلة" info="كل ما قدّمته الجهات عبر مسارات المشروع ووصل إلى اللجنة الوطنية — من مشاريع ومبادرات وعمليات وخدمات." />
-                <CommitteeKpi value={vm.aiStats.nominated} label="المدخلات المرشحة من رؤساء المسارات" dot="#E68A1E" info="ما رشّحه رؤساء المسارات لاعتماد اللجنة الوطنية." />
-                <CommitteeKpi value={vm.aiStats.funded} label="المدخلات المعتمدة" dot="#12B76A" info="ما اعتمدته اللجنة الوطنية ضمن المشروع." />
+              <div data-r="kpi" data-tour="kpis" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 4px', marginTop: -8, display: 'flex', alignItems: 'stretch', gap: 0, flexWrap: 'wrap' }}>
+                <CmtStat value={vm.aiStats.entCount} label="الجهات المشاركة" sub="جهة مشاركة" iconD="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01" info="عدد الجهات الاتحادية التي قدّمت مدخلات ضمن المشروع." />
+                <div style={{ width: 1, background: '#EEF1F6', alignSelf: 'stretch', margin: '2px 0' }} />
+                <CmtStat value={vm.aiStats.total} label="إجمالي المدخلات" sub="مُدخل مسجّل" iconD="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" info="كل ما قدّمته الجهات عبر مسارات المشروع ووصل إلى اللجنة الوطنية." />
+                <div style={{ width: 1, background: '#EEF1F6', alignSelf: 'stretch', margin: '2px 0' }} />
+                <div style={{ flex: '2 1 300px', minWidth: 280, padding: '2px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                    <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات المرشّحة</span>
+                    <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>من أصل {vm.aiStats.total} مدخلات</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                    <CmtMini value={vm.aiStats.nominatedHeads} label="مرشّحة من رؤساء المسارات" info="ما رشّحه رؤساء المسارات وينتظر قرار اللجنة." />
+                    <CmtMini value={vm.aiStats.nominatedCommittee} label="مرشّحة من اللجنة الوطنية" info="ما رشّحته اللجنة الوطنية مباشرة وينتظر الاعتماد." />
+                    <CmtMini value={vm.aiStats.funded} label="المعتمدة للتمويل" green info="ما اعتمدته اللجنة الوطنية للتمويل." />
+                  </div>
+                </div>
               </div>
 
               {/* Section 2: متابعة المدخلات حسب المسارات */}
@@ -2895,6 +2906,38 @@ function CommitteeKpi({ value, label, dot, info }: { value: number; label: strin
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 6 }}>
         <span style={{ fontSize: 34, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{value}</span>
+      </div>
+    </div>
+  );
+}
+
+// national-overview stat column (inside the shared indicators card)
+function CmtStat({ value, label, sub, iconD, info }: { value: number; label: string; sub: string; iconD: string; info?: string }) {
+  return (
+    <div style={{ flex: '1 1 150px', minWidth: 150, padding: '2px 18px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+          <span style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>{label}</span>
+          <Icon d={iconD} size={16} color="#8A97AD" />
+        </span>
+        {info && <InfoTip text={info} />}
+      </div>
+      <div style={{ fontSize: 34, fontWeight: 800, color: '#13213C', lineHeight: 1, marginTop: 8 }}>{value}</div>
+      <div style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 400 }}>{sub}</div>
+    </div>
+  );
+}
+
+// mini nomination-distribution card
+function CmtMini({ value, label, info, green }: { value: number; label: string; info?: string; green?: boolean }) {
+  return (
+    <div style={{ background: green ? '#EAF7F0' : '#fff', border: '1px solid ' + (green ? '#CDEBD9' : '#E7ECF4'), borderRadius: 14, padding: '12px 13px', display: 'flex', flexDirection: 'column', gap: 6, minHeight: 92 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 }}>
+        <span style={{ fontSize: 11.5, color: green ? '#0B8A4B' : '#6B7A93', fontWeight: 400, lineHeight: 1.4 }}>{label}</span>
+        {info && <InfoTip text={info} />}
+      </div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <span style={{ fontSize: 27, fontWeight: 800, color: green ? '#0B8A4B' : '#13213C', lineHeight: 1 }}>{value}</span>
       </div>
     </div>
   );
