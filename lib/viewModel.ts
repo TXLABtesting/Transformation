@@ -339,6 +339,14 @@ function build(s: Store) {
     .sort((a, b) => b.value - a.value);
 
   // ---- per-batch (مرحلة) summary: items + total execution cost ----
+  // short stream names + chip colours for the stage-distribution cards
+  const STREAM_META: Record<string, { short: string; color: string }> = {
+    ops: { short: 'العمليات', color: '#14B8A6' },
+    strategy: { short: 'الاستراتيجي', color: '#C2410C' },
+    services: { short: 'الخدمات', color: '#10B981' },
+    capacity: { short: 'بناء القدرات', color: '#2563EB' },
+    tech: { short: 'الذكاء والبيانات', color: '#8B5CF6' },
+  };
   const batchSummary = launchBatches().map((b) => {
     const inBatch = roleBase.filter((i) => i.execBatch === b.name);
     const cost = inBatch.reduce((a, i) => a + parseBudget(i.budget), 0);
@@ -362,6 +370,17 @@ function build(s: Store) {
         .filter((c) => c.n > 0)
         .map((c) => ({ ...c, onOpen: () => s.openBatchItems(b.name, c.section) })),
       onOpenAll: () => s.openBatchItems(b.name, 'all'),
+      // stage-distribution breakdowns (entity rep view)
+      typeBreak: [
+        { label: 'المشاريع والمبادرات', n: inBatch.filter((i) => isProjInit(i.type)).length },
+        { label: 'الخدمات', n: inBatch.filter((i) => i.type === 'service').length },
+        { label: 'العمليات', n: inBatch.filter((i) => i.type === 'operation').length },
+      ].filter((x) => x.n > 0),
+      streamBreak: PATHS.map((p) => ({
+        short: STREAM_META[p.id]?.short || p.name,
+        color: STREAM_META[p.id]?.color || '#2563EB',
+        n: inBatch.filter((i) => i.path === p.id).length,
+      })).filter((x) => x.n > 0),
       costLabel: cost > 0 ? formatMoney(cost) : '—',
       launchCostLabel: launchTotal > 0 ? formatMoney(launchTotal) : '—',
       // delivery mapping: how far this مرحلة's assignments have progressed

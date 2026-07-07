@@ -480,6 +480,97 @@ function EntityOverview({ vm }: { vm: VM }) {
   );
 }
 
+// Execution & launch stages — distribution of inputs across the four stages
+// (entity representative view)
+function StageDistribution({ vm }: { vm: VM }) {
+  const CAL = 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z';
+  const statuses = [
+    { label: 'قيد التطوير', c: '#2563EB', key: 'underDev' as const },
+    { label: 'تم التطوير', c: '#60A5FA', key: 'developed' as const },
+    { label: 'تم الإطلاق', c: '#BFD3F5', key: 'launched' as const },
+  ];
+  return (
+    <>
+      <div>
+        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>مراحل التنفيذ والإطلاق</div>
+        <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3, maxWidth: 720, lineHeight: 1.7 }}>
+          توزيع مدخلات التحول على المراحل الزمنية الأربع — لكل مرحلة إجمالي مدخلاتها وتفصيلها حسب المسار والحالة والنوع.
+        </div>
+      </div>
+      <div data-tour="stages" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(440px,1fr))', gap: 16 }}>
+        {vm.batchSummary.map((b) => {
+          const t = b.count || 1;
+          const segs = statuses.map((s) => ({ key: s.key, frac: (b[s.key] as number) / t, color: s.c })).filter((x) => x.frac > 0.0001);
+          return (
+            <div key={b.name} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* header */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                <div>
+                  <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{b.displayName}</div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 5 }}>
+                    <Icon d={CAL} size={13} color="#9AA6BC" />
+                    {b.period}
+                  </div>
+                </div>
+                <button
+                  onClick={b.onOpenAll}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#1D4ED8', fontWeight: 800, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  عرض المدخلات
+                  <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
+                </button>
+              </div>
+              {/* donut + status legend */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column', gap: 11 }}>
+                  {statuses.map((r) => (
+                    <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ width: 9, height: 9, borderRadius: '50%', background: r.c, flex: 'none' }} />
+                        <span style={{ fontSize: 12.5, color: '#54627B', fontWeight: 400 }}>{r.label}</span>
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{b[r.key] as number}</span>
+                    </div>
+                  ))}
+                </div>
+                <EoDonutSeg segs={segs} center={String(b.count)} sub="مدخلات" />
+              </div>
+              {/* نوع المدخلات */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>نوع المدخلات</span>
+                <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                  {b.typeBreak.map((tp) => (
+                    <span key={tp.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#13213C', color: '#fff', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
+                      {tp.label} <b style={{ color: '#BFD3F5' }}>{tp.n}</b>
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {/* المسار */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>المسار</span>
+                <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                  {b.streamBreak.map((st) => (
+                    <span key={st.short} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#F4F7FC', border: '1px solid #E7ECF4', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.color, flex: 'none' }} />
+                      {st.short} <b style={{ color: '#13213C' }}>{st.n}</b>
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {/* cost footer */}
+              <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 'auto' }}>
+                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ التقديرية للمرحلة</span>
+                <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{b.costLabel}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 // small ⓘ affordance: hover / tap reveals a plain-language explanation
 function InfoTip({ text, dark, flip }: { text: string; dark?: boolean; flip?: boolean }) {
   // flip: the popup grows to the LEFT by default (RTL); near the screen's
@@ -1530,7 +1621,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 }}
               >
                 <Icon d="M5 8h14l-1.2 10.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8z M9 8V6a3 3 0 0 1 6 0v2" size={16} color="#2563EB" />
-                سلة التمويل
+                {vm.role === 'ai' ? 'قائمة الاعتماد' : 'سلة التمويل'}
                 {vm.hasBasketBadge && (
                   <span
                     style={{
@@ -1558,7 +1649,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           <div data-r="railhelp" style={{ padding: 12 }}>
             <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>دليل الاستخدام</div>
+                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة' : 'دليل الاستخدام'}</div>
                 <span
                   style={{
                     flex: 'none',
@@ -1576,7 +1667,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.
+                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
@@ -1704,37 +1795,36 @@ export function Dashboard({ vm }: { vm: VM }) {
             <>
               {/* page heading */}
               <div style={{ margin: '2px 0 -4px' }}>
-                <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>لوحة متابعة مشروع الذكاء الاصطناعي المساعد</div>
-                <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400, marginTop: 6, maxWidth: 700, lineHeight: 1.7 }}>منصة وطنية لمتابعة مدخلات الجهات الحكومية، وتصنيفها حسب المسارات، وحالة الترشيح والاعتماد.</div>
+                <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>لوحة اللجنة الوطنية</div>
+                <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400, marginTop: 6, maxWidth: 700, lineHeight: 1.7 }}>متابعة مدخلات الجهات حسب المسارات، وحالة الترشيح والاعتماد.</div>
               </div>
 
-              {/* Section 1: المؤشرات الوطنية العامة */}
+              {/* Section 1: ملخص المدخلات */}
               <div>
-                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>المؤشرات الوطنية العامة</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>ملخص شامل لحالة مشاركة الجهات والمدخلات المسجلة ضمن المشروع.</div>
+                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>ملخص المدخلات</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>نظرة سريعة على حالة المدخلات ومشاركة الجهات.</div>
               </div>
-              <div data-r="kpi" data-tour="kpis" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 4px', marginTop: -8, display: 'flex', alignItems: 'stretch', gap: 0, flexWrap: 'wrap' }}>
+              <div data-r="kpi" data-tour="kpis" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: 14, marginTop: -8, display: 'flex', alignItems: 'stretch', gap: 12, flexWrap: 'wrap' }}>
                 <CmtStat value={vm.aiStats.entCount} label="الجهات المشاركة" sub="جهة مشاركة" iconD="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01" info="عدد الجهات الاتحادية التي قدّمت مدخلات ضمن المشروع." />
                 <div style={{ width: 1, background: '#EEF1F6', alignSelf: 'stretch', margin: '2px 0' }} />
                 <CmtStat value={vm.aiStats.total} label="إجمالي المدخلات" sub="مُدخل مسجّل" iconD="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" info="كل ما قدّمته الجهات عبر مسارات المشروع ووصل إلى اللجنة الوطنية." />
-                <div style={{ width: 1, background: '#EEF1F6', alignSelf: 'stretch', margin: '2px 0' }} />
-                <div style={{ flex: '2 1 300px', minWidth: 280, padding: '2px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ flex: '2 1 300px', minWidth: 280, background: '#F5F7FB', borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                    <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات المرشّحة</span>
+                    <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>حالة الترشيح</span>
                     <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>من أصل {vm.aiStats.total} مدخلات</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                    <CmtMini value={vm.aiStats.nominatedHeads} label="مرشّحة من رؤساء المسارات" info="ما رشّحه رؤساء المسارات وينتظر قرار اللجنة." />
-                    <CmtMini value={vm.aiStats.nominatedCommittee} label="مرشّحة من اللجنة الوطنية" info="ما رشّحته اللجنة الوطنية مباشرة وينتظر الاعتماد." />
-                    <CmtMini value={vm.aiStats.funded} label="المعتمدة للتمويل" green info="ما اعتمدته اللجنة الوطنية للتمويل." />
+                    <CmtMini value={vm.aiStats.nominatedHeads} label="ترشيح رؤساء المسارات" info="ما رشّحه رؤساء المسارات وينتظر قرار اللجنة." />
+                    <CmtMini value={vm.aiStats.nominatedCommittee} label="ترشيح اللجنة" info="ما رشّحته اللجنة الوطنية مباشرة وينتظر الاعتماد." />
+                    <CmtMini value={vm.aiStats.funded} label="المعتمدة" green info="ما اعتمدته اللجنة الوطنية للتمويل." />
                   </div>
                 </div>
               </div>
 
-              {/* Section 2: متابعة المدخلات حسب المسارات */}
+              {/* Section 2: المدخلات حسب المسار */}
               <div>
-                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>متابعة المدخلات حسب المسارات</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>عرض تفصيلي لحجم مشاركة الجهات وتصنيف المدخلات المرتبطة بكل مسار.</div>
+                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>المدخلات حسب المسار</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>حجم المشاركة وتصنيف المدخلات في كل مسار.</div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
                 {vm.committeeStreamCards.map((st) => (
@@ -1747,12 +1837,12 @@ export function Dashboard({ vm }: { vm: VM }) {
                     </div>
                     <div style={{ height: 1, background: '#EEF1F6' }} />
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-                      <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>الجهات المشاركة</span>
+                      <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>عدد الجهات</span>
                       <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.entCount}</span>
                     </div>
                     <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 9 }}>
-                        <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>تصنيف المدخلات</span>
+                        <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>التصنيف</span>
                         <span style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 400 }}>الإجمالي <span style={{ fontWeight: 800, color: '#13213C' }}>{st.total}</span></span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1777,7 +1867,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       onClick={st.onOpen}
                       style={{ marginTop: 'auto', width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
                     >
-                      عرض المزيد
+                      التفاصيل
                       <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
                     </button>
                   </div>
@@ -2085,7 +2175,8 @@ export function Dashboard({ vm }: { vm: VM }) {
           )}
 
           {/* ===== LAUNCH PLANS: four big مرحلة cards ===== */}
-          {vm.navSection === 'launchplans' && (
+          {vm.navSection === 'launchplans' && vm.role === 'entity' && <StageDistribution vm={vm} />}
+          {vm.navSection === 'launchplans' && vm.role !== 'entity' && (
             <>
               <div>
                 <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>مراحل التنفيذ والإطلاق</div>
