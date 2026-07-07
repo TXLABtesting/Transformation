@@ -1231,8 +1231,13 @@ export function Dashboard({ vm }: { vm: VM }) {
       {/* ===================== BANNER + STEPPER (entity/coord only) ===================== */}
       {vm.showProgramBanner && (
       <>
-      <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C', margin: '2px 0 -4px' }}>
-        {vm.banner.pageTitle}
+      <div style={{ margin: '2px 0 -4px' }}>
+        <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>
+          {vm.banner.pageTitle}
+        </div>
+        <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400, marginTop: 6, maxWidth: 620, lineHeight: 1.7 }}>
+          {vm.banner.subtitle}
+        </div>
       </div>
       <div
         data-tour="banner"
@@ -1268,10 +1273,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           }}
         >
           <div style={{ minWidth: 260, flex: 1 }}>
-            <div className="hd" style={{ fontSize: 14.5, fontWeight: 800 }}>{vm.banner.boxTitle}</div>
-            <div style={{ fontSize: 12, color: '#AFC6E8', fontWeight: 400, marginTop: 5, maxWidth: 520, lineHeight: 1.7 }}>
-              {vm.banner.subtitle}
-            </div>
+            <div className="hd" style={{ fontSize: 15, fontWeight: 800 }}>{vm.banner.boxTitle}</div>
             {vm.isAiRole && (
               <HoverButton
                 onClick={s.openDeadlines}
