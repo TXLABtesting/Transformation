@@ -290,7 +290,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 padding: '12px 13px',
               }}
             >
-              <div style={labelStyle}>التعقيد</div>
+              <div style={labelStyle}>التصنيف</div>
               <div style={valueStyle}>{d.complexity}</div>
             </div>
             <div
@@ -301,7 +301,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 padding: '12px 13px',
               }}
             >
-              <div style={labelStyle}>الانتهاء المتوقع</div>
+              <div style={labelStyle}>تاريخ الإطلاق المتوقع</div>
               <div style={valueStyle}>{d.endDateFmt}</div>
             </div>
           </div>
@@ -381,11 +381,11 @@ export function DetailPanel({ vm }: { vm: VM }) {
             }}
           >
             <div>
-              <div style={labelStyle}>الاسم</div>
+              <div style={labelStyle}>اسم المدخل</div>
               <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{d.title}</div>
             </div>
             <div>
-              <div style={labelStyle}>الوصف</div>
+              <div style={labelStyle}>وصف المدخل</div>
               <RichTextView html={d.desc} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
             </div>
 
@@ -416,15 +416,15 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   <div>
-                    <div style={labelStyle}>قابلية التحول</div>
+                    <div style={labelStyle}>قابلية التحويل</div>
                     <div style={valueStyle}>{d.transformability}</div>
                   </div>
                   <div>
-                    <div style={labelStyle}>أولوية التحول</div>
+                    <div style={labelStyle}>أولوية التحويل</div>
                     <div style={valueStyle}>{d.transformPriority}</div>
                   </div>
                   <div>
-                    <div style={labelStyle}>جاهزية التحول</div>
+                    <div style={labelStyle}>جاهزية التحويل</div>
                     <div style={valueStyle}>{d.readiness}%</div>
                   </div>
                 </div>
@@ -436,7 +436,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   <div>
-                    <div style={labelStyle}>نوع العملية</div>
+                    <div style={labelStyle}>نوع المدخل</div>
                     <div style={valueStyle}>{d.opType}</div>
                   </div>
                   <div>
@@ -450,15 +450,15 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   <div>
-                    <div style={labelStyle}>قابلية التحول</div>
+                    <div style={labelStyle}>قابلية التحويل</div>
                     <div style={valueStyle}>{d.transformability}</div>
                   </div>
                   <div>
-                    <div style={labelStyle}>أولوية التحول</div>
+                    <div style={labelStyle}>أولوية التحويل</div>
                     <div style={valueStyle}>{d.transformPriority}</div>
                   </div>
                   <div>
-                    <div style={labelStyle}>جاهزية التحول</div>
+                    <div style={labelStyle}>جاهزية التحويل</div>
                     <div style={valueStyle}>{d.readiness}</div>
                   </div>
                 </div>
@@ -850,7 +850,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 marginBottom: 14,
               }}
             >
-              نطاق العمل والميزانية المتوقعة
+              نطاق العمل والتكلفة المتوقعة
             </div>
 
             {/* Editable */}
@@ -955,11 +955,10 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49' }}>
-                    بانتظار إدخال رئيس المسار
+                    بانتظار مراجعة رئيس المسار
                   </div>
                   <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginTop: 4 }}>
-                    سيقوم رئيس المسار بإدخال نطاق العمل والميزانية المطلوبة، وستظهر التفاصيل هنا بمجرد
-                    إرسالها.
+                    ستظهر تفاصيل نطاق العمل والتكلفة التقديرية بعد مراجعة رئيس المسار.
                   </div>
                 </div>
               </div>

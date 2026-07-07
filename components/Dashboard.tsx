@@ -606,33 +606,39 @@ function StageCard({ b }: { b: VM['batchSummary'][number] }) {
           </div>
         </div>
         <button onClick={b.onOpenAll} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#1D4ED8', fontWeight: 800, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-          عرض المدخلات
+          عرض مدخلات المرحلة
           <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
         </button>
       </div>
       {/* donut (right) + status legend (left), with hover */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
-        <EoDonutSeg segs={segs} dim={hov} center={String(b.count)} sub="مدخلات" />
-        <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {STAGE_STATUSES.map((r) => (
-            <div
-              key={r.label}
-              onMouseEnter={() => setHov(r.key)}
-              onMouseLeave={() => setHov(null)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '4px 8px', borderRadius: 8, background: hov === r.key ? '#EEF3FC' : 'transparent', cursor: 'default', transition: 'background .12s' }}
-            >
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 9, height: 9, borderRadius: '50%', background: r.c, flex: 'none' }} />
-                <span style={{ fontSize: 12.5, color: '#54627B', fontWeight: 400 }}>{r.label}</span>
-              </span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{b[r.key]}</span>
-            </div>
-          ))}
+      {b.count === 0 ? (
+        <div style={{ padding: '22px 8px', textAlign: 'center', fontSize: 12.5, fontWeight: 400, color: '#9AA6BC' }}>
+          لا توجد مدخلات في هذه المرحلة
         </div>
-      </div>
-      {/* نوع المدخلات */}
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+          <EoDonutSeg segs={segs} dim={hov} center={String(b.count)} sub="مدخلات" />
+          <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {STAGE_STATUSES.map((r) => (
+              <div
+                key={r.label}
+                onMouseEnter={() => setHov(r.key)}
+                onMouseLeave={() => setHov(null)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '4px 8px', borderRadius: 8, background: hov === r.key ? '#EEF3FC' : 'transparent', cursor: 'default', transition: 'background .12s' }}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: r.c, flex: 'none' }} />
+                  <span style={{ fontSize: 12.5, color: '#54627B', fontWeight: 400 }}>{r.label}</span>
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{b[r.key]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* أنواع المدخلات */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>نوع المدخلات</span>
+        <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>أنواع المدخلات</span>
         <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
           {b.typeBreak.map((tp) => (
             <span key={tp.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF1F5', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
@@ -641,21 +647,21 @@ function StageCard({ b }: { b: VM['batchSummary'][number] }) {
           ))}
         </div>
       </div>
-      {/* المسار */}
+      {/* المسارات */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>المسار</span>
+        <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>المسارات</span>
         <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
           {b.streamBreak.map((st) => (
-            <span key={st.short} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF1F5', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
+            <span key={st.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF1F5', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.color, flex: 'none' }} />
-              {st.short} <b style={{ color: '#13213C' }}>{st.n}</b>
+              {st.name} <b style={{ color: '#13213C' }}>{st.n}</b>
             </span>
           ))}
         </div>
       </div>
       {/* cost footer */}
       <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 'auto' }}>
-        <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ التقديرية للمرحلة</span>
+        <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ التقديرية</span>
         <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{b.costLabel}</span>
       </div>
     </div>
@@ -666,9 +672,9 @@ function StageDistribution({ vm }: { vm: VM }) {
   return (
     <>
       <div>
-        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>مراحل التنفيذ والإطلاق</div>
+        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>مراحل التقدم</div>
         <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3, maxWidth: 720, lineHeight: 1.7 }}>
-          توزيع مدخلات التحول على المراحل الزمنية الأربع — لكل مرحلة إجمالي مدخلاتها وتفصيلها حسب المسار والحالة والنوع.
+          توزيع مدخلات الجهة على مراحل التقدم الأربع حسب المسار، النوع، حالة التطوير، والتكلفة التقديرية.
         </div>
       </div>
       <div data-tour="stages" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(440px,1fr))', gap: 16 }}>
@@ -1860,7 +1866,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 }}
               >
                 <Icon d="M5 8h14l-1.2 10.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8z M9 8V6a3 3 0 0 1 6 0v2" size={16} color="#2563EB" />
-                {vm.role === 'ai' ? 'قائمة الاعتماد' : 'سلة التمويل'}
+                {vm.role === 'ai' ? 'قائمة الاعتماد والتمويل' : 'سلة التمويل'}
                 {vm.hasBasketBadge && (
                   <span
                     style={{
@@ -1888,7 +1894,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           <div data-r="railhelp" style={{ padding: 12 }}>
             <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة' : vm.role === 'entity' ? 'دليل ممثل الجهة' : vm.role === 'coord' ? 'دليل منسق المسار في الجهة' : 'دليل الاستخدام'}</div>
+                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة الوطنية' : vm.role === 'entity' ? 'دليل ممثل الجهة' : vm.role === 'coord' ? 'دليل منسق المسار في الجهة' : 'دليل الاستخدام'}</div>
                 <span
                   style={{
                     flex: 'none',
@@ -1906,7 +1912,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? (vm.navSection === 'lplan' ? 'إرشادات مراجعة مدخلات الجهة ومتابعة خطة الإطلاق.' : vm.navStream ? 'إرشادات مراجعة مدخلات المسار وتحديث حالة الاعتماد.' : 'إرشادات مراجعة مدخلات الجهة وتحديث حالة الاعتماد.') : vm.role === 'coord' ? 'إرشادات متابعة المدخلات وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
+                {vm.role === 'ai' ? 'إرشادات مراجعة الترشيحات واعتماد المدخلات للتمويل.' : vm.role === 'entity' ? (vm.navSection === 'lplan' ? 'إرشادات مراجعة مدخلات الجهة ومتابعة خطة الإطلاق.' : vm.navSection === 'launchplans' ? 'إرشادات مراجعة مدخلات الجهة ومتابعة مراحل التقدم.' : vm.navStream ? 'إرشادات مراجعة مدخلات المسار وتحديث حالة الاعتماد.' : 'إرشادات مراجعة مدخلات الجهة وتحديث حالة الاعتماد.') : vm.role === 'coord' ? 'إرشادات متابعة مدخلات المسار وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
@@ -1924,7 +1930,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   fontFamily: 'inherit',
                 }}
               >
-                {vm.role === 'coord' || vm.role === 'entity' ? 'عرض الدليل' : 'فتح الدليل'}
+                {vm.role === 'coord' || vm.role === 'entity' || vm.role === 'ai' ? 'عرض الدليل' : 'فتح الدليل'}
               </button>
             </div>
           </div>
@@ -2035,52 +2041,53 @@ export function Dashboard({ vm }: { vm: VM }) {
               {/* page heading */}
               <div style={{ margin: '2px 0 -4px' }}>
                 <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>لوحة اللجنة الوطنية</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>متابعة حالة المدخلات المرشحة والجهات المشاركة حسب المسارات.</div>
               </div>
 
-              {/* Section 1: ملخص المدخلات */}
+              {/* Section 1: ملخص المدخلات والترشيحات */}
               <div>
-                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>ملخص المدخلات</div>
+                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>ملخص المدخلات والترشيحات</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>نظرة سريعة على حالة المدخلات ومشاركة الجهات.</div>
               </div>
               <div data-r="kpi" data-tour="kpis" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: 14, marginTop: -8, display: 'flex', alignItems: 'stretch', gap: 12, flexWrap: 'wrap' }}>
-                <CmtStat value={vm.aiStats.entCount} label="الجهات المشاركة" sub="جهة مشاركة" iconD="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01" info="عدد الجهات الاتحادية التي قدّمت مدخلات ضمن المشروع." />
+                <CmtStat value={vm.aiStats.entCount} label="الجهات المشاركة" sub={vm.aiStats.entCount > 2 ? 'جهات مشاركة' : 'جهة مشاركة'} iconD="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01" info="عدد الجهات الاتحادية التي قدّمت مدخلات ضمن المشروع." />
                 <div style={{ width: 1, background: '#EEF1F6', alignSelf: 'stretch', margin: '2px 0' }} />
-                <CmtStat value={vm.aiStats.total} label="إجمالي المدخلات" sub="مُدخل مسجّل" iconD="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" info="كل ما قدّمته الجهات عبر مسارات المشروع ووصل إلى اللجنة الوطنية." />
+                <CmtStat value={vm.aiStats.total} label="إجمالي المدخلات" sub={vm.aiStats.total > 2 ? 'مدخلات مسجلة' : 'مُدخل مسجّل'} iconD="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" info="كل ما قدّمته الجهات عبر مسارات المشروع ووصل إلى اللجنة الوطنية." />
                 <div style={{ flex: '2 1 300px', minWidth: 280, background: '#F5F7FB', borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                    <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>حالة الترشيح</span>
+                    <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>حالة الترشيحات</span>
                     <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>من أصل {vm.aiStats.total} مدخلات</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                    <CmtMini value={vm.aiStats.nominatedHeads} label="ترشيح رؤساء المسارات" info="ما رشّحه رؤساء المسارات وينتظر قرار اللجنة." />
-                    <CmtMini value={vm.aiStats.nominatedCommittee} label="ترشيح اللجنة" info="ما رشّحته اللجنة الوطنية مباشرة وينتظر الاعتماد." />
-                    <CmtMini value={vm.aiStats.funded} label="المعتمدة" green info="ما اعتمدته اللجنة الوطنية للتمويل." />
+                    <CmtMini value={vm.aiStats.nominatedHeads} label="مرشحة من رؤساء المسارات" info="ما رشّحه رؤساء المسارات وينتظر قرار اللجنة." />
+                    <CmtMini value={vm.aiStats.nominatedCommittee} label="مرشحة للجنة الوطنية" info="ما رشّحته اللجنة الوطنية مباشرة وينتظر الاعتماد." />
+                    <CmtMini value={vm.aiStats.funded} label="معتمدة للتمويل" green info="ما اعتمدته اللجنة الوطنية للتمويل." />
                   </div>
                 </div>
               </div>
 
               {/* Section 2: المدخلات حسب المسار */}
               <div>
-                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>المدخلات حسب المسار</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>حجم المشاركة وتصنيف المدخلات في كل مسار.</div>
+                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب المسار</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع المدخلات حسب المسار ونوع المدخل.</div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
                 {vm.committeeStreamCards.map((st) => (
                   <div key={st.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>
-                      <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>{st.name}</div>
+                      <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5 }}>{st.name}</div>
                       <span style={{ width: 38, height: 38, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
                         <Icon d={st.icon} size={18} color="#2563EB" />
                       </span>
                     </div>
                     <div style={{ height: 1, background: '#EEF1F6' }} />
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-                      <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>عدد الجهات</span>
+                      <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>عدد الجهات المشاركة</span>
                       <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.entCount}</span>
                     </div>
                     <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 9 }}>
-                        <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>المدخلات حسب النوع</span>
+                        <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>توزيع المدخلات حسب النوع</span>
                         <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{st.total}</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -2105,7 +2112,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       onClick={st.onOpen}
                       style={{ marginTop: 'auto', width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
                     >
-                      التفاصيل
+                      عرض التفاصيل
                       <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
                     </button>
                   </div>
@@ -2117,7 +2124,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <>
                   <div>
                     <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>الجهات المشاركة</div>
-                    <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>ترتيب الجهات حسب عدد المدخلات المقدّمة — توسّع القائمة تلقائياً مع مشاركة جهات جديدة</div>
+                    <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>ترتيب الجهات حسب عدد المدخلات المقدمة.</div>
                   </div>
                   <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 22px', marginTop: -8, display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {vm.entityRanking.map((r) => (
@@ -2189,7 +2196,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               </div>
 
               {vm.role === 'coord' && (
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: -8 }}>متابعة حالة مدخلات المسار حسب التطوير والاعتماد.</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: -8 }}>متابعة مدخلات المسار حسب حالة التطوير والاعتماد.</div>
               )}
 
               {/* recap strip for the current selection — hidden on the "الكل" view */}
@@ -2210,8 +2217,8 @@ export function Dashboard({ vm }: { vm: VM }) {
 
               {/* filters + search */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{vm.navStream ? 'قائمة مراجعة مدخلات المسار' : vm.role === 'entity' ? 'قائمة مراجعة مدخلات الجهة' : 'القائمة التفصيلية للمدخلات'}</div>
-                <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>{vm.shownCount} من {vm.totalCount} مدخلات</span>
+                <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? (vm.navStream ? 'المدخلات المرشحة للتمويل ضمن المسار' : 'المدخلات المرشحة للتمويل') : vm.role === 'coord' ? 'قائمة متابعة مدخلات المسار' : vm.navStream ? 'قائمة مراجعة مدخلات المسار' : vm.role === 'entity' ? 'قائمة مراجعة مدخلات الجهة' : 'القائمة التفصيلية للمدخلات'}</div>
+                <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>{vm.shownCount === 1 ? '1 من 1 مدخل' : `${vm.shownCount} من ${vm.totalCount} مدخلات`}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <div style={{ position: 'relative' }}>
@@ -2337,7 +2344,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     </button>
                   ))}
                 </div>
-                <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} label={vm.navStream ? 'تحميل تقرير المسار' : 'تحميل التقرير'} />
+                <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} label={vm.role === 'ai' ? (vm.navStream ? 'تحميل تقرير اعتماد المسار' : 'تحميل تقرير الاعتماد') : vm.navStream ? 'تحميل تقرير المسار' : 'تحميل التقرير'} />
                 {vm.showAddBtn && (
                   <button
                     onClick={s.openCreate}
@@ -2448,14 +2455,16 @@ export function Dashboard({ vm }: { vm: VM }) {
           {/* ===== LAUNCH PLANS: four big مرحلة cards ===== */}
           {vm.navSection === 'launchplans' && vm.role === 'entity' && <StageDistribution vm={vm} />}
           {vm.navSection === 'lplan' && vm.role === 'entity' && <LaunchPlanEntity vm={vm} />}
-          {vm.navSection === 'launchplans' && vm.role !== 'entity' && (
+          {((vm.navSection === 'launchplans' && vm.role !== 'entity') || (vm.navSection === 'lplan' && vm.role === 'coord')) && (() => { const launchPage = vm.navSection === 'lplan'; return (
             <>
               <div>
-                <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>مراحل التنفيذ والإطلاق</div>
+                <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{launchPage ? 'خطة الإطلاق' : 'مراحل التنفيذ والإطلاق'}</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
-                  {(vm.role === 'path' || vm.role === 'ai')
-                    ? 'المراحل الأربع — تكلفة التنفيذ التقديرية، والإطلاقات وما يندرج تحت كل منها'
-                    : 'المراحل الأربع — تكلفة التنفيذ والإطلاق التقديرية، والإطلاقات وما يندرج تحت كل منها'}
+                  {launchPage
+                    ? 'الإطلاقات المجدولة لكل مرحلة — أضِف الإطلاقات وحدِّد ما يشمله كل إطلاق وميزانيته التقديرية.'
+                    : (vm.role === 'path' || vm.role === 'ai')
+                      ? 'المراحل الأربع — تكلفة التنفيذ التقديرية، وحالة تطوير مدخلاتها.'
+                      : 'المراحل الأربع — توزيع المدخلات وتكلفة التنفيذ التقديرية وحالة التطوير.'}
                 </div>
               </div>
               <div
@@ -2475,8 +2484,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                       </div>
                       <InfoTip text={(vm.role === 'path' || vm.role === 'ai') ? 'تكلفة التنفيذ تُجمع من ميزانيات ما هو معيَّن لهذه المرحلة. اضغطوا على أي إطلاق لاستعراض ما يندرج تحته.' : 'تكلفة التنفيذ تُجمع من ميزانيات ما هو معيَّن لهذه المرحلة، وتكلفة الإطلاق من ميزانيات إطلاقاتها. اضغطوا على أي إطلاق لاستعراض ما يندرج تحته.'} />
                     </div>
-                    {/* محتوى المرحلة: composition + delivery status in one block */}
-                    {b.count === 0 ? (
+                    {/* محتوى المرحلة: composition + delivery status (Page A — execution) */}
+                    {!launchPage && (b.count === 0 ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
                         <div style={{ flex: 1, fontSize: 11.5, color: '#6B7A93', fontWeight: 400 }}>
                           لا توجد تعيينات لهذه المرحلة بعد.
@@ -2519,26 +2528,48 @@ export function Dashboard({ vm }: { vm: VM }) {
                             خطة التنفيذ
                           </div>
                           {vm.showAddBtn ? (
-                            <button
-                              onClick={() => setItemsMgrFor(b.name)}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 5,
-                                background: '#fff',
-                                border: '1px solid #E3E9F3',
-                                borderRadius: 999,
-                                padding: '5px 12px',
-                                fontSize: 11,
-                                color: '#16408F',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                fontFamily: 'inherit',
-                              }}
-                            >
-                              <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={11} color="#16408F" />
-                              إدارة
-                            </button>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <button
+                                onClick={() => setItemsMgrFor(b.name)}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  background: '#EAF0FE',
+                                  border: '1px solid #D9E4FD',
+                                  borderRadius: 999,
+                                  padding: '5px 12px',
+                                  fontSize: 11,
+                                  color: '#2563EB',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  fontFamily: 'inherit',
+                                }}
+                              >
+                                <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={11} color="#2563EB" />
+                                إدارة التنفيذ
+                              </button>
+                              <button
+                                onClick={b.onOpenAll}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  background: '#fff',
+                                  border: '1px solid #E1E7F1',
+                                  borderRadius: 999,
+                                  padding: '5px 12px',
+                                  fontSize: 11,
+                                  color: '#54627B',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  fontFamily: 'inherit',
+                                }}
+                              >
+                                عرض المدخلات
+                                <Icon d="M15 18l-6-6 6-6" size={11} color="#54627B" />
+                              </button>
+                            </div>
                           ) : (
                             <button
                               onClick={b.onOpenAll}
@@ -2557,7 +2588,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                                 fontFamily: 'inherit',
                               }}
                             >
-                              عرض البطاقات
+                              عرض المدخلات
                               <Icon d="M15 18l-6-6 6-6" size={11} color="#16408F" />
                             </button>
                           )}
@@ -2610,9 +2641,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                           </div>
                         )}
                       </div>
-                    )}
-                    {/* launches: coordinator manages in place, others read */}
-                    {vm.showAddBtn ? (
+                    ))}
+                    {/* launch plan section — Page B (coord) or read-only for path/ai */}
+                    {(launchPage || !vm.showAddBtn) && (vm.showAddBtn ? (
                       <div style={{ background: '#FAFCFF', border: '1px solid #EBEFF6', borderRadius: 14, padding: '12px 14px', marginTop: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
                           <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>خطة الإطلاق</div>
@@ -2779,20 +2810,24 @@ export function Dashboard({ vm }: { vm: VM }) {
                         </div>
                       </div>
                       )
-                    )}
-                    {/* cost tiles — launch budget hidden for track head + committee */}
-                    <div data-r="form2" style={{ display: 'grid', gridTemplateColumns: (vm.role === 'path' || vm.role === 'ai') ? '1fr' : '1fr 1fr', gap: 10, marginTop: 14 }}>
-                      <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
-                        <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية التنفيذ التقديرية</div>
-                        <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.costLabel}</div>
-                      </div>
-                      {!(vm.role === 'path' || vm.role === 'ai') && (
+                    ))}
+                    {/* cost tile — Page A owns execution cost; Page B owns launch cost */}
+                    {!launchPage && (
+                      <div data-r="form2" style={{ marginTop: 14 }}>
                         <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
-                          <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية الإطلاق التقديرية</div>
+                          <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ التقديرية</div>
+                          <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.costLabel}</div>
+                        </div>
+                      </div>
+                    )}
+                    {launchPage && (
+                      <div data-r="form2b" style={{ marginTop: 14 }}>
+                        <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
+                          <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>تكلفة الإطلاق التقديرية</div>
                           <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.launchCostLabel}</div>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -2890,7 +2925,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   >
                     <div style={{ padding: '18px 22px 12px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #F0F3F8' }}>
                       <div style={{ flex: 1 }}>
-                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>خطة الإطلاق — {launchMgrFor.replace(/^إطلاق /, '')}</div>
+                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>إدارة الإطلاقات — {launchMgrFor.replace(/^إطلاق /, '')}</div>
                         <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                           أضيفوا الإطلاقات وحدِّدوا ما يشمله كل إطلاق — تنعكس التغييرات مباشرة على بطاقة المرحلة.
                         </div>
@@ -3083,7 +3118,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </div>
               )}
             </>
-          )}
+          ); })()}
 
         </div>
       </div>
@@ -3552,8 +3587,52 @@ function ListView({ cards }: { cards: CardVM[] }) {
   );
 }
 
+const CARD_PILLS: Record<string, { label: string; color: string; bg: string }> = {
+  draft: { label: 'مسودة', color: '#5A6B86', bg: '#EEF2F8' },
+  pendEnt: { label: 'بانتظار اعتماد الجهة', color: '#B45309', bg: '#FFF7EB' },
+  apprEnt: { label: 'معتمد من الجهة', color: '#0B8A4B', bg: '#EAF7F0' },
+  rejEnt: { label: 'مرفوض من الجهة', color: '#C0392B', bg: '#FDECEA' },
+  nominated: { label: 'مُرشَّح للتمويل', color: '#6D28D9', bg: '#F3EEFD' },
+  pendFund: { label: 'بانتظار اعتماد التمويل', color: '#B45309', bg: '#FFF7EB' },
+  apprFund: { label: 'معتمد للتمويل', color: '#0B8A4B', bg: '#EAF7F0' },
+  launched: { label: 'تم الإطلاق', color: '#0B8A4B', bg: '#E9F7EF' },
+};
+
+const RECO_BANDS: Record<'reco' | 'wait', { color: string; bg: string; border: string }> = {
+  reco: { color: '#0B8A4B', bg: '#F3FBF6', border: '#DCF0E5' },
+  wait: { color: '#B45309', bg: '#FFFBF3', border: '#F6E7CE' },
+};
+
+// §6 button tokens — base: 12.5/700, padding 9x12, radius 9, inline-flex centered gap 6.
+// GREEN and RED are reserved EXCLUSIVELY for approve and reject.
+const BTN_BASE: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  fontSize: 12.5,
+  fontWeight: 700,
+  padding: '9px 12px',
+  borderRadius: 9,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  lineHeight: 1,
+};
+const BTN_PRIMARY: React.CSSProperties = { ...BTN_BASE, background: '#2563EB', color: '#fff', border: 'none' };
+const BTN_APPROVE: React.CSSProperties = { ...BTN_BASE, background: '#0B8A4B', color: '#fff', border: 'none' };
+const BTN_REJECT: React.CSSProperties = { ...BTN_BASE, background: '#fff', border: '1px solid #F0D2CC', color: '#C0392B' };
+const BTN_NEUTRAL: React.CSSProperties = { ...BTN_BASE, background: '#fff', border: '1px solid #E4E9F2', color: '#64748B' };
+
+const CLOCK_D = 'M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z';
+const CHECK_D = 'M20 6 9 17l-5-5';
+
 function CardItem({ c }: { c: CardVM }) {
   const [hover, setHover] = useState(false);
+  const pill = CARD_PILLS[c.cardStatus] || CARD_PILLS.draft;
+  const showCheckbox = c.showAssignCheck || c.showSelectCheck;
+  const checkboxChecked = c.showAssignCheck ? c.assignChecked : c.fundChecked;
+  const onToggleCheckbox = c.showAssignCheck ? c.onToggleAssignSel : c.onToggleFundSel;
+  const band = RECO_BANDS[c.recoBand] || RECO_BANDS.wait;
   return (
     <div
       onClick={c.onOpen}
@@ -3563,10 +3642,10 @@ function CardItem({ c }: { c: CardVM }) {
         background: '#fff',
         border: '1px solid #E7ECF4',
         borderRadius: 16,
-        padding: 18,
+        padding: 22,
         display: 'flex',
         flexDirection: 'column',
-        gap: 13,
+        gap: 16,
         cursor: 'pointer',
         transition: 'box-shadow .15s,transform .15s',
         ...(hover
@@ -3574,132 +3653,57 @@ function CardItem({ c }: { c: CardVM }) {
           : null),
       }}
     >
-      {/* Top row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            fontSize: 11,
-            fontWeight: 800,
-            padding: '4px 10px',
-            borderRadius: 999,
-            background: c.typeBg,
-            color: c.typeColor,
-            whiteSpace: 'nowrap',
-            flex: 'none',
-          }}
-        >
-          {c.typeLabel}
-        </span>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            flexWrap: 'wrap',
-            justifyContent: 'flex-end',
-          }}
-        >
-          {c.isFundedCommittee && (
-            <HoverButton
-              title="اضغط لإلغاء التمويل"
-              onClick={(e) => {
-                stop(e);
-                c.onCancelFund();
-              }}
-              base={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                fontSize: 11,
-                fontWeight: 800,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: '#E3F6EC',
-                color: '#0B8A4B',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-              hover={{ background: '#D2F0DE' }}
-            >
-              <Icon d="M20 6 9 17l-5-5" size={12} strokeWidth={2.6} />
-              معتمد للتمويل
-            </HoverButton>
-          )}
-          {c.isFundedOther && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                fontSize: 11,
-                fontWeight: 800,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: '#E3F6EC',
-                color: '#0B8A4B',
-              }}
-            >
-              <Icon d="M20 6 9 17l-5-5" size={12} strokeWidth={2.6} />
-              معتمد للتمويل
-            </span>
-          )}
+      {/* Caption above the meta */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#9AA6BA', marginBottom: -6 }}>{c.cardCaption}</div>
+
+      {/* Meta row: type chip + status pill + optional checkbox */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontSize: 11,
+              fontWeight: 700,
+              padding: '3px 10px',
+              borderRadius: 999,
+              background: '#EEF2F8',
+              color: '#5A6B86',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {c.typeLabel}
+          </span>
           <span
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
               fontSize: 11,
-              fontWeight: 800,
-              padding: '4px 10px',
+              fontWeight: 700,
+              padding: '3px 10px',
               borderRadius: 999,
-              background: c.wfBg,
-              color: c.wfChip,
+              background: pill.bg,
+              color: pill.color,
+              whiteSpace: 'nowrap',
             }}
           >
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: c.wfChip }} />
-            {c.wfLabel}
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: pill.color, flex: 'none' }} />
+            {c.pillLabel || pill.label}
           </span>
-          {/* status timestamp — inline next to the status chip */}
-          {c.statusStamp && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                fontSize: 10.5,
-                fontWeight: 700,
-                color: '#9AA6BC',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <Icon
-                d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"
-                size={11}
-                color="#9AA6BC"
-              />
-              {c.statusStamp}
-            </span>
-          )}
         </div>
-      </div>
-
-      {/* Title row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
-        {c.showSelectCheck && (
+        {showCheckbox && (
           <span
             onClick={(e) => {
               stop(e);
-              c.onToggleFundSel();
+              onToggleCheckbox();
             }}
             style={{
-              width: 20,
-              height: 20,
-              marginTop: 1,
+              width: 19,
+              height: 19,
               borderRadius: 6,
-              border: `2px solid ${c.fundChecked ? '#2563EB' : '#C7D1E2'}`,
-              background: c.fundChecked ? '#2563EB' : '#fff',
+              border: `2px solid ${checkboxChecked ? '#2563EB' : '#CBD5E6'}`,
+              background: checkboxChecked ? '#2563EB' : '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -3708,43 +3712,21 @@ function CardItem({ c }: { c: CardVM }) {
               transition: 'all .12s',
             }}
           >
-            {c.fundChecked && <Icon d="M20 6 9 17l-5-5" size={13} color="#fff" strokeWidth={3} />}
+            {checkboxChecked && <Icon d={CHECK_D} size={12} color="#fff" strokeWidth={3} />}
           </span>
         )}
-        {c.showAssignCheck && (
-          <span
-            onClick={(e) => {
-              stop(e);
-              c.onToggleAssignSel();
-            }}
-            style={{
-              width: 20,
-              height: 20,
-              marginTop: 1,
-              borderRadius: 6,
-              border: `2px solid ${c.assignChecked ? '#2563EB' : '#C7D1E2'}`,
-              background: c.assignChecked ? '#2563EB' : '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flex: 'none',
-              cursor: 'pointer',
-              transition: 'all .12s',
-            }}
-          >
-            {c.assignChecked && <Icon d="M20 6 9 17l-5-5" size={13} color="#fff" strokeWidth={3} />}
-          </span>
-        )}
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C', lineHeight: 1.4 }}>{c.title}</div>
       </div>
 
-      {/* Description */}
+      {/* Title */}
+      <div style={{ fontSize: 15.5, fontWeight: 700, color: '#13213C', lineHeight: 1.4 }}>{c.title}</div>
+
+      {/* Description (2-line clamp) */}
       <div
         style={{
-          fontSize: 12,
-          color: '#7A879E',
+          fontSize: 12.5,
+          color: '#8492A8',
           lineHeight: 1.6,
-          fontWeight: 400,
+          fontWeight: 500,
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
@@ -3754,7 +3736,7 @@ function CardItem({ c }: { c: CardVM }) {
         {c.desc}
       </div>
 
-      {/* Linked launch + stage-move flags (sync visible everywhere) */}
+      {/* Linked launch + stage-move flags */}
       {((c.launchNames && c.launchNames.length > 0) || c.stageMoved) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {c.launchNames && c.launchNames.length > 0 && (
@@ -3764,7 +3746,7 @@ function CardItem({ c }: { c: CardVM }) {
                 alignItems: 'center',
                 gap: 5,
                 fontSize: 10,
-                fontWeight: 800,
+                fontWeight: 700,
                 padding: '3px 9px',
                 borderRadius: 999,
                 background: '#F0F4FB',
@@ -3782,7 +3764,7 @@ function CardItem({ c }: { c: CardVM }) {
             <span
               style={{
                 fontSize: 10,
-                fontWeight: 800,
+                fontWeight: 700,
                 padding: '3px 9px',
                 borderRadius: 999,
                 background: '#FFF3DE',
@@ -3795,33 +3777,45 @@ function CardItem({ c }: { c: CardVM }) {
         </div>
       )}
 
-      {/* Returned banner */}
-      {c.isReturned && (
-        <div style={{ background: '#FFF4F4', border: '1px solid #F6D6D9', borderRadius: 11, padding: '10px 12px' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#C0303B', marginBottom: 3 }}>
-            {c.retBannerLabel}
-          </div>
-          <div style={{ fontSize: 11.5, color: '#7A4A4E', fontWeight: 600, lineHeight: 1.6 }}>{c.retNote}</div>
+      {/* Rejection reason box */}
+      {c.cardStatus === 'rejEnt' && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 9,
+            background: '#FDF1EF',
+            border: '1px solid #F6D9D3',
+            borderRadius: 10,
+            padding: '10px 12px',
+          }}
+        >
+          <Icon
+            d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+            size={15}
+            color="#C0392B"
+            strokeWidth={2}
+          />
+          <div style={{ fontSize: 11.5, color: '#A23A2E', fontWeight: 600, lineHeight: 1.6 }}>{c.retNote}</div>
         </div>
       )}
 
-      {/* Score / entity block */}
+      {/* Recommendation strip — COMMITTEE only, on every committee card */}
       {c.showEntity && (
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 10,
-            background: '#F7F9FD',
-            border: '1px solid #EBEFF6',
+            gap: 11,
+            background: band.bg,
+            border: `1px solid ${band.border}`,
             borderRadius: 11,
             padding: '9px 11px',
           }}
         >
           <span
             style={{
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               borderRadius: 9,
               flex: 'none',
               display: 'flex',
@@ -3830,14 +3824,12 @@ function CardItem({ c }: { c: CardVM }) {
               fontSize: 15,
               fontWeight: 900,
               color: '#fff',
-              background: c.scoreColor,
+              background: band.color,
             }}
           >
             {c.scoreV}
           </span>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: c.scoreColor }}>{c.scoreLabel}</div>
-          </div>
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: band.color }}>{c.recoStripLabel || c.scoreLabel}</div>
         </div>
       )}
 
@@ -3845,57 +3837,168 @@ function CardItem({ c }: { c: CardVM }) {
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          flexDirection: 'column',
+          gap: 7,
           borderTop: '1px solid #F0F3F8',
-          paddingTop: 11,
+          paddingTop: 13,
           marginTop: 'auto',
         }}
       >
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 11.5,
-            fontWeight: 700,
-            color: '#54627B',
-          }}
-        >
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: c.pathColor }} /> {c.footLabel}
-        </span>
+        {c.showPathLine && (
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#9AA6BA' }}>المسار: {c.pathName}</div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              fontSize: 11.5,
+              fontWeight: 600,
+              color: '#54627B',
+              minWidth: 0,
+            }}
+          >
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#94A3B8', flex: 'none' }} />
+            <span>{c.footLabel}</span>
+          </span>
+          {c.endDateFmt && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#AEB8C7',
+                whiteSpace: 'nowrap',
+                flex: 'none',
+              }}
+            >
+              <Icon d={CLOCK_D} size={11} color="#AEB8C7" />
+              {c.endDateFmt}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Entity pending actions */}
-      {c.canApprove && (
-        <div
-          style={{
-            position: 'relative',
-            display: 'flex',
-            gap: 7,
-            borderTop: '1px solid #F0F3F8',
-            paddingTop: 11,
+      {/* Action area — per (role, status) matrix */}
+      {c.cardAction === 'edit' && (
+        <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
+          <button
+            onClick={(e) => {
+              stop(e);
+              c.onPathCta();
+            }}
+            style={{ ...BTN_PRIMARY, flex: 1 }}
+          >
+            متابعة التعبئة
+          </button>
+          <button
+            aria-label="خيارات"
+            onClick={(e) => {
+              stop(e);
+              c.onMenu();
+            }}
+            style={{ ...BTN_NEUTRAL, width: 38, flex: 'none', padding: 0 }}
+          >
+            <Icon d="M12 5h.01M12 12h.01M12 19h.01" size={18} color="#64748B" strokeWidth={2.6} />
+          </button>
+          {c.menuOpen && c.canDelete && (
+            <div
+              onClick={stop}
+              style={{
+                position: 'absolute',
+                bottom: 'calc(100% + 6px)',
+                left: 0,
+                background: '#fff',
+                border: '1px solid #E7ECF4',
+                borderRadius: 10,
+                boxShadow: '0 14px 30px -14px rgba(15,31,61,.4)',
+                padding: 5,
+                zIndex: 5,
+                minWidth: 150,
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  stop(e);
+                  c.onDelete();
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  width: '100%',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 7,
+                  padding: '8px 10px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#C0392B',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <Icon
+                  d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"
+                  size={14}
+                  color="#C0392B"
+                />
+                حذف المدخل
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {c.cardAction === 'withdraw' && (
+        <button
+          onClick={(e) => {
+            stop(e);
+            c.onWithdrawToDraft();
           }}
+          style={{ ...BTN_NEUTRAL, width: '100%' }}
         >
-          {/* all three decisions visible — no action is implied as the default */}
+          سحب المدخل
+        </button>
+      )}
+
+      {c.cardAction === 'editResubmit' && (
+        <button
+          onClick={(e) => {
+            stop(e);
+            c.onPathCta();
+          }}
+          style={{ ...BTN_PRIMARY, width: '100%' }}
+        >
+          تعديل المدخل وإعادة إرساله
+        </button>
+      )}
+
+      {c.cardAction === 'viewDetails' && (
+        <button
+          onClick={(e) => {
+            stop(e);
+            c.onOpen();
+          }}
+          style={{ ...BTN_NEUTRAL, width: '100%' }}
+        >
+          عرض التفاصيل
+        </button>
+      )}
+
+      {c.cardAction === 'approveInfoReject' && (
+        <div style={{ display: 'flex', gap: 7 }}>
           <button
             onClick={(e) => {
               stop(e);
               c.onApprove();
             }}
-            style={{
-              flex: 1,
-              background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 9,
-              padding: '8px 6px',
-              fontWeight: 800,
-              fontSize: 12,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
+            style={{ ...BTN_APPROVE, flex: 1 }}
           >
+            <Icon d={CHECK_D} size={13} color="#fff" strokeWidth={3} />
             اعتماد المدخل
           </button>
           <button
@@ -3903,189 +4006,108 @@ function CardItem({ c }: { c: CardVM }) {
               stop(e);
               c.onReqInfo();
             }}
-            style={{
-              flex: 1,
-              background: '#fff',
-              color: '#33405A',
-              border: '1px solid #E7ECF4',
-              borderRadius: 9,
-              padding: '8px 6px',
-              fontWeight: 700,
-              fontSize: 11.5,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              whiteSpace: 'nowrap',
-            }}
+            style={{ ...BTN_NEUTRAL, flex: 1, whiteSpace: 'nowrap' }}
           >
             طلب معلومات إضافية
           </button>
           <button
-            title="رفض المدخل"
-            aria-label="رفض المدخل"
             onClick={(e) => {
               stop(e);
               c.onReject();
             }}
+            style={{ ...BTN_REJECT, flex: 1 }}
+          >
+            رفض المدخل
+          </button>
+        </div>
+      )}
+
+      {c.cardAction === 'nominate' && (
+        <button
+          onClick={(e) => {
+            stop(e);
+            c.onNominate();
+          }}
+          style={{ ...BTN_PRIMARY, width: '100%' }}
+        >
+          ترشيح للتمويل
+        </button>
+      )}
+
+      {c.cardAction === 'cancelNom' && (
+        <button
+          onClick={(e) => {
+            stop(e);
+            c.onWithdrawNom();
+          }}
+          style={{ ...BTN_REJECT, width: '100%' }}
+        >
+          إلغاء الترشيح
+        </button>
+      )}
+
+      {/* committee funding decision — approve (green) / reject (red).
+          NOTE: card handover §9-5 says committee never rejects; the committee
+          copy spec (later, wins) requires «رفض التمويل». */}
+      {c.cardAction === 'fundApproveReject' && (
+        <div style={{ display: 'flex', gap: 7 }}>
+          <button
+            onClick={(e) => {
+              stop(e);
+              c.onFundNom();
+            }}
+            style={{ ...BTN_APPROVE, flex: 1 }}
+          >
+            <Icon d={CHECK_D} size={13} color="#fff" strokeWidth={3} />
+            اعتماد التمويل
+          </button>
+          <button
+            onClick={(e) => {
+              stop(e);
+              c.onDeclineNom();
+            }}
+            style={{ ...BTN_REJECT, flex: 1 }}
+          >
+            رفض التمويل
+          </button>
+        </div>
+      )}
+
+      {c.cardAction === 'funded' && (
+        <span
+          onClick={(e) => {
+            stop(e);
+            c.onCancelFund();
+          }}
+          title="اضغط للإلغاء"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 9,
+            cursor: 'pointer',
+            fontSize: 12.5,
+            fontWeight: 700,
+            color: '#0B8A4B',
+          }}
+        >
+          <span
             style={{
-              width: 38,
+              width: 20,
+              height: 20,
+              borderRadius: 6,
+              border: '2px solid #0B8A4B',
+              background: '#0B8A4B',
               flex: 'none',
-              background: '#FCEEEF',
-              color: '#C0303B',
-              border: '1px solid #F5D8DB',
-              borderRadius: 9,
-              padding: 0,
-              cursor: 'pointer',
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Icon d="M18 6L6 18M6 6l12 12" size={14} color="#C0303B" strokeWidth={2.4} />
-          </button>
-        </div>
-      )}
-
-      {/* Coord fill CTA — delete stays available while not yet approved (ent1) */}
-      {(c.showPathCta || c.canDelete) && (
-        <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 11, display: 'flex', gap: 8 }}>
-          {c.showPathCta && (
-          <button
-            onClick={(e) => {
-              stop(e);
-              c.onPathCta();
-            }}
-            style={{
-              flex: 1,
-              background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 9,
-              padding: '10px 0',
-              fontWeight: 800,
-              fontSize: 12.5,
-              cursor: 'pointer',
-              boxShadow: '0 8px 18px -9px rgba(37,99,235,.65)',
-            }}
-          >
-            {c.pathCtaLabel}
-          </button>
-          )}
-          {c.canDelete && (
-            <button
-              title={c.showPathCta ? 'حذف المسودة' : 'سحب المدخل وحذفه (لم يُعتمد بعد)'}
-              onClick={(e) => {
-                stop(e);
-                c.onDelete();
-              }}
-              style={{
-                ...(c.showPathCta ? { width: 40, flex: 'none' } : { flex: 1, padding: '10px 0' }),
-                background: '#FCEEEF',
-                color: '#C0303B',
-                border: 'none',
-                borderRadius: 9,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 7,
-                fontWeight: 800,
-                fontSize: 12.5,
-                fontFamily: 'inherit',
-              }}
-            >
-              <Icon d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" size={15} color="#C0303B" />
-              {!c.showPathCta && 'سحب المدخل وحذفه'}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Nominated state */}
-      {c.isNominated && (
-        <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 11, display: 'flex', flexDirection: 'column', gap: 9 }}>
-          <span
-            style={{
-              alignSelf: 'flex-start',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 11,
-              fontWeight: 800,
-              color: '#2563EB',
-              background: '#E5EEFF',
-              borderRadius: 999,
-              padding: '5px 11px',
-            }}
-          >
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563EB' }} />
-            {c.nomLabel}
+            <Icon d={CHECK_D} size={13} color="#fff" strokeWidth={3} />
           </span>
-          {c.canFundNom && (
-            <div style={{ display: 'flex', gap: 7 }}>
-              <button
-                onClick={(e) => {
-                  stop(e);
-                  c.onFundNom();
-                }}
-                style={{
-                  flex: 1,
-                  background: 'linear-gradient(180deg,#12B26F,#0B8A4B)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 9,
-                  padding: '9px 8px',
-                  fontWeight: 800,
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                اعتماد التمويل
-              </button>
-              <button
-                onClick={(e) => {
-                  stop(e);
-                  c.onDeclineNom();
-                }}
-                style={{
-                  background: '#fff',
-                  border: '1px solid #F1D4D7',
-                  color: '#DC2B38',
-                  borderRadius: 9,
-                  padding: '9px 15px',
-                  fontWeight: 800,
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                رفض التمويل
-              </button>
-            </div>
-          )}
-          {c.canWithdrawNom && (
-            <button
-              onClick={(e) => {
-                stop(e);
-                c.onWithdrawNom();
-              }}
-              style={{
-                alignSelf: 'flex-start',
-                background: '#fff',
-                border: '1px solid #E7ECF4',
-                color: '#54627B',
-                borderRadius: 9,
-                padding: '7px 14px',
-                fontWeight: 800,
-                fontSize: 11.5,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              سحب الترشيح
-            </button>
-          )}
-        </div>
+          معتمد للتمويل
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#9AA6BA' }}>(اضغط للإلغاء)</span>
+        </span>
       )}
     </div>
   );

@@ -333,9 +333,9 @@ function build(s: Store) {
       entCount: new Set(inStream.map((i) => ent(i))).size,
       total: inStream.length,
       byType: [
-        { label: 'عمليات', n: inStream.filter((i) => i.type === 'operation').length },
-        { label: 'خدمات', n: inStream.filter((i) => i.type === 'service').length },
-        { label: 'مشاريع ومبادرات', n: inStream.filter((i) => isProjInit(i.type)).length },
+        { label: 'مشروع / مبادرة', n: inStream.filter((i) => isProjInit(i.type)).length },
+        { label: 'عملية', n: inStream.filter((i) => i.type === 'operation').length },
+        { label: 'خدمة', n: inStream.filter((i) => i.type === 'service').length },
       ],
       totalCostLabel: compactM0(execCost + launchCost),
       fundedLabel: compactM0(fundedCost),
@@ -406,6 +406,7 @@ function build(s: Store) {
       ].filter((x) => x.n > 0),
       streamBreak: PATHS.map((p) => ({
         short: STREAM_META[p.id]?.short || p.name,
+        name: p.name,
         color: STREAM_META[p.id]?.color || '#2563EB',
         n: inBatch.filter((i) => i.path === p.id).length,
       })).filter((x) => x.n > 0),
@@ -611,8 +612,8 @@ function build(s: Store) {
     { key: 'overview', label: 'الرئيسية', icon: NAV_HOME },
     { key: 'all', label: streamSub ? 'جميع المسارات' : 'جميع الأنواع', icon: NAV_DOTS, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
     ...subNav,
-    { key: 'launchplans', label: rawRole === 'entity' ? 'مراحل التنفيذ والإطلاق' : 'التنفيذ والإطلاق', icon: NAV_CAL },
-    ...(rawRole === 'entity' ? [{ key: 'lplan', label: 'خطة الإطلاق', icon: NAV_ROCKET }] : []),
+    { key: 'launchplans', label: rawRole === 'entity' || rawRole === 'coord' ? 'مراحل التنفيذ والإطلاق' : 'التنفيذ والإطلاق', icon: NAV_CAL },
+    ...(rawRole === 'entity' || rawRole === 'coord' ? [{ key: 'lplan', label: 'خطة الإطلاق', icon: NAV_ROCKET }] : []),
     ...(rawRole === 'ai' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
   ].map((n) => ({
@@ -938,10 +939,16 @@ function build(s: Store) {
     navStream,
     kpiBreak,
     sectionTitle:
-      rawRole === 'entity' && navSection === 'all' && ui.navStream
+      navSection === 'all' && ui.navStream
         ? 'مدخلات مسار ' + pathById(ui.navStream).name
-        : rawRole === 'entity' && navSection === 'all'
-          ? 'جميع مدخلات الجهة'
+        : navSection === 'all'
+          ? rawRole === 'entity'
+            ? 'جميع مدخلات الجهة'
+            : rawRole === 'coord'
+              ? 'جميع مدخلات المسار'
+              : rawRole === 'ai'
+                ? 'قائمة الاعتماد والتمويل'
+                : (navSection in typeSections ? typeSections[navSection] : '') || ''
           : (navSection in typeSections ? typeSections[navSection] : '') || '',
     portfolioStreams,
     recap,
@@ -1209,8 +1216,135 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const launchNames = (i.launchPlanIds || [])
     .map((pid) => (s.launchPlans.find((p) => p.id === pid)?.title || '').trim())
     .filter(Boolean);
+
+  // ---- design-handover card state: (role, workflow) → status key + caption + action ----
+  // status keys: draft|pendEnt|apprEnt|rejEnt|nominated|pendFund|apprFund|launched
+  const recoBand: 'reco' | 'wait' = score.color === '#0B8A4B' ? 'reco' : 'wait';
+  const recoPct = Math.round((score.v / 5) * 100);
+  const isRet = !!i.ret;
+  const nomByMe = !!i.nom && i.nom.by === myName;
+  // committee-specific overrides (task: committee labels win for rawRole 'ai')
+  let pillLabel = ''; // '' → component falls back to the generic status-pill label
+  let recoStripLabel = recoBand === 'reco' ? 'موصى به للتمويل · ' + recoPct + '%' : score.ar;
+  let cardStatus:
+    | 'draft'
+    | 'pendEnt'
+    | 'apprEnt'
+    | 'rejEnt'
+    | 'nominated'
+    | 'pendFund'
+    | 'apprFund'
+    | 'launched';
+  let cardCaption: string;
+  let cardAction:
+    | 'edit'
+    | 'withdraw'
+    | 'editResubmit'
+    | 'viewDetails'
+    | 'approveInfoReject'
+    | 'nominate'
+    | 'cancelNom'
+    | 'fundTick'
+    | 'fundApproveReject'
+    | 'funded'
+    | 'none';
+  if (rawRole === 'coord') {
+    if (w === 'draft' && isRet) {
+      cardStatus = 'rejEnt';
+      cardCaption = 'مرفوض — يتطلب تعديلاً';
+      cardAction = 'editResubmit';
+    } else if (w === 'draft') {
+      cardStatus = 'draft';
+      cardCaption = 'مسودة — قيد التعبئة';
+      cardAction = 'edit';
+    } else if (w === 'ent1') {
+      cardStatus = 'pendEnt';
+      cardCaption = 'بانتظار اعتماد الجهة';
+      cardAction = 'withdraw';
+    } else if (isFunded) {
+      cardStatus = 'apprFund';
+      cardCaption = 'معتمد للتمويل';
+      cardAction = 'viewDetails';
+    } else if (w === 'done') {
+      cardStatus = 'launched';
+      cardCaption = 'تم الإطلاق';
+      cardAction = 'viewDetails';
+    } else {
+      cardStatus = 'apprEnt';
+      cardCaption = 'معتمد من الجهة';
+      cardAction = 'viewDetails';
+    }
+  } else if (rawRole === 'entity') {
+    if (w === 'draft' && isRet) {
+      cardStatus = 'rejEnt';
+      cardCaption = 'مرفوض من الجهة';
+      cardAction = 'viewDetails';
+    } else if (w === 'ent1') {
+      cardStatus = 'pendEnt';
+      cardCaption = 'بانتظار الاعتماد — إجراء مطلوب';
+      cardAction = 'approveInfoReject';
+    } else if (isFunded) {
+      cardStatus = 'apprFund';
+      cardCaption = 'معتمد للتمويل';
+      cardAction = 'viewDetails';
+    } else if (w === 'done') {
+      cardStatus = 'launched';
+      cardCaption = 'تم الإطلاق';
+      cardAction = 'viewDetails';
+    } else {
+      cardStatus = 'apprEnt';
+      cardCaption = 'معتمد — رُفع للأعلى';
+      cardAction = 'viewDetails';
+    }
+  } else if (rawRole === 'path') {
+    if (w === 'done') {
+      cardStatus = 'launched';
+      cardCaption = 'تم الإطلاق';
+      cardAction = 'viewDetails';
+    } else if (isFunded) {
+      cardStatus = 'apprFund';
+      cardCaption = 'معتمد للتمويل';
+      cardAction = 'viewDetails';
+    } else if (i.nom) {
+      cardStatus = 'nominated';
+      cardCaption = nomByMe ? 'مُرشَّح بواسطتي' : 'مُرشَّح للتمويل';
+      cardAction = nomByMe ? 'cancelNom' : 'viewDetails';
+    } else {
+      cardStatus = 'apprEnt';
+      cardCaption = 'معتمد من الجهة — متاح للترشيح';
+      cardAction = 'nominate';
+    }
+  } else {
+    // rawRole === 'ai' (اللجنة الوطنية / committee)
+    if (w === 'done') {
+      cardStatus = 'launched';
+      cardCaption = 'تم الإطلاق';
+      cardAction = 'viewDetails';
+    } else if (isFunded) {
+      cardStatus = 'apprFund';
+      cardCaption = 'معتمد للتمويل';
+      cardAction = 'funded';
+      pillLabel = 'معتمدة للتمويل';
+    } else {
+      cardStatus = 'pendFund';
+      cardCaption =
+        recoBand === 'reco'
+          ? 'بانتظار اعتماد التمويل — موصى به'
+          : 'بانتظار اعتماد التمويل — قائمة الانتظار';
+      cardAction = 'fundApproveReject';
+      pillLabel = 'قيد مراجعة التمويل';
+    }
+  }
+
   return {
     id: i.id,
+    // design-handover card state
+    cardStatus,
+    cardCaption,
+    cardAction,
+    recoBand,
+    pillLabel,
+    recoStripLabel,
     title: i.title,
     desc: stripHtml(i.desc || ''),
     launchNames,
@@ -1220,6 +1354,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     typeBg: t.bg,
     pathName: p.name,
     pathColor: p.color,
+    // stream head (رئيس المسار) always shows a «المسار: …» line
+    showPathLine: rawRole === 'path',
     approval: i.approval,
     apprBg: appr.bg,
     apprColor: appr.c,
@@ -1277,11 +1413,12 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     onToggleAssignSel: () => s.toggleAssignSel(i.id),
     nomBy: i.nom?.by || '',
     nomStream: i.nom ? pathById(i.nom.path || i.path).name : '',
-    // path rep views its own nomination → drop the (redundant) name/stream
+    // unified nomination badge — drop person names; show the FULL stream name.
+    // (committee spec: «مرشحة للجنة الوطنية · [اسم المسار الكامل]»)
     nomLabel:
       rawRole === 'path'
         ? 'مُرشّح للتمويل'
-        : 'مُرشّح · ' + (i.nom?.by || '') + ' · ' + (i.nom ? pathById(i.nom.path || i.path).name : ''),
+        : 'مرشحة للجنة الوطنية · ' + pathById(i.nom?.path || i.path).name,
     // time of the last status change (shown next to the status chip)
     statusStamp:
       w === 'ent1'
@@ -1295,10 +1432,12 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     onMenu: () => s.toggleMenu(i.id),
     canDelete: rawRole === 'coord' && ((w === 'draft' && !i.ret) || w === 'ent1'),
     onDelete: () => s.deleteItem(i.id),
+    onWithdrawToDraft: () => s.withdrawToDraft(i.id),
     onReqInfo: () => s.reqInfoItem(i.id),
     onReject: () => s.rejectItem(i.id),
     onPathCta: () => s.openDetail(i.id),
     onToggleFundSel: () => s.toggleFundSel(i.id),
+    onNominate: () => s.nominateItem(i.id),
     onWithdrawNom: () => s.withdrawNom(i.id),
     onDeclineNom: () => s.declineNom(i.id),
     onCancelFund: () => s.openCancelFund(i.id),
@@ -1306,7 +1445,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
 }
 
 function pathCta(w: string, ret: boolean): string {
-  if (w === 'draft') return ret ? 'تعديل المدخل وإعادة الإرسال' : 'إكمال وإرسال';
+  if (w === 'draft') return ret ? 'تعديل المدخل وإعادة إرساله' : 'إكمال وإرسال';
   if (w === 'exec') return 'تحديث حالة التطوير';
   return 'تحديث خطة الإطلاق';
 }
@@ -1435,11 +1574,10 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
       pathName: pathById(i.path).name,
       costLabel: cost > 0 ? formatMoney(cost) : '—',
       nomName,
+      // unified badge — no person names (names live in the item detail only)
       nomByLine: byCommittee
-        ? 'مُرشّح من قبل اللجنة الوطنية'
-        : nomName
-          ? 'مُرشّح من قبل: ' + nomName
-          : '',
+        ? 'مرشحة للجنة الوطنية · ' + pathById(i.path).name
+        : 'مرشحة من رئيس المسار · ' + pathById(i.path).name,
       approved: !!i.funded,
       onOpen: () => s.openDetail(i.id),
       onApprove: () => s.fundItem(i.id, isComNom(i)),
@@ -1682,7 +1820,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     canApproveGateView,
     canEdit,
     showMenuEdit,
-    editLabel: isDraftForCoord ? 'متابعة وإكمال البيانات وإرسالها' : 'تعديل',
+    editLabel: isDraftForCoord ? 'استكمال البيانات وإعادة الإرسال' : 'تعديل',
     // handlers
     onClose: () => s.closeDetail(),
     onApprove: () => s.approveItem(i.id),
@@ -1707,7 +1845,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
 function buildLogRows(i: Item) {
   // Displayed action text (mirrors the design's actLabel()).
   const actLabel = (e: { action: string; role?: string }): string => {
-    if (e.action === 'submit') return 'تم الإرسال للاعتماد';
+    if (e.action === 'submit') return 'تم إرسال المدخل للاعتماد';
     if (e.action === 'approve') return 'تم الاعتماد من ' + (e.role || '');
     if (e.action === 'pending') return 'قيد الاعتماد لدى ' + (e.role || '');
     if (e.action === 'reject') return 'رفض';
@@ -1772,13 +1910,13 @@ function buildModal(s: Store) {
   const step2Label =
     ({ project: 'تقييم المشروع', initiative: 'تقييم المبادرة', operation: 'تقييم العملية', service: 'تقييم الخدمة' } as Record<string, string>)[type] ||
     'التقييم';
-  const fLabels = [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والميزانية المتوقعة', 'خطة التنفيذ والإطلاق'];
-  const fTitles = [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والميزانية المتوقعة', 'خطة التنفيذ والإطلاق'];
+  const fLabels = [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'خطة التنفيذ والإطلاق'];
+  const fTitles = [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'خطة التنفيذ والإطلاق'];
   const fHints = [
     'ابدأ بالمعلومات الأساسية',
     'حدّد الأولوية وقابلية التحول',
     'النتائج والأثر المستهدف',
-    'نطاق العمل والميزانية المتوقعة والمرفقات',
+    'نطاق العمل والتكلفة المتوقعة والمرفقات',
     'اختر مرحلة التنفيذ والإطلاق',
   ];
   return {

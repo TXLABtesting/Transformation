@@ -108,7 +108,7 @@ export type UiState = {
   reqModal: { id: string; mode: 'reject' | 'info'; note: string } | null;
   // in-app confirmation dialog (replaces window.confirm)
   confirmModal: {
-    kind: 'launchAll' | 'deleteItem' | 'deletePlan' | 'crossMove' | 'moveBatch';
+    kind: 'launchAll' | 'deleteItem' | 'deletePlan' | 'crossMove' | 'moveBatch' | 'withdrawDraft';
     title: string;
     body: string;
     okLabel: string;
@@ -230,6 +230,7 @@ type Actions = {
   removeLaunch: (i: number) => void;
   submitItem: () => void;
   deleteItem: (id: string, force?: boolean) => void;
+  withdrawToDraft: (id: string, force?: boolean) => void;
   bulkDemo: () => Promise<void>;
   importWorkplan: (buf: ArrayBuffer) => Promise<void>;
   submitBulk: () => void;
@@ -690,44 +691,56 @@ export const useStore = create<Store>((set, get) => {
       const target = findItem(id);
       if (!target) return;
       const wf = stage === 'launched' ? 'done' : stage === 'developed' ? 'launch' : 'exec';
-      // launching syncs with the launch plan: offer to confirm the whole launch
-      if (stage === 'launched' && (target.launchPlanIds || []).length && mode !== 'single') {
+      // launching a المدخل ALWAYS asks for confirmation first (launches fire as a
+      // unit — you cannot launch one entry and leave the rest).
+      const coLaunched = () => {
         const planIds = target.launchPlanIds || [];
-        const siblings = s.items.filter(
+        if (!planIds.length) return [] as Item[];
+        return s.items.filter(
           (it) =>
             it.id !== id &&
             (it.launchPlanIds || []).some((x) => planIds.includes(x)) &&
             wfOf(it) !== 'done' &&
             (it.transformability || '') !== 'غير قابل'
         );
-        if (siblings.length) {
-          const planTitle = s.launchPlans.find((p) => planIds.includes(p.id))?.title || 'الإطلاق';
-          if (mode === 'all') {
-            set((st) => ({
-              items: st.items.map((it) =>
-                it.id === id || siblings.some((sb) => sb.id === it.id) ? { ...it, wf: 'done' as WfState } : it
-              ),
-            }));
-            persist();
-            toast('تم تأكيد الإطلاق لجميع بنود «' + planTitle + '»');
-            return;
-          }
-          // ask via the in-app confirmation dialog
-          setUi({
-            confirmModal: {
-              kind: 'launchAll',
-              title: 'تأكيد الإطلاق',
-              body:
-                'هذا البند ضمن «' + planTitle + '» مع ' + siblings.length +
-                ' من البنود الأخرى. هل تودّون تأكيد الإطلاق لجميع البنود حتى تبقى الحالات متزامنة؟',
-              okLabel: 'تأكيد الإطلاق للجميع',
-              altLabel: 'هذا البند فقط',
-              cancelLabel: 'إلغاء',
-              payload: { id },
-            },
-          });
-          return;
-        }
+      };
+      if (stage === 'launched' && mode !== 'all' && mode !== 'single') {
+        const siblings = coLaunched();
+        const names = siblings.map((sb) => '«' + sb.title + '»').join('، ');
+        setUi({
+          confirmModal: {
+            kind: 'launchAll',
+            title: 'تأكيد الإطلاق',
+            body: siblings.length
+              ? 'هل تريد إطلاق هذا المدخل؟ سيتم أيضًا إطلاق ' +
+                siblings.length +
+                ' ' +
+                (siblings.length === 1 ? 'مدخل آخر' : 'مدخلات أخرى') +
+                ' ضمن الإطلاق نفسه، وستتحوّل حالتها إلى «تم الإطلاق»: ' +
+                names +
+                '.'
+              : 'هل تريد إطلاق هذا المدخل؟',
+            okLabel: 'نعم، إطلاق',
+            cancelLabel: 'إلغاء',
+            payload: { id },
+          },
+        });
+        return;
+      }
+      if (stage === 'launched' && mode === 'all') {
+        const sibIds = coLaunched().map((x) => x.id);
+        set((st) => ({
+          items: st.items.map((it) =>
+            it.id === id || sibIds.includes(it.id) ? { ...it, wf: 'done' as WfState } : it
+          ),
+        }));
+        persist();
+        toast(
+          sibIds.length
+            ? 'تم إطلاق المدخل وجميع مدخلات الإطلاق نفسه'
+            : 'تم إطلاق ' + typeLabelDef(target.type) + ' رسمياً'
+        );
+        return;
       }
       patchItem(id, () => ({ wf: wf as WfState }));
       persist();
@@ -747,6 +760,7 @@ export const useStore = create<Store>((set, get) => {
       setUi({ confirmModal: null });
       if (cm.kind === 'launchAll') get().setDevStage(cm.payload.id, 'launched', 'all');
       else if (cm.kind === 'deleteItem') get().deleteItem(cm.payload.id, true);
+      else if (cm.kind === 'withdrawDraft') get().withdrawToDraft(cm.payload.id, true);
       else if (cm.kind === 'deletePlan') get().removeLaunchPlan(cm.payload.id, true);
       else if (cm.kind === 'crossMove') get().togglePlanItem(cm.payload.planId, cm.payload.itemId, true);
       else if (cm.kind === 'moveBatch') get().setItemBatch(cm.payload.itemId, cm.payload.batch, true);
@@ -971,6 +985,30 @@ export const useStore = create<Store>((set, get) => {
       set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
       toast(w === 'ent1' ? 'تم سحب المدخل وحذفه: ' + typeLabelDef(it.type) : 'تم حذف المسودة');
+    },
+    // withdraw a submitted (ent1) المدخل back to the coordinator's DRAFT state
+    // — this does NOT delete it (true deletion is deleteItem on a draft).
+    withdrawToDraft: (id, force) => {
+      const it = get().items.find((x) => x.id === id);
+      if (!it) return;
+      if (wfOf(it) !== 'ent1') return;
+      if (!force) {
+        setUi({
+          confirmModal: {
+            kind: 'withdrawDraft',
+            title: 'هل تريد سحب هذا المدخل؟',
+            body: 'سيتم إرجاع المدخل إلى حالة المسودة، ولن يظهر ضمن المدخلات المرسلة للاعتماد.',
+            okLabel: 'تأكيد السحب',
+            cancelLabel: 'إلغاء',
+            payload: { id },
+          },
+          menuOpenId: null,
+        });
+        return;
+      }
+      patchItem(id, () => ({ wf: 'draft' as WfState, approval: 'مسودة', ret: null }));
+      persist();
+      toast('تم سحب المدخل وإرجاعه إلى المسودة');
     },
     submitItem: () => {
       commitDraft(get, set, persist, toast, 'تم الإرسال', false);
