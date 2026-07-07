@@ -234,11 +234,11 @@ function EntityOverview({ vm }: { vm: VM }) {
                       transition: 'background .12s',
                     }}
                   >
-                    <span style={{ fontSize: r.bold ? 15 : 13, fontWeight: 800, color: '#13213C' }}>{r.v}</span>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                      <span className={r.bold ? 'hd' : undefined} style={{ fontSize: r.bold ? 13.5 : 12.5, fontWeight: r.bold ? 800 : 400, color: r.bold ? '#13213C' : '#6B7A93' }}>{r.label}</span>
                       <span style={{ width: 10, height: 10, borderRadius: r.square ? 3 : '50%', background: r.dot, flex: 'none' }} />
+                      <span className={r.bold ? 'hd' : undefined} style={{ fontSize: r.bold ? 13.5 : 12.5, fontWeight: r.bold ? 800 : 400, color: r.bold ? '#13213C' : '#6B7A93' }}>{r.label}</span>
                     </span>
+                    <span style={{ fontSize: r.bold ? 15 : 13, fontWeight: 800, color: '#13213C' }}>{r.v}</span>
                   </div>
                 </Fragment>
               ))}
@@ -1425,25 +1425,48 @@ export function Dashboard({ vm }: { vm: VM }) {
           ))}
           </div>
           {/* bottom: onboarding guide */}
-          <div data-r="railhelp" style={{ borderTop: '1px solid #F0F3F8', padding: '10px 12px' }}>
-            <HoverDiv
-              onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
-              base={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '11px 13px',
-                borderRadius: 11,
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: 400,
-                color: '#42506B',
-              }}
-              hover={{ background: '#F7F9FD' }}
-            >
-              <Icon d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" size={16} color="#8A97AD" />
-              دليل الاستخدام
-            </HoverDiv>
+          <div data-r="railhelp" style={{ borderTop: '1px solid #F0F3F8', padding: 12 }}>
+            <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>دليل الاستخدام</div>
+                <span
+                  style={{
+                    flex: 'none',
+                    width: 38,
+                    height: 38,
+                    borderRadius: 11,
+                    background: '#fff',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 10px -5px rgba(29,78,216,.4)',
+                  }}
+                >
+                  <Icon d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" size={18} color="#2563EB" />
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
+                تعرّف على خطوات رحلة المشروع وكيفية إدارة المدخلات.
+              </div>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
+                style={{
+                  marginTop: 12,
+                  width: '100%',
+                  background: BLUE_GRAD,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '11px 0',
+                  fontWeight: 800,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                فتح الدليل
+              </button>
+            </div>
           </div>
         </aside>
 
@@ -1453,161 +1476,40 @@ export function Dashboard({ vm }: { vm: VM }) {
           <>
       {/* ===================== BANNER + STEPPER (entity/coord only) ===================== */}
       {vm.showProgramBanner && (
-      <>
-      <div style={{ margin: '2px 0 -4px' }}>
-        <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>
-          {vm.banner.pageTitle}
-        </div>
-        <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400, marginTop: 6, maxWidth: 620, lineHeight: 1.7 }}>
-          {vm.banner.subtitle}
-        </div>
-      </div>
-      <div
-        data-tour="banner"
-        style={{
-          margin: 0,
-          background: BLUE_GRAD,
-          borderRadius: 18,
-          padding: '18px 22px',
-          color: '#fff',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            opacity: 0.6,
-            pointerEvents: 'none',
-            backgroundImage:
-              'radial-gradient(circle at 97% 0%,rgba(39,194,240,.30),transparent 38%),radial-gradient(circle at 3% 100%,rgba(37,99,235,.25),transparent 40%)',
-          }}
-        />
-        {/* hero: title + progress ring + tiles + distribution */}
-        <div
-          style={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 20,
-            flexWrap: 'wrap',
-          }}
-        >
-          <div style={{ minWidth: 260, flex: 1 }}>
-            <div className="hd" style={{ fontSize: 15, fontWeight: 800 }}>{vm.banner.boxTitle}</div>
-            {vm.isAiRole && (
-              <HoverButton
-                onClick={s.openDeadlines}
-                base={{
-                  marginTop: 12,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 7,
-                  background: 'rgba(255,255,255,.12)',
-                  border: '1px solid rgba(255,255,255,.2)',
-                  color: '#fff',
-                  borderRadius: 11,
-                  padding: '8px 13px',
-                  fontSize: 12,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                }}
-                hover={{ background: 'rgba(255,255,255,.2)' }}
-              >
-                <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={15} />
-                ضبط المهل
-              </HoverButton>
-            )}
+      <div style={{ margin: '2px 0 -4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 0 }}>
+          <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>
+            {vm.banner.pageTitle}
           </div>
-          {vm.showAddBtn && (
-            <button
-              onClick={s.openCreate}
-              style={{
-                flex: 'none',
-                alignSelf: 'flex-start',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                height: 42,
-                padding: '0 18px',
-                background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,.25)',
-                borderRadius: 11,
-                fontWeight: 800,
-                fontSize: 13.5,
-                cursor: 'pointer',
-                boxShadow: '0 10px 22px -10px rgba(11,27,58,.8)',
-                fontFamily: 'inherit',
-              }}
-            >
-              <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديدة
-            </button>
-          )}
+          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400, marginTop: 6, maxWidth: 620, lineHeight: 1.7 }}>
+            {vm.banner.subtitle}
+          </div>
         </div>
-
-        {/* icon stat cards */}
-        {(() => {
-          const step = (n: number) => Number(vm.programSteps[n]?.stepCount || 0);
-          const underExec = Math.max(0, step(2) - vm.launchedCount);
-          const cards = [
-            { label: 'إجمالي المدخلات', v: vm.kpis.total, icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z' },
-            { label: 'تم حصرها', v: step(0), icon: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
-            { label: 'بانتظار الاعتماد', v: step(1), icon: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2' },
-            { label: 'قيد التنفيذ', v: underExec, icon: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
-            { label: 'تم الإطلاق', v: vm.launchedCount, icon: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7' },
-          ];
-          return (
-            <div
-              style={{
-                position: 'relative',
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))',
-                gap: 12,
-                marginTop: 18,
-              }}
-            >
-              {cards.map((c) => (
-                <div
-                  key={c.label}
-                  style={{
-                    background: 'rgba(255,255,255,.08)',
-                    border: '1px solid rgba(255,255,255,.14)',
-                    borderRadius: 15,
-                    padding: '13px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                  }}
-                >
-                  <div
-                    style={{
-                      flex: 'none',
-                      width: 40,
-                      height: 40,
-                      borderRadius: 12,
-                      background: 'rgba(255,255,255,.12)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Icon d={c.icon} size={18} color="#fff" strokeWidth={1.8} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{c.v}</div>
-                    <div style={{ fontSize: 11, fontWeight: 400, color: '#C7D9F5', marginTop: 2 }}>{c.label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
-
+        {vm.showAddBtn && (
+          <button
+            onClick={s.openCreate}
+            style={{
+              flex: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              height: 42,
+              padding: '0 18px',
+              background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 11,
+              fontWeight: 800,
+              fontSize: 13.5,
+              cursor: 'pointer',
+              boxShadow: '0 10px 22px -10px rgba(11,27,58,.8)',
+              fontFamily: 'inherit',
+            }}
+          >
+            <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديدة
+          </button>
+        )}
       </div>
-      </>
       )}
 
           {/* Entity overview — redesigned first section (cost + inputs donuts)
