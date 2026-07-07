@@ -1000,44 +1000,102 @@ export function DetailPanel({ vm }: { vm: VM }) {
             <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 16 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>حالة التطوير</div>
               <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, margin: '6px 0 14px' }}>
-                حدّدوا الحالة الحالية — قيد التطوير، ثم تم التطوير، وصولاً إلى تم الإطلاق.
+                {d.canEditStage
+                  ? 'اضغطوا على المرحلة الحالية — قيد التطوير، ثم تم التطوير، وصولاً إلى تم الإطلاق.'
+                  : 'الحالة الحالية لرحلة التطوير والإطلاق.'}
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  background: '#F4F7FC',
-                  border: '1px solid #E7ECF4',
-                  borderRadius: 12,
-                  padding: 4,
-                  gap: 4,
-                }}
-              >
-                {[
-                  { k: 'underDev', label: 'قيد التطوير' },
-                  { k: 'developed', label: 'تم التطوير' },
-                  { k: 'launched', label: 'تم الإطلاق' },
-                ].map((st) => (
-                  <button
-                    key={st.k}
-                    onClick={() => d.onSetStage(st.k)}
-                    disabled={!d.canEditStage}
-                    style={{
-                      flex: 1,
-                      border: 'none',
-                      borderRadius: 9,
-                      padding: '10px 8px',
-                      fontWeight: d.devStage === st.k ? 800 : 400,
-                      fontSize: 12.5,
-                      cursor: d.canEditStage ? 'pointer' : 'default',
-                      fontFamily: 'inherit',
-                      background: d.devStage === st.k ? '#EAF1FE' : 'transparent',
-                      color: d.devStage === st.k ? '#1D4ED8' : '#54627B',
-                    }}
-                  >
-                    {st.label}
-                  </button>
-                ))}
+              {/* step timeline — same design language as the workflow timeline above */}
+              <div style={{ display: 'flex' }}>
+                {(() => {
+                  const stages = [
+                    { k: 'underDev', label: 'قيد التطوير' },
+                    { k: 'developed', label: 'تم التطوير' },
+                    { k: 'launched', label: 'تم الإطلاق' },
+                  ];
+                  const cur = stages.findIndex((x) => x.k === d.devStage);
+                  return stages.map((st, idx) => {
+                    const isDone = cur >= 0 && (idx < cur || (idx === cur && st.k === 'launched'));
+                    const isActive = idx === cur && st.k !== 'launched';
+                    const circleBg = isDone ? '#0B8A4B' : isActive ? '#fff' : '#EFF2F7';
+                    const circleColor = isDone ? '#fff' : isActive ? '#2563EB' : '#9AA6BC';
+                    const circleBorder = isActive ? '2px solid #2563EB' : isDone ? 'none' : '1px solid #E1E7F1';
+                    const circleGlow = isActive ? '0 0 0 4px rgba(37,99,235,.15)' : 'none';
+                    const labelColor = isActive ? '#13213C' : isDone ? '#0B8A4B' : '#9AA6BC';
+                    const reached = (i: number) => cur >= 0 && i <= cur;
+                    return (
+                      <div
+                        key={st.k}
+                        onClick={d.canEditStage ? () => d.onSetStage(st.k) : undefined}
+                        title={d.canEditStage ? 'تحديد الحالة: ' + st.label : undefined}
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          cursor: d.canEditStage ? 'pointer' : 'default',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                          <div
+                            style={{
+                              flex: 1,
+                              height: 3,
+                              borderRadius: 3,
+                              background: idx === 0 ? 'transparent' : reached(idx) ? '#0B8A4B' : '#E1E7F1',
+                            }}
+                          />
+                          <div
+                            style={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 12,
+                              fontWeight: 800,
+                              flex: 'none',
+                              margin: '0 4px',
+                              background: circleBg,
+                              color: circleColor,
+                              border: circleBorder,
+                              boxShadow: circleGlow,
+                            }}
+                          >
+                            {isDone ? <Icon d={CHECK} size={14} color="#fff" strokeWidth={3} /> : idx + 1}
+                          </div>
+                          <div
+                            style={{
+                              flex: 1,
+                              height: 3,
+                              borderRadius: 3,
+                              background: idx === stages.length - 1 ? 'transparent' : reached(idx + 1) ? '#0B8A4B' : '#E1E7F1',
+                            }}
+                          />
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: 800,
+                            color: labelColor,
+                            textAlign: 'center',
+                            marginTop: 6,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {st.label}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
+              {d.devStage === null && (
+                <div style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 400, marginTop: 10 }}>
+                  تبدأ رحلة التطوير بعد اعتماد اللجنة الوطنية.
+                </div>
+              )}
             </div>
           )}
           </div>

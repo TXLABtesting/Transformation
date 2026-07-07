@@ -731,9 +731,9 @@ export const useStore = create<Store>((set, get) => {
       persist();
       toast(
         stage === 'launched'
-          ? 'تم الإطلاق — أُغلق ' + typeLabelDef(target.type)
+          ? 'تم إطلاق ' + typeLabelDef(target.type) + ' رسمياً'
           : stage === 'developed'
-            ? 'تم التطوير — ' + typeLabelDef(target.type) + ' جاهز للإطلاق'
+            ? 'اكتمل تطوير ' + typeLabelDef(target.type) + ' — يمكن الانتقال إلى الإطلاق'
             : typeLabelDef(target.type) + ' قيد التطوير'
       );
     },
