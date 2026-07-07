@@ -11,15 +11,15 @@ const WALLET = 'M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2
 const SPEECH = 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z';
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 400,
-  color: '#8A97AD',
-  marginBottom: 4,
+  fontSize: 12.5,
+  fontWeight: 500,
+  color: '#98A4B6',
+  marginBottom: 8,
 };
 const valueStyle: React.CSSProperties = {
-  fontSize: 13,
-  fontWeight: 700,
-  color: '#1F2D49',
+  fontSize: 14.5,
+  fontWeight: 800,
+  color: '#16233F',
 };
 
 const sectionCard: React.CSSProperties = {
@@ -40,31 +40,31 @@ const IC_PEOPLE = 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 
 
 function DetailSecHead({ iconD, title }: { iconD: string; title: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 8, marginBottom: 2 }}>
-      <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{title}</span>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 22, marginBottom: 12 }}>
+      <span className="hd" style={{ fontSize: 15.5, fontWeight: 800, color: '#16233F' }}>{title}</span>
       <Icon d={iconD} size={16} color="#2563EB" />
     </div>
   );
 }
 
-function DetailGrid({ cols, children }: { cols: number; children: React.ReactNode }) {
+function DetailGrid({ cols, tint, children }: { cols: number; tint?: boolean; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols},minmax(0,1fr))`, gap: 1, background: '#EAEEF5', border: '1px solid #EAEEF5', borderRadius: 14, overflow: 'hidden' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols},minmax(0,1fr))`, gap: 1, background: '#EAEEF5', border: '1px solid #E7ECF4', borderRadius: 16, overflow: 'hidden' }}>
       {children}
     </div>
   );
 }
 
-function DetailCell({ label, iconD, children }: { label: string; iconD?: string; children: React.ReactNode }) {
+function DetailCell({ label, iconD, tint, children }: { label: string; iconD?: string; tint?: boolean; children: React.ReactNode }) {
   return (
-    <div style={{ background: '#fff', padding: '13px 15px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 58 }}>
+    <div style={{ background: tint ? '#F8FAFD' : '#fff', padding: '20px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 92 }}>
       <div style={{ minWidth: 0, textAlign: 'right', flex: 1 }}>
         <div style={labelStyle}>{label}</div>
-        <div style={{ ...valueStyle, lineHeight: 1.6 }}>{children}</div>
+        <div style={{ ...valueStyle, lineHeight: 1.55 }}>{children}</div>
       </div>
       {iconD && (
-        <span style={{ width: 30, height: 30, flex: 'none', borderRadius: 9, background: '#EEF3FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon d={iconD} size={15} color="#2563EB" />
+        <span style={{ width: 34, height: 34, flex: 'none', borderRadius: 10, background: '#EAF0FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon d={iconD} size={16} color="#2563EB" />
         </span>
       )}
     </div>
@@ -500,16 +500,16 @@ export function DetailPanel({ vm }: { vm: VM }) {
               <>
                 <DetailSecHead iconD={IC_SLIDERS} title="خصائص العملية" />
                 <DetailGrid cols={3}>
-                  <DetailCell label="نوع المدخل">{d.opType}</DetailCell>
+                  <DetailCell label="نوع العملية">{d.opType}</DetailCell>
                   <DetailCell label="كثافة الاستخدام">{d.usageIntensity}</DetailCell>
                   <DetailCell label="الأنشطة الفرعية"><RichTextView html={d.subActivities} style={valueStyle} /></DetailCell>
                 </DetailGrid>
 
-                <DetailSecHead iconD={IC_TREND} title="جاهزية التحويل" />
+                <DetailSecHead iconD={IC_TREND} title="جاهزية التحول" />
                 <DetailGrid cols={3}>
-                  <DetailCell label="قابلية التحويل"><TransformPill v={d.transformability} /></DetailCell>
-                  <DetailCell label="أولوية التحويل">{d.transformPriority}</DetailCell>
-                  <DetailCell label="جاهزية التحويل">{d.readiness}</DetailCell>
+                  <DetailCell label="قابلية التحول"><TransformPill v={d.transformability} /></DetailCell>
+                  <DetailCell label="أولوية التحول">{d.transformPriority}</DetailCell>
+                  <DetailCell label="جاهزية التحول">{d.readiness}</DetailCell>
                 </DetailGrid>
 
                 <DetailSecHead iconD={IC_BOT} title="الأتمتة" />
@@ -525,12 +525,12 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 <DetailSecHead iconD={IC_BUILDING} title="الجهة المعنية" />
                 {(() => {
                   const cells = [
-                    <DetailCell key="fed" label="الجهة الاتحادية المعنية" iconD={IC_BUILDING}>{d.itemEntityName}</DetailCell>,
-                    ...(d.sector ? [<DetailCell key="sec" label="القطاع المعني" iconD={IC_TAG}>{d.sector}</DetailCell>] : []),
-                    ...(d.dept ? [<DetailCell key="dept" label="الوحدة التنظيمية المعنية" iconD={IC_GRID}>{d.dept}</DetailCell>] : []),
-                    ...(d.section ? [<DetailCell key="sect" label="القسم المعني" iconD={IC_PEOPLE}>{d.section}</DetailCell>] : []),
+                    <DetailCell key="fed" tint label="الجهة الاتحادية المعنية" iconD={IC_BUILDING}>{d.itemEntityName}</DetailCell>,
+                    ...(d.sector ? [<DetailCell key="sec" tint label="القطاع المعني" iconD={IC_TAG}>{d.sector}</DetailCell>] : []),
+                    ...(d.dept ? [<DetailCell key="dept" tint label="الوحدة التنظيمية المعنية" iconD={IC_GRID}>{d.dept}</DetailCell>] : []),
+                    ...(d.section ? [<DetailCell key="sect" tint label="القسم المعني" iconD={IC_PEOPLE}>{d.section}</DetailCell>] : []),
                   ];
-                  return <DetailGrid cols={2}>{cells}</DetailGrid>;
+                  return <DetailGrid cols={2} tint>{cells}</DetailGrid>;
                 })()}
               </>
             )}

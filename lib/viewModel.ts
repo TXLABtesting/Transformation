@@ -612,7 +612,7 @@ function build(s: Store) {
     { key: 'overview', label: 'الرئيسية', icon: NAV_HOME },
     { key: 'all', label: streamSub ? 'جميع المسارات' : 'جميع الأنواع', icon: NAV_DOTS, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
     ...subNav,
-    { key: 'launchplans', label: rawRole === 'entity' || rawRole === 'coord' ? 'مراحل التنفيذ والإطلاق' : 'التنفيذ والإطلاق', icon: NAV_CAL },
+    { key: 'launchplans', label: 'مراحل التنفيذ', icon: NAV_CAL },
     ...(rawRole === 'entity' || rawRole === 'coord' ? [{ key: 'lplan', label: 'خطة الإطلاق', icon: NAV_ROCKET }] : []),
     ...(rawRole === 'ai' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
@@ -1327,10 +1327,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       pillLabel = 'معتمد للتمويل';
     } else {
       cardStatus = 'pendFund';
-      cardCaption =
-        recoBand === 'reco'
-          ? 'بانتظار اعتماد التمويل — موصى به'
-          : 'بانتظار اعتماد التمويل — قائمة الانتظار';
+      cardCaption = '';
       cardAction = 'fundApproveReject';
       pillLabel = 'قيد مراجعة التمويل';
     }

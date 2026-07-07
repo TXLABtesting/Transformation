@@ -2458,7 +2458,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           {((vm.navSection === 'launchplans' && vm.role !== 'entity') || (vm.navSection === 'lplan' && vm.role === 'coord')) && (() => { const launchPage = vm.navSection === 'lplan'; return (
             <>
               <div>
-                <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{launchPage ? 'خطة الإطلاق' : 'مراحل التنفيذ والإطلاق'}</div>
+                <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{launchPage ? 'خطة الإطلاق' : 'مراحل التنفيذ'}</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                   {launchPage
                     ? 'الإطلاقات المجدولة لكل مرحلة — أضِف الإطلاقات وحدِّد ما يشمله كل إطلاق وميزانيته التقديرية.'
