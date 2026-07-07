@@ -1,5 +1,5 @@
 'use client';
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useState, type CSSProperties, type ReactNode } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
 import { Tour, TOUR_EVENT, type TourStep } from './Tour';
@@ -172,12 +172,40 @@ function EntityOverview({ vm }: { vm: VM }) {
   const s = vm.store;
   const cc = vm.costCard;
   const ic = vm.inputsCard;
+  const [hovIn, setHovIn] = useState<string | null>(null);
+  const [hovCost, setHovCost] = useState<string | null>(null);
   const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
   const money = (label: string) => {
     const p = label.split(' ');
     return { num: p[0], unit: p.slice(1).join(' ') };
   };
   const costTot = money(cc.totalLabel);
+  const clampFrac = (n: number) => Math.min(0.95, Math.max(0.05, n));
+
+  // inputs legend items (hoverable)
+  const inItems = [
+    { key: 'capable', label: 'قابل للتحويل', v: ic.capable, dot: '#2563EB', square: true, bold: true },
+    { key: 'underDev', label: 'قيد التطوير', v: ic.underDev, dot: '#3B82F6', square: false, bold: false, sub: true },
+    { key: 'developed', label: 'تم التطوير', v: ic.developed, dot: '#60A5FA', square: false, bold: false, sub: true },
+    { key: 'launched', label: 'تم الإطلاق', v: ic.launched, dot: '#93C5FD', square: false, bold: false, sub: true },
+    { key: 'notCapable', label: 'غير قابل للتحويل', v: ic.notCapable, dot: '#C7D9F5', square: true, bold: true, divider: true },
+  ];
+  const inHov = inItems.find((x) => x.key === hovIn);
+  const inDonut = inHov
+    ? { frac: ic.total ? clampFrac(inHov.v / ic.total) : 0.5, light: '#EDF1F8', center: String(inHov.v), sub: inHov.label }
+    : { frac: ic.capFrac, light: '#C7D9F5', center: String(ic.total), sub: 'إجمالي المدخلات' };
+
+  // cost legend items (hoverable)
+  const costItems = [
+    { key: 'exec', label: 'تكلفة التنفيذ الإجمالية', short: 'تكلفة التنفيذ', val: cc.execLabel, pct: cc.execPct, frac: cc.execFrac, c: '#2563EB' },
+    { key: 'launch', label: 'تكلفة الإطلاق الإجمالية', short: 'تكلفة الإطلاق', val: cc.launchLabel, pct: cc.launchPct, frac: 1 - cc.execFrac, c: '#BFD3F5' },
+  ];
+  const costHov = costItems.find((x) => x.key === hovCost);
+  const costM = costHov ? money(costHov.val) : costTot;
+  const costDonut = costHov
+    ? { frac: clampFrac(costHov.frac), light: '#EDF1F8', top: costHov.short, center: costM.num, sub: costM.unit }
+    : { frac: cc.execFrac, light: '#BFD3F5', top: 'الإجمالي', center: costTot.num, sub: costTot.unit };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* ===== Section 1: التكلفة الإجمالية + إجمالي المدخلات ===== */}
@@ -186,34 +214,36 @@ function EntityOverview({ vm }: { vm: VM }) {
         <div style={cardStyle}>
           <EoCardHead title="إجمالي المدخلات" iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <span style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{ic.capable}</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>قابل للتحويل</span>
-                  <span style={{ width: 11, height: 11, borderRadius: 3, background: '#2563EB', flex: 'none' }} />
-                </span>
-              </div>
-              {[
-                { label: 'قيد التطوير', v: ic.underDev },
-                { label: 'تم التطوير', v: ic.developed },
-                { label: 'تم الإطلاق', v: ic.launched },
-              ].map((r) => (
-                <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingRight: 19 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{r.v}</span>
-                  <span style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>{r.label}</span>
-                </div>
+            <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {inItems.map((r) => (
+                <Fragment key={r.key}>
+                  {r.divider && <div style={{ height: 1, background: '#EEF1F6', margin: '5px 0' }} />}
+                  <div
+                    onMouseEnter={() => setHovIn(r.key)}
+                    onMouseLeave={() => setHovIn(null)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                      padding: '6px 10px',
+                      marginRight: r.sub ? 12 : 0,
+                      borderRadius: 9,
+                      background: hovIn === r.key ? '#EEF3FC' : 'transparent',
+                      cursor: 'default',
+                      transition: 'background .12s',
+                    }}
+                  >
+                    <span style={{ fontSize: r.bold ? 15 : 13, fontWeight: 800, color: '#13213C' }}>{r.v}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <span className={r.bold ? 'hd' : undefined} style={{ fontSize: r.bold ? 13.5 : 12.5, fontWeight: r.bold ? 800 : 400, color: r.bold ? '#13213C' : '#6B7A93' }}>{r.label}</span>
+                      <span style={{ width: 10, height: 10, borderRadius: r.square ? 3 : '50%', background: r.dot, flex: 'none' }} />
+                    </span>
+                  </div>
+                </Fragment>
               ))}
-              <div style={{ height: 1, background: '#EEF1F6', margin: '3px 0' }} />
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <span style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{ic.notCapable}</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>غير قابل للتحويل</span>
-                  <span style={{ width: 11, height: 11, borderRadius: 3, background: '#C7D9F5', flex: 'none' }} />
-                </span>
-              </div>
             </div>
-            <EoDonut frac={ic.capFrac} dark="#2563EB" light="#C7D9F5" center={String(ic.total)} sub="إجمالي المدخلات" />
+            <EoDonut frac={inDonut.frac} dark="#2563EB" light={inDonut.light} center={inDonut.center} sub={inDonut.sub} />
           </div>
         </div>
 
@@ -222,11 +252,24 @@ function EntityOverview({ vm }: { vm: VM }) {
           <EoCardHead title="التكلفة الإجمالية" iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                { label: 'تكلفة التنفيذ الإجمالية', val: cc.execLabel, pct: cc.execPct, c: '#2563EB' },
-                { label: 'تكلفة الإطلاق الإجمالية', val: cc.launchLabel, pct: cc.launchPct, c: '#BFD3F5' },
-              ].map((r) => (
-                <div key={r.label} style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '11px 13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              {costItems.map((r) => (
+                <div
+                  key={r.key}
+                  onMouseEnter={() => setHovCost(r.key)}
+                  onMouseLeave={() => setHovCost(null)}
+                  style={{
+                    background: hovCost === r.key ? '#EEF3FC' : '#F7F9FD',
+                    border: '1px solid ' + (hovCost === r.key ? '#D8E3F5' : '#EEF1F6'),
+                    borderRadius: 12,
+                    padding: '11px 13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                    cursor: 'default',
+                    transition: 'background .12s',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>{r.label}</div>
@@ -238,7 +281,7 @@ function EntityOverview({ vm }: { vm: VM }) {
                 </div>
               ))}
             </div>
-            <EoDonut frac={cc.execFrac} dark="#2563EB" light="#BFD3F5" top="الإجمالي" center={costTot.num} sub={costTot.unit} />
+            <EoDonut frac={costDonut.frac} dark="#2563EB" light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} />
           </div>
         </div>
       </div>
