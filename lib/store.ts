@@ -33,6 +33,7 @@ import {
   parseBudget,
   typeLabelDef,
 } from './domain';
+import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
 import type { LaunchPlan } from './domain';
 import { type ReviewResult } from './ai';
@@ -829,19 +830,31 @@ export const useStore = create<Store>((set, get) => {
       set((s) => (s.ui.draft ? { ui: { ...s.ui, draft: { ...s.ui.draft, [k]: v } } } : {})),
     fNext: () => {
       const s = get();
-      // a name is mandatory before leaving step 1 — no nameless cards
-      if (s.ui.fStep === 1 && !(s.ui.draft?.title || '').trim()) {
-        return toast('نرجو إدخال اسم ' + typeLabelDef(s.ui.draft?.type || '') + ' قبل المتابعة');
+      const d = s.ui.draft;
+      // every input is mandatory except the estimated budget — validate the
+      // current step's fields before moving on
+      const filled = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
+      const dd = (d || {}) as unknown as Record<string, unknown>;
+      const isOp = d?.type === 'operation';
+      const isSvc = d?.type === 'service';
+      const requiredByStep: Record<number, string[]> = {
+        1: ['title', 'desc', ...(isOp ? ['subActivities', 'sector', 'dept', 'section'] : []), ...(isSvc ? ['serviceOwner', 'targetUsers'] : [])],
+        2: [...(isOp ? ['automationSystem'] : []), ...(isSvc ? ['currentJourney', 'painPoints', 'expectedImprovement', 'endDate'] : [])],
+        3: ['expectedOutputs', 'aiModels', 'endDate'],
+        4: ['scopeOfWork'],
+        5: [],
+      };
+      const missing = (requiredByStep[s.ui.fStep] || []).filter((k) => !filled(dd[k]));
+      if (missing.length) {
+        return toast(
+          s.ui.fStep === 1 && missing.includes('title')
+            ? 'نرجو إدخال اسم ' + typeLabelDef(d?.type || '') + ' قبل المتابعة'
+            : 'نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة'
+        );
       }
       if (s.ui.fStep < 5) {
         setUi({ fStep: s.ui.fStep + 1 });
         return;
-      }
-      const d = s.ui.draft;
-      // scope stays mandatory at submission — the estimated budget is optional
-      if (d && !(d.scopeOfWork || '').trim()) {
-        setUi({ fStep: 4 });
-        return toast('نرجو استكمال نطاق العمل قبل الإرسال للاعتماد');
       }
       if (d && (d.transformability || '') !== 'غير قابل' && !(d.execBatch || '').trim()) {
         return toast('نرجو اختيار مرحلة التنفيذ والإطلاق قبل الإرسال للاعتماد');

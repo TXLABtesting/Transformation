@@ -122,7 +122,9 @@ function SectionLabel({ children }: { children: ReactNode }) {
 }
 
 // small ⓘ affordance: hover / tap reveals a plain-language explanation
-function InfoTip({ text, dark }: { text: string; dark?: boolean }) {
+function InfoTip({ text, dark, flip }: { text: string; dark?: boolean; flip?: boolean }) {
+  // flip: the popup grows to the LEFT by default (RTL); near the screen's
+  // left edge it must grow to the right instead or it gets clipped
   const [open, setOpen] = useState(false);
   return (
     <span
@@ -162,7 +164,7 @@ function InfoTip({ text, dark }: { text: string; dark?: boolean }) {
           style={{
             position: 'absolute',
             top: 22,
-            right: -8,
+            ...(flip ? { left: -8 } : { right: -8 }),
             width: 240,
             background: '#0F1F3D',
             color: '#fff',
@@ -717,7 +719,6 @@ export function Dashboard({ vm }: { vm: VM }) {
           {/* Phase countdown (moved out of the banner) */}
           {vm.showProgramBanner && (
             <div
-              title={'الموعد النهائي: ' + vm.banner.curPhaseDeadlineFmt}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -746,7 +747,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </span>
                 </span>
               ))}
-              <InfoTip text={'الوقت المتبقي على الموعد النهائي لهذه المرحلة — يُرجى استكمال حصر وإدخال جميع المشاريع والمبادرات والعمليات والخدمات قبل انتهائه (' + vm.banner.curPhaseDeadlineFmt + ').'} />
+              <InfoTip flip text={'الوقت المتبقي على الموعد النهائي لهذه المرحلة — يُرجى استكمال حصر وإدخال جميع المشاريع والمبادرات والعمليات والخدمات قبل انتهائه (' + vm.banner.curPhaseDeadlineFmt + ').'} />
             </div>
           )}
 
@@ -1291,6 +1292,31 @@ export function Dashboard({ vm }: { vm: VM }) {
               </HoverButton>
             )}
           </div>
+          {vm.showAddBtn && (
+            <button
+              onClick={s.openCreate}
+              style={{
+                flex: 'none',
+                alignSelf: 'flex-start',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                height: 42,
+                padding: '0 18px',
+                background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,.25)',
+                borderRadius: 11,
+                fontWeight: 800,
+                fontSize: 13.5,
+                cursor: 'pointer',
+                boxShadow: '0 10px 22px -10px rgba(11,27,58,.8)',
+                fontFamily: 'inherit',
+              }}
+            >
+              <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة جديدة
+            </button>
+          )}
         </div>
 
         {/* icon stat cards */}
@@ -1302,7 +1328,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             { label: 'تم حصرها', v: step(0), icon: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
             { label: 'بانتظار الاعتماد', v: step(1), icon: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2' },
             { label: 'قيد التنفيذ', v: underExec, icon: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
-            { label: 'تم الإطلاق', v: vm.launchedCount, icon: 'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z' },
+            { label: 'تم الإطلاق', v: vm.launchedCount, icon: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7' },
           ];
           return (
             <div
@@ -1667,7 +1693,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               {/* stream summary cards — الكل first, click filters the page */}
               {vm.portfolioStreams.length > 2 && (
                 <>
-                <SectionLabel>مسارات التحول</SectionLabel>
+                <SectionLabel>مسارات التحول للذكاء الاصطناعي المساعد</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
                   {vm.portfolioStreams.map((st) => (
                     <HoverDiv
@@ -1938,17 +1964,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                       </div>
                       <InfoTip text="تكلفة التنفيذ تُجمع من ميزانيات ما هو معيَّن لهذه المرحلة، وتكلفة الإطلاق من ميزانيات إطلاقاتها. اضغطوا على أي إطلاق لاستعراض ما يندرج تحته." />
                     </div>
-                    {/* cost tiles */}
-                    <div data-r="form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
-                      <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
-                        <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية التنفيذ التقديرية</div>
-                        <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.costLabel}</div>
-                      </div>
-                      <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
-                        <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية الإطلاق التقديرية</div>
-                        <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.launchCostLabel}</div>
-                      </div>
-                    </div>
                     {/* محتوى المرحلة: composition + delivery status in one block */}
                     {b.count === 0 ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
@@ -2087,7 +2102,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     )}
                     {/* launches: coordinator manages in place, others read */}
                     {vm.showAddBtn ? (
-                      <div style={{ borderTop: '1px solid #F0F3F8', marginTop: 14, paddingTop: 12 }}>
+                      <div style={{ background: '#FAFCFF', border: '1px solid #EBEFF6', borderRadius: 14, padding: '12px 14px', marginTop: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
                           <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>خطة الإطلاق</div>
                           <button
@@ -2203,8 +2218,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                       </div>
                                         ) : (
                       b.launches.length > 0 && (
-                      <div style={{ borderTop: '1px solid #F0F3F8', marginTop: 14, paddingTop: 12 }}>
-                        <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400, marginBottom: 8 }}>خطة الإطلاق</div>
+                      <div style={{ background: '#FAFCFF', border: '1px solid #EBEFF6', borderRadius: 14, padding: '12px 14px', marginTop: 12 }}>
+                        <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', marginBottom: 8 }}>خطة الإطلاق</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                           {b.launches.map((l) => {
                             const lOpen = openLaunch === b.name + '|' + l.id;
@@ -2254,6 +2269,17 @@ export function Dashboard({ vm }: { vm: VM }) {
                       </div>
                       )
                     )}
+                    {/* cost tiles */}
+                    <div data-r="form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+                      <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
+                        <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية التنفيذ التقديرية</div>
+                        <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.costLabel}</div>
+                      </div>
+                      <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
+                        <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية الإطلاق التقديرية</div>
+                        <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.launchCostLabel}</div>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -3202,7 +3228,7 @@ function CardItem({ c }: { c: CardVM }) {
                 maxWidth: '100%',
               }}
             >
-              <Icon d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" size={11} />
+              <Icon d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7" size={11} />
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {c.launchNames.join('، ')}
               </span>

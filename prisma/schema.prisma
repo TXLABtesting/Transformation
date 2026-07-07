@@ -122,6 +122,10 @@ model StreamOwner {
 enum WfState {
   draft
   ent1
+  pm1
+  pm2
+  ent2
+  budget
   exec
   launch
   done
@@ -201,6 +205,13 @@ model Item {
   retType String? @map("ret_type") // info | reject
   retFrom String? @map("ret_from")
   retNote String? @map("ret_note")
+
+  // stage-move marker (نُقل بين المراحل) — set when the item is moved to a
+  // different execution stage; every stakeholder is notified of the move
+  stageMoveFrom String?   @map("stage_move_from")
+  stageMoveTo   String?   @map("stage_move_to")
+  stageMoveAt   DateTime? @map("stage_move_at")
+  stageMoveBy   String?   @map("stage_move_by")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

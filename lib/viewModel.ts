@@ -332,7 +332,6 @@ function build(s: Store) {
       : rawRole === 'entity'
         ? [
             { v: 'all', label: 'كل الحالات' },
-            { v: 'draft', label: 'مسودة' },
             { v: 'approve', label: 'للاعتماد' },
             { v: 'inprog', label: 'قيد التنفيذ' },
             { v: 'done', label: 'تم الإطلاق' },
@@ -720,7 +719,7 @@ function build(s: Store) {
           currentBatches: assignSelBatches,
           batchOptions: launchBatches().map((b) => ({
             name: b.name,
-            label: b.period ? b.name + ' · ' + b.period : b.name,
+            label: (b.period ? b.name + ' · ' + b.period : b.name).replace(/^إطلاق /, ''),
           })),
         }
       : null,
@@ -1262,6 +1261,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     wfChip: wm.chip,
     wfBg: wm.bg,
     priority: i.priority,
+    rankLabel: i.rank ? 'رقم ' + i.rank : '',
     complexity: i.complexity,
     endDateFmt: fmtDate(i.endDate),
     isReturned: rawRole === 'coord' && !!i.ret,
@@ -1499,7 +1499,7 @@ function buildModal(s: Store) {
     // execution batches (خطة التنفيذ والإطلاق) + centrally-managed launch plans
     batchOptions: launchBatches().map((b) => ({
       name: b.name,
-      label: b.period ? b.name + ' · ' + b.period : b.name,
+      label: (b.period ? b.name + ' · ' + b.period : b.name).replace(/^إطلاق /, ''),
     })),
     startStates: START_STATES,
     // ai review

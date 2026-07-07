@@ -518,7 +518,7 @@ function F1({
     <div style={cardStyle}>
       {m.mIsOp && (
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>نوع العملية</label>
+          <label style={labelStyle}>نوع العملية <span style={{ color: '#D23B45' }}>*</span></label>
           <select value={gv('opType')} onChange={(e) => setField('opType', e.target.value)} style={inputStyle}>
             <option>العمليات التخصصية</option>
             <option>عمليات الدعم المؤسسي</option>
@@ -528,7 +528,7 @@ function F1({
 
       {m.mIsProjectish && (
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>التصنيف</label>
+          <label style={labelStyle}>التصنيف <span style={{ color: '#D23B45' }}>*</span></label>
           <select
             value={gv('type') === 'initiative' ? 'مبادرة' : 'مشروع'}
             onChange={(e) => setField('type', e.target.value === 'مبادرة' ? 'initiative' : 'project')}
@@ -551,7 +551,7 @@ function F1({
       </div>
 
       <div style={{ marginBottom: 14 }}>
-        <label style={labelStyle}>وصف مختصر</label>
+        <label style={labelStyle}>وصف مختصر <span style={{ color: '#D23B45' }}>*</span></label>
         <RichTextEditor
           value={gv('desc')}
           onChange={(v) => setField('desc', v)}
@@ -563,7 +563,7 @@ function F1({
       {m.mIsOp && (
         <>
           <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>الأنشطة الفرعية</label>
+            <label style={labelStyle}>الأنشطة الفرعية <span style={{ color: '#D23B45' }}>*</span></label>
             <RichTextEditor
               value={gv('subActivities')}
               onChange={(v) => setField('subActivities', v)}
@@ -577,15 +577,15 @@ function F1({
               <input value={vm.entityName} disabled style={disabledStyle} />
             </div>
             <div>
-              <label style={labelStyle}>القطاع المعني</label>
+              <label style={labelStyle}>القطاع المعني <span style={{ color: '#D23B45' }}>*</span></label>
               <input value={gv('sector')} onChange={(e) => setField('sector', e.target.value)} style={inputStyle} />
             </div>
             <div>
-              <label style={labelStyle}>الوحدة التنظيمية المعنية</label>
+              <label style={labelStyle}>الوحدة التنظيمية المعنية <span style={{ color: '#D23B45' }}>*</span></label>
               <input value={gv('dept')} onChange={(e) => setField('dept', e.target.value)} style={inputStyle} />
             </div>
             <div>
-              <label style={labelStyle}>القسم المعني</label>
+              <label style={labelStyle}>القسم المعني <span style={{ color: '#D23B45' }}>*</span></label>
               <input value={gv('section')} onChange={(e) => setField('section', e.target.value)} style={inputStyle} />
             </div>
           </div>
@@ -595,11 +595,11 @@ function F1({
       {m.mIsService && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
-            <label style={labelStyle}>مالك الخدمة</label>
+            <label style={labelStyle}>مالك الخدمة <span style={{ color: '#D23B45' }}>*</span></label>
             <input value={gv('serviceOwner')} onChange={(e) => setField('serviceOwner', e.target.value)} style={inputStyle} />
           </div>
           <div>
-            <label style={labelStyle}>الفئة المستهدفة</label>
+            <label style={labelStyle}>الفئة المستهدفة <span style={{ color: '#D23B45' }}>*</span></label>
             <input value={gv('targetUsers')} onChange={(e) => setField('targetUsers', e.target.value)} style={inputStyle} />
           </div>
         </div>
@@ -623,7 +623,7 @@ function F2({
   const cardTitle: React.CSSProperties = { fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 };
   const rankBtn = (
     <div style={{ marginBottom: 14 }}>
-      <label style={labelStyle}>ترتيب الأولوية</label>
+      <label style={labelStyle}>ترتيب الأولوية <span style={{ color: '#D23B45' }}>*</span></label>
       <button
         onClick={() => s.openRank()}
         style={{
@@ -650,7 +650,7 @@ function F2({
   );
   const sel = (label: string, key: string, opts: string[]) => (
     <div style={{ marginBottom: 14 }}>
-      <label style={labelStyle}>{label}</label>
+      <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
       <select value={gv(key)} onChange={(e) => setField(key, e.target.value)} style={inputStyle}>
         {opts.map((o) => (
           <option key={o}>{o}</option>
@@ -660,7 +660,7 @@ function F2({
   );
   const range = (label: string, key: string) => (
     <div style={{ marginBottom: 14 }}>
-      <label style={labelStyle}>{label}</label>
+      <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <input
           type="range"
@@ -715,7 +715,7 @@ function F2({
             <div style={cardTitle}>معلومات الأتمتة</div>
             {range('نسبة الأتمتة الحالية', 'automationPct')}
             <div style={{ marginBottom: 14 }}>
-              <label style={labelStyle}>نظام الأتمتة المستخدم</label>
+              <label style={labelStyle}>نظام الأتمتة المستخدم <span style={{ color: '#D23B45' }}>*</span></label>
               <input
                 value={gv('automationSystem')}
                 onChange={(e) => setField('automationSystem', e.target.value)}
@@ -732,7 +732,7 @@ function F2({
         <div style={cardStyle}>
           <div style={cardTitle}>تفاصيل الخدمة</div>
           <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>رحلة المتعامل / الخطوات الحالية</label>
+            <label style={labelStyle}>رحلة المتعامل / الخطوات الحالية <span style={{ color: '#D23B45' }}>*</span></label>
             <RichTextEditor
               value={gv('currentJourney')}
               onChange={(v) => setField('currentJourney', v)}
@@ -740,7 +740,7 @@ function F2({
             />
           </div>
           <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>نقاط الألم</label>
+            <label style={labelStyle}>نقاط الألم <span style={{ color: '#D23B45' }}>*</span></label>
             <RichTextEditor
               value={gv('painPoints')}
               onChange={(v) => setField('painPoints', v)}
@@ -748,7 +748,7 @@ function F2({
             />
           </div>
           <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>التحسين المتوقع</label>
+            <label style={labelStyle}>التحسين المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
             <RichTextEditor
               value={gv('expectedImprovement')}
               onChange={(v) => setField('expectedImprovement', v)}
@@ -758,7 +758,7 @@ function F2({
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label style={labelStyle}>مستوى الأثر المتوقع</label>
+              <label style={labelStyle}>مستوى الأثر المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
               <select value={gv('impact')} onChange={(e) => setField('impact', e.target.value)} style={inputStyle}>
                 {['منخفض', 'متوسط', 'عالٍ'].map((o) => (
                   <option key={o}>{o}</option>
@@ -766,7 +766,7 @@ function F2({
               </select>
             </div>
             <div>
-              <label style={labelStyle}>تاريخ الانتهاء المتوقع</label>
+              <label style={labelStyle}>تاريخ الانتهاء المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
               <input
                 type="date"
                 value={gv('endDate')}
@@ -792,7 +792,7 @@ function FOutcome({
   return (
     <div style={cardStyle}>
       <div style={{ marginBottom: 14 }}>
-        <label style={labelStyle}>المخرجات المتوقعة</label>
+        <label style={labelStyle}>المخرجات المتوقعة <span style={{ color: '#D23B45' }}>*</span></label>
         <RichTextEditor
           value={gv('expectedOutputs')}
           onChange={(v) => setField('expectedOutputs', v)}
@@ -802,7 +802,7 @@ function FOutcome({
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
-          <label style={{ ...labelStyle, minHeight: 38 }}>نسبة التحول المستهدفة باستخدام الذكاء الاصطناعي</label>
+          <label style={{ ...labelStyle, minHeight: 38 }}>نسبة التحول المستهدفة باستخدام الذكاء الاصطناعي <span style={{ color: '#D23B45' }}>*</span></label>
           <div
             style={{
               display: 'flex',
@@ -842,32 +842,17 @@ function FOutcome({
           </div>
         </div>
         <div>
-          <label style={{ ...labelStyle, minHeight: 38 }}>عدد نماذج وأنظمة الذكاء الاصطناعي المتوقعة</label>
-          <div style={{ position: 'relative' }}>
-            <input
-              type="number"
-              min={0}
-              value={gv('aiModels')}
-              onChange={(e) => setField('aiModels', e.target.value)}
-              style={{ ...inputStyle, padding: '11px 52px 11px 13px' }}
-            />
-            <span
-              style={{
-                position: 'absolute',
-                left: 13,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                fontSize: 12,
-                fontWeight: 700,
-                color: '#9AA6BC',
-              }}
-            >
-              نموذج
-            </span>
-          </div>
+          <label style={{ ...labelStyle, minHeight: 38 }}>عدد نماذج وأنظمة الذكاء الاصطناعي المتوقعة <span style={{ color: '#D23B45' }}>*</span></label>
+          <input
+            type="number"
+            min={0}
+            value={gv('aiModels')}
+            onChange={(e) => setField('aiModels', e.target.value)}
+            style={inputStyle}
+          />
         </div>
         <div>
-          <label style={labelStyle}>تاريخ الانتهاء المتوقع</label>
+          <label style={labelStyle}>تاريخ الانتهاء المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
           <input
             type="date"
             value={gv('endDate')}
@@ -893,10 +878,6 @@ function FBudget({
   void vm;
   return (
     <div style={cardStyle}>
-      <p style={{ fontSize: 11.5, color: '#9AA6BC', margin: '0 0 14px', lineHeight: 1.7 }}>
-        حدّد نطاق العمل التفصيلي وميزانية التنفيذ التقديرية وأرفق المستند الداعم — تُجمَع الميزانيات
-        تلقائياً على مستوى خطة الإطلاق.
-      </p>
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>
           نطاق العمل التفصيلي <span style={{ color: '#D23B45' }}>*</span>
@@ -920,7 +901,7 @@ function FBudget({
         />
       </div>
       <div>
-        <label style={labelStyle}>المستند المرفق</label>
+        <label style={labelStyle}>المستند المرفق <span style={{ color: '#D23B45' }}>*</span></label>
         {gv('scopeFile') ? (
           <div
             style={{
@@ -1047,7 +1028,7 @@ function FPhases({ vm }: { vm: VM }) {
       ) : (
       <div style={cardStyle}>
         <label style={labelStyle}>
-          اختر مرحلة الإطلاق <span style={{ color: '#D23B45' }}>*</span>
+          اختر مرحلة التنفيذ <span style={{ color: '#D23B45' }}>*</span>
         </label>
         <select
           value={draft?.execBatch || ''}
