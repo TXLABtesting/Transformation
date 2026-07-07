@@ -1313,7 +1313,7 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
 
   const mk = (i: Item) => {
     const cost = parseB(i.budget);
-    const nomName = i.funded?.by || i.nom?.by || '';
+    const nomName = i.nom?.by || i.funded?.by || '';
     const byCommittee = nomName === 'اللجنة الوطنية' || isComNom(i) || !!i.funded?.direct;
     return {
       id: i.id,

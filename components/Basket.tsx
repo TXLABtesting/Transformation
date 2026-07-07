@@ -226,7 +226,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 28px' }}>
           {b.items.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {b.items.map((it) => (
@@ -283,7 +283,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
 
         {/* Budget usage + total footer (committee) */}
         {b.showBudget && (
-          <div style={{ background: '#fff', borderTop: '1px solid #E7ECF4', padding: '16px 18px' }}>
+          <div style={{ background: '#fff', borderTop: '1px solid #E7ECF4', padding: '16px 18px 26px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                 <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>الميزانية المعتمدة</span>
