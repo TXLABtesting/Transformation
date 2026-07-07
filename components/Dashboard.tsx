@@ -680,6 +680,136 @@ function StageDistribution({ vm }: { vm: VM }) {
   );
 }
 
+// ===== خطة الإطلاق (Launch Plan) — entity representative, read-only =====
+// Phase → Launch → Entry, per the launch-plan handover. Only the status pill
+// carries colour; type chip stays neutral.
+const LPE_STATUS: Record<'dev' | 'launch' | 'done', { label: string; c: string; bg: string }> = {
+  dev: { label: 'قيد التطوير', c: '#1F5FE0', bg: '#EAF0FE' },
+  launch: { label: 'تم التطوير', c: '#3F82D8', bg: '#EAF3FD' },
+  done: { label: 'تم الإطلاق', c: '#0B8A4B', bg: '#E6F6EE' },
+};
+
+function LpEntryRow({ e, launched }: { e: VM['batchSummary'][number]['launches'][number]['items'][number]; launched: boolean }) {
+  const [hov, setHov] = useState(false);
+  const st = LPE_STATUS[launched ? 'done' : e.status];
+  return (
+    <div
+      onClick={e.onOpen}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
+        border: '1px solid ' + (hov ? '#C7D6EE' : '#EEF1F7'), borderRadius: 11,
+        background: hov ? '#F4F8FE' : '#FBFCFE', cursor: 'pointer', transition: 'background .12s,border-color .12s',
+      }}
+    >
+      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</span>
+      <span style={{ flex: 'none', fontSize: 11, fontWeight: 700, color: '#64748B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>{e.typeLabel}</span>
+      <span style={{ flex: 'none', fontSize: 11, fontWeight: 800, color: st.c, background: st.bg, borderRadius: 999, padding: '4px 11px' }}>{st.label}</span>
+      <Icon d="M15 18l-6-6 6-6" size={13} color="#AEB8C7" />
+    </div>
+  );
+}
+
+function LpLaunchCard({ l, idx }: { l: VM['batchSummary'][number]['launches'][number]; idx: number }) {
+  const [open, setOpen] = useState(false);
+  const [hov, setHov] = useState(false);
+  return (
+    <div style={{ border: '1px solid #E6EBF3', borderRadius: 14, background: '#fff', overflow: 'hidden' }}>
+      <div
+        onClick={() => setOpen((o) => !o)}
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => setHov(false)}
+        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', cursor: 'pointer', background: hov ? '#FAFBFE' : '#fff', transition: 'background .12s' }}
+      >
+        <Icon d={open ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} size={17} color="#AEB8C7" />
+        <span style={{ width: 38, height: 38, flex: 'none', borderRadius: 11, background: '#EAF0FE', color: '#2563EB', fontWeight: 900, fontSize: 15, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</span>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{l.title}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#5A6B86', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>
+            <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" size={11} color="#5A6B86" />
+            إجمالي المدخلات <b style={{ color: '#13213C', fontWeight: 900 }}>{l.count}</b>
+          </span>
+        </div>
+        <div style={{ flex: 'none', textAlign: 'left' }}>
+          <div style={{ fontSize: 10.5, color: '#AEB8C7', fontWeight: 400 }}>ميزانية الإطلاق</div>
+          <div style={{ fontSize: 15, fontWeight: 900, color: '#13213C', marginTop: 2 }}>{l.budgetLabel}</div>
+        </div>
+      </div>
+      {open && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 15px 15px', borderTop: '1px solid #ECF0F6' }}>
+          <div style={{ height: 4 }} />
+          {l.items.map((e) => (
+            <LpEntryRow key={e.id} e={e} launched={l.launched} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LpPhaseCard({ b }: { b: VM['batchSummary'][number] }) {
+  const [showAll, setShowAll] = useState(false);
+  const launches = b.launches;
+  const visible = showAll ? launches : launches.slice(0, 3);
+  return (
+    <div style={{ background: '#fff', border: '1px solid #EAEEF5', borderRadius: 16, padding: 22 }}>
+      {/* phase header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', paddingBottom: 14, borderBottom: '1px solid #EEF1F7' }}>
+        <span className="hd" style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>{b.displayName}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#8A97AD', fontWeight: 400 }}>
+          <Icon d={STAGE_CAL} size={13} color="#8A97AD" />
+          {b.period}
+        </span>
+        <div style={{ flex: 1 }} />
+        <span style={{ flex: 'none', fontSize: 12, fontWeight: 800, color: '#2563EB', background: '#EAF0FE', borderRadius: 999, padding: '5px 13px' }}>{launches.length} إطلاق</span>
+      </div>
+      {/* section label */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '16px 0 12px' }}>
+        <span style={{ width: 3, height: 16, borderRadius: 2, background: '#7C93F5' }} />
+        <span className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>الإطلاقات المجدولة</span>
+      </div>
+      {launches.length === 0 ? (
+        <div style={{ border: '1px dashed #D8DFEB', borderRadius: 12, padding: '20px 16px', textAlign: 'center', fontSize: 12.5, color: '#8A97AD', fontWeight: 400 }}>
+          لا توجد إطلاقات مجدولة في هذه المرحلة بعد
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {visible.map((l, i) => (
+            <LpLaunchCard key={l.id} l={l} idx={i} />
+          ))}
+          {launches.length > 3 && (
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              style={{ width: '100%', background: '#F5F8FD', border: '1px solid #E6EBF3', borderRadius: 11, padding: '10px 0', fontSize: 12.5, fontWeight: 800, color: '#1D4ED8', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              {showAll ? 'عرض أقل' : `عرض المزيد (${launches.length - 3})`}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LaunchPlanEntity({ vm }: { vm: VM }) {
+  return (
+    <>
+      <div>
+        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>خطة الإطلاق</div>
+        <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 400, marginTop: 3, maxWidth: 720, lineHeight: 1.7 }}>
+          جدولة مدخلات الجهة المعتمدة ضمن الإطلاقات عبر مراحل التنفيذ الأربع، مع ميزانية كل إطلاق وحالة مدخلاته.
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {vm.batchSummary.map((b) => (
+          <LpPhaseCard key={b.name} b={b} />
+        ))}
+      </div>
+    </>
+  );
+}
+
 // small ⓘ affordance: hover / tap reveals a plain-language explanation
 function InfoTip({ text, dark, flip }: { text: string; dark?: boolean; flip?: boolean }) {
   // flip: the popup grows to the LEFT by default (RTL); near the screen's
@@ -2316,7 +2446,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           )}
 
           {/* ===== LAUNCH PLANS: four big مرحلة cards ===== */}
-          {vm.navSection === 'launchplans' && vm.role === 'entity' && <StageDistribution vm={vm} />}
+          {vm.navSection === 'launchplans' && vm.role === 'entity' && <LaunchPlanEntity vm={vm} />}
           {vm.navSection === 'launchplans' && vm.role !== 'entity' && (
             <>
               <div>

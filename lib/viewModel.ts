@@ -427,14 +427,23 @@ function build(s: Store) {
             title: p.title || 'خطة إطلاق جديدة',
             execLabel: visCost > 0 ? formatMoney(visCost) : '—',
             launchLabel: parseBudget(p.launchBudget) > 0 ? formatMoney(parseBudget(p.launchBudget)) : '',
-            items: visItems.map((i) => ({
-              id: i.id,
-              title: i.title,
-              typeLabel: typeLabel(i.type),
-              budgetLabel: (i.budget || '').trim() || 'لم يتم تحديد الميزانية',
-              launched: devStatusOfItem(i) === 'launched',
-              onOpen: () => s.openDetail(i.id),
-            })),
+            // launch-plan (خطة الإطلاق) display fields
+            budgetLabel: parseBudget(p.launchBudget) > 0 ? formatMoney(parseBudget(p.launchBudget)) : '—',
+            count: visItems.length,
+            // launch-together rule: the whole launch is launched only when every entry is
+            launched: visItems.length > 0 && visItems.every((i) => devStatusOfItem(i) === 'launched'),
+            items: visItems.map((i) => {
+              const ds = devStatusOfItem(i);
+              return {
+                id: i.id,
+                title: i.title,
+                typeLabel: typeLabel(i.type),
+                budgetLabel: (i.budget || '').trim() || 'لم يتم تحديد الميزانية',
+                launched: ds === 'launched',
+                status: (ds === 'launched' ? 'done' : ds === 'developed' ? 'launch' : 'dev') as 'dev' | 'launch' | 'done',
+                onOpen: () => s.openDetail(i.id),
+              };
+            }),
           };
         })
         .filter((l) => l.items.length > 0),
