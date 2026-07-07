@@ -219,9 +219,13 @@ function EntityOverview({ vm }: { vm: VM }) {
   const [stageTab, setStageTab] = useState<'all' | 'projinit' | 'operation' | 'service'>('all');
   const [hovBar, setHovBar] = useState<string | null>(null);
   const isCoord = vm.role === 'coord';
-  const sec2Cards = isCoord ? vm.typeOverviewCards : vm.streamOverviewCards;
-  const sec2Title = isCoord ? 'التوزيع حسب نوع المدخل' : 'نظرة عامة حسب المسارات';
-  const sec2Sub = isCoord ? 'تفاصيل كل نوع: المدخلات، المراحل، والتكاليف' : 'توزيع المدخلات والتكاليف على المسارات الخمسة';
+  const isPath = vm.role === 'path';
+  const useTypes = isCoord || isPath;
+  const [hovNom, setHovNom] = useState<string | null>(null);
+  const nc = vm.nomCard;
+  const sec2Cards = useTypes ? vm.typeOverviewCards : vm.streamOverviewCards;
+  const sec2Title = useTypes ? 'التوزيع حسب نوع المدخل' : 'مسارات الجهة';
+  const sec2Sub = useTypes ? 'تفاصيل كل نوع: المدخلات، المراحل، والتكاليف' : 'متابعة المدخلات والتكاليف ومراحل التقدم لكل مسار.';
   const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
   const money = (label: string) => {
     const p = label.split(' ');
@@ -232,11 +236,11 @@ function EntityOverview({ vm }: { vm: VM }) {
 
   // inputs legend items (hoverable)
   const inItems = [
-    { key: 'capable', label: 'قابل للتحويل', v: ic.capable, dot: '#2563EB', square: true, bold: true },
+    { key: 'capable', label: 'جاهزة للتحويل', v: ic.capable, dot: '#2563EB', square: true, bold: true },
     { key: 'underDev', label: 'قيد التطوير', v: ic.underDev, dot: '#3B82F6', square: false, bold: false, sub: true },
     { key: 'developed', label: 'تم التطوير', v: ic.developed, dot: '#60A5FA', square: false, bold: false, sub: true },
     { key: 'launched', label: 'تم الإطلاق', v: ic.launched, dot: '#93C5FD', square: false, bold: false, sub: true },
-    { key: 'notCapable', label: 'غير قابل للتحويل', v: ic.notCapable, dot: '#C7D9F5', square: true, bold: true, divider: true },
+    { key: 'notCapable', label: 'غير قابلة للتحويل', v: ic.notCapable, dot: '#C7D9F5', square: true, bold: true, divider: true },
   ];
   const inHov = inItems.find((x) => x.key === hovIn);
   const inDonut = inHov
@@ -257,8 +261,8 @@ function EntityOverview({ vm }: { vm: VM }) {
 
   // cost legend items (hoverable)
   const costItems = [
-    { key: 'exec', label: 'تكلفة التنفيذ الإجمالية', short: 'تكلفة التنفيذ', val: cc.execLabel, pct: cc.execPct, frac: cc.execFrac, c: '#2563EB' },
-    { key: 'launch', label: 'تكلفة الإطلاق الإجمالية', short: 'تكلفة الإطلاق', val: cc.launchLabel, pct: cc.launchPct, frac: 1 - cc.execFrac, c: '#BFD3F5' },
+    { key: 'exec', label: 'تكلفة التنفيذ', short: 'تكلفة التنفيذ', val: cc.execLabel, pct: cc.execPct, frac: cc.execFrac, c: '#2563EB' },
+    { key: 'launch', label: 'تكلفة الإطلاق', short: 'تكلفة الإطلاق', val: cc.launchLabel, pct: cc.launchPct, frac: 1 - cc.execFrac, c: '#BFD3F5' },
   ];
   const costHov = costItems.find((x) => x.key === hovCost);
   const costM = costHov ? money(costHov.val) : costTot;
@@ -272,7 +276,7 @@ function EntityOverview({ vm }: { vm: VM }) {
       <div data-r="dash-top" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* --- إجمالي المدخلات (right) --- */}
         <div style={cardStyle}>
-          <EoCardHead title="إجمالي المدخلات" iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
+          <EoCardHead title={isPath ? 'إجمالي المدخلات' : 'مدخلات الجهة'} iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
             <EoDonutSeg segs={inSegs} dim={hovIn} center={inDonut.center} sub={inDonut.sub} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -307,9 +311,62 @@ function EntityOverview({ vm }: { vm: VM }) {
           </div>
         </div>
 
-        {/* --- التكلفة الإجمالية (left) --- */}
+        {/* --- left card: nominations summary (path) OR cost (entity/coord) --- */}
+        {isPath ? (() => {
+          const nomItems = [
+            { key: 'nominated', label: 'المرشّحة من قِبلي', v: nc.nominated, dot: '#2563EB', square: true, bold: true },
+            { key: 'funded', label: 'معتمدة للتمويل', v: nc.funded, dot: '#12B76A', square: false, bold: false, sub: true },
+            { key: 'pending', label: 'قيد مراجعة اللجنة', v: nc.pending, dot: '#E68A1E', square: false, bold: false, sub: true },
+            { key: 'notNominated', label: 'غير مرشّحة', v: nc.notNominated, dot: '#C7D9F5', square: true, bold: true, divider: true },
+          ];
+          const nomHov = nomItems.find((x) => x.key === hovNom);
+          const nomCenter = nomHov ? { center: String(nomHov.v), sub: nomHov.label } : { center: String(nc.total), sub: 'إجمالي المدخلات' };
+          const t = nc.total || 1;
+          const nomSegs = [
+            { key: 'funded', frac: nc.funded / t, color: '#12B76A' },
+            { key: 'pending', frac: nc.pending / t, color: '#E68A1E' },
+            { key: 'notNominated', frac: nc.notNominated / t, color: '#C7D9F5' },
+          ].filter((x) => x.frac > 0.0001);
+          return (
+            <div style={cardStyle}>
+              <EoCardHead title="ملخّص الترشيحات" iconD={EO_WALLET} onArrow={() => s.setNavSection('all')} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                <EoDonutSeg segs={nomSegs} dim={hovNom === 'nominated' ? null : hovNom} center={nomCenter.center} sub={nomCenter.sub} />
+                <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {nomItems.map((r) => (
+                    <Fragment key={r.key}>
+                      {r.divider && <div style={{ height: 1, background: '#EEF1F6', margin: '5px 0' }} />}
+                      <div
+                        onMouseEnter={() => setHovNom(r.key)}
+                        onMouseLeave={() => setHovNom(null)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 10,
+                          padding: '6px 10px',
+                          marginRight: r.sub ? 12 : 0,
+                          borderRadius: 9,
+                          background: hovNom === r.key ? '#EEF3FC' : 'transparent',
+                          cursor: 'default',
+                          transition: 'background .12s',
+                        }}
+                      >
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: r.square ? 3 : '50%', background: r.dot, flex: 'none' }} />
+                          <span className={r.bold ? 'hd' : undefined} style={{ fontSize: r.bold ? 13.5 : 12.5, fontWeight: r.bold ? 800 : 400, color: r.bold ? '#13213C' : '#6B7A93' }}>{r.label}</span>
+                        </span>
+                        <span style={{ fontSize: r.bold ? 15 : 13, fontWeight: 800, color: '#13213C' }}>{r.v}</span>
+                      </div>
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })() : (
         <div style={cardStyle}>
-          <EoCardHead title="التكلفة الإجمالية" iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
+          <EoCardHead title="التكلفة التقديرية" iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
             <EoDonut frac={costDonut.frac} dark="#2563EB" light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -344,6 +401,7 @@ function EntityOverview({ vm }: { vm: VM }) {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* ===== Section 2: overview cards (by stream for entity · by type for coord) ===== */}
@@ -362,11 +420,11 @@ function EntityOverview({ vm }: { vm: VM }) {
             </div>
             <div style={{ height: 1, background: '#EEF1F6' }} />
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-              <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>إجمالي المدخلات</span>
+              <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>عدد المدخلات</span>
               <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.total}</span>
             </div>
             <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
-              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>إجمالي المدخلات حسب المرحلة</div>
+              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>المدخلات حسب المرحلة</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {(() => {
                   const maxN = Math.max(...st.stages.map((x) => x.n), 1);
@@ -388,16 +446,16 @@ function EntityOverview({ vm }: { vm: VM }) {
             <div style={{ height: 1, background: '#EEF1F6', marginTop: 'auto' }} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ الإجمالية</span>
+                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ</span>
                 <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.execLabel}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة الإطلاق الإجمالية</span>
+                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة الإطلاق</span>
                 <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.launchLabel}</span>
               </div>
               <div style={{ height: 1, background: '#EEF1F6', margin: '2px 0' }} />
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>التكلفة الإجمالية</span>
+                <span className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>إجمالي التكلفة</span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB' }}>{st.totalLabel}</span>
               </div>
             </div>
@@ -405,15 +463,15 @@ function EntityOverview({ vm }: { vm: VM }) {
               onClick={st.onOpen}
               style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              عرض المزيد
+              تفاصيل المسار
               <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
             </button>
           </div>
         ))}
       </div>
 
-      {/* ===== Section 3: التوزيع حسب المرحلة (coordinator only) ===== */}
-      {isCoord && (() => {
+      {/* ===== Section 3: التوزيع حسب المرحلة (coordinator / path) ===== */}
+      {useTypes && (() => {
         const sd = vm.stageDist[stageTab];
         const tabs = [
           { id: 'all', label: 'الكل' },
@@ -482,13 +540,86 @@ function EntityOverview({ vm }: { vm: VM }) {
 
 // Execution & launch stages — distribution of inputs across the four stages
 // (entity representative view)
+const STAGE_CAL = 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z';
+const STAGE_STATUSES = [
+  { label: 'قيد التطوير', c: '#3B6FE8', key: 'underDev' as const },
+  { label: 'تم التطوير', c: '#7BA3F5', key: 'developed' as const },
+  { label: 'تم الإطلاق', c: '#C7D9F5', key: 'launched' as const },
+];
+
+function StageCard({ b }: { b: VM['batchSummary'][number] }) {
+  const [hov, setHov] = useState<string | null>(null);
+  const tot = b.count || 1;
+  const segs = STAGE_STATUSES.map((s) => ({ key: s.key, frac: b[s.key] / tot, color: s.c })).filter((x) => x.frac > 0.0001);
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+        <div>
+          <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{b.displayName}</div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 5 }}>
+            <Icon d={STAGE_CAL} size={13} color="#9AA6BC" />
+            {b.period}
+          </div>
+        </div>
+        <button onClick={b.onOpenAll} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#1D4ED8', fontWeight: 800, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+          عرض المدخلات
+          <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
+        </button>
+      </div>
+      {/* donut (right) + status legend (left), with hover */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+        <EoDonutSeg segs={segs} dim={hov} center={String(b.count)} sub="مدخلات" />
+        <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {STAGE_STATUSES.map((r) => (
+            <div
+              key={r.label}
+              onMouseEnter={() => setHov(r.key)}
+              onMouseLeave={() => setHov(null)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '4px 8px', borderRadius: 8, background: hov === r.key ? '#EEF3FC' : 'transparent', cursor: 'default', transition: 'background .12s' }}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 9, height: 9, borderRadius: '50%', background: r.c, flex: 'none' }} />
+                <span style={{ fontSize: 12.5, color: '#54627B', fontWeight: 400 }}>{r.label}</span>
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{b[r.key]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* نوع المدخلات */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>نوع المدخلات</span>
+        <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+          {b.typeBreak.map((tp) => (
+            <span key={tp.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#13213C', color: '#fff', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
+              {tp.label} <b style={{ color: '#BFD3F5' }}>{tp.n}</b>
+            </span>
+          ))}
+        </div>
+      </div>
+      {/* المسار */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>المسار</span>
+        <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+          {b.streamBreak.map((st) => (
+            <span key={st.short} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#F4F7FC', border: '1px solid #E7ECF4', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.color, flex: 'none' }} />
+              {st.short} <b style={{ color: '#13213C' }}>{st.n}</b>
+            </span>
+          ))}
+        </div>
+      </div>
+      {/* cost footer */}
+      <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 'auto' }}>
+        <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ التقديرية للمرحلة</span>
+        <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{b.costLabel}</span>
+      </div>
+    </div>
+  );
+}
+
 function StageDistribution({ vm }: { vm: VM }) {
-  const CAL = 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z';
-  const statuses = [
-    { label: 'قيد التطوير', c: '#2563EB', key: 'underDev' as const },
-    { label: 'تم التطوير', c: '#60A5FA', key: 'developed' as const },
-    { label: 'تم الإطلاق', c: '#BFD3F5', key: 'launched' as const },
-  ];
   return (
     <>
       <div>
@@ -498,74 +629,9 @@ function StageDistribution({ vm }: { vm: VM }) {
         </div>
       </div>
       <div data-tour="stages" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(440px,1fr))', gap: 16 }}>
-        {vm.batchSummary.map((b) => {
-          const t = b.count || 1;
-          const segs = statuses.map((s) => ({ key: s.key, frac: (b[s.key] as number) / t, color: s.c })).filter((x) => x.frac > 0.0001);
-          return (
-            <div key={b.name} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* header */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                <div>
-                  <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{b.displayName}</div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 5 }}>
-                    <Icon d={CAL} size={13} color="#9AA6BC" />
-                    {b.period}
-                  </div>
-                </div>
-                <button
-                  onClick={b.onOpenAll}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#1D4ED8', fontWeight: 800, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  عرض المدخلات
-                  <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
-                </button>
-              </div>
-              {/* donut + status legend */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column', gap: 11 }}>
-                  {statuses.map((r) => (
-                    <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 9, height: 9, borderRadius: '50%', background: r.c, flex: 'none' }} />
-                        <span style={{ fontSize: 12.5, color: '#54627B', fontWeight: 400 }}>{r.label}</span>
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{b[r.key] as number}</span>
-                    </div>
-                  ))}
-                </div>
-                <EoDonutSeg segs={segs} center={String(b.count)} sub="مدخلات" />
-              </div>
-              {/* نوع المدخلات */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>نوع المدخلات</span>
-                <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-                  {b.typeBreak.map((tp) => (
-                    <span key={tp.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#13213C', color: '#fff', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
-                      {tp.label} <b style={{ color: '#BFD3F5' }}>{tp.n}</b>
-                    </span>
-                  ))}
-                </div>
-              </div>
-              {/* المسار */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>المسار</span>
-                <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-                  {b.streamBreak.map((st) => (
-                    <span key={st.short} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#F4F7FC', border: '1px solid #E7ECF4', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.color, flex: 'none' }} />
-                      {st.short} <b style={{ color: '#13213C' }}>{st.n}</b>
-                    </span>
-                  ))}
-                </div>
-              </div>
-              {/* cost footer */}
-              <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 'auto' }}>
-                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ التقديرية للمرحلة</span>
-                <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{b.costLabel}</span>
-              </div>
-            </div>
-          );
-        })}
+        {vm.batchSummary.map((b) => (
+          <StageCard key={b.name} b={b} />
+        ))}
       </div>
     </>
   );
@@ -1649,7 +1715,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           <div data-r="railhelp" style={{ padding: 12 }}>
             <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة' : 'دليل الاستخدام'}</div>
+                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة' : vm.role === 'entity' ? 'دليل ممثل الجهة' : 'دليل الاستخدام'}</div>
                 <span
                   style={{
                     flex: 'none',
@@ -1667,7 +1733,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
+                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? 'إرشادات متابعة المسارات وتحديث حالة المدخلات.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
@@ -1723,7 +1789,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               fontWeight: 800,
               fontSize: 13.5,
               cursor: 'pointer',
-              boxShadow: '0 10px 22px -10px rgba(11,27,58,.8)',
+              boxShadow: '0 2px 6px -2px rgba(37,99,235,.35)',
               fontFamily: 'inherit',
             }}
           >
@@ -1735,10 +1801,10 @@ export function Dashboard({ vm }: { vm: VM }) {
 
           {/* Entity overview — redesigned first section (cost + inputs donuts)
               and second section (per-stream cards) */}
-          {(vm.role === 'entity' || vm.role === 'coord') && <EntityOverview vm={vm} />}
+          {(vm.role === 'entity' || vm.role === 'coord' || vm.role === 'path') && <EntityOverview vm={vm} />}
 
           {/* KPI bands (coord / path): counts band only */}
-          {vm.notAiRole && vm.role !== 'entity' && vm.role !== 'coord' && (
+          {vm.notAiRole && vm.role !== 'entity' && vm.role !== 'coord' && vm.role !== 'path' && (
             <div data-tour="kpis" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <SectionLabel>الأعداد الإجمالية</SectionLabel>
               <div data-r="kpirow">
@@ -2083,7 +2149,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       fontWeight: 800,
                       fontSize: 13.5,
                       cursor: 'pointer',
-                      boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
+                      boxShadow: '0 2px 6px -2px rgba(37,99,235,.35)',
                       fontFamily: 'inherit',
                     }}
                   >

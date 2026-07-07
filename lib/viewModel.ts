@@ -210,6 +210,16 @@ function build(s: Store) {
     notCapable: notCap,
     capFrac: roleBase.length ? Math.min(0.94, Math.max(0.06, (roleBase.length - notCap) / roleBase.length)) : 0.75,
   };
+  // nominations summary (stream head view) — what I nominated and its status
+  const nomFundedN = roleBase.filter((i) => !!i.funded).length;
+  const nomPendingN = roleBase.filter((i) => !!i.nom && !i.funded).length;
+  const nomCard = {
+    total: roleBase.length,
+    nominated: nomFundedN + nomPendingN,
+    funded: nomFundedN,
+    pending: nomPendingN,
+    notNominated: Math.max(0, roleBase.length - nomFundedN - nomPendingN),
+  };
   // per-stream cards (نظرة عامة حسب المسارات) — all five streams
   const streamOverviewCards = PATHS.map((p) => {
     const inStream = roleBase.filter((i) => i.path === p.id);
@@ -719,12 +729,19 @@ function build(s: Store) {
     title: 'تقدم مشروع الذكاء الاصطناعي المساعد',
     // big page heading shown ABOVE the blue box; the coordinator sees his stream
     pageTitle:
-      rawRole === 'coord'
+      rawRole === 'coord' || rawRole === 'path'
         ? 'مسار ' + pathById(myPath).name
-        : 'مشروع الذكاء الاصطناعي المساعد',
+        : rawRole === 'entity'
+          ? 'لوحة متابعة مدخلات الجهة'
+          : 'مشروع الذكاء الاصطناعي المساعد',
     // small title inside the blue box
     boxTitle: 'ملخص التقدم',
-    subtitle: 'رحلة منظمة من الحصر والاختيار إلى التنفيذ وقياس الأثر لضمان تحول فعّال ومؤثر',
+    subtitle:
+      rawRole === 'entity'
+        ? 'متابعة مدخلات الجهة حسب المسارات ومراحل التقدم.'
+        : rawRole === 'path'
+          ? 'مراجعة مدخلات جميع الجهات ضمن المسار وترشيح الأنسب للتمويل.'
+          : 'رحلة منظمة من الحصر والاختيار إلى التنفيذ وقياس الأثر لضمان تحول فعّال ومؤثر',
     firstMsName: firstMs.name,
     firstMsPeriod: firstMs.period,
     curPhaseDeadlineFmt: fmtDate(firstMs.end),
@@ -812,7 +829,7 @@ function build(s: Store) {
     basketOpen: ui.basketOpen,
     // banner + steps — the program journey banner is for the working roles
     // (entity/coord); oversight roles (committee, stream rep) don't see it
-    showProgramBanner: rawRole === 'entity' || rawRole === 'coord',
+    showProgramBanner: rawRole === 'entity' || rawRole === 'coord' || rawRole === 'path',
     banner,
     programSteps,
     isAiRole,
@@ -839,6 +856,7 @@ function build(s: Store) {
     launchBudgetTotal,
     costCard,
     inputsCard,
+    nomCard,
     streamOverviewCards,
     typeOverviewCards,
     stageDist,
