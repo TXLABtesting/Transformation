@@ -151,11 +151,11 @@ function EoCardHead({ title, iconD, onArrow }: { title: string; iconD: string; o
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-        <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{title}</span>
-        <InfoTip text={title} />
         <span style={{ width: 36, height: 36, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
           <Icon d={iconD} size={18} color="#2563EB" />
         </span>
+        <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{title}</span>
+        <InfoTip text={title} />
       </div>
       <button
         onClick={onArrow}
@@ -214,6 +214,7 @@ function EntityOverview({ vm }: { vm: VM }) {
         <div style={cardStyle}>
           <EoCardHead title="إجمالي المدخلات" iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <EoDonut frac={inDonut.frac} dark="#2563EB" light={inDonut.light} center={inDonut.center} sub={inDonut.sub} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 3 }}>
               {inItems.map((r) => (
                 <Fragment key={r.key}>
@@ -243,7 +244,6 @@ function EntityOverview({ vm }: { vm: VM }) {
                 </Fragment>
               ))}
             </div>
-            <EoDonut frac={inDonut.frac} dark="#2563EB" light={inDonut.light} center={inDonut.center} sub={inDonut.sub} />
           </div>
         </div>
 
@@ -251,6 +251,7 @@ function EntityOverview({ vm }: { vm: VM }) {
         <div style={cardStyle}>
           <EoCardHead title="التكلفة الإجمالية" iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <EoDonut frac={costDonut.frac} dark="#2563EB" light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {costItems.map((r) => (
                 <div
@@ -281,7 +282,6 @@ function EntityOverview({ vm }: { vm: VM }) {
                 </div>
               ))}
             </div>
-            <EoDonut frac={costDonut.frac} dark="#2563EB" light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} />
           </div>
         </div>
       </div>
@@ -301,33 +301,33 @@ function EntityOverview({ vm }: { vm: VM }) {
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-              <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.total}</span>
               <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>إجمالي المدخلات</span>
+              <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.total}</span>
             </div>
             <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '10px 12px' }}>
               <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>إجمالي المدخلات حسب المرحلة</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                 {st.stages.map((sg) => (
                   <div key={sg.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{sg.n}</span>
                     <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400 }}>{sg.label}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{sg.n}</span>
                   </div>
                 ))}
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.execLabel}</span>
                 <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ الإجمالية</span>
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.execLabel}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.launchLabel}</span>
                 <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة الإطلاق الإجمالية</span>
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.launchLabel}</span>
               </div>
               <div style={{ height: 1, background: '#EEF1F6', margin: '2px 0' }} />
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB' }}>{st.totalLabel}</span>
                 <span className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>التكلفة الإجمالية</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB' }}>{st.totalLabel}</span>
               </div>
             </div>
             <button
