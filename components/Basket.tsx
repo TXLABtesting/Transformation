@@ -184,20 +184,23 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                     flex: 1,
                     border: 'none',
                     borderRadius: 10,
-                    padding: '9px 6px',
-                    display: 'inline-flex',
+                    padding: '8px 6px',
+                    minHeight: 46,
+                    display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 7,
+                    gap: 4,
                     fontWeight: 800,
-                    fontSize: 12,
+                    fontSize: 10.5,
+                    lineHeight: 1.3,
+                    textAlign: 'center',
                     cursor: 'pointer',
                     fontFamily: 'inherit',
                     background: on ? '#0F1F3D' : '#F1F5FB',
                     color: on ? '#fff' : '#54627B',
                   }}
                 >
-                  {t.label}
                   <span
                     style={{
                       minWidth: 17,
@@ -215,6 +218,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                   >
                     {t.count}
                   </span>
+                  {t.label}
                 </button>
               );
             })}
@@ -238,6 +242,12 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                     </div>
                     <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C', lineHeight: 1.4, marginTop: 10 }}>{it.title}</div>
                     <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>{it.entity} · {it.pathName}</div>
+                    {it.nomByLine && (
+                      <div style={{ fontSize: 11.5, color: '#54627B', fontWeight: 700, marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563EB', flex: 'none' }} />
+                        {it.nomByLine}
+                      </div>
+                    )}
                   </div>
                   {it.approved ? (
                     <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#E7F7EE', color: '#0B8A4B', borderRadius: 11, padding: '11px 12px', fontSize: 12.5, fontWeight: 800 }}>

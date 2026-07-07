@@ -2021,7 +2021,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               ) : viewMode === 'list' ? (
                 <ListView cards={vm.sectionCards} />
               ) : (
-                <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+                <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
                   {vm.sectionCards.map((c) => (
                     <CardItem key={c.id} c={c} />
                   ))}
@@ -3162,10 +3162,10 @@ function CardItem({ c }: { c: CardVM }) {
         background: '#fff',
         border: '1px solid #E7ECF4',
         borderRadius: 16,
-        padding: 16,
+        padding: 18,
         display: 'flex',
         flexDirection: 'column',
-        gap: 11,
+        gap: 13,
         cursor: 'pointer',
         transition: 'box-shadow .15s,transform .15s',
         ...(hover
@@ -3436,27 +3436,7 @@ function CardItem({ c }: { c: CardVM }) {
           </span>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: c.scoreColor }}>{c.scoreLabel}</div>
-            <div style={{ fontSize: 10, color: '#9AA6BC', fontWeight: 400, lineHeight: 1.4 }}>{c.scoreExpl}</div>
           </div>
-        </div>
-      )}
-
-      {/* launch plan meta (batch already lives in the status chip) */}
-      {c.launchLabel && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: -2 }}>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              fontSize: 11,
-              fontWeight: 700,
-              color: '#54627B',
-            }}
-          >
-            <Icon d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" size={12} color="#8A97AD" />
-            الإطلاق: {c.launchLabel}
-          </span>
         </div>
       )}
 
@@ -3621,18 +3601,10 @@ function CardItem({ c }: { c: CardVM }) {
 
       {/* Nominated state */}
       {c.isNominated && (
-        <div
-          style={{
-            borderTop: '1px solid #F0F3F8',
-            paddingTop: 11,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-          }}
-        >
+        <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 11, display: 'flex', flexDirection: 'column', gap: 9 }}>
           <span
             style={{
+              alignSelf: 'flex-start',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
@@ -3647,6 +3619,49 @@ function CardItem({ c }: { c: CardVM }) {
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563EB' }} />
             {c.nomLabel}
           </span>
+          {c.canFundNom && (
+            <div style={{ display: 'flex', gap: 7 }}>
+              <button
+                onClick={(e) => {
+                  stop(e);
+                  c.onFundNom();
+                }}
+                style={{
+                  flex: 1,
+                  background: 'linear-gradient(180deg,#12B26F,#0B8A4B)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 9,
+                  padding: '9px 8px',
+                  fontWeight: 800,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                اعتماد التمويل
+              </button>
+              <button
+                onClick={(e) => {
+                  stop(e);
+                  c.onDeclineNom();
+                }}
+                style={{
+                  background: '#fff',
+                  border: '1px solid #F1D4D7',
+                  color: '#DC2B38',
+                  borderRadius: 9,
+                  padding: '9px 15px',
+                  fontWeight: 800,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                رفض الاعتماد
+              </button>
+            </div>
+          )}
           {c.canWithdrawNom && (
             <button
               onClick={(e) => {
@@ -3654,37 +3669,19 @@ function CardItem({ c }: { c: CardVM }) {
                 c.onWithdrawNom();
               }}
               style={{
+                alignSelf: 'flex-start',
                 background: '#fff',
                 border: '1px solid #E7ECF4',
                 color: '#54627B',
-                borderRadius: 8,
-                padding: '6px 11px',
+                borderRadius: 9,
+                padding: '7px 14px',
                 fontWeight: 800,
-                fontSize: 11,
+                fontSize: 11.5,
                 cursor: 'pointer',
+                fontFamily: 'inherit',
               }}
             >
-              سحب
-            </button>
-          )}
-          {c.canDeclineNom && (
-            <button
-              onClick={(e) => {
-                stop(e);
-                c.onDeclineNom();
-              }}
-              style={{
-                background: '#fff',
-                border: '1px solid #F1D4D7',
-                color: '#C0303B',
-                borderRadius: 8,
-                padding: '6px 11px',
-                fontWeight: 800,
-                fontSize: 11,
-                cursor: 'pointer',
-              }}
-            >
-              رفض الترشيح
+              سحب الترشيح
             </button>
           )}
         </div>

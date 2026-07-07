@@ -503,29 +503,53 @@ function build(s: Store) {
           : i.type === 'service';
   const roleStreams =
     rawRole === 'coord' || rawRole === 'path' ? PATHS.filter((p) => p.id === myPath) : PATHS;
+  // Icons (mirroring the side-menu design)
+  const NAV_HOME = 'M3 10.5 12 3l9 7.5M5 9.5V21h5v-6h4v6h5V9.5';
+  const NAV_DOTS = 'M5 6h.01M12 6h.01M19 6h.01M5 12h.01M12 12h.01M19 12h.01M5 18h.01M12 18h.01M19 18h.01';
+  const NAV_FOLDER = 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z';
+  const NAV_SLIDERS = 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6';
+  const NAV_GRID4 = 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z';
+  const NAV_CAL = 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z';
+  const NAV_BUILDING = 'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01';
+  const NAV_PEOPLE = 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75';
+
+  // «الكل» sub-menu: entity rep + committee drill down by STREAM (full names);
+  // coordinator + stream head drill down by input TYPE
+  const streamSub = rawRole === 'entity' || rawRole === 'ai';
+  const subNav = streamSub
+    ? roleStreams.map((p) => ({
+        key: 'stream:' + p.id,
+        label: p.name,
+        icon: PIC[p.id],
+        sub: true,
+        active: navSection === 'all' && navStream === p.id,
+        onClick: () => {
+          s.setNavSection('all');
+          s.setNavStream(p.id);
+        },
+      }))
+    : [
+        { key: 'projects', label: 'المشاريع والمبادرات', icon: NAV_FOLDER, sub: true },
+        ...(roleStreams.some((p) => streamHasType(p.id, 'operation'))
+          ? [{ key: 'operations', label: 'العمليات', icon: NAV_SLIDERS, sub: true }]
+          : []),
+        ...(roleStreams.some((p) => streamHasType(p.id, 'service'))
+          ? [{ key: 'services', label: 'الخدمات', icon: NAV_GRID4, sub: true }]
+          : []),
+      ];
+
   const navItems = [
-    { key: 'overview', label: 'الرئيسية', icon: 'M3 10.5 12 3l9 7.5M5 9.5V21h5v-6h4v6h5V9.5' },
-    { key: 'all', label: 'الكل', icon: 'M4 6h16M4 12h16M4 18h16' },
-    // type pages sit one level under «الكل»
-    { key: 'projects', label: 'المشاريع والمبادرات', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7', sub: true },
-    ...(roleStreams.some((p) => streamHasType(p.id, 'operation'))
-      ? [{ key: 'operations', label: 'العمليات', icon: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 3v2M12 19v2M4.6 4.6 6 6M18 18l1.4 1.4M3 12h2M19 12h2M4.6 19.4 6 18M18 6l1.4-1.4', sub: true }]
-      : []),
-    ...(roleStreams.some((p) => streamHasType(p.id, 'service'))
-      ? [{ key: 'services', label: 'الخدمات', icon: 'M3 5h18v14H3zM3 9h18M6.2 7h.01', sub: true }]
-      : []),
-    { key: 'launchplans', label: 'مراحل التنفيذ والإطلاق', icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z' },
-    ...(rawRole === 'ai'
-      ? [{ key: 'entities', label: 'الجهات', icon: 'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01' }]
-      : []),
-    ...(rawRole === 'entity'
-      ? [{ key: 'team', label: 'فريق العمل', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' }]
-      : []),
+    { key: 'overview', label: 'الرئيسية', icon: NAV_HOME },
+    { key: 'all', label: 'الكل', icon: NAV_DOTS, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
+    ...subNav,
+    { key: 'launchplans', label: 'مراحل التنفيذ والإطلاق', icon: NAV_CAL },
+    ...(rawRole === 'ai' ? [{ key: 'entities', label: 'الجهات', icon: NAV_BUILDING }] : []),
+    ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
   ].map((n) => ({
     sub: false,
-    ...n,
     active: navSection === n.key,
     onClick: n.key === 'team' ? () => s.openTeam() : () => s.setNavSection(n.key),
+    ...n,
   }));
 
   const typeSections: Record<string, string> = {
@@ -1125,6 +1149,9 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     isFundedCommittee: rawRole === 'ai' && isFunded,
     isFundedOther: rawRole !== 'ai' && isFunded,
     canDeclineNom: rawRole === 'ai' && !!i.nom && !i.funded && !i.nom?.direct,
+    // committee can approve a pending nomination straight from the card
+    canFundNom: rawRole === 'ai' && !!i.nom && !i.funded,
+    onFundNom: () => s.fundItem(i.id, !!i.nom?.direct),
     showSelectCheck,
     fundChecked: s.ui.fundSel.includes(i.id),
     fundCheckBorder: s.ui.fundSel.includes(i.id) ? '#2563EB' : '#C7D1E2',
@@ -1286,6 +1313,8 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
 
   const mk = (i: Item) => {
     const cost = parseB(i.budget);
+    const nomName = i.funded?.by || i.nom?.by || '';
+    const byCommittee = nomName === 'اللجنة الوطنية' || isComNom(i) || !!i.funded?.direct;
     return {
       id: i.id,
       title: i.title,
@@ -1293,6 +1322,12 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
       entity: ent(i),
       pathName: pathById(i.path).name,
       costLabel: cost > 0 ? formatMoney(cost) : '—',
+      nomName,
+      nomByLine: byCommittee
+        ? 'مُرشّح من اللجنة الوطنية'
+        : nomName
+          ? 'مُرشّح من رئيس المسار: ' + nomName
+          : '',
       approved: !!i.funded,
       onOpen: () => s.openDetail(i.id),
       onApprove: () => s.fundItem(i.id, isComNom(i)),
@@ -1310,9 +1345,9 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
   const active = s.ui.basketTab;
   const tabs = isCom
     ? [
-        { id: 'heads' as const, label: 'رؤساء المسارات', count: headsSrc.length },
-        { id: 'committee' as const, label: 'اللجنة', count: comSrc.length },
-        { id: 'approved' as const, label: 'المعتمدة', count: appSrc.length },
+        { id: 'heads' as const, label: 'مرشح من قبل رؤساء المسارات', count: headsSrc.length },
+        { id: 'committee' as const, label: 'مرشح من قبل اللجنة الوطنية', count: comSrc.length },
+        { id: 'approved' as const, label: 'معتمد للتمويل', count: appSrc.length },
       ]
     : [
         { id: 'heads' as const, label: 'ترشيحاتي', count: myNomsSrc.length },
