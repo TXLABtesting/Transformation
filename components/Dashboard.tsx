@@ -1226,7 +1226,7 @@ function StatBand({
 }
 
 // «تنزيل التقرير» dropdown next to the view switcher: Excel / PowerPoint
-function ExportMenu({ onExcel, onPpt }: { onExcel: () => void; onPpt: () => void }) {
+function ExportMenu({ onExcel, onPpt, label }: { onExcel: () => void; onPpt: () => void; label: string }) {
   const [open, setOpen] = useState(false);
   const items = [
     {
@@ -1266,7 +1266,7 @@ function ExportMenu({ onExcel, onPpt }: { onExcel: () => void; onPpt: () => void
         hover={{ borderColor: '#C7D6EE' }}
       >
         <Icon d="M12 3v12M7 10l5 5 5-5M5 21h14" size={15} />
-        تحميل التقرير
+        {label}
         <Icon d={open ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={13} color="#8A97AD" />
       </HoverButton>
       {open && (
@@ -1906,7 +1906,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? 'إرشادات مراجعة مدخلات الجهة وتحديث حالة الاعتماد.' : vm.role === 'coord' ? 'إرشادات متابعة المدخلات وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
+                {vm.role === 'ai' ? 'إرشادات مراجعة المدخلات واعتمادها.' : vm.role === 'entity' ? (vm.navStream ? 'إرشادات مراجعة مدخلات المسار وتحديث حالة الاعتماد.' : 'إرشادات مراجعة مدخلات الجهة وتحديث حالة الاعتماد.') : vm.role === 'coord' ? 'إرشادات متابعة المدخلات وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
@@ -2210,7 +2210,7 @@ export function Dashboard({ vm }: { vm: VM }) {
 
               {/* filters + search */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{vm.role === 'entity' ? 'قائمة مراجعة مدخلات الجهة' : 'القائمة التفصيلية للمدخلات'}</div>
+                <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{vm.navStream ? 'قائمة مراجعة مدخلات المسار' : vm.role === 'entity' ? 'قائمة مراجعة مدخلات الجهة' : 'القائمة التفصيلية للمدخلات'}</div>
                 <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>{vm.shownCount} من {vm.totalCount} مدخلات</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -2237,7 +2237,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" size={15} color="#9AA6BC" />
                   </span>
                 </div>
-                <select value={vm.pathFilterValue} onChange={(e) => s.setActivePath(e.target.value)} style={selectStyle}>
+                <select value={vm.pathFilterValue} onChange={(e) => { const v = e.target.value; if (vm.role === 'entity' || vm.role === 'ai') s.setNavStream(v === 'all' ? null : v); else s.setActivePath(v); }} style={{ ...selectStyle, width: 'auto', minWidth: 170, maxWidth: 280 }}>
                   {vm.pathOptions.map((o) => (
                     <option key={o.v} value={o.v}>
                       {o.label}
@@ -2337,7 +2337,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     </button>
                   ))}
                 </div>
-                <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} />
+                <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} label={vm.navStream ? 'تحميل تقرير المسار' : 'تحميل التقرير'} />
                 {vm.showAddBtn && (
                   <button
                     onClick={s.openCreate}

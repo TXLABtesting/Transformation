@@ -91,6 +91,8 @@ function build(s: Store) {
   }
   let visible = roleBase.slice();
   if (effActivePath !== 'all') visible = visible.filter((i) => i.path === effActivePath);
+  // sidebar stream selection (entity rep / committee) narrows the list too
+  if (ui.navStream) visible = visible.filter((i) => i.path === ui.navStream);
   if (ui.filter !== 'all')
     visible = visible.filter((i) =>
       ui.filter === 'projinit' ? isProjInit(i.type) : i.type === ui.filter
@@ -472,7 +474,11 @@ function build(s: Store) {
       onClick: () => s.setActivePath(p.id),
     };
   });
-  const totalCount = roleBase.length;
+  const totalCount = ui.navStream
+    ? roleBase.filter((i) => i.path === ui.navStream).length
+    : effActivePath !== 'all'
+      ? roleBase.filter((i) => i.path === effActivePath).length
+      : roleBase.length;
 
   // ---- active path title + summary ----
   const activePathName: string =
@@ -931,7 +937,12 @@ function build(s: Store) {
     navSection,
     navStream,
     kpiBreak,
-    sectionTitle: (rawRole === 'entity' && navSection === 'all') ? 'جميع مدخلات الجهة' : ((navSection in typeSections ? typeSections[navSection] : '') || ''),
+    sectionTitle:
+      rawRole === 'entity' && navSection === 'all' && ui.navStream
+        ? 'مدخلات مسار ' + pathById(ui.navStream).name
+        : rawRole === 'entity' && navSection === 'all'
+          ? 'جميع مدخلات الجهة'
+          : (navSection in typeSections ? typeSections[navSection] : '') || '',
     portfolioStreams,
     recap,
     sectionCards,
@@ -958,7 +969,7 @@ function build(s: Store) {
     showFundFilter: rawRole === 'entity',
     searchValue: ui.search,
     pathOptions,
-    pathFilterValue: ui.activePath,
+    pathFilterValue: ui.navStream || ui.activePath,
     typeOptions,
     anyFilterActive,
     showEntFilter,
