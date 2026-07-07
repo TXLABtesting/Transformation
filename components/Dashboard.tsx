@@ -2914,7 +2914,7 @@ function CommitteeKpi({ value, label, dot, info }: { value: number; label: strin
 // national-overview stat column (inside the shared indicators card)
 function CmtStat({ value, label, sub, iconD, info }: { value: number; label: string; sub: string; iconD: string; info?: string }) {
   return (
-    <div style={{ flex: '1 1 150px', minWidth: 150, padding: '2px 18px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div style={{ flex: '1 1 150px', minWidth: 150, padding: '2px 18px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
           <span style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>{label}</span>
@@ -2922,8 +2922,10 @@ function CmtStat({ value, label, sub, iconD, info }: { value: number; label: str
         </span>
         {info && <InfoTip text={info} />}
       </div>
-      <div style={{ fontSize: 34, fontWeight: 800, color: '#13213C', lineHeight: 1, marginTop: 8 }}>{value}</div>
-      <div style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 400 }}>{sub}</div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4, paddingTop: 12 }}>
+        <div style={{ fontSize: 34, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 400 }}>{sub}</div>
+      </div>
     </div>
   );
 }

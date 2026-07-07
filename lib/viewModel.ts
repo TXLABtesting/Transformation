@@ -187,8 +187,8 @@ function build(s: Store) {
   const execBudgetTotal = roleBase.reduce((a, i) => a + parseBudget(i.budget), 0);
 
   // ---- entity overview cards (redesigned first + second sections) ----
-  // compact millions formatter ("6.1M") for the dense per-stream cards
-  const compactM = (n: number) => (n > 0 ? (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M' : '—');
+  // Arabic dirham formatter for the dense per-stream cards
+  const compactM = (n: number) => (n > 0 ? formatMoney(n) : '—');
   const grandBudget = execBudgetTotal + launchBudgetTotal;
   const eoExecPct = grandBudget ? Math.round((execBudgetTotal / grandBudget) * 100) : 0;
   const money = (n: number) => (n > 0 ? formatMoney(n) : '—');
