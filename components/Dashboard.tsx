@@ -353,18 +353,19 @@ function EntityOverview({ vm }: { vm: VM }) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
         {sec2Cards.map((st) => (
-          <div key={st.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '16px 16px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div key={st.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>
               <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>{st.name}</div>
               <span style={{ width: 38, height: 38, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
                 <Icon d={st.icon} size={18} color="#2563EB" />
               </span>
             </div>
+            <div style={{ height: 1, background: '#EEF1F6' }} />
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
               <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>إجمالي المدخلات</span>
               <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.total}</span>
             </div>
-            <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '10px 12px' }}>
+            <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
               <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>إجمالي المدخلات حسب المرحلة</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {(() => {
@@ -384,7 +385,8 @@ function EntityOverview({ vm }: { vm: VM }) {
                 })()}
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            <div style={{ height: 1, background: '#EEF1F6', marginTop: 'auto' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                 <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ الإجمالية</span>
                 <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.execLabel}</span>
@@ -401,7 +403,7 @@ function EntityOverview({ vm }: { vm: VM }) {
             </div>
             <button
               onClick={st.onOpen}
-              style={{ marginTop: 'auto', width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
             >
               عرض المزيد
               <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
@@ -1303,60 +1305,6 @@ export function Dashboard({ vm }: { vm: VM }) {
             )}
           </div>
 
-          {/* Basket */}
-          {vm.showBasket && (
-            <div data-tour="basket" style={{ position: 'relative' }}>
-              <HoverButton
-                onClick={s.openBasket}
-                base={{
-                  position: 'relative',
-                  height: 38,
-                  padding: '0 13px',
-                  borderRadius: 11,
-                  border: '1px solid #E7ECF4',
-                  background: '#fff',
-                  color: '#42506B',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontWeight: 800,
-                  fontSize: 12,
-                }}
-                hover={{ borderColor: '#C7D6EE' }}
-              >
-                <Icon
-                  d="M5 8h14l-1.2 10.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8z M9 8V6a3 3 0 0 1 6 0v2"
-                  size={17}
-                />
-                السلة
-                {vm.hasBasketBadge && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: -5,
-                      right: -5,
-                      minWidth: 18,
-                      height: 18,
-                      padding: '0 4px',
-                      borderRadius: 9,
-                      background: '#E5484D',
-                      color: '#fff',
-                      fontSize: 10,
-                      fontWeight: 800,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '2px solid #fff',
-                    }}
-                  >
-                    {vm.basketBadge}
-                  </span>
-                )}
-              </HoverButton>
-            </div>
-          )}
-
           {/* Avatar / profile */}
           <div data-tour="profile" style={{ position: 'relative' }}>
             <div
@@ -1558,6 +1506,54 @@ export function Dashboard({ vm }: { vm: VM }) {
             </button>
           ))}
           </div>
+          {/* basket entry (moved from the top bar into the side menu) */}
+          {vm.showBasket && (
+            <div data-tour="basket" style={{ padding: '4px 12px 0' }}>
+              <button
+                onClick={s.openBasket}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '11px 13px',
+                  borderRadius: 11,
+                  border: '1px solid #E7ECF4',
+                  background: '#fff',
+                  color: '#42506B',
+                  fontWeight: 800,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  textAlign: 'right',
+                }}
+              >
+                <Icon d="M5 8h14l-1.2 10.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8z M9 8V6a3 3 0 0 1 6 0v2" size={16} color="#2563EB" />
+                السلة
+                {vm.hasBasketBadge && (
+                  <span
+                    style={{
+                      marginInlineStart: 'auto',
+                      minWidth: 20,
+                      height: 20,
+                      padding: '0 5px',
+                      borderRadius: 10,
+                      background: '#E5484D',
+                      color: '#fff',
+                      fontSize: 11,
+                      fontWeight: 800,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {vm.basketBadge}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
           {/* bottom: onboarding guide */}
           <div data-r="railhelp" style={{ borderTop: '1px solid #F0F3F8', padding: 12 }}>
             <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
@@ -1731,18 +1727,19 @@ export function Dashboard({ vm }: { vm: VM }) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
                 {vm.committeeStreamCards.map((st) => (
-                  <div key={st.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '16px 16px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div key={st.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>
                       <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>{st.name}</div>
                       <span style={{ width: 38, height: 38, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
                         <Icon d={st.icon} size={18} color="#2563EB" />
                       </span>
                     </div>
+                    <div style={{ height: 1, background: '#EEF1F6' }} />
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                       <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>جهة مشاركة</span>
                       <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.entCount}</span>
                     </div>
-                    <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '10px 12px' }}>
+                    <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 9 }}>
                         <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>المدخلات حسب النوع</span>
                         <span style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 400 }}>الإجمالي <span style={{ fontWeight: 800, color: '#13213C' }}>{st.total}</span></span>
@@ -1765,7 +1762,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                         })()}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 'auto' }}>
+                    <div style={{ height: 1, background: '#EEF1F6', marginTop: 'auto' }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                         <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>التكلفة الإجمالية</span>
                         <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.totalCostLabel}</span>
@@ -1775,57 +1773,17 @@ export function Dashboard({ vm }: { vm: VM }) {
                         <span style={{ fontSize: 12.5, fontWeight: 800, color: '#2563EB' }}>{st.fundedLabel}</span>
                       </div>
                     </div>
+                    <button
+                      onClick={st.onOpen}
+                      style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+                    >
+                      عرض المزيد
+                      <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
+                    </button>
                   </div>
                 ))}
               </div>
 
-              {/* Budget overview: approved · spent · remaining + utilization bar */}
-              <div style={{ marginTop: 4 }}>
-                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>الميزانية والاستخدام</div>
-              </div>
-              <div
-                style={{
-                  background: '#fff',
-                  border: '1px solid #E7ECF4',
-                  borderRadius: 16,
-                  padding: '20px 24px',
-                  marginTop: 13,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
-                  <BudgetFigure value={vm.aiStats.approvedBudgetLabel} label="الميزانية المعتمدة" />
-                  <div style={{ width: 1, height: 36, background: '#EBEFF6' }} />
-                  <BudgetFigure value={vm.aiStats.spentBudgetLabel} label="المصروفة حتى الآن" />
-                  <div style={{ width: 1, height: 36, background: '#EBEFF6' }} />
-                  <BudgetFigure value={vm.aiStats.remainingBudgetLabel} label="المتبقي" />
-                  <span
-                    style={{
-                      marginRight: 'auto',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: '#54627B',
-                      background: '#F1F4F9',
-                      borderRadius: 999,
-                      padding: '6px 13px',
-                    }}
-                  >
-                    نسبة الاستخدام {vm.aiStats.budgetPct}%
-                  </span>
-                </div>
-                <div style={{ marginTop: 18 }}>
-                  <div style={{ height: 6, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden' }}>
-                    <div
-                      style={{
-                        width: `${vm.aiStats.budgetPct}%`,
-                        height: '100%',
-                        background: '#2563EB',
-                        borderRadius: 999,
-                        transition: 'width .4s ease',
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
             </>
           )}
 

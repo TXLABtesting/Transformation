@@ -138,43 +138,15 @@ export function AssignBar({ vm }: { vm: VM }) {
 export function BasketDrawer({ vm }: { vm: VM }) {
   if (!vm.basketOpen) return null;
   const b = vm.basket;
-  const tabBase = {
-    border: 'none',
-    borderRadius: 10,
-    padding: '9px 0',
-    flex: 1,
-    textAlign: 'center' as const,
-    fontWeight: 800,
-    cursor: 'pointer',
-  };
-  const activeTab = {
-    background: '#0F1F3D',
-    color: '#fff',
-  };
-  const inactiveTab = {
-    background: '#F4F7FC',
-    color: '#54627B',
-  };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 60,
-        display: 'flex',
-        justifyContent: 'flex-start',
-      }}
-    >
-      <div
-        onClick={() => vm.store.closeBasket()}
-        style={{ position: 'absolute', inset: 0, background: 'rgba(8,16,38,.42)' }}
-      />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', justifyContent: 'flex-start' }}>
+      <div onClick={() => vm.store.closeBasket()} style={{ position: 'absolute', inset: 0, background: 'rgba(8,16,38,.42)' }} />
       <div
         style={{
           position: 'relative',
-          width: 440,
-          maxWidth: '92vw',
+          width: 460,
+          maxWidth: '94vw',
           height: '100%',
           background: '#F7F9FD',
           boxShadow: '24px 0 60px -20px rgba(2,12,35,.5)',
@@ -184,301 +156,147 @@ export function BasketDrawer({ vm }: { vm: VM }) {
         }}
       >
         {/* Header */}
-        <div
-          style={{
-            background: '#fff',
-            borderBottom: '1px solid #E7ECF4',
-            padding: '16px 18px',
-          }}
-        >
+        <div style={{ background: '#fff', borderBottom: '1px solid #E7ECF4', padding: '16px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <div
-              style={{
-                width: 38,
-                height: 38,
-                flex: 'none',
-                borderRadius: 11,
-                background: '#E5EEFF',
-                color: '#2563EB',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <div style={{ width: 38, height: 38, flex: 'none', borderRadius: 11, background: '#E5EEFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icon d={BASKET_ICON} size={20} color="#2563EB" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{b.title}</div>
-              <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, lineHeight: 1.5, marginTop: 2 }}>
-                {b.subtitle}
-              </div>
+              <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{b.title}</div>
+              <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, lineHeight: 1.5, marginTop: 2 }}>{b.subtitle}</div>
             </div>
             <button
               onClick={() => vm.store.closeBasket()}
-              style={{
-                width: 34,
-                height: 34,
-                flex: 'none',
-                borderRadius: 10,
-                border: '1px solid #E7ECF4',
-                background: '#fff',
-                color: '#54627B',
-                fontSize: 16,
-                fontWeight: 700,
-                cursor: 'pointer',
-                lineHeight: 1,
-              }}
+              style={{ width: 34, height: 34, flex: 'none', borderRadius: 10, border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', fontSize: 16, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}
             >
               ✕
             </button>
           </div>
-          {/* Tabs */}
+          {/* Tabs (with counts) */}
           <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
-            <button
-              onClick={() => vm.store.setBasketTab('sel')}
-              style={{
-                ...tabBase,
-                fontSize: 12.5,
-                ...(b.tab === 'sel' ? activeTab : inactiveTab),
-              }}
-            >
-              {b.selTabLabel} · {b.selCount}
-            </button>
-            <button
-              onClick={() => vm.store.setBasketTab('app')}
-              style={{
-                ...tabBase,
-                fontSize: 12.5,
-                ...(b.tab === 'app' ? activeTab : inactiveTab),
-              }}
-            >
-              {b.appTabLabel} · {b.appCount}
-            </button>
+            {b.tabs.map((t) => {
+              const on = b.tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => vm.store.setBasketTab(t.id)}
+                  style={{
+                    flex: 1,
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '9px 6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 7,
+                    fontWeight: 800,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    background: on ? '#0F1F3D' : '#F1F5FB',
+                    color: on ? '#fff' : '#54627B',
+                  }}
+                >
+                  {t.label}
+                  <span
+                    style={{
+                      minWidth: 17,
+                      height: 17,
+                      padding: '0 5px',
+                      borderRadius: 9,
+                      fontSize: 10.5,
+                      fontWeight: 800,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: on ? 'rgba(255,255,255,.22)' : '#E1E8F2',
+                      color: on ? '#fff' : '#54627B',
+                    }}
+                  >
+                    {t.count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px' }}>
-          {b.tab === 'sel' ? (
-            b.selItems.length ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {b.selItems.map((it) => (
-                  <div
-                    key={it.id}
-                    style={{
-                      background: '#fff',
-                      border: '1px solid #E7ECF4',
-                      borderRadius: 14,
-                      padding: 14,
-                    }}
-                  >
-                    <div onClick={it.onOpen} style={{ cursor: 'pointer' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 800,
-                            padding: '4px 10px',
-                            borderRadius: 999,
-                            background: '#EEF3FA',
-                            color: '#42506B',
-                          }}
-                        >
-                          {it.typeLabel}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', lineHeight: 1.4, marginTop: 10 }}>
-                        {it.title}
-                      </div>
-                      <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>
-                        {it.entity} · {it.pathName}
-                      </div>
-                    </div>
-                    {b.isCommittee ? (
-                      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                        <button
-                          onClick={it.onApprove}
-                          style={{
-                            flex: 1,
-                            background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: 11,
-                            padding: '10px 12px',
-                            fontSize: 12.5,
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            boxShadow: '0 10px 22px -10px rgba(11,138,75,.6)',
-                          }}
-                        >
-                          اعتماد التمويل
-                        </button>
-                        <button
-                          onClick={it.onDecline}
-                          style={{
-                            background: '#fff',
-                            color: '#C0303B',
-                            border: '1px solid #E7ECF4',
-                            borderRadius: 11,
-                            padding: '10px 16px',
-                            fontSize: 12.5,
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          عدم الاعتماد
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 800,
-                            padding: '5px 11px',
-                            borderRadius: 999,
-                            color: '#B45309',
-                            background: '#FFF3DE',
-                          }}
-                        >
-                          بانتظار اللجنة الوطنية
-                        </span>
-                        <button
-                          onClick={it.onWithdraw}
-                          style={{
-                            marginInlineStart: 'auto',
-                            background: '#fff',
-                            color: '#C0303B',
-                            border: '1px solid #E7ECF4',
-                            borderRadius: 11,
-                            padding: '8px 14px',
-                            fontSize: 12,
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          سحب الترشيح
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 12,
-                  padding: '60px 20px',
-                  color: '#9AA6BC',
-                }}
-              >
-                <Icon d={BASKET_ICON} size={40} color="#C3CDDD" />
-                <div style={{ fontSize: 13, fontWeight: 700 }}>لا توجد ترشيحات بعد</div>
-              </div>
-            )
-          ) : b.appItems.length ? (
+          {b.items.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {b.appItems.map((it) => (
-                <div
-                  key={it.id}
-                  onClick={it.onOpen}
-                  style={{
-                    background: '#fff',
-                    border: '1px solid #D5EEE0',
-                    borderRadius: 14,
-                    padding: 14,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 800,
-                        padding: '4px 10px',
-                        borderRadius: 999,
-                        background: '#EEF3FA',
-                        color: '#42506B',
-                      }}
-                    >
-                      {it.typeLabel}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 800,
-                        padding: '4px 10px',
-                        borderRadius: 999,
-                        background: '#E3F6EC',
-                        color: '#0B8A4B',
-                      }}
-                    >
-                      مموّل من اللجنة
-                    </span>
+              {b.items.map((it) => (
+                <div key={it.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: 14 }}>
+                  <div onClick={it.onOpen} style={{ cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>
+                        التكلفة <span style={{ fontWeight: 800, color: '#13213C' }}>{it.costLabel}</span>
+                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: '#EEF3FA', color: '#42506B' }}>
+                        {it.typeLabel}
+                      </span>
+                    </div>
+                    <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C', lineHeight: 1.4, marginTop: 10 }}>{it.title}</div>
+                    <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>{it.entity} · {it.pathName}</div>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', lineHeight: 1.4, marginTop: 10 }}>
-                    {it.title}
-                  </div>
-                  <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>
-                    {it.entity} · {it.pathName}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: '#54627B',
-                      fontWeight: 700,
-                      marginTop: 9,
-                      background: '#F5F8FD',
-                      border: '1px solid #EBEFF6',
-                      borderRadius: 9,
-                      padding: '8px 10px',
-                      lineHeight: 1.55,
-                    }}
-                  >
-                    {it.fundedText}
-                  </div>
+                  {it.approved ? (
+                    <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#E7F7EE', color: '#0B8A4B', borderRadius: 11, padding: '11px 12px', fontSize: 12.5, fontWeight: 800 }}>
+                      <Icon d={CHECK_ICON} size={16} color="#0B8A4B" />
+                      تم اعتماده للتمويل
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <button
+                        onClick={it.onApprove}
+                        style={{ flex: 1, background: 'linear-gradient(180deg,#12B26F,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 11, padding: '11px 12px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 22px -12px rgba(11,138,75,.6)' }}
+                      >
+                        اعتماد التمويل
+                      </button>
+                      <button
+                        onClick={it.onDecline}
+                        style={{ background: '#fff', color: '#DC2B38', border: '1px solid #F3D3D6', borderRadius: 11, padding: '11px 16px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}
+                      >
+                        رفض الاعتماد
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           ) : (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 12,
-                padding: '60px 20px',
-                color: '#9AA6BC',
-              }}
-            >
-              <Icon d={CHECK_ICON} size={40} color="#C3CDDD" />
-              <div style={{ fontSize: 13, fontWeight: 700 }}>لا توجد اعتمادات بعد</div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '60px 20px', color: '#9AA6BC' }}>
+              <Icon d={b.activeIsApproved ? CHECK_ICON : BASKET_ICON} size={40} color="#C3CDDD" />
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{b.activeIsApproved ? 'لا توجد اعتمادات بعد' : 'لا توجد ترشيحات بعد'}</div>
             </div>
           )}
         </div>
 
-        {/* Sticky total footer */}
-        <div
-          style={{
-            background: '#fff',
-            borderTop: '1px solid #E7ECF4',
-            padding: '14px 18px',
-            display: 'flex',
-            justifyContent: 'space-between',
-          }}
-        >
-          <span style={{ color: '#54627B', fontSize: 12.5, fontWeight: 700 }}>
-            إجمالي تكلفة التمويل المعتمد
-          </span>
-          <span style={{ color: '#0B8A4B', fontSize: 15, fontWeight: 800 }}>
-            {vm.basket.fundedTotalLabel}
-          </span>
-        </div>
+        {/* Budget usage + total footer (committee) */}
+        {b.showBudget && (
+          <div style={{ background: '#fff', borderTop: '1px solid #E7ECF4', padding: '16px 18px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>الميزانية المعتمدة</span>
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{b.budget.approvedLabel}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>المتبقي</span>
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{b.budget.remainingLabel}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>نسبة الاستخدام</span>
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#2563EB' }}>{b.budget.pct}%</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden' }}>
+                <div style={{ width: `${b.budget.pct}%`, height: '100%', background: '#2563EB', borderRadius: 999, transition: 'width .4s ease' }} />
+              </div>
+            </div>
+            <div style={{ borderTop: '1px dashed #E1E8F2', marginTop: 14, paddingTop: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span className="hd" style={{ color: '#13213C', fontSize: 12.5, fontWeight: 800 }}>إجمالي تكلفة التمويل المعتمد</span>
+              <span style={{ color: '#2563EB', fontSize: 15, fontWeight: 800 }}>{b.fundedTotalLabel}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

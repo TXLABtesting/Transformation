@@ -311,6 +311,10 @@ function build(s: Store) {
       ],
       totalCostLabel: compactM0(execCost + launchCost),
       fundedLabel: compactM0(fundedCost),
+      onOpen: () => {
+        s.setNavSection('all');
+        s.setNavStream(p.id);
+      },
     };
   });
 
@@ -1272,58 +1276,76 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
 function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i: Item) => string }) {
   const { rawRole, myName, ent } = ctx;
   const isCom = rawRole === 'ai';
-  const selSrc = isCom
-    ? s.items.filter((i) => i.nom && !i.funded)
-    : s.items.filter((i) => i.nom && !i.funded && i.nom.by === myName);
-  const appSrc = isCom
-    ? s.items.filter((i) => i.funded)
-    : s.items.filter((i) => i.funded && i.nom && i.nom.by === myName);
+  const parseB = (b?: string) => {
+    const n = parseInt((b || '').replace(/[^\d]/g, ''), 10);
+    return isNaN(n) ? 0 : n;
+  };
+  // a nomination raised by the committee itself (vs by a stream head)
+  const isComNom = (i: Item) =>
+    !!i.nom && (!!i.nom.direct || i.nom.role === 'اللجنة الوطنية' || i.nom.by === 'اللجنة الوطنية');
+
   const mk = (i: Item) => {
-    const score = transformScore(i);
-    // funding-source line for approved rows
-    const fundedText = i.funded?.direct
-      ? 'اعتُمد مباشرة من اللجنة الوطنية'
-      : 'بترشيح من ' + (i.nom?.by || 'رئيس المسار') + ' · ' + pathById(i.path).name;
+    const cost = parseB(i.budget);
     return {
       id: i.id,
       title: i.title,
       typeLabel: typeLabel(i.type),
       entity: ent(i),
       pathName: pathById(i.path).name,
-      nomBy: i.nom?.by || '',
-      fundedText,
-      scoreV: score.v,
-      scoreColor: score.color,
+      costLabel: cost > 0 ? formatMoney(cost) : '—',
+      approved: !!i.funded,
       onOpen: () => s.openDetail(i.id),
-      onApprove: () => s.fundItem(i.id, false),
+      onApprove: () => s.fundItem(i.id, isComNom(i)),
       onDecline: () => s.declineNom(i.id),
       onWithdraw: () => s.withdrawNom(i.id),
     };
   };
-  // total approved-funding cost (parse the free-text budget strings)
-  const parseBudget = (b?: string) => {
-    const n = parseInt((b || '').replace(/[^\d]/g, ''), 10);
-    return isNaN(n) ? 0 : n;
-  };
-  // own budgets + each shared launch plan's group budget counted once
-  const fundedTotal = appSrc.reduce((a, i) => a + parseBudget(i.budget), 0);
-  const fundedTotalLabel = fundedTotal.toLocaleString('en-US') + ' درهم';
+
+  const headsSrc = s.items.filter((i) => i.nom && !i.funded && !isComNom(i));
+  const comSrc = s.items.filter((i) => i.nom && !i.funded && isComNom(i));
+  const appSrc = s.items.filter((i) => i.funded);
+  const myNomsSrc = s.items.filter((i) => i.nom && !i.funded && i.nom.by === myName);
+  const myAppSrc = s.items.filter((i) => i.funded && i.nom && i.nom.by === myName);
+
+  const active = s.ui.basketTab;
+  const tabs = isCom
+    ? [
+        { id: 'heads' as const, label: 'رؤساء المسارات', count: headsSrc.length },
+        { id: 'committee' as const, label: 'اللجنة', count: comSrc.length },
+        { id: 'approved' as const, label: 'المعتمدة', count: appSrc.length },
+      ]
+    : [
+        { id: 'heads' as const, label: 'ترشيحاتي', count: myNomsSrc.length },
+        { id: 'approved' as const, label: 'المعتمدة للتمويل', count: myAppSrc.length },
+      ];
+  const srcMap: Record<string, Item[]> = isCom
+    ? { heads: headsSrc, committee: comSrc, approved: appSrc }
+    : { heads: myNomsSrc, committee: [], approved: myAppSrc };
+  const items = (srcMap[active] || srcMap.heads).map(mk);
+
+  // budget block — spent = committee-approved funding cost, live from data
+  const fundedTotal = appSrc.reduce((a, i) => a + parseB(i.budget), 0);
+  const remaining = Math.max(0, APPROVED_BUDGET - fundedTotal);
+  const pct = APPROVED_BUDGET ? Math.min(100, Math.round((fundedTotal / APPROVED_BUDGET) * 100)) : 0;
+
   return {
     isCommittee: isCom,
     title: isCom ? 'سلة اللجنة الوطنية' : 'سلة الترشيحات',
     subtitle: isCom
-      ? 'الترشيحات الواردة من رؤساء المسارات وما تم تمويله'
+      ? 'الترشيحات الواردة من رؤساء المسارات واللجنة وما تم اعتماده للتمويل'
       : 'ما رشّحته لتمويل اللجنة الوطنية',
-    selTabLabel: isCom ? 'المرشّحة للتمويل' : 'ترشيحاتي',
-    appTabLabel: 'المعتمدة للتمويل',
-    tab: s.ui.basketTab,
-    selItems: selSrc.map(mk),
-    appItems: appSrc.map(mk),
-    selCount: selSrc.length,
-    appCount: appSrc.length,
-    pendingCount: selSrc.length,
-    fundedTotal,
-    fundedTotalLabel,
+    tabs,
+    tab: active,
+    items,
+    activeIsApproved: active === 'approved',
+    showBudget: isCom,
+    budget: {
+      approvedLabel: formatMoney(APPROVED_BUDGET),
+      remainingLabel: formatMoney(remaining),
+      pct,
+    },
+    pendingCount: isCom ? headsSrc.length + comSrc.length : myNomsSrc.length,
+    fundedTotalLabel: fundedTotal.toLocaleString('en-US') + ' درهم',
   };
 }
 

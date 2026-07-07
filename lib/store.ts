@@ -96,7 +96,7 @@ export type UiState = {
   notifOpen: boolean;
   profileOpen: boolean;
   basketOpen: boolean;
-  basketTab: 'sel' | 'app';
+  basketTab: 'heads' | 'committee' | 'approved';
   dActionMenuOpen: boolean;
   menuOpenId: string | null; // card ⋯ menu
   // selection / funding
@@ -185,7 +185,7 @@ type Actions = {
   goEditTeam: () => void;
   openBasket: () => void;
   closeBasket: () => void;
-  setBasketTab: (t: 'sel' | 'app') => void;
+  setBasketTab: (t: 'heads' | 'committee' | 'approved') => void;
   openDeadlines: () => void;
   closeDeadlines: () => void;
   setPhaseName: (i: number, v: string) => void;
@@ -351,7 +351,7 @@ function defaultUi(): UiState {
     notifOpen: false,
     profileOpen: false,
     basketOpen: false,
-    basketTab: 'sel',
+    basketTab: 'heads',
     dActionMenuOpen: false,
     menuOpenId: null,
     fundSel: [],
