@@ -604,7 +604,7 @@ function build(s: Store) {
     { key: 'overview', label: 'الرئيسية', icon: NAV_HOME },
     { key: 'all', label: streamSub ? 'جميع المسارات' : 'جميع الأنواع', icon: NAV_DOTS, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
     ...subNav,
-    { key: 'launchplans', label: 'التنفيذ والإطلاق', icon: NAV_CAL },
+    { key: 'launchplans', label: rawRole === 'entity' ? 'خطة الإطلاق' : 'التنفيذ والإطلاق', icon: NAV_CAL },
     ...(rawRole === 'ai' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
   ].map((n) => ({
