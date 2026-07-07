@@ -538,6 +538,13 @@ function build(s: Store) {
   const dl = daysLeft(firstMs.end!);
   const banner = {
     title: 'تقدم مشروع الذكاء الاصطناعي المساعد',
+    // big page heading shown ABOVE the blue box; the coordinator sees his stream
+    pageTitle:
+      rawRole === 'coord'
+        ? 'مسار ' + pathById(myPath).name
+        : 'مشروع الذكاء الاصطناعي المساعد',
+    // small title inside the blue box
+    boxTitle: 'ملخص التقدم',
     subtitle: 'رحلة منظمة من الحصر والاختيار إلى التنفيذ وقياس الأثر لضمان تحول فعّال ومؤثر',
     firstMsName: firstMs.name,
     firstMsPeriod: firstMs.period,
