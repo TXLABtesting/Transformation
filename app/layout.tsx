@@ -1,20 +1,14 @@
 import type { Metadata } from 'next';
-import { Noto_Kufi_Arabic, Alexandria } from 'next/font/google';
+import { IBM_Plex_Sans_Arabic } from 'next/font/google';
 import './globals.css';
 
-// Brand type: Noto Kufi Arabic is the base for all content; Alexandria is
-// reserved for headings and titles (see globals.css)
-const kufi = Noto_Kufi_Arabic({
-  subsets: ['arabic'],
+// Brand type: IBM Plex Sans Arabic across the whole product — titles carry the
+// bold weights, body/paragraph text stays regular (see globals.css)
+const ibm = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic', 'latin'],
   weight: ['400', '500', '600', '700'],
   display: 'swap',
   variable: '--font-base',
-});
-const alexandria = Alexandria({
-  subsets: ['arabic', 'latin'],
-  weight: ['400', '600', '700', '800'],
-  display: 'swap',
-  variable: '--font-heading',
 });
 
 export const metadata: Metadata = {
@@ -31,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl" className={`${kufi.variable} ${alexandria.variable}`}>
+    <html lang="ar" dir="rtl" className={ibm.variable}>
       <body>{children}</body>
     </html>
   );

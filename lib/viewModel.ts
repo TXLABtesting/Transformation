@@ -241,6 +241,50 @@ function build(s: Store) {
     };
   });
 
+  // per-TYPE cards (coordinator view — التوزيع حسب نوع المدخل)
+  const typeGroups = [
+    { id: 'projinit', name: 'مشروع / مبادرة', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7', section: 'projects', match: (i: Item) => isProjInit(i.type) },
+    { id: 'operation', name: 'عملية', icon: 'M3 6h18M3 12h18M3 18h18', section: 'operations', match: (i: Item) => i.type === 'operation' },
+    { id: 'service', name: 'خدمة', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z', section: 'services', match: (i: Item) => i.type === 'service' },
+  ];
+  const typeOverviewCards = typeGroups.map((g) => {
+    const inType = roleBase.filter(g.match);
+    const execCost = inType.reduce((a, i) => a + parseBudget(i.budget), 0);
+    let launchCost = 0;
+    s.launchPlans.forEach((pl) => {
+      const planItems = roleBase.filter((i) => (i.launchPlanIds || []).includes(pl.id));
+      if (!planItems.length) return;
+      const share = planItems.filter(g.match).length / planItems.length;
+      launchCost += parseBudget(pl.launchBudget) * share;
+    });
+    return {
+      id: g.id,
+      name: g.name,
+      icon: g.icon,
+      total: inType.length,
+      stages: launchBatches().map((b) => ({ label: b.name.replace(/^إطلاق /, ''), n: inType.filter((i) => i.execBatch === b.name).length })),
+      execLabel: compactM(execCost),
+      launchLabel: compactM(launchCost),
+      totalLabel: compactM(execCost + launchCost),
+      onOpen: () => s.setNavSection(g.section),
+    };
+  });
+
+  // stage distribution (coordinator — التوزيع حسب المرحلة) with per-type tabs
+  const stageDistFor = (match: (i: Item) => boolean) => {
+    const items = roleBase.filter(match);
+    return {
+      total: items.length,
+      stages: launchBatches().map((b) => ({ label: b.name.replace(/^إطلاق /, ''), n: items.filter((i) => i.execBatch === b.name).length })),
+    };
+  };
+  const stageDist = {
+    all: stageDistFor(() => true),
+    projinit: stageDistFor((i) => isProjInit(i.type)),
+    operation: stageDistFor((i) => i.type === 'operation'),
+    service: stageDistFor((i) => i.type === 'service'),
+  };
+
   // per-stream distribution shown INSIDE the type KPI cards (entity view) —
   // every eligible stream is listed, including zeros
   const kpiDist = {
@@ -716,6 +760,8 @@ function build(s: Store) {
     costCard,
     inputsCard,
     streamOverviewCards,
+    typeOverviewCards,
+    stageDist,
     showOpsKpi: effActivePath === 'all' || streamHasType(effActivePath, 'operation'),
     showSvcKpi: effActivePath === 'all' || streamHasType(effActivePath, 'service'),
     notAiRole: !isAiRole,

@@ -147,6 +147,48 @@ function EoDonut({ frac, dark, light, top, center, sub }: { frac: number; dark: 
   );
 }
 
+// Multi-segment donut: each status is its own arc, coloured to match the
+// legend so the chart and the list read as one system.
+function EoDonutSeg({ segs, dim, top, center, sub }: { segs: { frac: number; color: string; key: string }[]; dim?: string | null; top?: string; center: string; sub: string }) {
+  const R = 42;
+  const C = 2 * Math.PI * R;
+  const GAP = 2.2; // small white gap between segments (viewBox units)
+  let acc = 0;
+  return (
+    <div style={{ position: 'relative', flex: 'none', width: 150, height: 150 }}>
+      <svg viewBox="0 0 110 110" width={150} height={150}>
+        <circle cx="55" cy="55" r={R} fill="none" stroke="#EDF1F8" strokeWidth="13" />
+        {segs.map((sgm) => {
+          const off = acc;
+          acc += sgm.frac;
+          const len = Math.max(0, sgm.frac * C - GAP);
+          return (
+            <circle
+              key={sgm.key}
+              cx="55"
+              cy="55"
+              r={R}
+              fill="none"
+              stroke={sgm.color}
+              strokeWidth="13"
+              strokeLinecap="butt"
+              strokeDasharray={`${len} ${C}`}
+              strokeDashoffset={-(off * C)}
+              transform="rotate(-90 55 55)"
+              style={{ opacity: dim && dim !== sgm.key ? 0.28 : 1, transition: 'opacity .12s' }}
+            />
+          );
+        })}
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 22px' }}>
+        {top && <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, lineHeight: 1.3 }}>{top}</span>}
+        <span style={{ fontSize: 22, fontWeight: 800, color: '#13213C', lineHeight: 1.15 }}>{center}</span>
+        <span style={{ fontSize: 9.5, color: '#9AA6BC', fontWeight: 400, marginTop: 2, lineHeight: 1.3 }}>{sub}</span>
+      </div>
+    </div>
+  );
+}
+
 function EoCardHead({ title, iconD, onArrow }: { title: string; iconD: string; onArrow?: () => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
@@ -174,6 +216,12 @@ function EntityOverview({ vm }: { vm: VM }) {
   const ic = vm.inputsCard;
   const [hovIn, setHovIn] = useState<string | null>(null);
   const [hovCost, setHovCost] = useState<string | null>(null);
+  const [stageTab, setStageTab] = useState<'all' | 'projinit' | 'operation' | 'service'>('all');
+  const [hovBar, setHovBar] = useState<string | null>(null);
+  const isCoord = vm.role === 'coord';
+  const sec2Cards = isCoord ? vm.typeOverviewCards : vm.streamOverviewCards;
+  const sec2Title = isCoord ? 'التوزيع حسب نوع المدخل' : 'نظرة عامة حسب المسارات';
+  const sec2Sub = isCoord ? 'تفاصيل كل نوع: المدخلات، المراحل، والتكاليف' : 'توزيع المدخلات والتكاليف على المسارات الخمسة';
   const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
   const money = (label: string) => {
     const p = label.split(' ');
@@ -192,8 +240,20 @@ function EntityOverview({ vm }: { vm: VM }) {
   ];
   const inHov = inItems.find((x) => x.key === hovIn);
   const inDonut = inHov
-    ? { frac: ic.total ? clampFrac(inHov.v / ic.total) : 0.5, light: '#EDF1F8', center: String(inHov.v), sub: inHov.label }
-    : { frac: ic.capFrac, light: '#C7D9F5', center: String(ic.total), sub: 'إجمالي المدخلات' };
+    ? { center: String(inHov.v), sub: inHov.label }
+    : { center: String(ic.total), sub: 'إجمالي المدخلات' };
+  // multi-colour segments — each status coloured to match its legend marker
+  const inSegs = (() => {
+    const t = ic.total || 1;
+    const captured = Math.max(0, ic.capable - ic.underDev - ic.developed - ic.launched);
+    return [
+      { key: 'capable', frac: captured / t, color: '#2563EB' },
+      { key: 'underDev', frac: ic.underDev / t, color: '#3B82F6' },
+      { key: 'developed', frac: ic.developed / t, color: '#60A5FA' },
+      { key: 'launched', frac: ic.launched / t, color: '#93C5FD' },
+      { key: 'notCapable', frac: ic.notCapable / t, color: '#C7D9F5' },
+    ].filter((x) => x.frac > 0.0001);
+  })();
 
   // cost legend items (hoverable)
   const costItems = [
@@ -214,7 +274,7 @@ function EntityOverview({ vm }: { vm: VM }) {
         <div style={cardStyle}>
           <EoCardHead title="إجمالي المدخلات" iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-            <EoDonut frac={inDonut.frac} dark="#2563EB" light={inDonut.light} center={inDonut.center} sub={inDonut.sub} />
+            <EoDonutSeg segs={inSegs} dim={hovIn} center={inDonut.center} sub={inDonut.sub} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 3 }}>
               {inItems.map((r) => (
                 <Fragment key={r.key}>
@@ -286,16 +346,16 @@ function EntityOverview({ vm }: { vm: VM }) {
         </div>
       </div>
 
-      {/* ===== Section 2: نظرة عامة حسب المسارات ===== */}
+      {/* ===== Section 2: overview cards (by stream for entity · by type for coord) ===== */}
       <div>
-        <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>نظرة عامة حسب المسارات</div>
-        <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع المدخلات والتكاليف على المسارات الخمسة</div>
+        <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{sec2Title}</div>
+        <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>{sec2Sub}</div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
-        {vm.streamOverviewCards.map((st) => (
+        {sec2Cards.map((st) => (
           <div key={st.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '16px 16px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-              <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5 }}>{st.name}</div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>
+              <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>{st.name}</div>
               <span style={{ width: 38, height: 38, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
                 <Icon d={st.icon} size={18} color="#2563EB" />
               </span>
@@ -306,13 +366,22 @@ function EntityOverview({ vm }: { vm: VM }) {
             </div>
             <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '10px 12px' }}>
               <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>إجمالي المدخلات حسب المرحلة</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                {st.stages.map((sg) => (
-                  <div key={sg.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400 }}>{sg.label}</span>
-                    <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{sg.n}</span>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {(() => {
+                  const maxN = Math.max(...st.stages.map((x) => x.n), 1);
+                  return st.stages.map((sg) => {
+                    const pct = Math.max(6, Math.round((sg.n / maxN) * 100));
+                    return (
+                      <div key={sg.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400, flex: 'none', minWidth: 82, textAlign: 'right' }}>{sg.label}</span>
+                        <div style={{ flex: 1, height: 9, background: '#E9EEF7', borderRadius: 999, position: 'relative', overflow: 'hidden', minWidth: 40 }}>
+                          <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: pct + '%', background: '#3B6FE8', borderRadius: 999 }} />
+                        </div>
+                        <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', flex: 'none', minWidth: 12, textAlign: 'left' }}>{sg.n}</span>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
@@ -332,7 +401,7 @@ function EntityOverview({ vm }: { vm: VM }) {
             </div>
             <button
               onClick={st.onOpen}
-              style={{ marginTop: 2, width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ marginTop: 'auto', width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
             >
               عرض المزيد
               <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
@@ -340,6 +409,71 @@ function EntityOverview({ vm }: { vm: VM }) {
           </div>
         ))}
       </div>
+
+      {/* ===== Section 3: التوزيع حسب المرحلة (coordinator only) ===== */}
+      {isCoord && (() => {
+        const sd = vm.stageDist[stageTab];
+        const tabs = [
+          { id: 'all', label: 'الكل' },
+          { id: 'projinit', label: 'مشروع / مبادرة' },
+          { id: 'operation', label: 'عملية' },
+          { id: 'service', label: 'خدمة' },
+        ] as const;
+        const maxN = Math.max(...sd.stages.map((x) => x.n), 1);
+        return (
+          <>
+            <div>
+              <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>التوزيع حسب المرحلة</div>
+              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع المدخلات على المراحل — مرّر فوق الأعمدة للتفاصيل</div>
+            </div>
+            <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', marginTop: -8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 36, height: 36, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                    <Icon d="M3 3v18h18M8 17V9M13 17V5M18 17v-7" size={17} color="#2563EB" />
+                  </span>
+                  <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>التوزيع حسب المرحلة</span>
+                </div>
+                <div style={{ display: 'inline-flex', background: '#F1F5FB', borderRadius: 12, padding: 4, gap: 2, flexWrap: 'wrap' }}>
+                  {tabs.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setStageTab(t.id)}
+                      style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 9, padding: '7px 13px', fontSize: 12.5, fontWeight: stageTab === t.id ? 700 : 400, background: stageTab === t.id ? '#fff' : 'transparent', color: stageTab === t.id ? '#1D4ED8' : '#6B7A93', boxShadow: stageTab === t.id ? '0 2px 6px -2px rgba(11,27,58,.25)' : 'none', transition: 'background .12s' }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 16 }}>
+                <span style={{ fontSize: 34, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{sd.total}</span>
+                <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>إجمالي المدخلات</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginTop: 18, height: 200 }}>
+                {sd.stages.map((sg) => {
+                  const hpct = Math.max(6, Math.round((sg.n / maxN) * 100));
+                  const on = hovBar === sg.label;
+                  return (
+                    <div
+                      key={sg.label}
+                      onMouseEnter={() => setHovBar(sg.label)}
+                      onMouseLeave={() => setHovBar(null)}
+                      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, height: '100%', cursor: 'default' }}
+                    >
+                      <span style={{ fontSize: 15, fontWeight: 800, color: on ? '#1D4ED8' : '#13213C', transition: 'color .12s' }}>{sg.n}</span>
+                      <div style={{ position: 'relative', flex: 1, width: '100%', background: '#EEF3FB', borderRadius: 14, overflow: 'hidden', minHeight: 0 }}>
+                        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: hpct + '%', background: on ? '#1D4ED8' : '#3B6FE8', borderRadius: 14, transition: 'background .12s' }} />
+                      </div>
+                      <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400 }}>{sg.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }
@@ -1514,10 +1648,10 @@ export function Dashboard({ vm }: { vm: VM }) {
 
           {/* Entity overview — redesigned first section (cost + inputs donuts)
               and second section (per-stream cards) */}
-          {vm.role === 'entity' && <EntityOverview vm={vm} />}
+          {(vm.role === 'entity' || vm.role === 'coord') && <EntityOverview vm={vm} />}
 
           {/* KPI bands (coord / path): counts band only */}
-          {vm.notAiRole && vm.role !== 'entity' && (
+          {vm.notAiRole && vm.role !== 'entity' && vm.role !== 'coord' && (
             <div data-tour="kpis" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <SectionLabel>الأعداد الإجمالية</SectionLabel>
               <div data-r="kpirow">
@@ -1667,17 +1801,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                     />
                   </div>
                 </div>
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C', margin: '10px 0 2px' }}>
-                تصنيف توصيات التحول الذكي
-              </div>
-              <div
-                data-r="reco"
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 4 }}
-              >
-                <RecoCard value={vm.aiStats.now} label="موصى به 100%" dot="#0B8A4B" />
-                <RecoCard value={vm.aiStats.wait} label="قائمة الانتظار" dot="#B45309" />
-                <RecoCard value={vm.aiStats.low} label="غير موصى به" dot="#DC2B38" />
               </div>
             </>
           )}
@@ -2809,28 +2932,6 @@ function StatCard({ value, label, dot, info, suffix }: { value: number; label: s
         {value}
         {suffix && <span style={{ fontSize: 13, color: '#9AA6BC' }}>{suffix}</span>}
       </div>
-    </div>
-  );
-}
-
-function RecoCard({ value, label, dot }: { value: number; label: string; dot: string }) {
-  return (
-    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
-      <div
-        style={{
-          fontSize: 11.5,
-          fontWeight: 600,
-          color: '#6B7A93',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          whiteSpace: 'nowrap',
-        }}
-      >
-        <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flex: 'none' }} />
-        {label}
-      </div>
-      <div style={{ fontSize: 21, fontWeight: 800, color: '#13213C', marginTop: 3, lineHeight: 1.25 }}>{value}</div>
     </div>
   );
 }

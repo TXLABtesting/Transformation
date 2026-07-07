@@ -12,9 +12,10 @@ body {
   padding: 0;
 }
 body {
-  /* Noto Kufi Arabic is the base for all content */
+  /* IBM Plex Sans Arabic is the base for all content */
   font-family: var(--font-base), 'Cairo', system-ui, sans-serif;
   direction: rtl;
+  font-weight: 400;
   color: #0f1f3d;
   /* subtle futuristic backdrop: soft blue mesh over a light base */
   background-color: #eef2f9;
@@ -28,12 +29,13 @@ body {
      for this factor when measuring spotlight coordinates) */
   zoom: 1.15;
 }
-/* Alexandria carries headings and titles */
+/* Headings and titles: same family, bold weight */
 h1,
 h2,
 h3,
 .hd {
-  font-family: var(--font-heading), var(--font-base), system-ui, sans-serif;
+  font-family: var(--font-base), system-ui, sans-serif;
+  font-weight: 700;
 }
 button {
   font-family: inherit;
