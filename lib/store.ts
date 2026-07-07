@@ -1264,7 +1264,7 @@ export const useStore = create<Store>((set, get) => {
     commitSelection: () => {
       const s = get();
       if (logicRole(s.role) === 'path') nominateSelected(get, set, persist, toast);
-      else fundSelected(get, set, persist, toast);
+      else nominateByCommitteeSelected(get, set, persist, toast);
     },
 
     // ---- coordinator bulk-assign (execution batch + launch plan) ----
@@ -1605,30 +1605,31 @@ function commitDraft(
   if (asDraft) toast('تم حفظ المسودة');
 }
 
-function fundSelected(
+function nominateByCommitteeSelected(
   get: () => Store,
   set: (p: Partial<State> | ((s: State) => Partial<State>)) => void,
   persist: () => void,
   toast: (m: string) => void
 ) {
+  // committee "add for funding" NOMINATES the selection (does not fund directly);
+  // items land in the «مرشح من قبل اللجنة الوطنية» tab, then approved from there.
   const s = get();
   const ids = s.ui.fundSel;
   let n = 0;
   set((st) => ({
     items: st.items.map((it) => {
-      if (!ids.includes(it.id) || it.funded || !isEntityApproved(it)) return it;
+      if (!ids.includes(it.id) || it.nom || it.funded || !isEntityApproved(it)) return it;
       n++;
       return {
         ...it,
-        funded: { by: 'اللجنة الوطنية', at: Date.now(), direct: !it.nom },
-        nom: it.nom || { by: 'اللجنة الوطنية', role: 'اللجنة الوطنية', path: it.path, at: Date.now(), direct: true },
-        log: withLog(st, it, 'fund'),
+        nom: { by: 'اللجنة الوطنية', role: 'اللجنة الوطنية', path: it.path, at: Date.now(), direct: true },
+        log: withLog(st, it, 'nominate'),
       };
     }),
     ui: { ...st.ui, fundSel: [] },
   }));
   persist();
-  toast('تم اعتماد تمويل ' + n + ' من المشاريع والعمليات والخدمات — أُشعرت الجهات');
+  toast('تمت إضافة ' + n + ' إلى ترشيحات اللجنة الوطنية — بانتظار الاعتماد النهائي للتمويل');
 }
 
 function nominateSelected(

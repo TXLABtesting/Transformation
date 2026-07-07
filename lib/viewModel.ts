@@ -985,7 +985,7 @@ function build(s: Store) {
     basket,
     fundBarShow: (rawRole === 'ai' || rawRole === 'path') && ui.fundSel.length > 0,
     fundSelCount: ui.fundSel.length,
-    fundBarActionLabel: rawRole === 'ai' ? 'تمويل التحول' : 'ترشيح للتمويل',
+    fundBarActionLabel: 'ترشيح للتمويل',
     // coordinator bulk-assign bar + modal — re-selecting planned items reads as
     // a CHANGE, not a fresh assignment
     assignBar: {
