@@ -711,15 +711,17 @@ function build(s: Store) {
       ? []
       : [...new Set(roleBase.map((i) => ent(i)))].map((e) => {
           const inEnt = roleBase.filter((i) => ent(i) === e);
-          const budget = inEnt.reduce((a, i) => a + parseBudget(i.budget), 0);
+          const execBudget = inEnt.reduce((a, i) => a + parseBudget(i.budget), 0);
+          const fundedItems = inEnt.filter((i) => !!i.funded);
+          const approvedCost = fundedItems.reduce((a, i) => a + parseBudget(i.budget), 0);
           return {
             name: e,
             total: inEnt.length,
-            underDev: inEnt.filter((i) => devStatusOf(i) === 'underDev').length,
-            developed: inEnt.filter((i) => devStatusOf(i) === 'developed').length,
-            launched: inEnt.filter((i) => devStatusOf(i) === 'launched').length,
-            funded: inEnt.filter((i) => !!i.funded).length,
-            budgetLabel: budget > 0 ? formatMoney(budget) : '—',
+            // items broken down across every stream (full names, fixed order)
+            byStream: PATHS.map((p) => ({ name: p.name, count: inEnt.filter((i) => i.path === p.id).length })),
+            funded: fundedItems.length,
+            approvedCostLabel: approvedCost > 0 ? compactM0(approvedCost) : '—',
+            execBudgetLabel: execBudget > 0 ? compactM0(execBudget) : '—',
             onOpen: () => {
               s.setNavSection('all');
               s.setEntFilter(e);
