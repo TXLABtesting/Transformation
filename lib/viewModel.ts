@@ -305,9 +305,9 @@ function build(s: Store) {
       entCount: new Set(inStream.map((i) => ent(i))).size,
       total: inStream.length,
       byType: [
-        { label: 'عملية', n: inStream.filter((i) => i.type === 'operation').length },
-        { label: 'خدمة', n: inStream.filter((i) => i.type === 'service').length },
-        { label: 'مشروع / مبادرة', n: inStream.filter((i) => isProjInit(i.type)).length },
+        { label: 'عمليات', n: inStream.filter((i) => i.type === 'operation').length },
+        { label: 'خدمات', n: inStream.filter((i) => i.type === 'service').length },
+        { label: 'مشاريع ومبادرات', n: inStream.filter((i) => isProjInit(i.type)).length },
       ],
       totalCostLabel: compactM0(execCost + launchCost),
       fundedLabel: compactM0(fundedCost),
@@ -540,10 +540,10 @@ function build(s: Store) {
 
   const navItems = [
     { key: 'overview', label: 'الرئيسية', icon: NAV_HOME },
-    { key: 'all', label: 'الكل', icon: NAV_DOTS, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
+    { key: 'all', label: 'جميع المدخلات', icon: NAV_DOTS, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
     ...subNav,
-    { key: 'launchplans', label: 'مراحل التنفيذ والإطلاق', icon: NAV_CAL },
-    ...(rawRole === 'ai' ? [{ key: 'entities', label: 'الجهات', icon: NAV_BUILDING }] : []),
+    { key: 'launchplans', label: 'التنفيذ والإطلاق', icon: NAV_CAL },
+    ...(rawRole === 'ai' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
   ].map((n) => ({
     sub: false,

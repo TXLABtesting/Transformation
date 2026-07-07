@@ -1576,7 +1576,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                تعرّف على خطوات رحلة المشروع وكيفية إدارة المدخلات.
+                تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
@@ -1704,26 +1704,26 @@ export function Dashboard({ vm }: { vm: VM }) {
             <>
               {/* page heading */}
               <div style={{ margin: '2px 0 -4px' }}>
-                <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>مشروع الذكاء الاصطناعي المساعد</div>
-                <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400, marginTop: 6, maxWidth: 700, lineHeight: 1.7 }}>لمحة وطنية شاملة عن مشاركة الجهات وتوزيع المدخلات على المسارات والميزانية وتصنيف التوصيات.</div>
+                <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>لوحة متابعة مشروع الذكاء الاصطناعي المساعد</div>
+                <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400, marginTop: 6, maxWidth: 700, lineHeight: 1.7 }}>منصة وطنية لمتابعة مدخلات الجهات الحكومية، وتصنيفها حسب المسارات، وحالة الترشيح والاعتماد.</div>
               </div>
 
-              {/* Section 1: مؤشرات عامة */}
+              {/* Section 1: المؤشرات الوطنية العامة */}
               <div>
-                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>مؤشرات عامة</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>لمحة عن المشاركة والمدخلات على المستوى الوطني</div>
+                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>المؤشرات الوطنية العامة</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>ملخص شامل لحالة مشاركة الجهات والمدخلات المسجلة ضمن المشروع.</div>
               </div>
               <div data-r="kpi" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 13, marginTop: -8 }}>
                 <CommitteeKpi value={vm.aiStats.entCount} label="الجهات المشاركة" info="عدد الجهات الاتحادية التي قدّمت مشاريع أو عمليات أو خدمات." />
-                <CommitteeKpi value={vm.aiStats.total} label="إجمالي المدخلات" info="كل ما قدّمته الجهات عبر مسارات التحول ووصل إلى اللجنة الوطنية — من مشاريع ومبادرات وعمليات وخدمات." />
-                <CommitteeKpi value={vm.aiStats.nominated} label="المدخلات المرشحة من قبل رؤساء المسارات" dot="#E68A1E" info="ما رشّحه رؤساء المسارات لاعتماد التمويل." />
-                <CommitteeKpi value={vm.aiStats.funded} label="المدخلات المعتمدة للتمويل" dot="#12B76A" info="ما اعتمدته اللجنة الوطنية وستتكفّل بتكلفة تحويله." />
+                <CommitteeKpi value={vm.aiStats.total} label="إجمالي المدخلات المسجلة" info="كل ما قدّمته الجهات عبر مسارات المشروع ووصل إلى اللجنة الوطنية — من مشاريع ومبادرات وعمليات وخدمات." />
+                <CommitteeKpi value={vm.aiStats.nominated} label="المدخلات المرشحة من رؤساء المسارات" dot="#E68A1E" info="ما رشّحه رؤساء المسارات لاعتماد اللجنة الوطنية." />
+                <CommitteeKpi value={vm.aiStats.funded} label="المدخلات المعتمدة" dot="#12B76A" info="ما اعتمدته اللجنة الوطنية ضمن المشروع." />
               </div>
 
-              {/* Section 2: تفاصيل المسارات */}
+              {/* Section 2: متابعة المدخلات حسب المسارات */}
               <div>
-                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>تفاصيل المسارات</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>لكل مسار: الجهات المشاركة، المدخلات حسب النوع، والتكاليف</div>
+                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>متابعة المدخلات حسب المسارات</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>عرض تفصيلي لحجم مشاركة الجهات وتصنيف المدخلات المرتبطة بكل مسار.</div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
                 {vm.committeeStreamCards.map((st) => (
@@ -1736,12 +1736,12 @@ export function Dashboard({ vm }: { vm: VM }) {
                     </div>
                     <div style={{ height: 1, background: '#EEF1F6' }} />
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-                      <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>جهة مشاركة</span>
+                      <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>الجهات المشاركة</span>
                       <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.entCount}</span>
                     </div>
                     <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 9 }}>
-                        <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>المدخلات حسب النوع</span>
+                        <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>تصنيف المدخلات</span>
                         <span style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 400 }}>الإجمالي <span style={{ fontWeight: 800, color: '#13213C' }}>{st.total}</span></span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1751,8 +1751,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                             const pct = Math.max(6, Math.round((tp.n / maxN) * 100));
                             return (
                               <div key={tp.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400, flex: 'none', minWidth: 82, textAlign: 'right' }}>{tp.label}</span>
-                                <div style={{ flex: 1, height: 9, background: '#E9EEF7', borderRadius: 999, position: 'relative', overflow: 'hidden', minWidth: 40 }}>
+                                <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400, flex: 'none', minWidth: 94, textAlign: 'right' }}>{tp.label}</span>
+                                <div style={{ flex: 1, height: 9, background: '#E9EEF7', borderRadius: 999, position: 'relative', overflow: 'hidden', minWidth: 34 }}>
                                   <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: pct + '%', background: '#3B6FE8', borderRadius: 999 }} />
                                 </div>
                                 <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', flex: 'none', minWidth: 12, textAlign: 'left' }}>{tp.n}</span>
@@ -1762,20 +1762,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                         })()}
                       </div>
                     </div>
-                    <div style={{ height: 1, background: '#EEF1F6', marginTop: 'auto' }} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>التكلفة الإجمالية</span>
-                        <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.totalCostLabel}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>المعتمدة للتمويل</span>
-                        <span style={{ fontSize: 12.5, fontWeight: 800, color: '#2563EB' }}>{st.fundedLabel}</span>
-                      </div>
-                    </div>
                     <button
                       onClick={st.onOpen}
-                      style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+                      style={{ marginTop: 'auto', width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
                     >
                       عرض المزيد
                       <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
