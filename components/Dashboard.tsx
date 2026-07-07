@@ -480,15 +480,20 @@ function EntityOverview({ vm }: { vm: VM }) {
                 <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ</span>
                 <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.execLabel}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة الإطلاق</span>
-                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.launchLabel}</span>
-              </div>
-              <div style={{ height: 1, background: '#EEF1F6', margin: '2px 0' }} />
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>إجمالي التكلفة</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB' }}>{st.totalLabel}</span>
-              </div>
+              {/* launch budget hidden for track head — execution budget only */}
+              {!isPath && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة الإطلاق</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.launchLabel}</span>
+                  </div>
+                  <div style={{ height: 1, background: '#EEF1F6', margin: '2px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>إجمالي التكلفة</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB' }}>{st.totalLabel}</span>
+                  </div>
+                </>
+              )}
             </div>
             <button
               onClick={st.onOpen}
@@ -1900,7 +1905,6 @@ export function Dashboard({ vm }: { vm: VM }) {
               {/* page heading */}
               <div style={{ margin: '2px 0 -4px' }}>
                 <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>لوحة اللجنة الوطنية</div>
-                <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400, marginTop: 6, maxWidth: 700, lineHeight: 1.7 }}>متابعة مدخلات الجهات حسب المسارات، وحالة الترشيح والاعتماد.</div>
               </div>
 
               {/* Section 1: ملخص المدخلات */}
@@ -1989,8 +1993,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                     {vm.entityRanking.map((r) => (
                       <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                         <div className="hd" style={{ width: 300, flex: 'none', textAlign: 'right', fontSize: 14, fontWeight: 800, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
-                        <div style={{ flex: 1, height: 44, background: '#EFF2F7', borderRadius: 12, position: 'relative', overflow: 'hidden', minWidth: 60 }}>
-                          <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: Math.max(8, Math.round(r.frac * 100)) + '%', borderRadius: 12, background: r.top ? 'linear-gradient(90deg,#7DA9F7,#2563EB)' : '#1E2F4F' }} />
+                        <div style={{ flex: 1, height: 10, background: '#EFF2F7', borderRadius: 999, position: 'relative', overflow: 'hidden', minWidth: 60 }}>
+                          <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: Math.max(6, Math.round(r.frac * 100)) + '%', borderRadius: 999, background: r.top ? 'linear-gradient(90deg,#7DA9F7,#2563EB)' : '#1E2F4F' }} />
                         </div>
                         <div style={{ width: 64, flex: 'none', textAlign: 'center' }}>
                           <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{r.n}</div>
@@ -2314,7 +2318,9 @@ export function Dashboard({ vm }: { vm: VM }) {
               <div>
                 <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>مراحل التنفيذ والإطلاق</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
-                  المراحل الأربع — تكلفة التنفيذ والإطلاق التقديرية، والإطلاقات وما يندرج تحت كل منها
+                  {(vm.role === 'path' || vm.role === 'ai')
+                    ? 'المراحل الأربع — تكلفة التنفيذ التقديرية، والإطلاقات وما يندرج تحت كل منها'
+                    : 'المراحل الأربع — تكلفة التنفيذ والإطلاق التقديرية، والإطلاقات وما يندرج تحت كل منها'}
                 </div>
               </div>
               <div
@@ -2332,7 +2338,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                         <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{b.displayName}</div>
                         <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>{b.period}</div>
                       </div>
-                      <InfoTip text="تكلفة التنفيذ تُجمع من ميزانيات ما هو معيَّن لهذه المرحلة، وتكلفة الإطلاق من ميزانيات إطلاقاتها. اضغطوا على أي إطلاق لاستعراض ما يندرج تحته." />
+                      <InfoTip text={(vm.role === 'path' || vm.role === 'ai') ? 'تكلفة التنفيذ تُجمع من ميزانيات ما هو معيَّن لهذه المرحلة. اضغطوا على أي إطلاق لاستعراض ما يندرج تحته.' : 'تكلفة التنفيذ تُجمع من ميزانيات ما هو معيَّن لهذه المرحلة، وتكلفة الإطلاق من ميزانيات إطلاقاتها. اضغطوا على أي إطلاق لاستعراض ما يندرج تحته.'} />
                     </div>
                     {/* محتوى المرحلة: composition + delivery status in one block */}
                     {b.count === 0 ? (
@@ -2604,7 +2610,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                                   <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{l.title}</span>
                                   <span style={{ flex: 'none', fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>
                                     تنفيذ: <b style={{ color: '#13213C' }}>{l.execLabel}</b>
-                                    {l.launchLabel ? <> · إطلاق: <b style={{ color: '#13213C' }}>{l.launchLabel}</b></> : null}
+                                    {!(vm.role === 'path' || vm.role === 'ai') && l.launchLabel ? <> · إطلاق: <b style={{ color: '#13213C' }}>{l.launchLabel}</b></> : null}
                                   </span>
                                 </HoverDiv>
                                 {lOpen && (
@@ -2639,16 +2645,18 @@ export function Dashboard({ vm }: { vm: VM }) {
                       </div>
                       )
                     )}
-                    {/* cost tiles */}
-                    <div data-r="form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+                    {/* cost tiles — launch budget hidden for track head + committee */}
+                    <div data-r="form2" style={{ display: 'grid', gridTemplateColumns: (vm.role === 'path' || vm.role === 'ai') ? '1fr' : '1fr 1fr', gap: 10, marginTop: 14 }}>
                       <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
                         <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية التنفيذ التقديرية</div>
                         <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.costLabel}</div>
                       </div>
-                      <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
-                        <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية الإطلاق التقديرية</div>
-                        <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.launchCostLabel}</div>
-                      </div>
+                      {!(vm.role === 'path' || vm.role === 'ai') && (
+                        <div style={{ background: '#F7F9FD', border: '1px solid #EBEFF6', borderRadius: 12, padding: '11px 13px' }}>
+                          <div style={{ fontSize: 11, color: '#6B7A93', fontWeight: 400 }}>ميزانية الإطلاق التقديرية</div>
+                          <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', marginTop: 4 }}>{b.launchCostLabel}</div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
