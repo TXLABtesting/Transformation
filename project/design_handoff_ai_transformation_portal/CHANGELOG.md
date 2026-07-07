@@ -62,5 +62,159 @@ Apply these on top of the current implementation. Each item states the intended 
 
 ---
 
+## Round 4 — full system redesign (this session)
+
+A large UI/UX overhaul across every screen. Grouped by area; quoted Arabic
+strings are the exact copy to search for. Standing rules applied throughout:
+**fewer colours (blue family only; green/amber reserved for status), clearer
+data, formal plural Arabic for senior officials, labels regular-weight and
+gray while numbers/values are bold dark.**
+
+### Navigation shell (sidebar + header)
+- **Sidebar is now a full-height fixed panel pinned to the RIGHT edge of the
+  screen** (not a sticky card that matches the content cards). The content
+  area reserves its width (`padding-right`) so focus stays inside the page.
+  Top of the rail: the **two logos side by side** (UAE crest + AI logo);
+  middle: the nav; bottom: a **«دليل الاستخدام»** item (replaces the old
+  header «؟» tour button). White/glassy panel, distinct from content.
+- **Nav order & hierarchy:** `نظرة عامة` (clean home icon, not the old
+  4-square grid) → `الكل` → then **`المشاريع والمبادرات` / `العمليات` /
+  `الخدمات` indented as sub-items UNDER `الكل`** (small right border + inset) →
+  `مراحل التنفيذ والإطلاق` → `الجهات` (committee only) / `فريق العمل` (entity
+  only). Remove the **«القائمة»** heading label.
+- **Selected nav state = soft light-blue** (`bg #EAF1FE`, text/icon `#1D4ED8`)
+  with a thin blue accent bar on the edge — **not** the old dark navy pill.
+  Same light-blue selected treatment for the **header role tabs** (active =
+  white card, blue text, subtle shadow), the **stream summary cards**, and the
+  **dev-status switcher**.
+- **Header:** UAE crest + role-switcher tabs move to the reading start; the
+  duplicate crest is removed (it now lives in the sidebar). Countdown + bell on
+  the other side.
+- **Countdown pill:** quiet light style (white bg, `1px #E7ECF4` border). The
+  timer is **labelled segments** — `يوم / ساعة / دقيقة / ثانية` (four stacked
+  number+label cells with dividers), not a run-together `hh:mm:ss`. An **ⓘ**
+  explains the deadline ("الوقت المتبقي على الموعد النهائي لهذه المرحلة —
+  يُرجى استكمال حصر وإدخال جميع المشاريع…"). The tooltip **flips toward
+  screen-centre** near the left edge so it isn't clipped; the native `title`
+  duplicate is removed.
+- **Background:** subtle futuristic soft-blue radial mesh over the light base
+  (`background-attachment: fixed`), still within the blue family.
+
+### Overview = view-only dashboard
+- **Hero (dark blue gradient):** title + subtitle + a single row of frosted
+  **icon stat cards** (`إجمالي المدخلات` / `تم حصرها` / `بانتظار الاعتماد` /
+  `قيد التنفيذ` / `تم الإطلاق`). **Removed** the progress ring, the labelled
+  distribution bar, and the whole **«آخر الإضافات»** recent-cards block — the
+  overview is a dashboard, not a list. `coord` gets an **«إضافة جديدة»** button
+  at the hero's top-left.
+- **Section labels** above every row: `الأعداد الإجمالية`,
+  `الميزانيات التقديرية`; committee: `مؤشرات عامة`,
+  `التوزيع على مسارات التحول`, `الميزانية والاستخدام`; portfolio pages:
+  `مسارات التحول للذكاء الاصطناعي المساعد`, `ملخص حالة التنفيذ`,
+  `القائمة التفصيلية`.
+- **Counts-band card redesign:** total number on top, then **always-open,
+  labelled sub-sections** with dividers — **`التوزيع حسب المسار`** (per-stream
+  breakdown) then **`التوزيع حسب الحالة`** (`غير قابل للتحول` / `قيد التطوير` /
+  `تم التطوير` / `تم الإطلاق`). No expand chevron. **The section titles are gray
+  + regular weight; the stream/status detail rows are bold dark.** Each card is
+  clickable (chevron affordance) → navigates to the matching filtered portfolio
+  page.
+- **Budgets = donut** (`إجمالي المدخلات` in the centre; two segments —
+  execution navy `#16408F`, launch cyan `#27C2F0`, both always visible) beside
+  two labelled rows (`ميزانية التنفيذ التقديرية`, `ميزانية الإطلاق التقديرية`).
+  Card is width-constrained, not full-bleed. Dropped the "(للاطلاع)" and
+  "لا يدخل في التمويل" qualifiers.
+- **Committee dashboard:** **removed «متوسط درجة التحول»** and the **entity
+  ranking bars**. Order: **`الجهات المشاركة` first**, then `إجمالي المدخلات`,
+  then **`مرشح من قبل رؤساء المسارات`** (replaces «بانتظار الاعتماد» — the
+  committee only acts on stream-head nominations, not raw submissions), then
+  `معتمدة للتمويل`. Distribution pies + budget/utilisation retained.
+
+### Portfolio pages (الكل + type pages)
+- Stream summary cards on top (`الكل` first, light-blue active), then the
+  **recap StatBand** (`إجمالي المدخلات`, `غير قابل للتحول`, `قيد التطوير`,
+  `تم التطوير`, `تم الإطلاق`).
+- One **toolbar row** under `القائمة التفصيلية`: status filter, funding filter,
+  search, **cards/table view switcher**, `تنزيل التقرير`, and `إضافة جديدة`
+  (moved here from beside the page title).
+- **Table view** returns and carries the same three approval CTAs (below).
+- Status wording: **«مكتمل» → «تم الإطلاق»** everywhere (filter + chips). The
+  entity-rep status filter **drops «مسودة»** (drafts are visible to `coord`
+  only).
+
+### Stages page (مراحل التنفيذ والإطلاق)
+- Four stage cards (`المرحلة الأولى`…`الرابعة`). Each card, top to bottom:
+  header (name + period), a gray **«خطة التنفيذ»** box (clickable composition
+  links `N من العمليات`… + delivery mini-cards `قيد التطوير` / `تم التطوير` /
+  `تم الإطلاق`), a gray **«خطة الإطلاق»** box (lean launch rows named
+  `الإطلاق الأول` / `الثاني`… with date, a `N من M أُطلق` progress note that
+  becomes a green **«تم الإطلاق»** chip once all included items are launched,
+  and edit/delete icons), and the **budget tiles LAST**. The `% أُطلق` progress
+  line was removed.
+- **`إدارة`** (on خطة التنفيذ) opens a **stage-items manager modal** — tick
+  which items belong to the stage; moving an item already assigned to another
+  stage triggers an in-app confirm ("نقل بين المراحل") and notifies all
+  stakeholders (`stageMove`). **`إدارة الإطلاقات`** opens a **launch-manager
+  modal** hosting the full launch editor: `اسم الإطلاق` / `نوع الإطلاق` /
+  `التاريخ`, a **«ماذا سيشمل الإطلاق؟»** checklist (per-item budgets shown
+  read-only), **`الميزانية التقديرية للتنفيذ` = auto-sum of ticked items**
+  (read-only), `الميزانية التقديرية للإطلاق`, and `نطاق العمل (على مستوى
+  الإطلاق)`. Launched items show a green **«تم الإطلاق»** chip inside the
+  checklist and the read-only launch rows.
+
+### Item detail drawer
+- Right-side slide-in. **Sections are stacked (tabs removed)** in three groups:
+  البيانات (info grid, funded/returned banners, main card, recommendation),
+  التنفيذ والإطلاق (خطة التنفيذ, خطة الإطلاق, نطاق العمل والميزانية, حالة
+  التطوير), السجل. **Labels gray, values dark** to separate the two.
+- **`حالة التطوير` = a 3-state segmented switcher** (`قيد التطوير` /
+  `تم التطوير` / `تم الإطلاق`), light-blue selected; `coord` only can change it,
+  others read-only. (An earlier step-timeline version was reverted back to this
+  switcher on request.)
+- **`الأولوية` shows the drag-ranked order** as a chip: **«الترتيب رقم N»**.
+- **Entity approval footer shows all three decisions openly** — **`اعتماد`**
+  (green), **`طلب معلومات إضافية`** (written out), **`رفض`** (red **✕** icon) —
+  no ⋯ overflow menu, so the rep never feels forced to approve. Same three
+  actions on the item **card** and in the **table** row.
+
+### Create wizard
+- **Every input is mandatory except the budget.** Each mandatory label gets a
+  red **`*`**; each step validates before `التالي` and blocks with
+  "نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة".
+- Step 5 label is **«اختر مرحلة التنفيذ»**; the stage dropdown options are shown
+  **without the «إطلاق» prefix**.
+- Removed the **«نموذج»** suffix inside the AI-models number input and the intro
+  paragraph on the scope/budget step.
+
+### Confirmations, copy & misc
+- **All `window.confirm` dialogs replaced by designed in-app modals** (kind +
+  payload in UI state): launch-all sync, delete item, delete plan, cross-stage
+  move — each with title/body and OK/alt/cancel buttons.
+- **Rejected items stay visible to `coord`** with the rejection reason shown
+  (`ملاحظات ممثل الجهة`).
+- **Every "total" label reads «إجمالي المدخلات»** instead of the long
+  "إجمالي المشاريع والمبادرات والعمليات والخدمات" (overview tile, counts band,
+  recap, committee card, entity card). The budget-donut centre stays «الإجمالي»
+  (a money total, not an entry count).
+- **الجهات page (committee):** entity cards sorted by volume — `إجمالي المدخلات`,
+  mini counts `قيد التطوير` / `تم التطوير` / `تم الإطلاق` / `معتمد للتمويل`,
+  estimated budget; click → `الكل` filtered by that entity.
+- Rocket icon on the launched hero tile swapped for a cleaner **flag** glyph.
+- **Responsive:** the fixed rail collapses to a card above the content below
+  ~1100px (nav wraps as pills, `دليل الاستخدام` hidden); stat bands stack with
+  row separators; stages/entities grids go single-column; tight 2/3-col grids
+  (`form2`/`form3`, delivery mini-cards) reflow; no horizontal scroll at 390 /
+  834 / 1440 px.
+
+### Data / backend (for reference — not design copy)
+- `items[]` gains a **stage-move marker** (`stageMove {from,to,at,by}`); the
+  delivery-status helper excludes `transformability === 'غير قابل'` from
+  قيد التطوير/تم التطوير/تم الإطلاق. Launch plans carry a per-plan `scope` and
+  an informational `launchBudget`; the plan's execution budget is **derived**
+  (sum of attached items' budgets). Full Postgres schema, migrations, and an
+  **IT handover doc** (`docs/it-handover.md`) accompany the implementation.
+
+---
+
 ### How to hand this to the in-progress Claude Code session
 Give it **this `CHANGELOG.md` plus the refreshed `AI Transformation Portal.dc.html`**, and tell it: "These are incremental design changes on top of what you've built — apply each behavior, using the .dc.html as the reference for exact copy, layout, and logic. Don't rebuild; diff against your current implementation." The `.dc.html` is the source of truth for any ambiguity.
