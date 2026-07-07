@@ -1363,6 +1363,9 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     cardStatus,
     cardCaption,
     cardAction,
+    // committee: item already past funding approval (funded or launched) →
+    // its selection box is a locked, gray, checked, non-clickable mark
+    fundLocked: rawRole === 'ai' && (!!i.funded || w === 'done'),
     recoBand,
     pillLabel,
     recoStripLabel,

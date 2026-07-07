@@ -3259,7 +3259,7 @@ function ListView({ cards }: { cards: CardVM[] }) {
                       <Icon d="M20 6 9 17l-5-5" size={11} color="#fff" strokeWidth={3} />
                     )}
                   </span>
-                ) : c.cardAction === 'funded' ? (
+                ) : c.fundLocked ? (
                   <span
                     title="معتمد للتمويل"
                     style={{
@@ -3530,8 +3530,8 @@ function CardItem({ c }: { c: CardVM }) {
           >
             {checkboxChecked && <Icon d={CHECK_D} size={12} color="#fff" strokeWidth={3} />}
           </span>
-        ) : c.cardAction === 'funded' ? (
-          // already approved for funding: locked, gray, checked, not clickable
+        ) : c.fundLocked ? (
+          // already approved for funding (funded or launched): locked, gray, checked, not clickable
           <span
             title="معتمد للتمويل"
             style={{
