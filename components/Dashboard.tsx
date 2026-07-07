@@ -3647,7 +3647,7 @@ function CardItem({ c }: { c: CardVM }) {
                   fontFamily: 'inherit',
                 }}
               >
-                رفض الاعتماد
+                رفض التمويل
               </button>
             </div>
           )}

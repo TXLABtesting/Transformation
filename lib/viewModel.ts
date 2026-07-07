@@ -540,7 +540,7 @@ function build(s: Store) {
 
   const navItems = [
     { key: 'overview', label: 'الرئيسية', icon: NAV_HOME },
-    { key: 'all', label: 'جميع المدخلات', icon: NAV_DOTS, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
+    { key: 'all', label: streamSub ? 'جميع المسارات' : 'جميع الأنواع', icon: NAV_DOTS, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
     ...subNav,
     { key: 'launchplans', label: 'التنفيذ والإطلاق', icon: NAV_CAL },
     ...(rawRole === 'ai' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
@@ -1324,9 +1324,9 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
       costLabel: cost > 0 ? formatMoney(cost) : '—',
       nomName,
       nomByLine: byCommittee
-        ? 'مُرشّح من اللجنة الوطنية'
+        ? 'مُرشّح من قبل اللجنة الوطنية'
         : nomName
-          ? 'مُرشّح من رئيس المسار: ' + nomName
+          ? 'مُرشّح من قبل: ' + nomName
           : '',
       approved: !!i.funded,
       onOpen: () => s.openDetail(i.id),

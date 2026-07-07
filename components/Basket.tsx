@@ -266,7 +266,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                         onClick={it.onDecline}
                         style={{ background: '#fff', color: '#DC2B38', border: '1px solid #F3D3D6', borderRadius: 11, padding: '11px 16px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}
                       >
-                        رفض الاعتماد
+                        رفض التمويل
                       </button>
                     </div>
                   )}
