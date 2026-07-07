@@ -720,8 +720,8 @@ function build(s: Store) {
             // items broken down across every stream (full names, fixed order)
             byStream: PATHS.map((p) => ({ name: p.name, count: inEnt.filter((i) => i.path === p.id).length })),
             funded: fundedItems.length,
-            approvedCostLabel: approvedCost > 0 ? compactM0(approvedCost) : '—',
-            execBudgetLabel: execBudget > 0 ? compactM0(execBudget) : '—',
+            approvedCostLabel: approvedCost > 0 ? formatMoney(approvedCost) : '—',
+            execBudgetLabel: execBudget > 0 ? formatMoney(execBudget) : '—',
             onOpen: () => {
               s.setNavSection('all');
               s.setEntFilter(e);

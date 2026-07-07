@@ -2575,38 +2575,38 @@ export function Dashboard({ vm }: { vm: VM }) {
                         </span>
                         <div className="hd" style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 800, color: '#13213C', lineHeight: 1.5, textAlign: 'right' }}>{e2.name}</div>
                       </div>
-                      {/* total inputs */}
+                      {/* total inputs — label right, number left */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                        <div style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{e2.total}</div>
                         <div style={{ fontSize: 13, color: '#9AA6BC', fontWeight: 400 }}>إجمالي المدخلات</div>
+                        <div style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{e2.total}</div>
                       </div>
-                      {/* by-stream breakdown */}
+                      {/* by-stream breakdown — stream name right, count left */}
                       <div style={{ background: '#F7F9FC', border: '1px solid #EDF1F7', borderRadius: 14, padding: '14px 15px' }}>
                         <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, textAlign: 'right', marginBottom: 11 }}>المدخلات حسب المسار</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
                           {e2.byStream.map((sBrk) => (
                             <div key={sBrk.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                              <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{sBrk.count}</div>
                               <div style={{ fontSize: 13, color: '#42506B', fontWeight: 500, textAlign: 'right' }}>{sBrk.name}</div>
+                              <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{sBrk.count}</div>
                             </div>
                           ))}
                         </div>
                       </div>
-                      {/* approved for funding + approved cost */}
+                      {/* approved for funding + approved cost — label right, value left */}
                       <div style={{ borderTop: '1px solid #EEF1F7', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{e2.funded}</div>
                           <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>العناصر المعتمدة للتمويل</div>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.funded}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{e2.approvedCostLabel}</div>
                           <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>التكلفة المعتمدة</div>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.approvedCostLabel}</div>
                         </div>
                       </div>
-                      {/* total execution budget (blue) */}
+                      {/* total execution budget — label right (bold), value left (blue) */}
                       <div style={{ borderTop: '1px solid #EEF1F7', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: '#2563EB' }}>{e2.execBudgetLabel}</div>
                         <div style={{ fontSize: 13, color: '#13213C', fontWeight: 800 }}>إجمالي الميزانية التنفيذية</div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: '#2563EB', flex: 'none' }}>{e2.execBudgetLabel}</div>
                       </div>
                       {/* CTA */}
                       <button
