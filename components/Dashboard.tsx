@@ -1703,61 +1703,85 @@ export function Dashboard({ vm }: { vm: VM }) {
             </div>
           )}
 
-          {/* Committee analytics (ai) */}
+          {/* Committee analytics (ai) — national overview */}
           {vm.isAiRole && (
             <>
-              <SectionLabel>مؤشرات عامة</SectionLabel>
-              <div
-                data-r="kpi"
-                data-tour="kpis"
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 13, marginBottom: 4 }}
-              >
-                <StatCard value={vm.aiStats.entCount} label="الجهات المشاركة" info="عدد الجهات الاتحادية التي قدّمت مشاريع أو عمليات أو خدمات." />
-                <StatCard value={vm.aiStats.total} label="إجمالي المدخلات" info="كل ما قدّمته الجهات عبر مسارات التحول ووصل إلى اللجنة الوطنية — من مشاريع ومبادرات وعمليات وخدمات." />
-                <StatCard value={vm.aiStats.nominated} label="مرشح من قبل رؤساء المسارات" dot="#B45309" info="ما رشّحه رؤساء المسارات لاعتماد التمويل." />
-                <StatCard value={vm.aiStats.funded} label="معتمدة للتمويل" dot="#0B8A4B" info="ما اعتمدته اللجنة الوطنية وستتكفّل بتكلفة تحويله." />
+              {/* page heading */}
+              <div style={{ margin: '2px 0 -4px' }}>
+                <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>مشروع الذكاء الاصطناعي المساعد</div>
+                <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400, marginTop: 6, maxWidth: 700, lineHeight: 1.7 }}>لمحة وطنية شاملة عن مشاركة الجهات وتوزيع المدخلات على المسارات والميزانية وتصنيف التوصيات.</div>
               </div>
-              {/* Distribution charts (all-streams view) or plain type totals */}
-              {vm.pathFilterValue === 'all' ? (
-                <>
-                  <div style={{ marginTop: 13 }}>
-                    <SectionLabel>التوزيع على مسارات التحول</SectionLabel>
+
+              {/* Section 1: مؤشرات عامة */}
+              <div>
+                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>مؤشرات عامة</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>لمحة عن المشاركة والمدخلات على المستوى الوطني</div>
+              </div>
+              <div data-r="kpi" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 13, marginTop: -8 }}>
+                <CommitteeKpi value={vm.aiStats.entCount} label="الجهات المشاركة" info="عدد الجهات الاتحادية التي قدّمت مشاريع أو عمليات أو خدمات." />
+                <CommitteeKpi value={vm.aiStats.total} label="إجمالي المدخلات" info="كل ما قدّمته الجهات عبر مسارات التحول ووصل إلى اللجنة الوطنية — من مشاريع ومبادرات وعمليات وخدمات." />
+                <CommitteeKpi value={vm.aiStats.nominated} label="المدخلات المرشحة من قبل رؤساء المسارات" dot="#E68A1E" info="ما رشّحه رؤساء المسارات لاعتماد التمويل." />
+                <CommitteeKpi value={vm.aiStats.funded} label="المدخلات المعتمدة للتمويل" dot="#12B76A" info="ما اعتمدته اللجنة الوطنية وستتكفّل بتكلفة تحويله." />
+              </div>
+
+              {/* Section 2: تفاصيل المسارات */}
+              <div>
+                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>تفاصيل المسارات</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>لكل مسار: الجهات المشاركة، المدخلات حسب النوع، والتكاليف</div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
+                {vm.committeeStreamCards.map((st) => (
+                  <div key={st.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '16px 16px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>
+                      <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>{st.name}</div>
+                      <span style={{ width: 38, height: 38, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                        <Icon d={st.icon} size={18} color="#2563EB" />
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                      <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>جهة مشاركة</span>
+                      <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.entCount}</span>
+                    </div>
+                    <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '10px 12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 9 }}>
+                        <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>المدخلات حسب النوع</span>
+                        <span style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 400 }}>الإجمالي <span style={{ fontWeight: 800, color: '#13213C' }}>{st.total}</span></span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {(() => {
+                          const maxN = Math.max(...st.byType.map((x) => x.n), 1);
+                          return st.byType.map((tp) => {
+                            const pct = Math.max(6, Math.round((tp.n / maxN) * 100));
+                            return (
+                              <div key={tp.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400, flex: 'none', minWidth: 82, textAlign: 'right' }}>{tp.label}</span>
+                                <div style={{ flex: 1, height: 9, background: '#E9EEF7', borderRadius: 999, position: 'relative', overflow: 'hidden', minWidth: 40 }}>
+                                  <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: pct + '%', background: '#3B6FE8', borderRadius: 999 }} />
+                                </div>
+                                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', flex: 'none', minWidth: 12, textAlign: 'left' }}>{tp.n}</span>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 'auto' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>التكلفة الإجمالية</span>
+                        <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.totalCostLabel}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>المعتمدة للتمويل</span>
+                        <span style={{ fontSize: 12.5, fontWeight: 800, color: '#2563EB' }}>{st.fundedLabel}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))',
-                      gap: 13,
-                      marginTop: 13,
-                    }}
-                  >
-                    <PieCard title="توزيع المشاريع / المبادرات على المسارات" data={vm.kpiDist.projInit} />
-                    <PieCard title="توزيع العمليات على المسارات" data={vm.kpiDist.operations} />
-                    <PieCard title="توزيع الخدمات على المسارات" data={vm.kpiDist.services} />
-                  </div>
-                </>
-              ) : (
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
-                    gap: 13,
-                    marginTop: 13,
-                  }}
-                >
-                  <KpiCard
-                    value={vm.kpis.projInit}
-                    label="المشاريع / المبادرات"
-                    iconD="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"
-                  />
-                  <KpiCard value={vm.kpis.operations} label="العمليات" iconD="M3 6h18M3 12h18M3 18h18" />
-                  <KpiCard value={vm.kpis.services} label="الخدمات" grid />
-                </div>
-              )}
+                ))}
+              </div>
 
               {/* Budget overview: approved · spent · remaining + utilization bar */}
-              <div style={{ marginTop: 13 }}>
-                <SectionLabel>الميزانية والاستخدام</SectionLabel>
+              <div style={{ marginTop: 4 }}>
+                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>الميزانية والاستخدام</div>
               </div>
               <div
                 style={{
@@ -2909,6 +2933,25 @@ function KpiCard({
 const BLUE_STEPS = ['#2563EB', '#7DA4F2', '#C2D5FA'];
 
 // Percentage tile — label + value only, no decoration.
+
+// national-overview KPI card: info ⓘ on the left, label + status dot on the
+// right, big centred figure below
+function CommitteeKpi({ value, label, dot, info }: { value: number; label: string; dot?: string; info?: string }) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '15px 18px', minHeight: 120, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+          <span style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400, lineHeight: 1.5 }}>{label}</span>
+          {dot && <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, flex: 'none' }} />}
+        </span>
+        {info && <InfoTip text={info} />}
+      </div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 6 }}>
+        <span style={{ fontSize: 34, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{value}</span>
+      </div>
+    </div>
+  );
+}
 
 function StatCard({ value, label, dot, info, suffix }: { value: number; label: string; dot?: string; info?: string; suffix?: string }) {
   return (

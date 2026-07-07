@@ -285,6 +285,35 @@ function build(s: Store) {
     service: stageDistFor((i) => i.type === 'service'),
   };
 
+  // committee per-stream cards (تفاصيل المسارات) — participation + type mix + cost
+  const compactM0 = (n: number) => (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  const committeeStreamCards = PATHS.map((p) => {
+    const inStream = roleBase.filter((i) => i.path === p.id);
+    const execCost = inStream.reduce((a, i) => a + parseBudget(i.budget), 0);
+    let launchCost = 0;
+    s.launchPlans.forEach((pl) => {
+      const planItems = roleBase.filter((i) => (i.launchPlanIds || []).includes(pl.id));
+      if (!planItems.length) return;
+      const share = planItems.filter((i) => i.path === p.id).length / planItems.length;
+      launchCost += parseBudget(pl.launchBudget) * share;
+    });
+    const fundedCost = inStream.filter((i) => i.funded).reduce((a, i) => a + parseBudget(i.budget), 0);
+    return {
+      id: p.id,
+      name: p.name,
+      icon: PIC[p.id],
+      entCount: new Set(inStream.map((i) => ent(i))).size,
+      total: inStream.length,
+      byType: [
+        { label: 'عملية', n: inStream.filter((i) => i.type === 'operation').length },
+        { label: 'خدمة', n: inStream.filter((i) => i.type === 'service').length },
+        { label: 'مشروع / مبادرة', n: inStream.filter((i) => isProjInit(i.type)).length },
+      ],
+      totalCostLabel: compactM0(execCost + launchCost),
+      fundedLabel: compactM0(fundedCost),
+    };
+  });
+
   // per-stream distribution shown INSIDE the type KPI cards (entity view) —
   // every eligible stream is listed, including zeros
   const kpiDist = {
@@ -762,6 +791,7 @@ function build(s: Store) {
     streamOverviewCards,
     typeOverviewCards,
     stageDist,
+    committeeStreamCards,
     showOpsKpi: effActivePath === 'all' || streamHasType(effActivePath, 'operation'),
     showSvcKpi: effActivePath === 'all' || streamHasType(effActivePath, 'service'),
     notAiRole: !isAiRole,
