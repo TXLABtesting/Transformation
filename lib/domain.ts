@@ -4,7 +4,7 @@
 // numbers, colors and formulas are verbatim from the Claude Design prototype.
 // ============================================================================
 
-export type RoleKey = 'entity' | 'path' | 'coord' | 'ai';
+export type RoleKey = 'entity' | 'path' | 'coord' | 'ai' | 'admin';
 export type ItemType = 'project' | 'initiative' | 'operation' | 'service';
 export type WfState =
   | 'draft'
@@ -148,7 +148,28 @@ export const ROLE: Record<
     badge: '#6D28D9',
     bg: '#EFEAFE',
   },
+  admin: {
+    label: 'مشرف النظام',
+    sub: 'إدارة المستخدمين والأدوار وتعيين رؤساء المسارات واللجنة',
+    badge: '#B45309',
+    bg: '#FDF0DC',
+  },
 };
+
+// Access-role reference (الأدوار والصلاحيات) — mirrors the DB `roles` table.
+export const ROLE_INFO: {
+  key: RoleKey;
+  nameAr: string;
+  descAr: string;
+  scope: string;
+  permissions: string[];
+}[] = [
+  { key: 'admin', nameAr: 'مشرف النظام', descAr: 'يدير المستخدمين والأدوار، ويعيّن رؤساء المسارات وأعضاء اللجنة الوطنية.', scope: 'النظام بالكامل', permissions: ['users.manage', 'roles.view', 'streamhead.assign', 'committee.assign'] },
+  { key: 'ai', nameAr: 'اللجنة الوطنية', descAr: 'إشراف وطني على كل الجهات والمسارات واعتماد التمويل النهائي.', scope: 'وطني', permissions: ['item.view.all', 'nomination.review', 'funding.approve', 'funding.cancel', 'phase.edit', 'budget.set'] },
+  { key: 'path', nameAr: 'رئيس المسار', descAr: 'يراجع مدخلات كل الجهات ضمن مساره ويرشّح للتمويل.', scope: 'مسار واحد', permissions: ['item.view.stream', 'item.nominate', 'plan.view'] },
+  { key: 'entity', nameAr: 'ممثل الجهة', descAr: 'يتابع كل مسارات جهته ويعتمد المدخلات الجاهزة، ويعيّن منسقي المسارات.', scope: 'جهة واحدة', permissions: ['item.view.entity', 'item.approve', 'item.return', 'team.manage'] },
+  { key: 'coord', nameAr: 'منسق المسار في الجهة', descAr: 'يضيف ويحدّث مدخلات مسار واحد داخل جهته.', scope: 'مسار داخل جهة', permissions: ['item.create', 'item.update', 'item.submit', 'plan.edit'] },
+];
 
 // Real stream representatives (رئيس المسار) — one per transformation stream
 export const PATH_REPS: Record<string, string> = {
@@ -165,7 +186,41 @@ export const ROLE_PILLS: { key: RoleKey; label: string }[] = [
   { key: 'entity', label: 'ممثل الجهة' },
   { key: 'ai', label: 'اللجنة الوطنية' },
   { key: 'path', label: 'رئيس المسار' },
+  { key: 'admin', label: 'مشرف النظام' },
 ];
+
+// A managed user account (المستخدمون) as shown/edited in the admin console and,
+// in production, stored in the `users` table.
+export type UserRec = {
+  id: string;
+  role: RoleKey;
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  entityName?: string; // entity / coord
+  streamId?: string; // coord / path
+  active: boolean;
+  system?: boolean; // seeded reference account (kept out of the demo delete path)
+};
+
+// Starter accounts for the admin console (mirrors prisma/seed.ts): the national
+// committee + the five stream heads are set by the admin; the entity rep and
+// its coordinators are set by the entity rep (shown here read-only-ish).
+export function seedUsers(entityName = DEFAULT_ENTITY): UserRec[] {
+  const u: UserRec[] = [
+    { id: 'u-admin', role: 'admin', name: 'مشرف النظام', title: 'مسؤول المنصة', email: 'admin@aigp.gov.ae', phone: '', active: true, system: true },
+    { id: 'u-committee', role: 'ai', name: 'اللجنة الوطنية للذكاء الاصطناعي', title: 'عضو اللجنة الوطنية', email: 'committee@aigp.gov.ae', phone: '', active: true, system: true },
+  ];
+  for (const p of PATHS) {
+    u.push({ id: `u-head-${p.id}`, role: 'path', name: PATH_REPS[p.id] || `رئيس مسار ${p.name}`, title: `رئيس مسار ${p.name}`, email: `head.${p.id}@aigp.gov.ae`, phone: '', streamId: p.id, active: true, system: true });
+  }
+  u.push({ id: 'u-rep', role: 'entity', name: 'أحمد محمد العامري', title: 'مدير إدارة التحول الرقمي', email: 'rep@aigp.gov.ae', phone: '', entityName, active: true });
+  for (const p of PATHS) {
+    u.push({ id: `u-coord-${p.id}`, role: 'coord', name: `منسق ${p.name}`, title: `منسق مسار ${p.name}`, email: `coord.${p.id}@aigp.gov.ae`, phone: '', entityName, streamId: p.id, active: true });
+  }
+  return u;
+}
 
 // ---- 1.4 Status / approval enums ------------------------------------------
 export const APPR: Record<string, { bg: string; c: string }> = {

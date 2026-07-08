@@ -9,6 +9,7 @@ import {
   PATHS,
   ROLE,
   ROLE_PILLS,
+  ROLE_INFO,
   TYPE,
   APPR,
   PRIO,
@@ -47,6 +48,7 @@ import {
   type RoleKey,
 } from './domain';
 import { stripHtml } from './richtext';
+import { FEDERAL_ENTITIES } from './entities';
 
 export function useViewModel() {
   const s = useStore();
@@ -860,21 +862,58 @@ function build(s: Store) {
       ? PATH_REPS[myPath] || 'رئيس المسار'
       : rawRole === 'ai'
         ? 'اللجنة الوطنية'
-        : rawRole === 'coord'
-          ? s.setup.owners[myPath]?.name || 'منسق المسار في الجهة'
-          : repName;
+        : rawRole === 'admin'
+          ? 'مشرف النظام'
+          : rawRole === 'coord'
+            ? s.setup.owners[myPath]?.name || 'منسق المسار في الجهة'
+            : repName;
   const profilePos =
     rawRole === 'path'
       ? 'رئيس مسار ' + pathById(myPath).name
       : rawRole === 'ai'
         ? ROLE.ai.sub
-        : rawRole === 'coord'
-          ? 'منسق مسار ' + pathById(myPath).name
-          : repPos;
+        : rawRole === 'admin'
+          ? ROLE.admin.sub
+          : rawRole === 'coord'
+            ? 'منسق مسار ' + pathById(myPath).name
+            : repPos;
   const profileInitials =
     profileName.split(/\s+/).slice(0, 2).map((w) => w[0]).join('') || 'م';
 
+  // ---- admin console (لوحة المشرف) ----
+  const isAdmin = rawRole === 'admin';
+  const roleOrder: RoleKey[] = ['admin', 'ai', 'path', 'entity', 'coord'];
+  const streamName = (id?: string) => (id ? pathById(id).name : '');
+  const adminUsers = [...s.users]
+    .sort((a, b) => roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role) || a.name.localeCompare(b.name, 'ar'))
+    .map((u) => ({
+      ...u,
+      roleLabel: ROLE[u.role]?.label || u.role,
+      roleBadge: ROLE[u.role]?.badge || '#64748B',
+      roleBg: ROLE[u.role]?.bg || '#EEF2F7',
+      streamLabel: streamName(u.streamId),
+      scopeLabel: [u.entityName, streamName(u.streamId)].filter(Boolean).join(' · ') || '—',
+      initials: u.name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('') || 'م',
+    }));
+  const admin = {
+    users: adminUsers,
+    roleInfo: ROLE_INFO,
+    streams: PATHS.map((p) => ({ id: p.id, name: p.name })),
+    entities: Array.from(new Set([entityName, ...FEDERAL_ENTITIES])),
+    counts: {
+      total: s.users.length,
+      active: s.users.filter((u) => u.active).length,
+      heads: s.users.filter((u) => u.role === 'path').length,
+      committee: s.users.filter((u) => u.role === 'ai').length,
+    },
+    saveUser: (u: (typeof s.users)[number]) => s.adminSaveUser(u),
+    toggleUser: (id: string) => s.adminToggleUser(id),
+    removeUser: (id: string) => s.adminRemoveUser(id),
+  };
+
   return {
+    isAdmin,
+    admin,
     // view
     view: s.view,
     isLogin: s.view === 'login',

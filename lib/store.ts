@@ -10,6 +10,8 @@ import {
   type Item,
   type ItemType,
   type RoleKey,
+  type UserRec,
+  seedUsers,
   type ProgramPhase,
   type LogEntry,
   type WfState,
@@ -151,6 +153,7 @@ type State = {
   setupDone: boolean;
   items: Item[];
   launchPlans: LaunchPlan[];
+  users: UserRec[];
   readNotifs: string[];
   programStep: number;
   programPhases: ProgramPhase[];
@@ -178,6 +181,10 @@ type Actions = {
   skipSetup: () => void;
   // role
   setRole: (r: RoleKey) => void;
+  // admin — user & role management
+  adminSaveUser: (u: UserRec) => void;
+  adminToggleUser: (id: string) => void;
+  adminRemoveUser: (id: string) => void;
   // dropdowns / panels
   toggleNotifs: () => void;
   openNotifItem: (id: string) => void;
@@ -399,6 +406,7 @@ function initialState(): State {
     setupDone: false,
     items: seedItems(),
     launchPlans: recalcPlanBudgets(seedItems(), seedLaunchPlans()),
+    users: seedUsers(DEFAULT_ENTITY),
     readNotifs: [],
     programStep: 1,
     programPhases: DEFAULT_PROGRAM_PHASES.map((p) => ({ ...p })),
@@ -471,6 +479,7 @@ export const useStore = create<Store>((set, get) => {
       seedV: SEED_V,
       items: s.items,
       launchPlans: s.launchPlans,
+      users: s.users,
       phase: s.phase,
       setup: s.setup,
       readNotifs: s.readNotifs,
@@ -540,6 +549,7 @@ export const useStore = create<Store>((set, get) => {
             : ((saved!.role as RoleKey) || (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'entity'),
           myPath: (saved!.myPath as string) || 'ops',
           setupDone: !!saved!.setupDone,
+          users: !fresh && Array.isArray(saved!.users) ? (saved!.users as UserRec[]) : seedUsers(DEFAULT_ENTITY),
           items,
           phase: (saved!.phase as State['phase']) || s.phase,
           setup: (saved!.setup as Setup) || s.setup,
@@ -649,6 +659,26 @@ export const useStore = create<Store>((set, get) => {
         ui: { ...s.ui, activePath: 'all', entFilter: 'all', stepFilter: null, statusFilter: 'all', fundFilter: 'all', search: '', navSection: 'overview', navStream: null, batchFilter: null },
       }));
       persist();
+    },
+
+    // ---- admin: user & role management ----
+    adminSaveUser: (u) => {
+      set((s) => {
+        const exists = s.users.some((x) => x.id === u.id);
+        const users = exists ? s.users.map((x) => (x.id === u.id ? { ...x, ...u } : x)) : [...s.users, u];
+        return { users };
+      });
+      persist();
+      toast(get().users.some((x) => x.id === u.id) ? 'تم حفظ المستخدم' : 'تمت الإضافة');
+    },
+    adminToggleUser: (id) => {
+      set((s) => ({ users: s.users.map((x) => (x.id === id ? { ...x, active: !x.active } : x)) }));
+      persist();
+    },
+    adminRemoveUser: (id) => {
+      set((s) => ({ users: s.users.filter((x) => x.id !== id) }));
+      persist();
+      toast('تم حذف المستخدم');
     },
 
     // ---- dropdowns / panels ----
