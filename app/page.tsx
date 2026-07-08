@@ -5,6 +5,7 @@ import { useViewModel } from '@/lib/viewModel';
 import { Login } from '@/components/Login';
 import { TeamSetup } from '@/components/TeamSetup';
 import { Dashboard } from '@/components/Dashboard';
+import { AdminConsole } from '@/components/AdminConsole';
 import { CreatePanel } from '@/components/CreatePanel';
 import { DetailPanel } from '@/components/DetailPanel';
 import { BasketDrawer, FundBar, AssignBar } from '@/components/Basket';
@@ -27,7 +28,8 @@ export default function Page() {
     <>
       {vm.isLogin && <Login vm={vm} />}
       {vm.isSetup && <TeamSetup vm={vm} />}
-      {vm.isDashboard && (
+      {vm.isDashboard && vm.isAdmin && <AdminConsole vm={vm} />}
+      {vm.isDashboard && !vm.isAdmin && (
         <>
           <Dashboard vm={vm} />
           {vm.showBasket && <FundBar vm={vm} />}
