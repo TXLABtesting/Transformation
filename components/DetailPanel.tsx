@@ -40,7 +40,7 @@ const IC_PEOPLE = 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 
 
 function DetailSecHead({ iconD, title }: { iconD: string; title: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 22, marginBottom: 12 }}>
+    <div style={{ direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8, marginTop: 22, marginBottom: 12 }}>
       <span className="hd" style={{ fontSize: 15.5, fontWeight: 800, color: '#16233F' }}>{title}</span>
       <Icon d={iconD} size={16} color="#2563EB" />
     </div>
