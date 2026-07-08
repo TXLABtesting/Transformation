@@ -16,23 +16,45 @@ managed by Prisma.
 | Package manager | npm (lockfile committed) |
 
 ```bash
+cp .env.example .env         # then fill in the (REQUIRED) values — see §2
 npm ci
-npx prisma migrate deploy   # applies prisma/migrations in order (0001 → 0006)
-npx prisma db seed          # reference data: streams, batches, phases, entities
-npm run build && npm start  # serves on PORT (default 3000)
+npm run db:setup             # migrate deploy (0001 → 0007) + generate + seed
+npm run build && npm start   # serves on PORT (default 3000)
 ```
+
+Or, fully containerised (Postgres + app, migrations + seed on first boot):
+
+```bash
+cp .env.example .env         # fill in the (REQUIRED) values
+docker compose up --build    # app on :3000, Postgres on :5432
+```
+
+**What IT changes:** only the values in `.env` (DB URL, `SESSION_SECRET`,
+UAE PASS client id/secret/redirect, optional AI endpoint). No code edits are
+required. `NEXT_PUBLIC_*` values are build-time — set them before the build.
 
 ## 2. Environment variables
 
+The single source of truth is **`.env.example`** — every variable is listed
+there with `(REQUIRED)` / `(build-time)` markers and inline guidance. Copy it
+to `.env` and fill in the blanks. Summary:
+
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | Postgres connection string, e.g. `postgresql://user:pass@host:5432/aihub?schema=public` |
-| `NEXT_PUBLIC_DEMO_MODE` | **Leave unset in production.** `1` shows the role-switcher tabs (demo only) |
-| `NEXT_PUBLIC_DEMO_DATA` | **Leave unset in production.** `1` seeds the browser demo dataset |
-| `NEXT_PUBLIC_BASE_PATH` | Only for sub-path hosting (GitHub Pages demo uses `/Transformation`) |
-| UAE PASS client id/secret/redirect | Consumed by `app/api/auth/uaepass/*` — see §5 |
+| `DATABASE_URL` | Postgres connection string (REQUIRED) |
+| `NEXT_PUBLIC_DATA_MODE` | `api` in production (build-time); `local` = static demo |
+| `SESSION_SECRET` | Signs session cookies — `openssl rand -hex 32` (REQUIRED) |
+| `SESSION_TTL_HOURS` | Session lifetime (default 12) |
+| `STATE_API_TOKEN` | Bearer guard for `/api/state` on shared deployments |
+| `NEXT_PUBLIC_UAEPASS_MODE` | `live` in production; `mock` for the demo (build-time) |
+| `UAEPASS_CLIENT_ID` / `_SECRET` / `_REDIRECT_URI` | UAE PASS OIDC — see §5 (REQUIRED for live) |
+| `AI_API_BASE_URL` / `_KEY` / `_MODEL` | Internal AI reviewer endpoint (optional) |
+| `NEXT_PUBLIC_BASE_PATH` | Only for sub-path hosting (build-time) |
+| `NEXT_PUBLIC_DEMO_MODE` / `_DATA` | **Keep `0` in production** — role switcher / mock data |
 
 Secrets belong in the host's secret manager — never in the repository.
+`NEXT_PUBLIC_*` variables are inlined at build time, so set them before
+`npm run build` / the Docker image build.
 
 ## 3. Database structure (Prisma → Postgres)
 
@@ -78,20 +100,43 @@ the client uses camelCase). Migrations: `prisma/migrations/0001…0006`.
 - `fundings` / `funding_cancellations` — committee funding decisions with
   the mandatory cancellation reason.
 
+**Access control, sessions & notifications** (migration `0007`)
+- `roles` — the four access roles (`coord`, `entity`, `path`, `ai`) with an
+  Arabic name, scope, and a `permissions` JSON capability list. `users.role`
+  is a foreign key into this table, so every account resolves to a valid role.
+- `sessions` — one row per signed-in session (opaque token in an httpOnly
+  cookie, expiry, IP/user-agent). Populated by the UAE PASS callback (§5).
+- `notifications` — persisted الإشعارات, targeted to a user or broadcast to a
+  role / entity / stream, with `kind`, title/body, and `read_at`. The client
+  currently derives notifications from data state; this table lets IT persist
+  and push them (email/SMS) from the API layer.
+
 **Demo sync**
 - `app_state` — single JSON blob used by `/api/state` for the demo
   persistence. Harmless in production; can stay empty.
 
+The full table list (with columns) lives in `prisma/schema.prisma`; the
+versioned DDL is in `prisma/migrations/0001…0007`.
+
 ## 4. Role management
 
-`users` table drives access. `role` is one of:
+`users` table drives access; `users.role` is a FK into the `roles` reference
+table. The four roles (seeded by migration `0007` and the seed script):
 
-| role | Arabic | Scope columns |
-| --- | --- | --- |
-| `coord` | منسق المسار في الجهة | `entity_id` + `stream_id` |
-| `entity` | ممثل الجهة | `entity_id` |
-| `path` | رئيس المسار | `stream_id` |
-| `ai` | اللجنة الوطنية | — |
+| role | Arabic | Scope columns | scope |
+| --- | --- | --- | --- |
+| `coord` | منسق المسار في الجهة | `entity_id` + `stream_id` | `entity+stream` |
+| `entity` | ممثل الجهة | `entity_id` | `entity` |
+| `path` | رئيس المسار | `stream_id` | `stream` |
+| `ai` | اللجنة الوطنية | — | `national` |
+
+**Seeded starter accounts** (in `users`, keyed by email on the
+`@aigp.gov.ae` placeholder domain): the national committee, the five stream
+heads (`head.<stream>@…`), the default entity representative (`rep@…`), and
+one coordinator per stream (`coord.<stream>@…`). To go live, re-point each
+account's `email` to the verified UAE PASS identity (or deactivate and create
+real ones). `roles.permissions` carries the capability list the API can
+enforce against.
 
 Rules the application assumes (enforce when provisioning users):
 - `coord` and `entity` **must** have `entity_id`; `coord` and `path`
@@ -116,8 +161,10 @@ button. To go live:
    the environment.
 2. In the callback, map the verified Emirates ID / email to a row in
    `users` (email is unique) and reject users with no active row.
-3. Put the resolved `{role, entityId, streamId, name}` in the session; the
-   client reads the role from the session — the role-switcher tabs only
+3. Create a `sessions` row (opaque token → httpOnly cookie, signed with
+   `SESSION_SECRET`, `expires_at = now + SESSION_TTL_HOURS`) and resolve
+   `{role, entityId, streamId, name}` from the joined `users`/`roles` rows;
+   the client reads the role from the session — the role-switcher tabs only
    exist when `NEXT_PUBLIC_DEMO_MODE=1`.
 
 Invitation emails for entity reps and coordinators are drafted in

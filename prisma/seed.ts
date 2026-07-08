@@ -22,7 +22,24 @@ import { FEDERAL_ENTITIES } from '../lib/entities';
 
 const prisma = new PrismaClient();
 
+// The four access roles (mirrors migration 0007; upsert keeps them in sync).
+const ROLES: Array<{ key: string; nameAr: string; descAr: string; scope: string; permissions: string[]; sortOrder: number }> = [
+  { key: 'coord', nameAr: 'منسق المسار في الجهة', descAr: 'يضيف ويحدّث مدخلات مسار واحد داخل جهته.', scope: 'entity+stream', permissions: ['item.create', 'item.update', 'item.submit', 'plan.edit'], sortOrder: 1 },
+  { key: 'entity', nameAr: 'ممثل الجهة', descAr: 'يتابع كل مسارات جهته ويعتمد المدخلات الجاهزة.', scope: 'entity', permissions: ['item.view.entity', 'item.approve', 'item.return', 'team.manage'], sortOrder: 2 },
+  { key: 'path', nameAr: 'رئيس المسار', descAr: 'يراجع مدخلات كل الجهات ضمن مساره ويرشّح للتمويل.', scope: 'stream', permissions: ['item.view.stream', 'item.nominate', 'plan.view'], sortOrder: 3 },
+  { key: 'ai', nameAr: 'اللجنة الوطنية', descAr: 'إشراف وطني على كل الجهات والمسارات واعتماد التمويل النهائي.', scope: 'national', permissions: ['item.view.all', 'nomination.review', 'funding.approve', 'funding.cancel', 'phase.edit', 'budget.set'], sortOrder: 4 },
+];
+
 async function main() {
+  // 0) Roles (الأدوار) — must exist before any user (users.role → roles.key)
+  for (const r of ROLES) {
+    await prisma.role.upsert({
+      where: { key: r.key },
+      update: { nameAr: r.nameAr, descAr: r.descAr, scope: r.scope, permissions: r.permissions, sortOrder: r.sortOrder },
+      create: { key: r.key, nameAr: r.nameAr, descAr: r.descAr, scope: r.scope, permissions: r.permissions, sortOrder: r.sortOrder },
+    });
+  }
+
   // 1) Streams (المسارات) + heads (رؤساء المسارات)
   for (const [i, p] of PATHS.entries()) {
     await prisma.stream.upsert({
@@ -37,10 +54,6 @@ async function main() {
       },
     });
   }
-
-  // Users: the table exists (migration 0005) but is seeded EMPTY for now —
-  // IT creates accounts when wiring sign-in. The رؤساء المسارات official
-  // names stay predefined in the app (PATH_REPS) and on streams.head_name.
 
   // 2) Entities (الجهات): session entity + the 34 federal entities
   const entityNames = Array.from(new Set([DEFAULT_ENTITY, ...FEDERAL_ENTITIES]));
@@ -100,6 +113,53 @@ async function main() {
       where: { entityId_streamId: { entityId: sessionEntityId, streamId: p.id } },
       update: {},
       create: { entityId: sessionEntityId, streamId: p.id },
+    });
+  }
+
+  // 6b) Users (المستخدمون) — realistic starter accounts keyed by email so IT
+  // only re-points the email to the verified UAE PASS identity (or deactivates
+  // and re-creates). Placeholder emails use the @aigp.gov.ae domain.
+  const upsertUser = (email: string, data: { role: string; name: string; title?: string; streamId?: string | null; entityId?: string | null }) =>
+    prisma.user.upsert({
+      where: { email },
+      update: {},
+      create: {
+        email,
+        role: data.role,
+        name: data.name,
+        title: data.title || '',
+        streamId: data.streamId ?? null,
+        entityId: data.entityId ?? null,
+      },
+    });
+
+  // National committee (اللجنة الوطنية)
+  await upsertUser('committee@aigp.gov.ae', { role: 'ai', name: 'اللجنة الوطنية للذكاء الاصطناعي', title: 'عضو اللجنة الوطنية' });
+
+  // The five stream heads (رؤساء المسارات) — official names from PATH_REPS
+  for (const p of PATHS) {
+    await upsertUser(`head.${p.id}@aigp.gov.ae`, {
+      role: 'path',
+      name: PATH_REPS[p.id] || `رئيس مسار ${p.name}`,
+      title: `رئيس مسار ${p.name}`,
+      streamId: p.id,
+    });
+  }
+
+  // Default entity: representative (ممثل الجهة) + one coordinator per stream
+  await upsertUser('rep@aigp.gov.ae', {
+    role: 'entity',
+    name: 'أحمد محمد العامري',
+    title: 'مدير إدارة التحول الرقمي',
+    entityId: sessionEntityId,
+  });
+  for (const p of PATHS) {
+    await upsertUser(`coord.${p.id}@aigp.gov.ae`, {
+      role: 'coord',
+      name: `منسق ${p.name}`,
+      title: `منسق مسار ${p.name} في الجهة`,
+      entityId: sessionEntityId,
+      streamId: p.id,
     });
   }
 
@@ -262,6 +322,8 @@ async function main() {
   }
 
   const counts = {
+    roles: await prisma.role.count(),
+    users: await prisma.user.count(),
     streams: await prisma.stream.count(),
     entities: await prisma.entity.count(),
     batches: await prisma.execBatch.count(),

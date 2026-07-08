@@ -22,16 +22,19 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # All runtime configuration comes from the .env file IT fills in
+    # (copy .env.example → .env). DATABASE_URL is overridden here to point at
+    # the compose "db" service instead of localhost.
+    env_file:
+      - .env
     environment:
       NEXT_PUBLIC_DATA_MODE: api
       DATABASE_URL: postgresql://portal:portal@db:5432/transformation?schema=public
-      AI_API_BASE_URL: ${AI_API_BASE_URL:-}
-      AI_API_KEY: ${AI_API_KEY:-}
-      AI_MODEL: ${AI_MODEL:-default}
     ports:
       - '3000:3000'
-    # Push schema + seed on first boot, then start the server.
-    command: sh -c "npx prisma db push --accept-data-loss && npx tsx prisma/seed.ts && npm run start"
+    # Apply the versioned migrations (0001→0007), seed reference data, then
+    # start the server. `migrate deploy` is idempotent and safe to re-run.
+    command: sh -c "npx prisma migrate deploy && npx tsx prisma/seed.ts && npm run start"
 
 volumes:
   pgdata:

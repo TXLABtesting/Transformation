@@ -169,17 +169,17 @@ model Item {
   progress          Int     @default(0)
 
   // outcomes / scope
-  scopeOfWork         String? @map("scope_of_work")
-  budget              String?
-  budgetAmount        BigInt? @map("budget_amount") // parsed درهم amount
-  scopeApproval       String? @map("scope_approval")
-  scopeFile           String? @map("scope_file")
-  expectedOutputs     String? @map("expected_outputs")
-  expectedOutcomes    String? @map("expected_outcomes")
-  expectedImpact      String? @map("expected_impact")
-  aiModels            Int?    @map("ai_models")
-  targetPct           Int?    @map("target_pct")
-  endDate             String? @map("end_date")
+  scopeOfWork      String? @map("scope_of_work")
+  budget           String?
+  budgetAmount     BigInt? @map("budget_amount") // parsed درهم amount
+  scopeApproval    String? @map("scope_approval")
+  scopeFile        String? @map("scope_file")
+  expectedOutputs  String? @map("expected_outputs")
+  expectedOutcomes String? @map("expected_outcomes")
+  expectedImpact   String? @map("expected_impact")
+  aiModels         Int?    @map("ai_models")
+  targetPct        Int?    @map("target_pct")
+  endDate          String? @map("end_date")
 
   // operation-specific
   opType        String? @map("op_type")
@@ -196,7 +196,7 @@ model Item {
   expectedImprovement String? @map("expected_improvement")
 
   // execution planning
-  execBatch String? @map("exec_batch") // FK by name into exec_batches.name_ar (kept loose for flexibility)
+  execBatch       String?          @map("exec_batch") // FK by name into exec_batches.name_ar (kept loose for flexibility)
   // centrally-managed launch plans the item is attached to (إدارة خطط الإطلاق)
   // — one batch per item, but potentially several launches within that batch
   launchPlanLinks ItemLaunchPlan[]
@@ -268,14 +268,14 @@ model ItemLaunchPlan {
 
 /// Execution checklist rows (بنود التنفيذ) — agents/testing/pilot per item.
 model ExecChecklistItem {
-  id      String  @id @default(cuid())
-  itemId  String  @map("item_id")
-  key     String // agents | testing | pilot
-  label   String
-  status  String  @default("لم تبدأ") // لم تبدأ | مكتمل | متأخر
-  newDate String? @map("new_date")
-  reason  String?
-  sortOrder Int   @default(0) @map("sort_order")
+  id        String  @id @default(cuid())
+  itemId    String  @map("item_id")
+  key       String // agents | testing | pilot
+  label     String
+  status    String  @default("لم تبدأ") // لم تبدأ | مكتمل | متأخر
+  newDate   String? @map("new_date")
+  reason    String?
+  sortOrder Int     @default(0) @map("sort_order")
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
@@ -301,13 +301,13 @@ model SubMilestone {
 /// Launch plans (خطط الإطلاق) — shared across items via item_launches.
 /// Completion is synchronized: `done` lives here, once for all sharers.
 model Launch {
-  id     String  @id @default(cuid())
+  id     String    @id @default(cuid())
   title  String
   ltype  String
   date   String
-  desc   String  @default("")
-  status String  @default("مخطط")
-  done   Boolean @default(false)
+  desc   String    @default("")
+  status String    @default("مخطط")
+  done   Boolean   @default(false)
   doneAt DateTime? @map("done_at")
 
   items ItemLaunch[]
@@ -399,20 +399,87 @@ model AppState {
 /// predefined (official names/titles); their emails and phone numbers are
 /// added later for sign-in mapping (UAE PASS / IdP).
 model User {
-  id        String   @id @default(cuid())
-  role      String // entity | coord | path | ai
+  id        String    @id @default(cuid())
+  role      String // entity | coord | path | ai  (FK → roles.key)
   name      String
-  title     String   @default("")
-  email     String?  @unique
+  title     String    @default("")
+  email     String?   @unique
   phone     String?
-  streamId  String?  @map("stream_id")
-  entityId  String?  @map("entity_id")
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
+  streamId  String?   @map("stream_id")
+  entityId  String?   @map("entity_id")
+  isActive  Boolean   @default(true) @map("is_active")
+  lastLogin DateTime? @map("last_login")
+  createdAt DateTime  @default(now()) @map("created_at")
 
-  stream Stream? @relation(fields: [streamId], references: [id])
-  entity Entity? @relation(fields: [entityId], references: [id])
+  roleRef       Role           @relation(fields: [role], references: [key])
+  stream        Stream?        @relation(fields: [streamId], references: [id])
+  entity        Entity?        @relation(fields: [entityId], references: [id])
+  sessions      Session[]
+  notifications Notification[]
 
   @@index([role])
+  @@index([entityId])
+  @@index([streamId])
   @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Access control, sessions & notifications
+// ---------------------------------------------------------------------------
+
+/// Access role (الأدوار) reference table. The four roles the platform assumes;
+/// `permissions` is a capability list the API can enforce against.
+model Role {
+  key         String @id // entity | coord | path | ai
+  nameAr      String @map("name_ar")
+  descAr      String @default("") @map("desc_ar")
+  scope       String @default("") // entity+stream | entity | stream | national
+  permissions Json   @default("[]") // string[] of capability keys
+  sortOrder   Int    @default(0) @map("sort_order")
+
+  users User[]
+
+  @@map("roles")
+}
+
+/// Server-side auth session (UAE PASS / IdP). One row per signed-in session;
+/// the opaque `token` is stored in an httpOnly cookie.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  ip        String?
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+/// Persisted notification (الإشعارات). Targeted to a user, or broadcast to a
+/// role / entity / stream. Today notifications are derived in the client; this
+/// table lets IT persist and push them (email/SMS) from the API layer.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String?   @map("user_id") // specific recipient (optional)
+  role      String? // broadcast to a role
+  entityId  String?   @map("entity_id") // broadcast within an entity
+  streamId  String?   @map("stream_id") // broadcast within a stream
+  itemId    String?   @map("item_id") // related item
+  kind      String // return | nominate | fund | unfund | stageMove | approve | submit | info
+  title     String
+  body      String    @default("")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([role])
+  @@index([entityId])
+  @@index([streamId])
+  @@map("notifications")
 }
