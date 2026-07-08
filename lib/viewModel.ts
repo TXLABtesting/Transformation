@@ -739,25 +739,28 @@ function build(s: Store) {
   const assignIsChange = assignSelItems.length > 0 && assignSelItems.every((i) => !!i.execBatch);
 
   // ---- committee analytics ----
-  const withScore = base.filter((i) => wfOf(i) !== 'draft');
+  // Scope to what the committee actually sees (roleBase drops draft + ent1),
+  // so the headline «إجمالي المدخلات» reconciles with every list/breakdown below.
+  const aiBase = roleBase;
+  const withScore = aiBase.filter((i) => wfOf(i) !== 'draft');
   const scores = withScore.map((i) => transformScore(i).v);
   const sumV = scores.reduce((a, b) => a + b, 0);
   const n = scores.length || 1;
   // spent budget = own budgets of committee-funded items + each funded launch
   // plan's group budget counted ONCE (items without an own budget share it)
   // plan budgets are DERIVED from item budgets, so totals sum items directly
-  const fundedItems = base.filter((i) => i.funded);
+  const fundedItems = aiBase.filter((i) => i.funded);
   const spentBudget = fundedItems.reduce((a, i) => a + parseBudget(i.budget), 0);
   const aiNomByCommittee = (i: Item) =>
     !!i.nom && (!!i.nom.direct || i.nom.role === 'اللجنة الوطنية' || i.nom.by === 'اللجنة الوطنية');
   const aiStats = {
-    entCount: new Set(base.map((i) => ent(i))).size,
-    total: base.length,
+    entCount: new Set(aiBase.map((i) => ent(i))).size,
+    total: aiBase.length,
     // the committee acts only on stream-head nominations, not on raw submissions
-    nominated: base.filter((i) => !!i.nom && !i.funded).length,
-    nominatedHeads: base.filter((i) => !!i.nom && !i.funded && !aiNomByCommittee(i)).length,
-    nominatedCommittee: base.filter((i) => !!i.nom && !i.funded && aiNomByCommittee(i)).length,
-    funded: base.filter((i) => i.funded).length,
+    nominated: aiBase.filter((i) => !!i.nom && !i.funded).length,
+    nominatedHeads: aiBase.filter((i) => !!i.nom && !i.funded && !aiNomByCommittee(i)).length,
+    nominatedCommittee: aiBase.filter((i) => !!i.nom && !i.funded && aiNomByCommittee(i)).length,
+    funded: aiBase.filter((i) => i.funded).length,
     avg: Math.round((sumV / n) * 10) / 10,
     avgPct: Math.round((sumV / n / 5) * 100),
     now: scores.filter((v) => v >= 4.2).length,
@@ -1733,7 +1736,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     wfChip: wm.chip,
     wfBg: wm.bg,
     priority: i.priority,
-    rankLabel: i.rank ? 'رقم ' + i.rank : '',
+    rankLabel: i.rank ? String(i.rank) : '',
     complexity: i.complexity,
     endDateFmt: fmtDate(i.endDate),
     isReturned: rawRole === 'coord' && !!i.ret,

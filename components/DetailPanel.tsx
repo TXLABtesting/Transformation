@@ -85,6 +85,23 @@ function TransformPill({ v }: { v?: string }) {
   );
 }
 
+// Colored pill for qualitative levels (الأولوية / التصنيف / كثافة الاستخدام /
+// أولوية التحول / مستوى التعقيد): high→red, medium→amber, low→green.
+function LevelPill({ v }: { v?: string }) {
+  const s = (v || '').trim();
+  const high = /عالٍ|عالي|عالية|مرتفع|كبير|حرج|عاجل|قصو/.test(s);
+  const mid = /متوسط|معتدل|متوسّط/.test(s);
+  const low = /منخفض|بسيط|قليل|ضعيف|محدود/.test(s);
+  const c = !s ? '#8A97AD' : high ? '#C0392B' : mid ? '#B45309' : low ? '#0B8A4B' : '#1D4ED8';
+  const bg = !s ? '#EEF2F8' : high ? '#FDECEA' : mid ? '#FFF7EB' : low ? '#EAF7F0' : '#EAF1FE';
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: bg, color: c, borderRadius: 999, padding: '3px 11px', fontSize: 12, fontWeight: 800 }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: c, flex: 'none' }} />
+      {s || '—'}
+    </span>
+  );
+}
+
 function AutoLevel({ pct, level }: { pct?: number; level?: string }) {
   const p = Math.max(0, Math.min(100, pct || 0));
   return (
@@ -333,15 +350,14 @@ export function DetailPanel({ vm }: { vm: VM }) {
               }}
             >
               <div style={labelStyle}>الأولوية</div>
-              <div style={valueStyle}>
-                {d.priority}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <LevelPill v={d.priority} />
                 {d.rankLabel && (
                   <span
                     style={{
-                      marginRight: 6,
                       fontSize: 10.5,
                       fontWeight: 800,
-                      padding: '2px 8px',
+                      padding: '3px 9px',
                       borderRadius: 999,
                       background: '#EAF1FE',
                       color: '#1D4ED8',
@@ -362,7 +378,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               }}
             >
               <div style={labelStyle}>التصنيف</div>
-              <div style={valueStyle}>{d.complexity}</div>
+              <div><LevelPill v={d.complexity} /></div>
             </div>
             <div
               style={{
@@ -481,11 +497,11 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   <div>
                     <div style={labelStyle}>قابلية التحول</div>
-                    <div style={valueStyle}>{d.transformability}</div>
+                    <div><TransformPill v={d.transformability} /></div>
                   </div>
                   <div>
                     <div style={labelStyle}>أولوية التحول</div>
-                    <div style={valueStyle}>{d.transformPriority}</div>
+                    <div><LevelPill v={d.transformPriority} /></div>
                   </div>
                   <div>
                     <div style={labelStyle}>جاهزية التحول</div>
@@ -501,14 +517,14 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 <DetailSecHead iconD={IC_SLIDERS} title="خصائص العملية" />
                 <DetailGrid cols={3}>
                   <DetailCell label="نوع العملية">{d.opType}</DetailCell>
-                  <DetailCell label="كثافة الاستخدام">{d.usageIntensity}</DetailCell>
+                  <DetailCell label="كثافة الاستخدام"><LevelPill v={d.usageIntensity} /></DetailCell>
                   <DetailCell label="الأنشطة الفرعية"><RichTextView html={d.subActivities} style={valueStyle} /></DetailCell>
                 </DetailGrid>
 
                 <DetailSecHead iconD={IC_TREND} title="جاهزية التحول" />
                 <DetailGrid cols={3}>
                   <DetailCell label="قابلية التحول"><TransformPill v={d.transformability} /></DetailCell>
-                  <DetailCell label="أولوية التحول">{d.transformPriority}</DetailCell>
+                  <DetailCell label="أولوية التحول"><LevelPill v={d.transformPriority} /></DetailCell>
                   <DetailCell label="جاهزية التحول">{d.readiness}</DetailCell>
                 </DetailGrid>
 
@@ -517,7 +533,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   const cells = [
                     <DetailCell key="lvl" label="مستوى الأتمتة"><AutoLevel pct={d.automationPct} level={d.automationLevel} /></DetailCell>,
                     ...(d.automationSystem ? [<DetailCell key="sys" label="نظام الأتمتة">{d.automationSystem}</DetailCell>] : []),
-                    ...(d.complexityLevel ? [<DetailCell key="cx" label="مستوى تعقيد الأتمتة">{d.complexityLevel}</DetailCell>] : []),
+                    ...(d.complexityLevel ? [<DetailCell key="cx" label="مستوى تعقيد الأتمتة"><LevelPill v={d.complexityLevel} /></DetailCell>] : []),
                   ];
                   return <DetailGrid cols={Math.min(3, cells.length)}>{cells}</DetailGrid>;
                 })()}
@@ -781,11 +797,11 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   <div>
                     <div style={labelStyle}>الأولوية</div>
-                    <div style={valueStyle}>{d.priority}</div>
+                    <div><LevelPill v={d.priority} /></div>
                   </div>
                   <div>
                     <div style={labelStyle}>مستوى التعقيد</div>
-                    <div style={valueStyle}>{d.complexity}</div>
+                    <div><LevelPill v={d.complexity} /></div>
                   </div>
                   <div>
                     <div style={labelStyle}>الأثر المتوقع</div>
