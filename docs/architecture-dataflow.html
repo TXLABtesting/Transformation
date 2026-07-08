@@ -32,16 +32,19 @@
   <div class="sub" style="direction:rtl; text-align:left; font-size:13px;">المنصة الحكومية لتخطيط ومتابعة مشروع الذكاء الاصطناعي المساعد</div>
   <div class="meta">
     Document 1 of 2 · Prepared for the IT team (staging deployment, DB linking, go-live)<br>
-    Version 1.0 · July 2026 · Companion documents: HANDOVER.md, DEPLOYMENT.md, Roles &amp; Access (PDF)
+    Version 2.0 · July 2026 · Companion documents: docs/it-handover.md, .env.example, Roles &amp; Access (PDF)
   </div>
 </div>
 
 <div class="page">
   <h2>1. System overview</h2>
   <p>The portal is a <b>Next.js 14</b> application (App Router, TypeScript, RTL Arabic UI) backed by
-  <b>PostgreSQL 16</b> through <b>Prisma ORM</b>. Users sign in with <b>UAE PASS</b> (OIDC). An optional internal,
-  OpenAI-compatible model powers the AI review step. One codebase serves all four roles; every screen derives from a
-  single role-scoped view-model, so what a user can see is decided in one place.</p>
+  <b>PostgreSQL 16</b> through <b>Prisma ORM</b>. Users sign in with <b>UAE PASS</b> (OIDC); a server-side
+  <b>sessions</b> table backs the signed-in session. An optional internal, OpenAI-compatible model powers the AI
+  review step. One codebase serves all <b>five roles</b> — مشرف النظام (admin), ممثل الجهة, منسق المسار في الجهة,
+  رئيس المسار, and اللجنة الوطنية; every screen derives from a single role-scoped view-model, so what a user can
+  see is decided in one place. The <b>admin</b> gets a dedicated console for managing users &amp; roles and
+  assigning the stream heads and national committee.</p>
   <svg viewBox="0 0 760 400" width="100%">
     <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#54627B"/></marker></defs>
     <rect x="20" y="30" width="200" height="120" rx="10" fill="#EAF0FE" stroke="#2563EB"/>
@@ -62,7 +65,7 @@
     <text x="410" y="178" text-anchor="middle" font-size="10" fill="#33415C">Security headers · token guard</text>
     <rect x="590" y="20" width="150" height="60" rx="10" fill="#E3F6EC" stroke="#0B8A4B"/>
     <text x="665" y="45" text-anchor="middle" font-size="11" font-weight="700" fill="#0B8A4B">PostgreSQL 16</text>
-    <text x="665" y="62" text-anchor="middle" font-size="9.5" fill="#33415C">20 tables · Prisma</text>
+    <text x="665" y="62" text-anchor="middle" font-size="9.5" fill="#33415C">24 tables · Prisma</text>
     <rect x="590" y="100" width="150" height="52" rx="10" fill="#FFF3DE" stroke="#B45309"/>
     <text x="665" y="122" text-anchor="middle" font-size="11" font-weight="700" fill="#B45309">Internal AI model</text>
     <text x="665" y="138" text-anchor="middle" font-size="9.5" fill="#33415C">OpenAI-compatible API</text>
@@ -137,19 +140,21 @@
 
 <div class="page">
   <h2>3. Data model</h2>
-  <p>Schema source of truth: <b>prisma/schema.prisma</b> + migrations <b>0001–0005</b> (verified on a fresh
-  PostgreSQL 16). The seed loads <b>reference data only</b> — users, items, launch plans and all transaction tables
-  start empty.</p>
+  <p>Schema source of truth: <b>prisma/schema.prisma</b> + migrations <b>0001–0008</b> (verified on a fresh
+  PostgreSQL 16 — 24 tables). The seed loads <b>reference data + roles + starter accounts</b>; items, launch plans
+  and all transaction tables start empty (the demo portfolio only seeds when <code>NEXT_PUBLIC_DEMO_DATA=1</code>).</p>
   <table>
     <tr><th>Group</th><th>Tables</th><th>Notes</th></tr>
     <tr><td><b>Reference</b></td><td>streams, entities, program_phases, exec_batches, settings</td>
         <td>5 streams in official order with the predefined heads (رؤساء المسارات); 35 federal entities; المراحل; approved committee budget (100M AED).</td></tr>
-    <tr><td><b>Identity</b></td><td>users, entity_reps, stream_owners</td>
-        <td><b>users</b> is empty by design — IT creates accounts and maps UAE PASS sign-ins (role: entity | coord | path | ai, plus stream/entity links).</td></tr>
+    <tr><td><b>Access control</b></td><td>roles, users, sessions</td>
+        <td><b>roles</b> holds the 5 roles (admin | coord | entity | path | ai) with a permissions JSON; <b>users.role</b> is a FK into it. Seed creates starter accounts (admin, committee, 5 stream heads, entity rep, 5 coordinators) keyed by @aigp.gov.ae emails IT re-points to UAE PASS identities. <b>sessions</b> backs each signed-in session.</td></tr>
+    <tr><td><b>Team setup</b></td><td>entity_reps, stream_owners</td>
+        <td>Per-entity representative and per-stream owners; the entity rep provisions its own coordinators here.</td></tr>
     <tr><td><b>Portfolio</b></td><td>items, item_launch_plans, launch_plans, launches, item_launches, exec_checklist_items, sub_milestones</td>
         <td>Items carry the <b>execution budget</b>; a launch plan's execution budget is <b>derived</b> (sum of attached items) and its <b>launch_budget</b> is informational only.</td></tr>
-    <tr><td><b>Workflow / audit</b></td><td>log_entries, nominations, fundings, funding_cancellations</td>
-        <td>Every action is logged with actor + timestamp; nominations and funding decisions are first-class rows.</td></tr>
+    <tr><td><b>Workflow / audit</b></td><td>log_entries, nominations, fundings, funding_cancellations, notifications</td>
+        <td>Every action is logged with actor + timestamp; nominations and funding decisions are first-class rows. <b>notifications</b> persist الإشعارات (per-user or role/entity/stream broadcast) for optional email/SMS push.</td></tr>
     <tr><td><b>Misc</b></td><td>app_state</td><td>Serialized UI-state snapshot used by /api/state.</td></tr>
   </table>
   <h3>Cost model (important)</h3>
@@ -201,9 +206,9 @@
     <line x1="330" y1="145" x2="578" y2="145" stroke="#54627B" stroke-width="1.4" marker-end="url(#d)"/>
     <text x="455" y="138" text-anchor="middle" font-size="9.5" fill="#33415C">4. token exchange (server-side, client_secret)</text>
     <line x1="330" y1="175" x2="82" y2="175" stroke="#54627B" stroke-width="1.4" marker-end="url(#d)"/>
-    <text x="204" y="168" text-anchor="middle" font-size="9.5" fill="#33415C">5. session established → team setup / dashboard</text>
+    <text x="204" y="168" text-anchor="middle" font-size="9.5" fill="#33415C">5. sessions row + cookie → dashboard (role-scoped)</text>
     <rect x="40" y="195" width="680" height="34" rx="8" fill="#FFF8EC" stroke="#F6E2BD"/>
-    <text x="380" y="216" text-anchor="middle" font-size="9.5" fill="#8A6314">To wire (IT): after step 4, resolve the user in the users table (email / Emirates ID) → set role, stream, entity in the session. Mock mode skips 2–4.</text>
+    <text x="380" y="216" text-anchor="middle" font-size="9.5" fill="#8A6314">To wire (IT): after step 4, resolve the user in users (email / Emirates ID) → join roles → write a sessions row (token cookie, SESSION_SECRET, expiry) → role, stream, entity in the session. Mock mode skips 2–4.</text>
   </svg>
   <div class="caption">Fig. 4 — Authentication sequence</div>
 
@@ -284,4 +289,52 @@
     <tr><td>Excel / PowerPoint export</td><td>Client-side generation (exceljs / pptxgenjs)</td><td>Exports the current role-scoped list only — a user can never export data they cannot see.</td></tr>
   </table>
   <div class="foot"><span>AI Transformation Portal — Architecture &amp; Data Flow</span><span>6</span></div>
+</div>
+
+<div class="page">
+  <h2>8. Access provisioning &amp; the admin console</h2>
+  <p>Accounts live in <b>users</b> (FK <b>users.role → roles.key</b>). Two actors provision people, and the split
+  is enforced by role: the <b>admin</b> owns platform-level identities (stream heads and the national committee),
+  while each <b>entity rep</b> owns the coordinators inside its own entity.</p>
+  <svg viewBox="0 0 760 300" width="100%">
+    <defs><marker id="g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#54627B"/></marker></defs>
+    <rect x="300" y="20" width="160" height="54" rx="10" fill="#FDF0DC" stroke="#B45309"/>
+    <text x="380" y="42" text-anchor="middle" font-size="11" font-weight="700" fill="#B45309">مشرف النظام</text>
+    <text x="380" y="60" text-anchor="middle" font-size="9" fill="#54627B">admin · admin console</text>
+    <rect x="60" y="120" width="200" height="60" rx="10" fill="#DEF4F6" stroke="#0E7C86"/>
+    <text x="160" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0E7C86">رؤساء المسارات ×5</text>
+    <text x="160" y="161" text-anchor="middle" font-size="9" fill="#54627B">role=path · one per stream</text>
+    <rect x="500" y="120" width="200" height="60" rx="10" fill="#EFEAFE" stroke="#6D28D9"/>
+    <text x="600" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#6D28D9">اللجنة الوطنية</text>
+    <text x="600" y="161" text-anchor="middle" font-size="9" fill="#54627B">role=ai · committee members</text>
+    <rect x="300" y="120" width="160" height="60" rx="10" fill="#E5EEFF" stroke="#2563EB"/>
+    <text x="380" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#2563EB">ممثل الجهة</text>
+    <text x="380" y="161" text-anchor="middle" font-size="9" fill="#54627B">role=entity · per entity</text>
+    <rect x="300" y="220" width="160" height="58" rx="10" fill="#DCF3F5" stroke="#0E7C86"/>
+    <text x="380" y="243" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0E7C86">منسقو المسارات</text>
+    <text x="380" y="261" text-anchor="middle" font-size="9" fill="#54627B">role=coord · entity+stream</text>
+    <line x1="340" y1="74" x2="180" y2="118" stroke="#B45309" stroke-width="1.5" marker-end="url(#g)"/>
+    <text x="215" y="98" text-anchor="middle" font-size="8.5" fill="#B45309">assigns / تعيين</text>
+    <line x1="420" y1="74" x2="590" y2="118" stroke="#B45309" stroke-width="1.5" marker-end="url(#g)"/>
+    <text x="545" y="98" text-anchor="middle" font-size="8.5" fill="#B45309">assigns / إضافة عضو</text>
+    <line x1="380" y1="74" x2="380" y2="118" stroke="#54627B" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#g)"/>
+    <text x="452" y="98" text-anchor="middle" font-size="8.5" fill="#54627B">creates entity accounts</text>
+    <line x1="380" y1="180" x2="380" y2="218" stroke="#2563EB" stroke-width="1.5" marker-end="url(#g)"/>
+    <text x="470" y="203" text-anchor="middle" font-size="8.5" fill="#2563EB">provisions in team setup</text>
+  </svg>
+  <div class="caption">Fig. 7 — Who provisions whom (admin console vs. entity team setup)</div>
+
+  <h3>Roles &amp; capabilities (roles.permissions)</h3>
+  <table>
+    <tr><th>role</th><th class="ar">الدور</th><th>scope</th><th>Key capabilities</th></tr>
+    <tr><td><b>admin</b></td><td class="ar">مشرف النظام</td><td>system</td><td>users.manage · roles.view · streamhead.assign · committee.assign</td></tr>
+    <tr><td><b>ai</b></td><td class="ar">اللجنة الوطنية</td><td>national</td><td>item.view.all · nomination.review · funding.approve · funding.cancel · phase.edit · budget.set</td></tr>
+    <tr><td><b>path</b></td><td class="ar">رئيس المسار</td><td>stream</td><td>item.view.stream · item.nominate · plan.view</td></tr>
+    <tr><td><b>entity</b></td><td class="ar">ممثل الجهة</td><td>entity</td><td>item.view.entity · item.approve · item.return · team.manage</td></tr>
+    <tr><td><b>coord</b></td><td class="ar">منسق المسار في الجهة</td><td>entity+stream</td><td>item.create · item.update · item.submit · plan.edit</td></tr>
+  </table>
+  <p class="muted" style="margin-top:8px;">Provisioning rules enforced by the app: <b>coord</b> and <b>entity</b> require <code>entity_id</code>;
+  <b>coord</b> and <b>path</b> require <code>stream_id</code>; <b>ai</b> and <b>admin</b> require neither. Deactivate
+  (never delete) accounts via <code>is_active=false</code> so the audit trail keeps valid author names.</p>
+  <div class="foot"><span>AI Transformation Portal — Architecture &amp; Data Flow</span><span>7</span></div>
 </div>

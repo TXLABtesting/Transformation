@@ -38,12 +38,15 @@
 </div>
 
 <div class="page">
-  <h2>1. The four roles</h2>
-  <p>Every user belongs to exactly one role. The delivered build opens as <b>ممثل الجهة</b> by default
-  (<code>NEXT_PUBLIC_DEFAULT_ROLE</code>); in production the role comes from the sign-in mapping against the
-  <b>users</b> table. All scoping below is enforced centrally in the view-model — one place decides what each role sees.</p>
+  <h2>1. The five roles</h2>
+  <p>Every user belongs to exactly one role (<b>users.role</b> → FK <b>roles.key</b>). The delivered build opens as
+  <b>ممثل الجهة</b> by default (<code>NEXT_PUBLIC_DEFAULT_ROLE</code>); in production the role comes from the sign-in
+  mapping against the <b>users</b> table. Four roles operate the item workflow; the fifth, <b>مشرف النظام</b>
+  (admin), is a platform-level role that manages accounts and roles — see §5. All scoping below is enforced
+  centrally in the view-model — one place decides what each role sees.</p>
   <table>
     <tr><th>Role</th><th>Arabic</th><th>Who</th><th>Scope of data</th></tr>
+    <tr><td>System administrator</td><td class="ar">مشرف النظام</td><td>The platform administrator (manages users &amp; roles)</td><td>The admin console — users, roles, stream-head &amp; committee assignment (not the item workflow)</td></tr>
     <tr><td>Coordinator</td><td class="ar">منسق المسار في الجهة</td><td>The entity employee who enters the data for ONE stream</td><td>Own entity + own stream — including drafts</td></tr>
     <tr><td>Entity representative</td><td class="ar">ممثل الجهة</td><td>The entity's official approver</td><td>Own entity, all streams — submissions onward (never drafts)</td></tr>
     <tr><td>Stream head</td><td class="ar">رئيس المسار</td><td>Predefined national owner of one stream (5 officials)</td><td>Own stream across ALL entities — approved items only</td></tr>
@@ -202,6 +205,33 @@
     <tr><td>Other entities' data</td><td class="no">—</td><td class="no">—</td><td class="part">own stream only</td><td class="yes">✓</td></tr>
   </table>
   <p class="muted" style="font-size:9.5px;">Note: role enforcement is currently presentation-layer (single state API). Before opening the platform
-  to multiple tenants, transitions should be re-checked server-side per role — see HANDOVER.md §8.</p>
+  to multiple tenants, transitions should be re-checked server-side per role — see docs/it-handover.md.</p>
   <div class="foot"><span>AI Transformation Portal — Roles &amp; Access</span><span>6</span></div>
+</div>
+
+<div class="page">
+  <div class="rolehead"><span class="rolechip" style="background:#B45309;">A</span><h2 style="border:none;margin:0;">مشرف النظام — System administrator</h2></div>
+  <p><b>Purpose:</b> the platform-level role. Manages all accounts and roles and, specifically, assigns the stream
+  heads (رؤساء المسارات) and national committee (اللجنة الوطنية). Coordinators are provisioned by each entity rep in
+  team setup — not by the admin. The admin does not take part in the item workflow.</p>
+  <h3>Admin console (لوحة المشرف)</h3>
+  <ul>
+    <li><b>المستخدمون</b> — every account in one table with a role filter; add / edit / activate-deactivate / delete. Seeded reference accounts (committee, stream heads) are protected from deletion.</li>
+    <li><b>رؤساء المسارات واللجنة</b> — assign the رئيس المسار for each of the five streams and manage اللجنة الوطنية members.</li>
+    <li><b>الأدوار والصلاحيات</b> — reference cards for all five roles with scope and the <code>roles.permissions</code> capability list.</li>
+  </ul>
+  <h3>Provisioning split (who creates whom)</h3>
+  <table>
+    <tr><th>Account</th><th>Provisioned by</th><th>Where</th></tr>
+    <tr><td>Stream heads (رئيس المسار)</td><td class="ar">مشرف النظام</td><td>Admin console → رؤساء المسارات</td></tr>
+    <tr><td>National committee (اللجنة الوطنية)</td><td class="ar">مشرف النظام</td><td>Admin console → اللجنة</td></tr>
+    <tr><td>Entity representative (ممثل الجهة)</td><td class="ar">مشرف النظام</td><td>Admin console → المستخدمون</td></tr>
+    <tr><td>Coordinators (منسق المسار في الجهة)</td><td class="ar">ممثل الجهة</td><td>Team setup (تسجيل فريق العمل)</td></tr>
+  </table>
+  <h3>Capabilities (roles.permissions)</h3>
+  <p><code>users.manage</code> · <code>roles.view</code> · <code>streamhead.assign</code> · <code>committee.assign</code></p>
+  <p class="muted" style="font-size:9.5px;">In production the admin is reached by a <b>users</b> row with <code>role='admin'</code> (mapped from UAE PASS);
+  the demo exposes it through the role-switcher. The <code>admin</code> role and an <code>admin@aigp.gov.ae</code>
+  starter account are created by migration 0008 and the seed.</p>
+  <div class="foot"><span>AI Transformation Portal — Roles &amp; Access</span><span>7</span></div>
 </div>
