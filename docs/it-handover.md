@@ -100,10 +100,12 @@ the client uses camelCase). Migrations: `prisma/migrations/0001…0006`.
 - `fundings` / `funding_cancellations` — committee funding decisions with
   the mandatory cancellation reason.
 
-**Access control, sessions & notifications** (migration `0007`)
-- `roles` — the four access roles (`coord`, `entity`, `path`, `ai`) with an
+**Access control, sessions & notifications** (migrations `0007`/`0008`)
+- `roles` — the access roles (`admin`, `coord`, `entity`, `path`, `ai`) with an
   Arabic name, scope, and a `permissions` JSON capability list. `users.role`
   is a foreign key into this table, so every account resolves to a valid role.
+  The `admin` role (migration `0008`) runs the admin console — managing
+  users/roles and assigning the stream heads and national committee.
 - `sessions` — one row per signed-in session (opaque token in an httpOnly
   cookie, expiry, IP/user-agent). Populated by the UAE PASS callback (§5).
 - `notifications` — persisted الإشعارات, targeted to a user or broadcast to a
@@ -116,27 +118,33 @@ the client uses camelCase). Migrations: `prisma/migrations/0001…0006`.
   persistence. Harmless in production; can stay empty.
 
 The full table list (with columns) lives in `prisma/schema.prisma`; the
-versioned DDL is in `prisma/migrations/0001…0007`.
+versioned DDL is in `prisma/migrations/0001…0008`.
 
 ## 4. Role management
 
 `users` table drives access; `users.role` is a FK into the `roles` reference
-table. The four roles (seeded by migration `0007` and the seed script):
+table. The roles (seeded by migrations `0007`/`0008` and the seed script):
 
 | role | Arabic | Scope columns | scope |
 | --- | --- | --- | --- |
+| `admin` | مشرف النظام | — | `system` |
 | `coord` | منسق المسار في الجهة | `entity_id` + `stream_id` | `entity+stream` |
 | `entity` | ممثل الجهة | `entity_id` | `entity` |
 | `path` | رئيس المسار | `stream_id` | `stream` |
 | `ai` | اللجنة الوطنية | — | `national` |
 
+**Who provisions whom:** the `admin` manages all accounts and specifically
+assigns the stream heads (`path`) and national committee (`ai`) from the admin
+console; the entity rep (`entity`) provisions its own coordinators (`coord`)
+in team setup.
+
 **Seeded starter accounts** (in `users`, keyed by email on the
-`@aigp.gov.ae` placeholder domain): the national committee, the five stream
-heads (`head.<stream>@…`), the default entity representative (`rep@…`), and
-one coordinator per stream (`coord.<stream>@…`). To go live, re-point each
-account's `email` to the verified UAE PASS identity (or deactivate and create
-real ones). `roles.permissions` carries the capability list the API can
-enforce against.
+`@aigp.gov.ae` placeholder domain): the system admin (`admin@…`), the national
+committee, the five stream heads (`head.<stream>@…`), the default entity
+representative (`rep@…`), and one coordinator per stream (`coord.<stream>@…`).
+To go live, re-point each account's `email` to the verified UAE PASS identity
+(or deactivate and create real ones). `roles.permissions` carries the
+capability list the API can enforce against.
 
 Rules the application assumes (enforce when provisioning users):
 - `coord` and `entity` **must** have `entity_id`; `coord` and `path`

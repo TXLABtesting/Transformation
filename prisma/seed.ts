@@ -22,8 +22,9 @@ import { FEDERAL_ENTITIES } from '../lib/entities';
 
 const prisma = new PrismaClient();
 
-// The four access roles (mirrors migration 0007; upsert keeps them in sync).
+// The access roles (mirrors migrations 0007/0008; upsert keeps them in sync).
 const ROLES: Array<{ key: string; nameAr: string; descAr: string; scope: string; permissions: string[]; sortOrder: number }> = [
+  { key: 'admin', nameAr: 'مشرف النظام', descAr: 'يدير المستخدمين والأدوار، ويعيّن رؤساء المسارات وأعضاء اللجنة الوطنية.', scope: 'system', permissions: ['users.manage', 'roles.view', 'streamhead.assign', 'committee.assign'], sortOrder: 0 },
   { key: 'coord', nameAr: 'منسق المسار في الجهة', descAr: 'يضيف ويحدّث مدخلات مسار واحد داخل جهته.', scope: 'entity+stream', permissions: ['item.create', 'item.update', 'item.submit', 'plan.edit'], sortOrder: 1 },
   { key: 'entity', nameAr: 'ممثل الجهة', descAr: 'يتابع كل مسارات جهته ويعتمد المدخلات الجاهزة.', scope: 'entity', permissions: ['item.view.entity', 'item.approve', 'item.return', 'team.manage'], sortOrder: 2 },
   { key: 'path', nameAr: 'رئيس المسار', descAr: 'يراجع مدخلات كل الجهات ضمن مساره ويرشّح للتمويل.', scope: 'stream', permissions: ['item.view.stream', 'item.nominate', 'plan.view'], sortOrder: 3 },
@@ -132,6 +133,9 @@ async function main() {
         entityId: data.entityId ?? null,
       },
     });
+
+  // System administrator (مشرف النظام) — provisions stream heads & committee
+  await upsertUser('admin@aigp.gov.ae', { role: 'admin', name: 'مشرف النظام', title: 'مسؤول المنصة' });
 
   // National committee (اللجنة الوطنية)
   await upsertUser('committee@aigp.gov.ae', { role: 'ai', name: 'اللجنة الوطنية للذكاء الاصطناعي', title: 'عضو اللجنة الوطنية' });
