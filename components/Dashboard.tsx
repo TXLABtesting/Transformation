@@ -65,7 +65,7 @@ const TOUR_STEPS: TourStep[] = [
 const COORD_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="profile"]', title: 'الملف الشخصي وفريق العمل', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك، والاطلاع على فريق العمل المرتبط بالمسار عند توفره.' },
   { sel: '[data-tour="kpis"]', title: 'لوحة متابعة المسار', desc: 'تعرض هذه اللوحة نظرة سريعة على مدخلات المسار، حالتها الحالية، والتكلفة التقديرية المرتبطة بها، لمساعدتك على متابعة الوضع العام واتخاذ الإجراءات المطلوبة.' },
-  { sel: '[data-tour="add"]', title: 'إضافة مدخل جديد', desc: 'ابدأ من هنا لإضافة مشروع، مبادرة، عملية، أو خدمة ضمن المسار، مع استكمال البيانات المطلوبة قبل الإرسال.' },
+  { sel: '[data-tour="add"]', title: 'إضافة مدخل جديد', desc: 'من هنا يمكنك إضافة مدخل جديد ضمن المسار، سواء كان مشروعًا أو مبادرة أو عملية أو خدمة، مع استكمال البيانات المطلوبة قبل الإرسال.' },
   { sel: '[data-tour="inputs-card"]', title: 'ملخص مدخلات المسار', desc: 'يعرض هذا القسم إجمالي مدخلات المسار وحالتها الحالية، مثل الجاهزة للتحويل، قيد التطوير، أو غير القابلة للتحويل.' },
   { sel: '[data-tour="cost-card"]', title: 'ملخص التكلفة التقديرية', desc: 'يوضح هذا القسم تكلفة التنفيذ، تكلفة الإطلاق، وإجمالي التكلفة التقديرية للمدخلات المسجلة ضمن المسار.' },
   { sel: '[data-tour="nav-all"]', title: 'استعراض جميع المدخلات', desc: 'يعرض هذا القسم جميع مدخلات المسار في صفحة واحدة، سواء كانت مشاريع ومبادرات أو عمليات أو خدمات، لتسهيل المتابعة والتحديث.' },
@@ -100,6 +100,53 @@ const ENTITY_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يعرض هذا القسم التنبيهات المرتبطة بمدخلات الجهة، مثل طلبات التحديث، الملاحظات، الاعتمادات، ومراحل التقدم.' },
   { sel: '[data-tour="guide"]', title: 'دليل ممثل الجهة', desc: 'يحتوي الدليل على إرشادات مراجعة مدخلات الجهة، متابعة المسارات، واعتماد الجاهز منها للرفع.' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة جميع مسارات الجهة، مراجعة المدخلات، واعتماد الجاهز منها للرفع إلى المراحل التالية.' },
+];
+
+// National committee (اللجنة الوطنية) onboarding — national oversight across all
+// entities/streams, reviews nominations, holds final approval authority.
+const AI_TOUR_STEPS: TourStep[] = [
+  { sel: '[data-tour="profile"]', title: 'الملف الشخصي وفريق العمل', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة صلاحياتك، والاطلاع على أعضاء فريق العمل المرتبطين بمتابعة الترشيحات والاعتماد.' },
+  { sel: '[data-tour="ai-heading"]', title: 'لوحة اللجنة الوطنية', desc: 'تعرض هذه اللوحة نظرة وطنية شاملة على مدخلات الجهات، توزيعها حسب المسارات، وحالة الترشيحات والاعتماد.' },
+  { sel: '[data-tour="kpis"]', title: 'ملخص المدخلات والترشيحات', desc: 'يعرض هذا القسم إجمالي الجهات المشاركة، عدد المدخلات المسجلة، وحالة الترشيحات المعتمدة أو قيد المراجعة.' },
+  { sel: '[data-tour="nom-status"]', title: 'حالة الترشيحات', desc: 'يوضح هذا القسم المدخلات المرشحة من رؤساء المسارات، والمدخلات المرشحة من اللجنة الوطنية، والمدخلات المعتمدة للتمويل.' },
+  { sel: '[data-tour="nav-all"]', title: 'جميع المسارات', desc: 'يعرض هذا القسم جميع المسارات في صفحة واحدة، مع ملخص المدخلات وحالة المشاركة لكل مسار.' },
+  { sel: '[data-tour="ai-streams"]', title: 'توزيع المدخلات حسب المسار', desc: 'يعرض هذا القسم توزيع المدخلات على المسارات الخمسة، مع عدد الجهات المشاركة وتصنيف المدخلات في كل مسار.' },
+  { sel: '[data-tour="ai-stream-card"]', title: 'بطاقة المسار', desc: 'تعرض كل بطاقة ملخصًا سريعًا لعدد الجهات والمدخلات داخل المسار، مع تصنيفها حسب النوع.' },
+  { sel: '[data-tour="ai-stream-details"]', title: 'تفاصيل المسار', desc: 'اضغط هنا لمراجعة تفاصيل المدخلات المرتبطة بالمسار قبل اتخاذ قرارات الترشيح أو الاعتماد.' },
+  { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ', desc: 'يعرض هذا القسم توزيع المدخلات حسب مراحل التنفيذ، لمتابعة مستوى الجاهزية على المستوى الوطني.' },
+  { sel: '[data-tour="nav-launch"]', title: 'خطة الإطلاق', desc: 'يوضح هذا القسم المدخلات المرتبطة بالإطلاق، ويساعد اللجنة على معرفة ما هو جاهز أو قريب من الجاهزية.' },
+  { sel: '[data-tour="nav-entities"]', title: 'الجهات المشاركة', desc: 'يعرض هذا القسم قائمة الجهات المشاركة وعدد المدخلات المقدمة من كل جهة، لمتابعة مستوى المشاركة والالتزام.' },
+  { sel: '[data-tour="basket"]', title: 'قائمة الاعتماد والتمويل', desc: 'تجمع هذه القائمة المدخلات المرشحة للتمويل، لمراجعتها واتخاذ القرار النهائي بشأن اعتمادها.' },
+  { sel: '', title: 'الاعتماد النهائي', desc: 'من هنا يتم اعتماد المدخلات المختارة نهائيًا للتمويل بعد مراجعتها من قبل اللجنة الوطنية.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يعرض هذا القسم التنبيهات المرتبطة بالترشيحات، طلبات المراجعة، الاعتمادات، والتحديثات المهمة على مستوى المنصة.' },
+  { sel: '[data-tour="guide"]', title: 'دليل اللجنة الوطنية', desc: 'يحتوي الدليل على إرشادات مراجعة الترشيحات، مقارنة المدخلات، واتخاذ قرارات الاعتماد النهائي.' },
+  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة المدخلات على المستوى الوطني، مراجعة الترشيحات، واتخاذ قرارات الاعتماد النهائي للتمويل.' },
+];
+
+// Stream head (رئيس المسار) onboarding — reviews all entities' entries within one
+// stream, tracks readiness/cost, and nominates entries for funding (NOT final
+// approval — that belongs to the national committee).
+const PATH_TOUR_STEPS: TourStep[] = [
+  { sel: '[data-tour="profile"]', title: 'الملف الشخصي وفريق العمل', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة صلاحياتك، والاطلاع على فريق العمل المرتبط بالمسار عند توفره.' },
+  { sel: '[data-tour="kpis"]', title: 'لوحة رئيس المسار', desc: 'تعرض هذه اللوحة نظرة شاملة على مدخلات جميع الجهات ضمن المسار، مع حالة التقدم، الترشيحات، والتكلفة التقديرية.' },
+  { sel: '[data-tour="inputs-card"]', title: 'إجمالي مدخلات المسار', desc: 'يعرض هذا القسم إجمالي المدخلات المقدمة من الجهات ضمن المسار، وحالتها الحالية مثل الجاهزة للتحويل أو قيد التطوير.' },
+  { sel: '[data-tour="nom-card"]', title: 'ملخص الترشيحات', desc: 'يوضح هذا القسم حالة المدخلات من حيث الترشيح، بما يشمل المدخلات المرشحة من قبلك، المعتمدة للتمويل، أو قيد مراجعة اللجنة.' },
+  { sel: '[data-tour="nav-all"]', title: 'جميع الأنواع', desc: 'يعرض هذا القسم جميع المدخلات ضمن المسار، سواء كانت مشاريع ومبادرات أو عمليات أو خدمات، من جميع الجهات المشاركة.' },
+  { sel: '[data-tour="nav-projects"]', title: 'المشاريع والمبادرات', desc: 'يعرض هذا القسم المشاريع والمبادرات المقدمة من الجهات ضمن المسار، لمراجعة تفاصيلها وتحديد المناسب منها للترشيح.' },
+  { sel: '[data-tour="nav-operations"]', title: 'العمليات', desc: 'يعرض هذا القسم العمليات المقدمة ضمن المسار، مع إمكانية مراجعة حالتها، مراحل تقدمها، وتكلفتها التقديرية.' },
+  { sel: '[data-tour="nav-services"]', title: 'الخدمات', desc: 'يعرض هذا القسم الخدمات المقدمة ضمن المسار، لمتابعة جاهزيتها وتحديد ما يمكن ترشيحه للتمويل.' },
+  { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ', desc: 'يعرض هذا القسم توزيع المدخلات حسب مراحل التقدم، لمساعدتك على تقييم الجاهزية وتحديد المدخلات التي تحتاج إلى متابعة.' },
+  { sel: '[data-tour="nav-launch"]', title: 'خطة الإطلاق', desc: 'يوضح هذا القسم المدخلات المرتبطة بالإطلاق، ويساعدك على معرفة ما هو جاهز أو قريب من الجاهزية ضمن المسار.' },
+  { sel: '[data-tour="type-cards"]', title: 'توزيع المدخلات حسب النوع', desc: 'يعرض هذا القسم تصنيف مدخلات المسار حسب النوع، مع عدد المدخلات ومراحل التقدم والتكلفة التقديرية لكل نوع.' },
+  { sel: '[data-tour="sec2-card"]', title: 'بطاقة النوع', desc: 'تعرض كل بطاقة ملخصًا لمدخلات هذا النوع، بما يشمل العدد، مراحل التقدم، والتكلفة التقديرية.' },
+  { sel: '[data-tour="type-details"]', title: 'تفاصيل النوع', desc: 'اضغط هنا لمراجعة المدخلات التابعة لهذا النوع وتحديد المدخلات المناسبة للترشيح.' },
+  { sel: '[data-tour="stage-dist"]', title: 'المدخلات حسب مراحل التقدم', desc: 'يعرض هذا القسم توزيع المدخلات حسب مراحل التقدم داخل المسار، لمساعدتك على تقييم الجاهزية قبل الترشيح.' },
+  { sel: '[data-tour="basket"]', title: 'سلة التمويل', desc: 'تجمع هذه السلة المدخلات التي اخترتها للترشيح، لتتم مراجعتها قبل رفعها إلى اللجنة الوطنية لاتخاذ القرار النهائي.' },
+  { sel: '', title: 'ترشيح المدخلات', desc: 'يمكنك ترشيح المدخلات المناسبة للتمويل بناءً على الجاهزية، الأثر المتوقع، والتكلفة التقديرية.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يعرض هذا القسم التنبيهات المرتبطة بمدخلات المسار، مثل التحديثات، الملاحظات، الترشيحات، وحالة المراجعة.' },
+  { sel: '[data-tour="guide"]', title: 'دليل رئيس المسار', desc: 'يحتوي الدليل على إرشادات مراجعة مدخلات الجهات، تقييم الجاهزية، وترشيح المدخلات المناسبة للتمويل.' },
+  { sel: '', title: 'ملاحظة مهمة', desc: 'ترشيح المدخلات من رئيس المسار لا يعني الاعتماد النهائي. يتم الاعتماد النهائي من قبل اللجنة الوطنية.' },
+  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة مدخلات الجهات ضمن المسار، مراجعتها، وترشيح المناسب منها للتمويل.' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -412,7 +459,7 @@ function EntityOverview({ vm }: { vm: VM }) {
             { key: 'notNominated', frac: nc.notNominated / t, color: '#C7D9F5', label: 'غير مرشّحة', value: nc.notNominated },
           ].filter((x) => x.frac > 0.0001);
           return (
-            <div style={cardStyle}>
+            <div data-tour="nom-card" style={cardStyle}>
               <EoCardHead title="ملخّص الترشيحات" iconD={EO_WALLET} onArrow={() => s.setNavSection('all')} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
                 <EoDonutSeg segs={nomSegs} dim={hovNom === 'nominated' ? null : hovNom} center={nomCenter.center} sub={nomCenter.sub} />
@@ -2007,7 +2054,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             <button
               key={n.key}
               onClick={n.onClick}
-              data-tour={n.key === 'all' ? 'nav-all' : n.key === 'projects' ? 'nav-projects' : n.key === 'operations' ? 'nav-operations' : n.key === 'services' ? 'nav-services' : n.key === 'launchplans' ? 'nav-exec' : n.key === 'lplan' ? 'nav-launch' : n.key === 'team' ? 'nav-team' : undefined}
+              data-tour={n.key === 'all' ? 'nav-all' : n.key === 'projects' ? 'nav-projects' : n.key === 'operations' ? 'nav-operations' : n.key === 'services' ? 'nav-services' : n.key === 'launchplans' ? 'nav-exec' : n.key === 'lplan' ? 'nav-launch' : n.key === 'team' ? 'nav-team' : n.key === 'entities' ? 'nav-entities' : undefined}
               style={{
                 position: 'relative',
                 display: 'flex',
@@ -2159,6 +2206,7 @@ export function Dashboard({ vm }: { vm: VM }) {
         {vm.showAddBtn && (
           <button
             onClick={s.openCreate}
+            data-tour="add"
             style={{
               flex: 'none',
               display: 'inline-flex',
@@ -2244,7 +2292,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           {vm.isAiRole && (
             <>
               {/* page heading */}
-              <div style={{ margin: '2px 0 -4px' }}>
+              <div data-tour="ai-heading" style={{ margin: '2px 0 -4px' }}>
                 <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>لوحة اللجنة الوطنية</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>متابعة حالة المدخلات المرشحة والجهات المشاركة حسب المسارات.</div>
               </div>
@@ -2258,7 +2306,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <CmtStat value={vm.aiStats.entCount} label="الجهات المشاركة" sub={vm.aiStats.entCount > 2 ? 'جهات مشاركة' : 'جهة مشاركة'} iconD="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01" info="عدد الجهات الاتحادية التي قدّمت مدخلات ضمن المشروع." />
                 <div style={{ width: 1, background: '#EEF1F6', alignSelf: 'stretch', margin: '2px 0' }} />
                 <CmtStat value={vm.aiStats.total} label="إجمالي المدخلات" sub={vm.aiStats.total > 2 ? 'مدخلات مسجلة' : 'مُدخل مسجّل'} iconD="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" info="كل ما قدّمته الجهات عبر مسارات المشروع ووصل إلى اللجنة الوطنية." />
-                <div style={{ flex: '2 1 300px', minWidth: 280, background: '#F5F7FB', borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div data-tour="nom-status" style={{ flex: '2 1 300px', minWidth: 280, background: '#F5F7FB', borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                     <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>حالة الترشيحات</span>
                     <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>من أصل {vm.aiStats.total} مدخلات</span>
@@ -2276,9 +2324,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب المسار</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع المدخلات حسب المسار ونوع المدخل.</div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
+              <div data-tour="ai-streams" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
                 {vm.committeeStreamCards.map((st) => (
-                  <div key={st.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div key={st.id} data-tour="ai-stream-card" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>
                       <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5 }}>{st.name}</div>
                       <span style={{ width: 38, height: 38, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
@@ -2315,6 +2363,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     </div>
                     <button
                       onClick={st.onOpen}
+                      data-tour="ai-stream-details"
                       style={{ marginTop: 'auto', width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
                     >
                       عرض التفاصيل
@@ -2978,7 +3027,7 @@ export function Dashboard({ vm }: { vm: VM }) {
       </div>
 
       {/* First-login onboarding walkthrough */}
-      <Tour steps={vm.role === 'coord' ? COORD_TOUR_STEPS : vm.role === 'entity' ? ENTITY_TOUR_STEPS : TOUR_STEPS} />
+      <Tour steps={vm.role === 'coord' ? COORD_TOUR_STEPS : vm.role === 'entity' ? ENTITY_TOUR_STEPS : vm.role === 'ai' ? AI_TOUR_STEPS : vm.role === 'path' ? PATH_TOUR_STEPS : TOUR_STEPS} />
     </div>
   );
 }
