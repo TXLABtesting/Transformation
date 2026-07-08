@@ -15,38 +15,48 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     sel: '[data-tour="banner"]',
-    title: 'نظرة عامة على المشروع',
-    desc: 'يعرض هذا القسم المرحلة الحالية من المشروع وموعدها النهائي مع عدّ تنازلي، إلى جانب مراحل البرنامج الرئيسية.',
+    title: 'المرحلة الحالية والعدّ التنازلي',
+    desc: 'يوضّح هذا الشريط المرحلة الحالية من المشروع وموعدها النهائي مع عدّ تنازلي — تابعوه لاستكمال إدخال جميع المدخلات قبل انتهاء المرحلة.',
   },
   {
     sel: '[data-tour="kpis"]',
-    title: 'مؤشرات الأداء',
-    desc: 'بطاقات تلخّص أعداد المشاريع والعمليات والخدمات، ونسب الإنجاز والتحول والأتمتة، والميزانيات التقديرية — وتتحدّث تلقائياً كلما اكتملت البيانات.',
+    title: 'لوحة المتابعة',
+    desc: 'نقطة انطلاقكم: لوحة تلخّص أعداد المدخلات وحالاتها، والتكاليف التقديرية، وتوزيعها على المسارات — نظرة عامة سريعة على الوضع الحالي.',
   },
   {
-    sel: '[data-tour="stages"]',
-    title: 'مراحل التنفيذ والإطلاق',
-    desc: 'لكل مرحلة بطاقة تعرض تكلفة التنفيذ وتكلفة الإطلاق وما تتضمنه من مشاريع وعمليات وخدمات، مع خطط الإطلاق المرتبطة بها وإدارتها مباشرة من الصفحة.',
+    sel: '[data-tour="nav-all"]',
+    title: 'استعراض جميع المدخلات',
+    desc: 'من القائمة الجانبية تفتح «جميع المسارات / جميع الأنواع» قائمة بكل المدخلات (المشاريع والمبادرات والعمليات والخدمات) في مكان واحد، مع تصفية حسب النوع والحالة والمسار والبحث بالاسم للوصول السريع إلى أي مدخل.',
   },
   {
-    sel: '[data-tour="filters"]',
-    title: 'المرشحات والبحث',
-    desc: 'من هنا يمكنكم تصفية القائمة حسب النوع والحالة، والبحث بالاسم أو الوصف للوصول السريع إلى أي مشروع أو مبادرة أو عملية أو خدمة.',
+    sel: '[data-tour="nav-exec"]',
+    title: 'مراحل التنفيذ',
+    desc: 'ومنها «مراحل التنفيذ»: توزيع المدخلات على المراحل الزمنية الأربع وحالة تطويرها والتكلفة التقديرية للتنفيذ لكل مرحلة.',
+  },
+  {
+    sel: '[data-tour="nav-launch"]',
+    title: 'خطة الإطلاق',
+    desc: 'وتعرض «خطة الإطلاق» الإطلاقات المجدولة عبر المراحل، وما يندرج تحت كل إطلاق من مدخلات تُطلق معاً.',
+  },
+  {
+    sel: '[data-tour="notifs"]',
+    title: 'الإشعارات',
+    desc: 'يصلكم عبر جرس الإشعارات كل ما يخصّكم أولاً بأول: طلبات الاعتماد، والملاحظات المُعادة، وقرارات الترشيح والتمويل، وأي تغيّر في المراحل.',
   },
   {
     sel: '[data-tour="add"]',
-    title: 'الإضافة',
+    title: 'إضافة مدخل جديد',
     desc: 'من هنا تتم إضافة مشروع أو مبادرة أو عملية أو خدمة جديدة إلى محفظة جهتكم.',
   },
   {
     sel: '[data-tour="basket"]',
     title: 'السلة',
-    desc: 'تجمع المشاريع والعمليات والخدمات الجاهزة للاعتماد أو الترشيح في مكان واحد قبل إرسالها، وتظهر عليها إشارة عند وجود ما ينتظركم.',
+    desc: 'تجمع المدخلات الجاهزة للاعتماد أو الترشيح في مكان واحد قبل إرسالها، وتظهر عليها إشارة عند وجود ما ينتظركم.',
   },
   {
     sel: '[data-tour="cards"]',
-    title: 'بطاقات المشاريع والعمليات والخدمات',
-    desc: 'كل بطاقة تمثّل مشروعاً أو مبادرة أو عملية أو خدمة مع حالتها ونسبة إنجازها. اضغطوا على أي بطاقة لاستعراض التفاصيل واستكمال البيانات.',
+    title: 'بطاقات المدخلات',
+    desc: 'كل بطاقة تمثّل مدخلاً مع حالته ونسبة إنجازه. اضغطوا على أي بطاقة لاستعراض التفاصيل واستكمال البيانات.',
   },
 ];
 
@@ -637,7 +647,7 @@ function EntityFilter({ value, options, onChange }: { value: string; options: Fi
       {open && (
         <>
           <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 39 }} />
-          <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 290, background: '#fff', border: '1px solid #E4ECF7', borderRadius: 13, boxShadow: '0 18px 44px -14px rgba(15,31,61,.28)', zIndex: 40, overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: 290, maxWidth: 'min(290px, calc(100vw - 40px))', background: '#fff', border: '1px solid #E4ECF7', borderRadius: 13, boxShadow: '0 18px 44px -14px rgba(15,31,61,.28)', zIndex: 40, overflow: 'hidden' }}>
             <div style={{ padding: 10, borderBottom: '1px solid #F0F3F8' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F5F7FB', borderRadius: 9, padding: '8px 11px' }}>
                 <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, flex: 'none', stroke: '#9AA6BC', fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
@@ -964,11 +974,14 @@ function LaunchPlan({ vm, onManage }: { vm: VM; onManage?: (batch: string) => vo
   );
 }
 
-// small ⓘ affordance: hover / tap reveals a plain-language explanation
-function InfoTip({ text, dark, flip }: { text: string; dark?: boolean; flip?: boolean }) {
+// small ⓘ affordance: hover / tap reveals a plain-language explanation.
+// Per request, the ⓘ is shown ONLY on the top phase-countdown timer (keep);
+// everywhere else it is suppressed.
+function InfoTip({ text, dark, flip, keep }: { text: string; dark?: boolean; flip?: boolean; keep?: boolean }) {
   // flip: the popup grows to the LEFT by default (RTL); near the screen's
   // left edge it must grow to the right instead or it gets clipped
   const [open, setOpen] = useState(false);
+  if (!keep) return null;
   return (
     <span
       style={{ position: 'relative', display: 'inline-flex', flex: 'none', verticalAlign: 'middle' }}
@@ -1590,12 +1603,12 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </span>
                 </span>
               ))}
-              <InfoTip flip text={vm.banner.countdownCaption + ' — يُرجى استكمال حصر وإدخال جميع المشاريع والمبادرات والعمليات والخدمات قبل انتهائه (' + vm.banner.curPhaseDeadlineFmt + ').'} />
+              <InfoTip keep flip text={vm.banner.countdownCaption + ' — يُرجى استكمال حصر وإدخال جميع المشاريع والمبادرات والعمليات والخدمات قبل انتهائه (' + vm.banner.curPhaseDeadlineFmt + ').'} />
             </div>
           )}
 
           {/* Notifications */}
-          <div style={{ position: 'relative' }}>
+          <div data-tour="notifs" style={{ position: 'relative' }}>
             <button
               onClick={s.toggleNotifs}
               style={{
@@ -1951,6 +1964,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             <button
               key={n.key}
               onClick={n.onClick}
+              data-tour={n.key === 'all' ? 'nav-all' : n.key === 'launchplans' ? 'nav-exec' : n.key === 'lplan' ? 'nav-launch' : undefined}
               style={{
                 position: 'relative',
                 display: 'flex',
