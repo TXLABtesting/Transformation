@@ -25,9 +25,10 @@ body {
     radial-gradient(760px 480px at 55% 118%, rgba(22, 64, 143, 0.07), transparent 58%),
     linear-gradient(180deg, #f2f6fc 0%, #eef2f9 42%, #eaf0f9 100%);
   background-attachment: fixed;
-  /* global content scale — the whole UI reads larger (Tour.tsx compensates
-     for this factor when measuring spotlight coordinates) */
-  zoom: 1.15;
+  /* The global content scale (density zoom) is applied responsively from JS
+     (see ResponsiveZoom): 1.15 on desktop, 1 on tablet, 0.9 on small phones.
+     It lives in JS because the CSS minifier collapses `zoom` inside media
+     queries back into the base rule. Tour.tsx reads the live value. */
 }
 /* Headings and titles: same family, bold weight */
 h1,

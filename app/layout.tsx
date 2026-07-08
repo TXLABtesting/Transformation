@@ -26,7 +26,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ar" dir="rtl" className={ibm.variable}>
-      <body>{children}</body>
+      <body>
+        {/* Set the responsive density zoom before first paint (no flash);
+            ResponsiveZoom then keeps it in sync on resize. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){var w=window.innerWidth;document.body.style.zoom=w>=1101?'1.15':(w<=480?'0.9':'1');})();",
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
