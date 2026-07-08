@@ -11,6 +11,7 @@ import { DetailPanel } from '@/components/DetailPanel';
 import { BasketDrawer, FundBar, AssignBar } from '@/components/Basket';
 import { Overlays } from '@/components/Overlays';
 import { Toast } from '@/components/Toast';
+import { ResponsiveZoom } from '@/components/ResponsiveZoom';
 
 export default function Page() {
   const hydrate = useStore((s) => s.hydrate);
@@ -26,6 +27,7 @@ export default function Page() {
 
   return (
     <>
+      <ResponsiveZoom />
       {vm.isLogin && <Login vm={vm} />}
       {vm.isSetup && <TeamSetup vm={vm} />}
       {vm.isDashboard && vm.isAdmin && <AdminConsole vm={vm} />}
