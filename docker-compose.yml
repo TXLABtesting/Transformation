@@ -17,22 +17,31 @@ services:
       retries: 10
 
   app:
-    build: .
+    build:
+      context: .
+      # Production build defaults: Postgres API mode, real UAE PASS, NO
+      # role-switcher, NO demo data. These are baked into the client bundle at
+      # build time; change them here (not at runtime) if you need to.
+      args:
+        NEXT_PUBLIC_DATA_MODE: api
+        NEXT_PUBLIC_UAEPASS_MODE: live
+        NEXT_PUBLIC_DEMO_MODE: '0'
+        NEXT_PUBLIC_DEMO_DATA: '0'
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
-    # All runtime configuration comes from the .env file IT fills in
+    # Runtime configuration comes from the .env file IT fills in
     # (copy .env.example → .env). DATABASE_URL is overridden here to point at
     # the compose "db" service instead of localhost.
     env_file:
       - .env
     environment:
-      NEXT_PUBLIC_DATA_MODE: api
       DATABASE_URL: postgresql://portal:portal@db:5432/transformation?schema=public
     ports:
       - '3000:3000'
-    # Apply the versioned migrations (0001→0007), seed reference data, then
+    # Apply the versioned migrations (0001→0008), seed reference data (streams,
+    # entities, phases, roles, and starter accounts — NO portfolio items), then
     # start the server. `migrate deploy` is idempotent and safe to re-run.
     command: sh -c "npx prisma migrate deploy && npx tsx prisma/seed.ts && npm run start"
 
