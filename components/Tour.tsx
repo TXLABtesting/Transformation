@@ -25,8 +25,9 @@ export function Tour({ steps }: { steps: TourStep[] }) {
   stepRef.current = step;
 
   const start = useCallback(() => {
-    // only tour the sections this role actually sees
-    const present = steps.filter((st) => document.querySelector(st.sel));
+    // only tour the sections this role actually sees; steps with an empty
+    // selector (e.g. the closing message) are always kept
+    const present = steps.filter((st) => !st.sel || document.querySelector(st.sel));
     if (present.length === 0) return;
     setIdx(0);
     setRect(null);
@@ -63,7 +64,9 @@ export function Tour({ steps }: { steps: TourStep[] }) {
   // scroll the target into view, then track its rect while the step is shown
   useEffect(() => {
     if (!active) return;
-    const el = document.querySelector(stepRef.current.sel);
+    const sel = stepRef.current.sel;
+    if (!sel) { setRect(null); return; } // centered message step — no spotlight
+    const el = document.querySelector(sel);
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     let raf = 0;
@@ -86,7 +89,9 @@ export function Tour({ steps }: { steps: TourStep[] }) {
     };
   }, [active, idx]);
 
-  if (!active || !rect) return null;
+  if (!active) return null;
+  const centered = !step.sel;
+  if (!centered && !rect) return null;
 
   // the app body is scaled with CSS `zoom`; rects come back in visual pixels
   // while our fixed positioning is re-multiplied by that zoom — divide it out
@@ -101,26 +106,32 @@ export function Tour({ steps }: { steps: TourStep[] }) {
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
   const cardW = Math.min(390, vw - 24);
-  // card below the target when there is room, otherwise above it
-  const below = rect.top + rect.height + pad + 200 < vh || rect.top < 230;
-  const cardTop = below
-    ? Math.min(rect.top + rect.height + pad + 14, vh - 220)
-    : Math.max(12, rect.top - pad - 14 - 200);
-  const cardLeft = Math.min(Math.max(12, rect.left + rect.width / 2 - cardW / 2), vw - cardW - 12);
-  const arrowLeft = Math.min(Math.max(18, rect.left + rect.width / 2 - cardLeft - 7), cardW - 18);
+  // card below the target when there is room, otherwise above it (centered step
+  // has no target → sit the card in the middle of the screen)
+  const below = centered ? true : rect!.top + rect!.height + pad + 200 < vh || rect!.top < 230;
+  const cardTop = centered
+    ? Math.max(12, vh / 2 - 120)
+    : below
+      ? Math.min(rect!.top + rect!.height + pad + 14, vh - 220)
+      : Math.max(12, rect!.top - pad - 14 - 200);
+  const cardLeft = centered
+    ? Math.max(12, vw / 2 - cardW / 2)
+    : Math.min(Math.max(12, rect!.left + rect!.width / 2 - cardW / 2), vw - cardW - 12);
+  const arrowLeft = centered ? -100 : Math.min(Math.max(18, rect!.left + rect!.width / 2 - cardLeft - 7), cardW - 18);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 900, direction: 'rtl', zoom: 1 / z } as CSSProperties}>
-      {/* click blocker */}
-      <div style={{ position: 'absolute', inset: 0 }} onClick={(e) => e.stopPropagation()} />
-      {/* spotlight */}
+      {/* click blocker (also dims the whole screen on the centered closing step) */}
+      <div style={{ position: 'absolute', inset: 0, background: centered ? 'rgba(9,20,44,.52)' : 'transparent' }} onClick={(e) => e.stopPropagation()} />
+      {/* spotlight (skipped on the centered closing step) */}
+      {!centered && (
       <div
         style={{
           position: 'fixed',
-          top: rect.top - pad,
-          left: rect.left - pad,
-          width: rect.width + pad * 2,
-          height: rect.height + pad * 2,
+          top: rect!.top - pad,
+          left: rect!.left - pad,
+          width: rect!.width + pad * 2,
+          height: rect!.height + pad * 2,
           borderRadius: 16,
           boxShadow: '0 0 0 9999px rgba(9,20,44,.52)',
           border: '2px solid rgba(255,255,255,.85)',
@@ -128,6 +139,7 @@ export function Tour({ steps }: { steps: TourStep[] }) {
           transition: 'all .3s ease',
         }}
       />
+      )}
       {/* card */}
       <div
         style={{
@@ -142,7 +154,8 @@ export function Tour({ steps }: { steps: TourStep[] }) {
           transition: 'all .3s ease',
         }}
       >
-        {/* arrow */}
+        {/* arrow (hidden on the centered closing step) */}
+        {!centered && (
         <div
           style={{
             position: 'absolute',
@@ -155,6 +168,7 @@ export function Tour({ steps }: { steps: TourStep[] }) {
             borderRadius: 3,
           }}
         />
+        )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
           <div style={{ fontSize: 14.5, fontWeight: 800, color: '#13213C' }}>{step.title}</div>
           <div style={{ display: 'flex', gap: 5, flex: 'none' }}>
@@ -196,9 +210,10 @@ export function Tour({ steps }: { steps: TourStep[] }) {
               cursor: 'pointer',
               fontFamily: 'inherit',
               padding: '7px 4px',
+              visibility: last ? 'hidden' : 'visible',
             }}
           >
-            تخطّي الجولة
+            تخطي الجولة
           </button>
           <div style={{ display: 'flex', gap: 8 }}>
             {idx > 0 && (
@@ -234,7 +249,7 @@ export function Tour({ steps }: { steps: TourStep[] }) {
                 boxShadow: '0 8px 18px -8px rgba(37,99,235,.7)',
               }}
             >
-              {last ? 'ابدأ الآن' : 'التالي'}
+              {last ? 'إنهاء الجولة' : 'التالي'}
             </button>
           </div>
         </div>

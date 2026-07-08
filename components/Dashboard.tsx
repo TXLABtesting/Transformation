@@ -60,6 +60,48 @@ const TOUR_STEPS: TourStep[] = [
   },
 ];
 
+// Coordinator (منسق المسار في الجهة) onboarding — one specific stream inside the
+// entity. Speaks only to what the coordinator does; no roles/switching mentioned.
+const COORD_TOUR_STEPS: TourStep[] = [
+  { sel: '[data-tour="profile"]', title: 'الملف الشخصي وفريق العمل', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك، والاطلاع على فريق العمل المرتبط بالمسار عند توفره.' },
+  { sel: '[data-tour="kpis"]', title: 'لوحة متابعة المسار', desc: 'تعرض هذه اللوحة نظرة سريعة على مدخلات المسار، حالتها الحالية، والتكلفة التقديرية المرتبطة بها، لمساعدتك على متابعة الوضع العام واتخاذ الإجراءات المطلوبة.' },
+  { sel: '[data-tour="add"]', title: 'إضافة مدخل جديد', desc: 'ابدأ من هنا لإضافة مشروع، مبادرة، عملية، أو خدمة ضمن المسار، مع استكمال البيانات المطلوبة قبل الإرسال.' },
+  { sel: '[data-tour="inputs-card"]', title: 'ملخص مدخلات المسار', desc: 'يعرض هذا القسم إجمالي مدخلات المسار وحالتها الحالية، مثل الجاهزة للتحويل، قيد التطوير، أو غير القابلة للتحويل.' },
+  { sel: '[data-tour="cost-card"]', title: 'ملخص التكلفة التقديرية', desc: 'يوضح هذا القسم تكلفة التنفيذ، تكلفة الإطلاق، وإجمالي التكلفة التقديرية للمدخلات المسجلة ضمن المسار.' },
+  { sel: '[data-tour="nav-all"]', title: 'استعراض جميع المدخلات', desc: 'يعرض هذا القسم جميع مدخلات المسار في صفحة واحدة، سواء كانت مشاريع ومبادرات أو عمليات أو خدمات، لتسهيل المتابعة والتحديث.' },
+  { sel: '[data-tour="nav-projects"]', title: 'المشاريع والمبادرات', desc: 'يعرض هذا القسم المدخلات المصنفة كمشاريع أو مبادرات ضمن المسار، مع إمكانية مراجعة تفاصيلها وتحديث مراحل تقدمها.' },
+  { sel: '[data-tour="nav-operations"]', title: 'العمليات', desc: 'يعرض هذا القسم العمليات المسجلة ضمن المسار، لمتابعة حالتها وتحديث بياناتها عند الحاجة.' },
+  { sel: '[data-tour="nav-services"]', title: 'الخدمات', desc: 'يعرض هذا القسم الخدمات المسجلة ضمن المسار، مع متابعة حالتها ومراحل تقدمها.' },
+  { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ', desc: 'يعرض هذا القسم توزيع مدخلات المسار حسب مراحل التقدم، لمتابعة ما تم إنجازه وتحديد المدخلات التي تحتاج إلى تحديث أو استكمال.' },
+  { sel: '[data-tour="nav-launch"]', title: 'خطة الإطلاق', desc: 'يوضح هذا القسم المدخلات المرتبطة بالإطلاق، ويساعدك على متابعة جاهزيتها والخطوات المطلوبة قبل الوصول إلى مرحلة الإطلاق.' },
+  { sel: '[data-tour="type-cards"]', title: 'المدخلات حسب النوع', desc: 'يتم هنا تصنيف مدخلات المسار حسب النوع، مثل مشروع أو مبادرة، عملية، أو خدمة، مع عرض عدد المدخلات ومراحل التقدم لكل نوع.' },
+  { sel: '[data-tour="type-details"]', title: 'تفاصيل النوع', desc: 'اضغط هنا لعرض المدخلات المرتبطة بهذا النوع ومراجعة تفاصيلها بشكل أوسع.' },
+  { sel: '[data-tour="stage-dist"]', title: 'توزيع المدخلات حسب مراحل التقدم', desc: 'يعرض هذا القسم عدد المدخلات في كل مرحلة من مراحل التقدم، لمساعدتك على معرفة مستوى الجاهزية داخل المسار.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يعرض هذا القسم التنبيهات المرتبطة بمهامك، مثل طلبات التحديث، الملاحظات، الاعتمادات، ومراحل التقدم الخاصة بمدخلات المسار.' },
+  { sel: '[data-tour="guide"]', title: 'دليل منسق المسار', desc: 'يحتوي الدليل على إرشادات تساعدك على إضافة المدخلات، تحديث حالتها، ومتابعة مراحل التقدم بشكل صحيح.' },
+  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن البدء بإضافة ومتابعة مدخلات المسار، والتأكد من تحديث البيانات بشكل دوري لضمان جاهزيتها للمراجعة.' },
+];
+
+// Entity representative (ممثل الجهة) onboarding — follows ALL streams under the
+// entity, reviews submissions, and approves the ready ones for the next stage.
+const ENTITY_TOUR_STEPS: TourStep[] = [
+  { sel: '[data-tour="profile"]', title: 'الملف الشخصي وفريق العمل', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك، والاطلاع على منسقي المسارات المرتبطين بجهتك عند توفرهم.' },
+  { sel: '[data-tour="kpis"]', title: 'لوحة متابعة مدخلات الجهة', desc: 'تعرض هذه اللوحة نظرة شاملة على مدخلات الجهة حسب المسارات، مع حالة التقدم، التكلفة التقديرية، وحالة الاعتماد.' },
+  { sel: '[data-tour="inputs-card"]', title: 'ملخص مدخلات الجهة', desc: 'يعرض هذا القسم إجمالي مدخلات الجهة وحالتها الحالية، مثل الجاهزة للتحويل، قيد التطوير، أو غير القابلة للتحويل.' },
+  { sel: '[data-tour="cost-card"]', title: 'ملخص التكلفة التقديرية', desc: 'يوضح هذا القسم تكلفة التنفيذ، تكلفة الإطلاق، وإجمالي التكلفة التقديرية لمدخلات الجهة.' },
+  { sel: '[data-tour="nav-all"]', title: 'جميع المسارات', desc: 'يعرض هذا القسم جميع مسارات الجهة في صفحة واحدة، مع ملخص المدخلات وحالة التقدم والتكلفة التقديرية لكل مسار.' },
+  { sel: '[data-tour="type-cards"]', title: 'مدخلات الجهة حسب المسارات', desc: 'يعرض هذا القسم توزيع مدخلات الجهة على المسارات الخمسة، مع عدد المدخلات ومراحل التقدم والتكلفة التقديرية لكل مسار.' },
+  { sel: '[data-tour="sec2-card"]', title: 'بطاقة المسار', desc: 'تعرض كل بطاقة ملخصًا لمدخلات المسار، مراحل التقدم، والتكلفة التقديرية المرتبطة به.' },
+  { sel: '[data-tour="type-details"]', title: 'تفاصيل المسار', desc: 'اضغط هنا لمراجعة مدخلات المسار بشكل تفصيلي قبل اعتمادها أو طلب تحديثها من منسق المسار.' },
+  { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ', desc: 'يعرض هذا القسم توزيع مدخلات الجهة حسب مراحل التنفيذ، لمتابعة مستوى التقدم وتحديد المسارات التي تحتاج إلى تحديث أو استكمال.' },
+  { sel: '[data-tour="nav-launch"]', title: 'خطة الإطلاق', desc: 'يوضح هذا القسم المدخلات المرتبطة بالإطلاق ضمن مسارات الجهة، ويساعدك على متابعة جاهزيتها والخطوات المطلوبة قبل الإطلاق.' },
+  { sel: '[data-tour="nav-team"]', title: 'فريق العمل', desc: 'يعرض هذا القسم منسقي المسارات التابعين لجهتك، لمتابعة الأدوار والتأكد من استكمال المدخلات المطلوبة.' },
+  { sel: '', title: 'اعتماد المدخلات', desc: 'بعد مراجعة المدخلات والتأكد من جاهزيتها، يمكنك اعتمادها لرفعها إلى المراحل التالية.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يعرض هذا القسم التنبيهات المرتبطة بمدخلات الجهة، مثل طلبات التحديث، الملاحظات، الاعتمادات، ومراحل التقدم.' },
+  { sel: '[data-tour="guide"]', title: 'دليل ممثل الجهة', desc: 'يحتوي الدليل على إرشادات مراجعة مدخلات الجهة، متابعة المسارات، واعتماد الجاهز منها للرفع.' },
+  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة جميع مسارات الجهة، مراجعة المدخلات، واعتماد الجاهز منها للرفع إلى المراحل التالية.' },
+];
+
 // ---------------------------------------------------------------------------
 // Small hover-aware wrappers (the prototype used `style-hover`).
 // ---------------------------------------------------------------------------
@@ -317,7 +359,7 @@ function EntityOverview({ vm }: { vm: VM }) {
       {/* ===== Section 1: التكلفة الإجمالية + إجمالي المدخلات ===== */}
       <div data-r="dash-top" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* --- إجمالي المدخلات (right) --- */}
-        <div style={cardStyle}>
+        <div data-tour="inputs-card" style={cardStyle}>
           <EoCardHead title={isPath ? 'إجمالي المدخلات' : isCoord ? 'ملخص مدخلات المسار' : 'ملخص مدخلات الجهة'} iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
             <EoDonutSeg segs={inSegs} dim={hovIn} center={inDonut.center} sub={inDonut.sub} />
@@ -407,7 +449,7 @@ function EntityOverview({ vm }: { vm: VM }) {
             </div>
           );
         })() : (
-        <div style={cardStyle}>
+        <div data-tour="cost-card" style={cardStyle}>
           <EoCardHead title="ملخص التكلفة التقديرية" iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
             <EoDonut frac={costDonut.frac} dark="#2563EB" light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} arcMeta={costArcMeta} />
@@ -450,9 +492,9 @@ function EntityOverview({ vm }: { vm: VM }) {
         <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{sec2Title}</div>
         <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>{sec2Sub}</div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
+      <div data-tour="type-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
         {sec2Cards.map((st) => (
-          <div key={st.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div key={st.id} data-tour="sec2-card" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>
               <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>{st.name}</div>
               <span style={{ width: 38, height: 38, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
@@ -507,6 +549,7 @@ function EntityOverview({ vm }: { vm: VM }) {
             </div>
             <button
               onClick={st.onOpen}
+              data-tour="type-details"
               style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
             >
               {useTypes ? 'عرض تفاصيل النوع' : 'عرض تفاصيل المسار'}
@@ -532,7 +575,7 @@ function EntityOverview({ vm }: { vm: VM }) {
               <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب مراحل التقدم</div>
               <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>عرض عدد المدخلات في كل مرحلة من مراحل التقدم.</div>
             </div>
-            <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', marginTop: -8 }}>
+            <div data-tour="stage-dist" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', marginTop: -8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ display: 'inline-flex', background: '#F1F5FB', borderRadius: 12, padding: 4, gap: 2, flexWrap: 'wrap' }}>
                   {tabs.map((t) => (
@@ -1964,7 +2007,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             <button
               key={n.key}
               onClick={n.onClick}
-              data-tour={n.key === 'all' ? 'nav-all' : n.key === 'launchplans' ? 'nav-exec' : n.key === 'lplan' ? 'nav-launch' : undefined}
+              data-tour={n.key === 'all' ? 'nav-all' : n.key === 'projects' ? 'nav-projects' : n.key === 'operations' ? 'nav-operations' : n.key === 'services' ? 'nav-services' : n.key === 'launchplans' ? 'nav-exec' : n.key === 'lplan' ? 'nav-launch' : n.key === 'team' ? 'nav-team' : undefined}
               style={{
                 position: 'relative',
                 display: 'flex',
@@ -2053,7 +2096,7 @@ export function Dashboard({ vm }: { vm: VM }) {
             </div>
           )}
           {/* bottom: onboarding guide */}
-          <div data-r="railhelp" style={{ padding: 12 }}>
+          <div data-r="railhelp" data-tour="guide" style={{ padding: 12 }}>
             <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                 <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة الوطنية' : vm.role === 'entity' ? 'دليل ممثل الجهة' : vm.role === 'coord' ? 'دليل منسق المسار في الجهة' : 'دليل الاستخدام'}</div>
@@ -2092,7 +2135,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   fontFamily: 'inherit',
                 }}
               >
-                {vm.role === 'coord' || vm.role === 'entity' || vm.role === 'ai' ? 'عرض الدليل' : 'فتح الدليل'}
+                {vm.role === 'ai' ? 'عرض الدليل' : 'فتح الدليل'}
               </button>
             </div>
           </div>
@@ -2935,7 +2978,7 @@ export function Dashboard({ vm }: { vm: VM }) {
       </div>
 
       {/* First-login onboarding walkthrough */}
-      <Tour steps={TOUR_STEPS} />
+      <Tour steps={vm.role === 'coord' ? COORD_TOUR_STEPS : vm.role === 'entity' ? ENTITY_TOUR_STEPS : TOUR_STEPS} />
     </div>
   );
 }
