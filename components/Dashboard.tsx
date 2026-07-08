@@ -315,7 +315,7 @@ function EntityOverview({ vm }: { vm: VM }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* ===== Section 1: التكلفة الإجمالية + إجمالي المدخلات ===== */}
-      <div data-r="dash-top" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div data-r="dash-top" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* --- إجمالي المدخلات (right) --- */}
         <div style={cardStyle}>
           <EoCardHead title={isPath ? 'إجمالي المدخلات' : isCoord ? 'ملخص مدخلات المسار' : 'ملخص مدخلات الجهة'} iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
