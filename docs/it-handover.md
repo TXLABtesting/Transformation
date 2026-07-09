@@ -214,23 +214,32 @@ writes an `audit_logs` row (`lib/security/`):
   `GET /api/admin/roles|permissions|entities|streams`,
   `GET|POST|DELETE /api/admin/role-rules`, `GET /api/admin/audit-logs`.
 - **Ops**: `GET /api/health` (liveness), `GET /api/ready` (DB probe).
-- **Demo compatibility**: `GET|PUT /api/state` — the demo-mode blob
-  persistence (optionally guarded by `STATE_API_TOKEN`); production clients
-  should use the enforced endpoints above. `POST /api/ai-review` — internal
-  AI reviewer proxy.
+- **State blob (enforced)**: `GET|PUT /api/state` — requires a signed
+  session AND a global-scope role (`canAccessAllEntities`); scoped users get
+  `{data:null, scoped:true}`. `PUT` additionally honors `STATE_API_TOKEN`
+  when set. Because mock login is disabled with `NODE_ENV=production`,
+  shared server state in production requires a real `AUTH_PROVIDER`
+  (uaepass/workspaceone); until then each browser falls back to local
+  storage.
+- **AI reviewer (enforced)**: `POST /api/ai-review` — requires session +
+  `ai_review:run` permission, honors `AI_REVIEW_ENABLED=false` as a
+  kill-switch, and writes an audit log. Clients without access fall back to
+  the built-in heuristic review.
 
 ## 6. Authentication (UAE PASS)
 
-`app/api/auth/uaepass/login` and `…/callback` contain the integration
-points; the demo build bypasses them behind the "Sign in with UAE PASS"
-button. To go live:
+`app/api/auth/uaepass/login` and `…/callback` are fully wired: the
+callback validates state, exchanges the code, maps the verified identity to
+`users` via `ensureUserFromIdentity` (bootstrap admins + role-assignment
+rules, pending/disabled users are turned away), and issues the signed
+session cookie. The demo build bypasses this flow behind the "Sign in with
+UAE PASS" button. To go live:
 1. Register the redirect URI with UAE PASS and set the client id/secret in
-   the environment.
-2. In the callback, map the verified Emirates ID / email to a row in
-   `users` (email is unique) and reject users with no active row —
-   `lib/security/user-access.ts` (`ensureUserFromIdentity`) implements this
-   mapping including bootstrap admins and role-assignment rules.
-3. Set the stateless session cookie (HMAC-signed with `SESSION_SECRET`,
+   the environment (`UAEPASS_*` variables), plus `AUTH_PROVIDER=uaepass`
+   and `NEXT_PUBLIC_AUTH_PROVIDER=uaepass` (build arg).
+2. Nothing else — user mapping and access gating are implemented in
+   `lib/security/user-access.ts`.
+3. Sessions are stateless cookies (HMAC-signed with `SESSION_SECRET`,
    `maxAge = SESSION_TTL_HOURS`, httpOnly) via `lib/security/session.ts`;
    there is no sessions table. `/api/auth/me` resolves
    `{role, entityId, streamId, name}` plus backend roles/permissions — the

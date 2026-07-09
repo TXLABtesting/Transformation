@@ -577,9 +577,20 @@ export const useStore = create<Store>((set, get) => {
       } else {
         set({ _hydrated: true });
       }
-      // in API/Postgres mode, prefer server state when present
+      // in API/Postgres mode, prefer server state when present. The state API
+      // requires a session (reference behavior): if the first read is
+      // unauthenticated, hit /api/auth/login once — with the mock provider
+      // (dev) it silently establishes a session; with real providers the user
+      // signs in through the normal flow and until then we stay on local state.
       if (API_MODE) {
         fetch('/api/state')
+          .then(async (r) => {
+            if (r.status === 401) {
+              await fetch('/api/auth/login').catch(() => {});
+              return fetch('/api/state');
+            }
+            return r;
+          })
           .then((r) => r.json())
           .then((res) => {
             const d = res?.data;
