@@ -2785,9 +2785,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                   >
                     <div style={{ padding: '18px 22px 12px', display: 'flex', alignItems: 'flex-start', gap: 12, borderBottom: '1px solid #F0F3F8' }}>
                       <div style={{ flex: 1 }}>
-                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>خطة التنفيذ — {itemsMgrFor.replace(/^إطلاق /, '')}</div>
+                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>تخطيط {itemsMgrFor.replace(/^إطلاق /, '')}</div>
                         <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3, lineHeight: 1.7 }}>
-                          حدِّدوا ما يندرج ضمن هذه المرحلة — نقل بند من مرحلة أخرى يتطلب تأكيداً ويصل إشعار به لجميع المعنيين.
+                          اختر المدخلات التي سيتم تنفيذها ضمن هذه المرحلة من خطة التنفيذ.
                         </div>
                       </div>
                       <button
@@ -2820,11 +2820,15 @@ export function Dashboard({ vm }: { vm: VM }) {
                           <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {x.title}
                           </span>
-                          {x.batch && x.batch !== itemsMgrFor && (
-                            <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
-                              في {x.batch.replace(/^إطلاق /, '')}
+                          {x.batch === itemsMgrFor ? (
+                            <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#EAF1FE', color: '#1D4ED8' }}>
+                              ضمن هذه المرحلة
                             </span>
-                          )}
+                          ) : x.batch ? (
+                            <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#FFF3DE', color: '#B45309', whiteSpace: 'nowrap' }}>
+                              {'مخطط حاليًا ' + x.batch.replace(/^إطلاق /, '').replace(/^المرحلة/, 'للمرحلة')}
+                            </span>
+                          ) : null}
                         </div>
                       ))}
                     </div>

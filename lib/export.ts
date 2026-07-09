@@ -161,6 +161,81 @@ export async function downloadBulkTemplate(types: { key: string; label: string }
   );
 }
 
+// ---- Admin: users bulk template + reader -----------------------------------
+export async function downloadUsersTemplate(roleLabels: string[], entities: string[], streamNames: string[]) {
+  const mod = await import('exceljs');
+  const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'منصة التحول للذكاء الاصطناعي المساعد';
+  const ws = wb.addWorksheet('المستخدمون', { views: [{ rightToLeft: true, showGridLines: false }] });
+
+  const headers = ['الاسم الكامل', 'البريد الإلكتروني', 'الدور', 'الجهة', 'المسار'];
+  const widths = [30, 34, 26, 34, 26];
+  const cols = headers.length;
+
+  banner(ws, cols, 'قالب رفع المستخدمين', 'عبّئ صفًّا لكل مستخدم. «الاسم» و«البريد» إلزاميان. اختر «الدور» من القائمة؛ «الجهة»/«المسار» حسب الدور.');
+  ws.mergeCells(3, 1, 3, cols);
+  const note = ws.getCell(3, 1);
+  note.value = 'ملاحظة: منسق المسار يحتاج الجهة والمسار · ممثل الجهة يحتاج الجهة · رئيس المسار يحتاج المسار · المشرف واللجنة لا يحتاجان أيًّا منهما. احذف الصف التوضيحي قبل الرفع.';
+  note.font = { size: 10, color: { argb: 'FF1D4ED8' }, italic: true };
+  note.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+  note.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NOTE_BG } as XLColor };
+  ws.getRow(3).height = 30;
+
+  const headRow = 4;
+  headerRow(ws, headRow, headers, widths);
+
+  const ex = headRow + 1;
+  const sample = ['محمد أحمد العامري', 'm.alameri@aigp.gov.ae', roleLabels[0] || 'منسق المسار في الجهة', entities[0] || '', streamNames[0] || ''];
+  sample.forEach((v, c) => {
+    const cell = ws.getCell(ex, c + 1);
+    cell.value = v;
+    cell.font = { italic: true, color: { argb: 'FF9AA6BC' }, size: 10.5 };
+    cell.alignment = { horizontal: c === 1 ? 'left' : 'right', vertical: 'middle' };
+  });
+
+  const listOf = (arr: string[]) => '"' + arr.join(',').slice(0, 250) + '"';
+  for (let r = ex; r <= 80; r++) {
+    ws.getCell(r, 3).dataValidation = { type: 'list', allowBlank: true, formulae: [listOf(roleLabels)] };
+    if (entities.length) ws.getCell(r, 4).dataValidation = { type: 'list', allowBlank: true, formulae: [listOf(entities)] };
+    ws.getCell(r, 5).dataValidation = { type: 'list', allowBlank: true, formulae: [listOf(streamNames)] };
+    ws.getRow(r).height = 20;
+  }
+  boxAll(ws, headRow, 80, cols);
+  ws.views = [{ rightToLeft: true, showGridLines: false, state: 'frozen', ySplit: headRow }];
+
+  const buf = await wb.xlsx.writeBuffer();
+  downloadBlob(
+    new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    'قالب_رفع_المستخدمين.xlsx'
+  );
+}
+
+// Read a filled .xlsx (or .csv) into rows of trimmed cell strings, skipping the
+// title/note/header/example rows heuristically (caller filters further).
+export async function readSheetRows(file: File): Promise<string[][]> {
+  const buf = await file.arrayBuffer();
+  if (/\.csv$/i.test(file.name)) {
+    const text = new TextDecoder('utf-8').decode(buf).replace(/^﻿/, '');
+    return text.split(/\r?\n/).map((l) => l.split(/[,\t]/).map((c) => c.trim())).filter((r) => r.some((c) => c));
+  }
+  const mod = await import('exceljs');
+  const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buf);
+  const ws = wb.worksheets[0];
+  const rows: string[][] = [];
+  ws.eachRow((r) => {
+    const cells: string[] = [];
+    r.eachCell({ includeEmpty: true }, (c) => {
+      const v = c.value as unknown;
+      cells.push(v == null ? '' : typeof v === 'object' && v && 'text' in (v as object) ? String((v as { text: string }).text).trim() : String(v).trim());
+    });
+    if (cells.some((c) => c)) rows.push(cells);
+  });
+  return rows;
+}
+
 function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

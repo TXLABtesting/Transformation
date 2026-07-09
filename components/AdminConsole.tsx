@@ -9,6 +9,7 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
 import type { RoleKey, UserRec } from '@/lib/domain';
+import { downloadUsersTemplate, readSheetRows } from '@/lib/export';
 import { Icon } from './Icon';
 
 const IC_USERS = 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75';
@@ -406,82 +407,81 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
   );
 }
 
-// ---- Bulk user upload -----------------------------------------------------
-// Admins import many accounts at once: paste rows or load a .csv, one user per
-// line as «الاسم,البريد,الدور,الجهة,المسار». Role accepts the key
-// (admin|coord|entity|path|ai) or the Arabic name; stream accepts the id or
-// its Arabic name. Rows missing a name/email are skipped.
+// ---- Bulk user upload (2 steps: download template → upload it) -------------
 function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
-  const [text, setText] = useState('');
+  const [parsed, setParsed] = useState<{ valid: boolean; rec: UserRec }[] | null>(null);
+  const [fileName, setFileName] = useState('');
+  const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ added: number; skipped: number } | null>(null);
 
+  const roleLabels = a.roleInfo.map((r) => r.nameAr);
   const roleFromToken = (t: string): RoleKey | null => {
     const s = t.trim();
-    const byKey = a.roleInfo.find((r) => r.key === s);
-    if (byKey) return byKey.key;
-    const byName = a.roleInfo.find((r) => r.nameAr === s);
-    return byName ? byName.key : null;
+    return a.roleInfo.find((r) => r.key === s)?.key || a.roleInfo.find((r) => r.nameAr === s)?.key || null;
   };
   const streamFromToken = (t: string): string | undefined => {
     const s = t.trim();
-    if (!s) return undefined;
-    const byId = a.streams.find((x) => x.id === s);
-    if (byId) return byId.id;
-    const byName = a.streams.find((x) => x.name === s);
-    return byName ? byName.id : undefined;
+    return s ? (a.streams.find((x) => x.id === s)?.id || a.streams.find((x) => x.name === s)?.id) : undefined;
   };
   const entityFromToken = (t: string): string | undefined => {
     const s = t.trim();
     return s ? (a.entities.find((e) => e === s) || s) : undefined;
   };
+  const SAMPLE_EMAILS = new Set(['m.alameri@aigp.gov.ae', 'm.ahmed@aigp.gov.ae', 's.khaled@aigp.gov.ae']);
 
-  const rows = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l && !/^#/.test(l) && !/^الاسم\s*,/.test(l) && !/^name\s*,/i.test(l));
-
-  const parsed = rows.map((line) => {
-    const c = line.split(/[,\t]/).map((x) => x.trim());
-    const [name, email, roleTok = '', entTok = '', streamTok = ''] = c;
-    const role = roleFromToken(roleTok) || 'coord';
-    const needsEntity = role === 'entity' || role === 'coord';
-    const needsStream = role === 'coord' || role === 'path';
-    const valid = !!(name && /^\S+@\S+\.\S+$/.test(email || ''));
-    return {
-      valid,
-      rec: {
-        id: '',
-        role,
-        name: name || '',
-        title: '',
-        email: email || '',
-        phone: '',
-        entityName: needsEntity ? entityFromToken(entTok) : undefined,
-        streamId: needsStream ? streamFromToken(streamTok) : undefined,
-        active: true,
-      } as UserRec,
-    };
-  });
-  const validCount = parsed.filter((p) => p.valid).length;
-
-  const doImport = () => {
-    let added = 0;
-    parsed.forEach((p, i) => {
-      if (!p.valid) return;
-      a.saveUser({ ...p.rec, id: 'u-b' + Math.abs(hashStr(p.rec.email + p.rec.name + i)).toString(36) });
-      added++;
-    });
-    setDone({ added, skipped: parsed.length - added });
+  const download = async () => {
+    setBusy(true);
+    try {
+      await downloadUsersTemplate(roleLabels, a.entities, a.streams.map((x) => x.name));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const template = 'الاسم,البريد الإلكتروني,الدور,الجهة,المسار\nمحمد أحمد,m.ahmed@aigp.gov.ae,coord,وزارة شؤون مجلس الوزراء,services\nسارة خالد,s.khaled@aigp.gov.ae,entity,وزارة الاقتصاد والسياحة,';
-  const templateHref = 'data:text/csv;charset=utf-8,%EF%BB%BF' + encodeURIComponent(template);
+  const onFile = async (file: File) => {
+    setBusy(true);
+    setFileName(file.name);
+    try {
+      const rows = await readSheetRows(file);
+      // a data row = has a name (col0) and an email (col1); skip the template
+      // title/note/header/example rows
+      const recs = rows
+        .filter((c) => (c[0] || '').trim() && /^\S+@\S+\.\S+$/.test((c[1] || '').trim()) && !SAMPLE_EMAILS.has((c[1] || '').trim()))
+        .map((c) => {
+          const role = roleFromToken(c[2] || '') || 'coord';
+          const needsEntity = role === 'entity' || role === 'coord';
+          const needsStream = role === 'coord' || role === 'path';
+          return {
+            valid: true,
+            rec: {
+              id: '', role, name: (c[0] || '').trim(), title: '', email: (c[1] || '').trim(), phone: '',
+              entityName: needsEntity ? entityFromToken(c[3] || '') : undefined,
+              streamId: needsStream ? streamFromToken(c[4] || '') : undefined,
+              active: true,
+            } as UserRec,
+          };
+        });
+      setParsed(recs);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doImport = () => {
+    if (!parsed) return;
+    parsed.forEach((p, i) => a.saveUser({ ...p.rec, id: 'u-b' + Math.abs(hashStr(p.rec.email + p.rec.name + i)).toString(36) }));
+    setDone({ added: parsed.length, skipped: 0 });
+  };
+
+  const stepNum = (n: number, active: boolean) => (
+    <span style={{ width: 26, height: 26, borderRadius: '50%', flex: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12.5, background: active ? '#1D4ED8' : '#EAF1FE', color: active ? '#fff' : '#1D4ED8' }}>{n}</span>
+  );
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
-      <div style={{ position: 'relative', width: 'min(620px,calc(100vw-32px))', maxHeight: '90vh', overflowY: 'auto', background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+      <div style={{ position: 'relative', width: 'min(560px,calc(100vw-32px))', maxHeight: '90vh', overflowY: 'auto', background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <div style={{ fontSize: 16, fontWeight: 800 }}>رفع دفعة مستخدمين</div>
           <button onClick={onClose} style={{ border: 'none', background: '#F1F5FB', borderRadius: 9, width: 32, height: 32, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
             <Icon d={IC_X} size={16} color="#54627B" />
@@ -494,50 +494,45 @@ function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
               <Icon d={IC_CHECK} size={26} color="#0B8A4B" strokeWidth={2.6} />
             </span>
             <div style={{ fontSize: 15, fontWeight: 800, marginTop: 12 }}>تمت إضافة {done.added} مستخدمًا</div>
-            {done.skipped > 0 && <div style={{ fontSize: 12.5, color: '#8A97AD', marginTop: 4 }}>تم تجاهل {done.skipped} صفًا غير مكتمل</div>}
             <button onClick={onClose} style={{ marginTop: 18, border: 'none', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', borderRadius: 11, padding: '11px 26px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>تم</button>
           </div>
         ) : (
-          <>
-            <div style={{ fontSize: 12.5, color: '#54627B', lineHeight: 1.9, background: '#F7F9FD', border: '1px solid #EEF2F8', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
-              أدخل مستخدمًا واحدًا في كل سطر بالصيغة: <b>الاسم، البريد الإلكتروني، الدور، الجهة، المسار</b>.
-              <br />الدور: <code>admin</code> / <code>coord</code> / <code>entity</code> / <code>path</code> / <code>ai</code> (أو الاسم بالعربية). الجهة والمسار مطلوبان حسب الدور.
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: '1px solid #DDE5F0', background: '#fff', color: '#1D4ED8', borderRadius: 10, padding: '8px 13px', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>
-                <Icon d={IC_UPLOAD} size={14} color="#1D4ED8" /> اختيار ملف CSV
-                <input
-                  type="file"
-                  accept=".csv,text/csv"
-                  style={{ display: 'none' }}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    const rd = new FileReader();
-                    rd.onload = () => setText(String(rd.result || ''));
-                    rd.readAsText(f);
-                  }}
-                />
-              </label>
-              <a href={templateHref} download="users-template.csv" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: '1px solid #DDE5F0', background: '#fff', color: '#54627B', borderRadius: 10, padding: '8px 13px', fontWeight: 800, fontSize: 12, textDecoration: 'none' }}>
-                تنزيل قالب
-              </a>
-            </div>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={template}
-              spellCheck={false}
-              style={{ width: '100%', minHeight: 160, border: '1px solid #DDE5F0', borderRadius: 12, padding: 12, fontSize: 12.5, fontFamily: 'ui-monospace,monospace', direction: 'ltr', textAlign: 'right', resize: 'vertical', outline: 'none' }}
-            />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, gap: 10 }}>
-              <div style={{ fontSize: 12.5, color: '#54627B' }}>{validCount} مستخدم جاهز للإضافة</div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={onClose} style={{ border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', borderRadius: 11, padding: '11px 18px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
-                <button disabled={!validCount} onClick={doImport} style={{ border: 'none', background: validCount ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', borderRadius: 11, padding: '11px 22px', fontWeight: 800, fontSize: 13, cursor: validCount ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>استيراد</button>
+          <div style={{ display: 'grid', gap: 14 }}>
+            {/* STEP 1 — download the template */}
+            <div style={{ border: '1px solid #E7ECF4', borderRadius: 14, padding: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              {stepNum(1, true)}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 13.5 }}>تنزيل القالب</div>
+                <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, margin: '4px 0 10px' }}>نزّل قالب Excel المنظّم، وعبّئ صفًّا لكل مستخدم (الاسم، البريد، الدور، الجهة، المسار) مع قوائم منسدلة جاهزة.</div>
+                <button disabled={busy} onClick={download} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: '1px solid #DDE5F0', background: '#fff', color: '#1D4ED8', borderRadius: 10, padding: '9px 15px', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <Icon d="M12 3v12M7 10l5 5 5-5M5 21h14" size={15} color="#1D4ED8" /> تنزيل قالب Excel
+                </button>
               </div>
             </div>
-          </>
+
+            {/* STEP 2 — upload the filled file */}
+            <div style={{ border: '1px solid #E7ECF4', borderRadius: 14, padding: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              {stepNum(2, !!parsed)}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 13.5 }}>رفع الملف المعبّأ</div>
+                <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, margin: '4px 0 10px' }}>ارفع الملف بعد تعبئته (Excel أو CSV).</div>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: '1px dashed #B9C7DE', background: '#F7FAFF', color: '#1D4ED8', borderRadius: 10, padding: '10px 15px', fontWeight: 800, fontSize: 12.5, cursor: 'pointer' }}>
+                  <Icon d={IC_UPLOAD} size={15} color="#1D4ED8" /> {fileName || 'اختيار الملف'}
+                  <input type="file" accept=".xlsx,.csv" style={{ display: 'none' }} onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
+                </label>
+                {parsed && (
+                  <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: parsed.length ? '#0B8A4B' : '#C0392B' }}>
+                    {parsed.length ? `تم التعرف على ${parsed.length} مستخدمًا جاهزًا للإضافة` : 'لم يتم العثور على صفوف صالحة — تحقق من الملف'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, marginTop: 4 }}>
+              <button disabled={!parsed || !parsed.length || busy} onClick={doImport} style={{ border: 'none', background: parsed && parsed.length ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', borderRadius: 11, padding: '11px 24px', fontWeight: 800, fontSize: 13, cursor: parsed && parsed.length ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>استيراد</button>
+              <button onClick={onClose} style={{ border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', borderRadius: 11, padding: '11px 20px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+            </div>
+          </div>
         )}
       </div>
     </div>
