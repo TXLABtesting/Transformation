@@ -499,7 +499,7 @@ export function Overlays({ vm }: { vm: VM }) {
             <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>
-                  {vm.reqModal.mode === 'info' ? 'طلب معلومات إضافية' : 'الاعتذار عن الاعتماد'}
+                  {vm.reqModal.mode === 'info' ? 'طلب تفاصيل إضافية' : 'الاعتذار عن الاعتماد'}
                 </div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                   {vm.reqModal.mode === 'info'
