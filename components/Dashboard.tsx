@@ -302,8 +302,6 @@ function EntityOverview({ vm }: { vm: VM }) {
   const ic = vm.inputsCard;
   const [hovIn, setHovIn] = useState<string | null>(null);
   const [hovCost, setHovCost] = useState<string | null>(null);
-  const [stageTab, setStageTab] = useState<'all' | 'projinit' | 'operation' | 'service'>('all');
-  const [hovBar, setHovBar] = useState<string | null>(null);
   const isCoord = vm.role === 'coord';
   const isPath = vm.role === 'path';
   const useTypes = isCoord || isPath;
@@ -518,9 +516,10 @@ function EntityOverview({ vm }: { vm: VM }) {
             <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
               <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>توزيع المدخلات حسب المراحل</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {st.stages.map((sg) => (
-                  <div key={sg.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                    <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400 }}>{sg.label}</span>
+                {st.stages.map((sg, i) => (
+                  <div key={sg.label} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                    <span style={{ width: 21, height: 21, flex: 'none', borderRadius: 7, background: '#EAF0FE', color: '#2563EB', fontWeight: 800, fontSize: 11.5, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
+                    <span style={{ flex: 1, fontSize: 12, color: '#54627B', fontWeight: 400 }}>{sg.label}</span>
                     <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{sg.n}</span>
                   </div>
                 ))}
@@ -559,75 +558,7 @@ function EntityOverview({ vm }: { vm: VM }) {
         ))}
       </div>
 
-      {/* ===== Section 3: التوزيع حسب المرحلة (coordinator / path) ===== */}
-      {useTypes && (() => {
-        const sd = vm.stageDist[stageTab];
-        const tabs = (
-          [
-            { id: 'all', label: 'الكل' },
-            { id: 'projinit', label: 'مشروع / مبادرة' },
-            { id: 'operation', label: 'عملية' },
-            { id: 'service', label: 'خدمة' },
-          ] as const
-        ).filter((t) => t.id === 'all' || vm.streamTypeKeys.includes(t.id));
-        return (
-          <>
-            <div>
-              <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب المراحل</div>
-              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>عرض عدد المدخلات في كل مرحلة من المراحل.</div>
-            </div>
-            <div data-tour="stage-dist" style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 20px', marginTop: -8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
-                <div style={{ display: 'inline-flex', background: '#F1F5FB', borderRadius: 12, padding: 4, gap: 2, flexWrap: 'wrap' }}>
-                  {tabs.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setStageTab(t.id)}
-                      style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 9, padding: '7px 13px', fontSize: 12.5, fontWeight: stageTab === t.id ? 700 : 400, background: stageTab === t.id ? '#fff' : 'transparent', color: stageTab === t.id ? '#1D4ED8' : '#6B7A93', boxShadow: stageTab === t.id ? '0 2px 6px -2px rgba(11,27,58,.25)' : 'none', transition: 'background .12s' }}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 16 }}>
-                <span style={{ fontSize: 34, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{sd.total}</span>
-                <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>إجمالي المدخلات</span>
-              </div>
-              {/* numbers only — one tile per stage (hover keeps the numeric breakdown) */}
-              <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginTop: 18 }}>
-                {sd.stages.map((sg) => {
-                  const on = hovBar === sg.label;
-                  return (
-                    <div
-                      key={sg.label}
-                      onMouseEnter={() => setHovBar(sg.label)}
-                      onMouseLeave={() => setHovBar(null)}
-                      style={{ position: 'relative', background: on ? '#F2F7FF' : '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 14, padding: '16px 16px', textAlign: 'center', cursor: 'default', transition: 'background .12s' }}
-                    >
-                      {on && (
-                        <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 10, background: '#16233F', borderRadius: 14, padding: '11px 16px', boxShadow: '0 14px 30px -10px rgba(11,27,58,.55)', zIndex: 6, minWidth: 150, pointerEvents: 'none' }}>
-                          <div className="hd" style={{ fontSize: 12, fontWeight: 700, color: '#9FB0CC', textAlign: 'center', marginBottom: 9 }}>{sg.label}</div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                            {(stageTab === 'all' ? sg.typeBreak : sg.statusBreak).map((r) => (
-                              <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20 }}>
-                                <span style={{ fontSize: 12.5, color: '#DCE4F0', fontWeight: 400 }}>{r.label}</span>
-                                <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{r.n}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      <div style={{ fontSize: 26, fontWeight: 800, color: on ? '#1D4ED8' : '#13213C', lineHeight: 1, transition: 'color .12s' }}>{sg.n}</div>
-                      <div style={{ fontSize: 12, color: '#54627B', fontWeight: 400, marginTop: 8 }}>{sg.label}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </>
-        );
-      })()}
+
     </div>
   );
 }
@@ -2472,26 +2403,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                 ))}
               </div>
 
-              {/* Section 3: الجهات المشاركة — entities ranked by inputs submitted */}
-              {vm.entityRanking.length > 0 && (
-                <>
-                  <div>
-                    <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>الجهات المشاركة</div>
-                    <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>ترتيب الجهات حسب عدد المدخلات المقدمة.</div>
-                  </div>
-                  <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 22px', marginTop: -8, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    {vm.entityRanking.map((r) => (
-                      <div key={r.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-                        <div className="hd" style={{ minWidth: 0, textAlign: 'right', fontSize: 14, fontWeight: 800, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
-                        <div style={{ flex: 'none', display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                          <span style={{ fontSize: 17, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{r.n}</span>
-                          <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>مدخلات</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
 
             </>
           )}
