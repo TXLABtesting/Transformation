@@ -596,12 +596,18 @@ function build(s: Store) {
   // «الكل» sub-menu: entity rep + committee drill down by STREAM (full names);
   // coordinator + stream head drill down by input TYPE
   const streamSub = rawRole === 'entity' || rawRole === 'ai';
+  // entry counts per nav item (role-scoped portfolio)
+  const cntStream = (pid: string) => roleBase.filter((i) => i.path === pid).length;
+  const cntProjects = roleBase.filter((i) => isProjInit(i.type)).length;
+  const cntOperations = roleBase.filter((i) => i.type === 'operation').length;
+  const cntServices = roleBase.filter((i) => i.type === 'service').length;
   const subNav = streamSub
     ? roleStreams.map((p) => ({
         key: 'stream:' + p.id,
         label: p.name,
         icon: PIC[p.id],
         sub: true,
+        count: cntStream(p.id),
         active: navSection === 'all' && navStream === p.id,
         onClick: () => {
           s.setNavSection('all');
@@ -609,18 +615,18 @@ function build(s: Store) {
         },
       }))
     : [
-        { key: 'projects', label: 'المشاريع والمبادرات', icon: NAV_FOLDER, sub: true },
+        { key: 'projects', label: 'المشاريع والمبادرات', icon: NAV_FOLDER, sub: true, count: cntProjects },
         ...(roleStreams.some((p) => streamHasType(p.id, 'operation'))
-          ? [{ key: 'operations', label: 'العمليات', icon: NAV_SLIDERS, sub: true }]
+          ? [{ key: 'operations', label: 'العمليات', icon: NAV_SLIDERS, sub: true, count: cntOperations }]
           : []),
         ...(roleStreams.some((p) => streamHasType(p.id, 'service'))
-          ? [{ key: 'services', label: 'الخدمات', icon: NAV_GRID4, sub: true }]
+          ? [{ key: 'services', label: 'الخدمات', icon: NAV_GRID4, sub: true, count: cntServices }]
           : []),
       ];
 
   const navItems = [
     { key: 'overview', label: 'الرئيسية', icon: NAV_HOME },
-    { key: 'all', label: streamSub ? 'جميع المسارات' : 'جميع الأنواع', icon: NAV_DOTS, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
+    { key: 'all', label: streamSub ? 'جميع المسارات' : 'جميع الأنواع', icon: NAV_DOTS, count: roleBase.length, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
     ...subNav,
     { key: 'launchplans', label: 'مراحل التنفيذ', icon: NAV_CAL },
     { key: 'lplan', label: 'خطة الإطلاق', icon: NAV_ROCKET },
@@ -628,6 +634,7 @@ function build(s: Store) {
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
   ].map((n) => ({
     sub: false,
+    count: undefined as number | undefined,
     active: navSection === n.key,
     onClick: n.key === 'team' ? () => s.openTeam() : () => s.setNavSection(n.key),
     ...n,

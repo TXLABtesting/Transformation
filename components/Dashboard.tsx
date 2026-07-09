@@ -2053,6 +2053,23 @@ export function Dashboard({ vm }: { vm: VM }) {
               )}
               <Icon d={n.icon} size={n.sub ? 14 : 16} color={n.active ? '#2563EB' : '#8A97AD'} />
               {n.label}
+              {typeof n.count === 'number' && (
+                <span
+                  style={{
+                    marginInlineStart: 'auto',
+                    minWidth: 22,
+                    textAlign: 'center',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: n.active ? '#1D4ED8' : '#8A97AD',
+                    background: n.active ? '#DCE8FE' : '#F1F4F9',
+                    borderRadius: 999,
+                    padding: '1px 7px',
+                  }}
+                >
+                  {n.count}
+                </span>
+              )}
             </button>
           ))}
           </div>
@@ -3390,25 +3407,6 @@ function ListView({ cards }: { cards: CardVM[] }) {
                       اعتماد المدخل
                     </button>
                     <button
-                      onClick={(e) => {
-                        stop(e);
-                        c.onReqInfo();
-                      }}
-                      style={{
-                        background: '#fff',
-                        color: '#33405A',
-                        border: '1px solid #E7ECF4',
-                        borderRadius: 9,
-                        padding: '7px 12px',
-                        fontWeight: 700,
-                        fontSize: 11,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      طلب معلومات إضافية
-                    </button>
-                    <button
                       title="رفض المدخل"
                       aria-label="رفض المدخل"
                       onClick={(e) => {
@@ -3429,6 +3427,25 @@ function ListView({ cards }: { cards: CardVM[] }) {
                       }}
                     >
                       <Icon d="M18 6L6 18M6 6l12 12" size={12} color="#C0303B" strokeWidth={2.4} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        stop(e);
+                        c.onReqInfo();
+                      }}
+                      style={{
+                        background: '#fff',
+                        color: '#33405A',
+                        border: '1px solid #E7ECF4',
+                        borderRadius: 9,
+                        padding: '7px 12px',
+                        fontWeight: 700,
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      طلب تفاصيل إضافية
                     </button>
                   </span>
                 ) : c.showPathCta ? (
@@ -3905,20 +3922,20 @@ function CardItem({ c }: { c: CardVM }) {
           <button
             onClick={(e) => {
               stop(e);
-              c.onReqInfo();
-            }}
-            style={{ ...BTN_NEUTRAL, flex: 1, whiteSpace: 'nowrap' }}
-          >
-            طلب معلومات إضافية
-          </button>
-          <button
-            onClick={(e) => {
-              stop(e);
               c.onReject();
             }}
             style={{ ...BTN_REJECT, flex: 1 }}
           >
             رفض المدخل
+          </button>
+          <button
+            onClick={(e) => {
+              stop(e);
+              c.onReqInfo();
+            }}
+            style={{ ...BTN_NEUTRAL, flex: 1, whiteSpace: 'nowrap' }}
+          >
+            طلب تفاصيل إضافية
           </button>
         </div>
       )}
