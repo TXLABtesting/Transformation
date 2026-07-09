@@ -665,21 +665,45 @@ const FilterChevron = () => (
   </svg>
 );
 
-function StreamSelect({ value, options, onChange }: { value: string; options: FilterOpt[]; onChange: (v: string) => void }) {
+// Custom DOM dropdown replacing native <select> in filter UIs: native popups
+// are drawn by the OS/browser at their own scale and position (broken under
+// device emulation and inconsistent across phones), so we render our own.
+function FilterSelect({ value, options, onChange, minWidth = 150 }: { value: string; options: FilterOpt[]; onChange: (v: string) => void; minWidth?: number }) {
+  const [open, setOpen] = useState(false);
+  const label = options.find((o) => o.v === value)?.label || options[0]?.label || '';
+  const pick = (v: string) => { onChange(v); setOpen(false); };
   return (
-    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #E4ECF7', borderRadius: 11, padding: '8px 13px' }}>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{ font: 'inherit', fontSize: 12.5, fontWeight: 800, color: '#13213C', background: 'transparent', border: 'none', cursor: 'pointer', outline: 'none', WebkitAppearance: 'none', appearance: 'none', padding: 0 }}
+    <div data-r="fselect" style={{ position: 'relative', flex: 'none' }}>
+      <div
+        onClick={() => setOpen((o) => !o)}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 10, justifyContent: 'space-between', minWidth, height: 40, background: '#fff', border: '1px solid #E4ECF7', borderRadius: 11, padding: '0 13px', cursor: 'pointer' }}
       >
-        {options.map((o) => (
-          <option key={o.v} value={o.v}>{o.label}</option>
-        ))}
-      </select>
-      <FilterChevron />
-    </label>
+        <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>{label}</span>
+        <FilterChevron />
+      </div>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 39 }} />
+          <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, minWidth: '100%', width: 'max-content', maxWidth: 'min(300px, calc(100vw - 32px))', maxHeight: 320, overflowY: 'auto', background: '#fff', border: '1px solid #E4ECF7', borderRadius: 13, boxShadow: '0 18px 44px -14px rgba(15,31,61,.28)', zIndex: 40 }}>
+            {options.map((o) => (
+              <div
+                key={o.v}
+                onClick={() => pick(o.v)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '11px 14px', fontSize: 12.5, fontWeight: o.v === value ? 800 : 400, color: o.v === value ? '#1D4ED8' : '#33415C', background: o.v === value ? '#F2F7FF' : '#fff', cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                {o.label}
+                {o.v === value && <Icon d="M20 6 9 17l-5-5" size={13} color="#1D4ED8" />}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
+}
+
+function StreamSelect({ value, options, onChange }: { value: string; options: FilterOpt[]; onChange: (v: string) => void }) {
+  return <FilterSelect value={value} options={options} onChange={onChange} />;
 }
 
 function EntityFilter({ value, options, onChange }: { value: string; options: FilterOpt[]; onChange: (v: string) => void }) {
@@ -2603,39 +2627,20 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </div>
                 {/* heads/coordinators are locked to their own stream — no streams filter */}
                 {vm.role !== 'path' && vm.role !== 'coord' && (
-                  <select value={vm.pathFilterValue} onChange={(e) => { const v = e.target.value; if (vm.role === 'entity' || vm.role === 'ai') s.setNavStream(v === 'all' ? null : v); else s.setActivePath(v); }} style={{ ...selectStyle, width: 'auto', minWidth: 170, maxWidth: 280 }}>
-                    {vm.pathOptions.map((o) => (
-                      <option key={o.v} value={o.v}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                  <FilterSelect
+                    value={vm.pathFilterValue}
+                    options={vm.pathOptions}
+                    minWidth={170}
+                    onChange={(v) => { if (vm.role === 'entity' || vm.role === 'ai') s.setNavStream(v === 'all' ? null : v); else s.setActivePath(v); }}
+                  />
                 )}
                 {vm.showEntFilter && (
                   <EntityFilter value={vm.entFilterValue} options={vm.entOptions} onChange={(v) => s.setEntFilter(v)} />
                 )}
-                <select value={vm.filterValue} onChange={(e) => s.setFilter(e.target.value)} style={selectStyle}>
-                  {vm.typeOptions.map((o) => (
-                    <option key={o.v} value={o.v}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-                <select value={vm.statusFilterValue} onChange={(e) => s.setStatusFilter(e.target.value)} style={selectStyle}>
-                  {vm.statusOptions.map((o) => (
-                    <option key={o.v} value={o.v}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                <FilterSelect value={vm.filterValue} options={vm.typeOptions} onChange={(v) => s.setFilter(v)} />
+                <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
                 {vm.showFundFilter && (
-                  <select value={vm.fundFilterValue} onChange={(e) => s.setFundFilter(e.target.value)} style={{ ...selectStyle, width: 200 }}>
-                    {vm.fundOptions.map((o) => (
-                      <option key={o.v} value={o.v}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                  <FilterSelect value={vm.fundFilterValue} options={vm.fundOptions} minWidth={200} onChange={(v) => s.setFundFilter(v)} />
                 )}
                 <button
                   onClick={() => s.resetFilters()}
