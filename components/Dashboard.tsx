@@ -690,7 +690,7 @@ function EntityFilter({ value, options, onChange }: { value: string; options: Fi
   const filtered = options.filter((o) => !q || o.label.includes(q));
   const pick = (v: string) => { onChange(v); setOpen(false); setQuery(''); };
   return (
-    <div style={{ position: 'relative', flex: 'none' }}>
+    <div data-r="entfilter" style={{ position: 'relative', flex: 'none' }}>
       <div
         onClick={() => { setOpen((o) => !o); setQuery(''); }}
         style={{ display: 'inline-flex', alignItems: 'center', gap: 10, justifyContent: 'space-between', minWidth: 160, background: '#fff', border: '1px solid #E4ECF7', borderRadius: 11, padding: '8px 13px', cursor: 'pointer' }}
@@ -1561,6 +1561,8 @@ export function Dashboard({ vm }: { vm: VM }) {
   const [itemsMgrFor, setItemsMgrFor] = useState<string | null>(null);
   const [launchMgrFor, setLaunchMgrFor] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  // mobile: the filter bar collapses into one button that opens a full-screen sheet
+  const [mobileFilters, setMobileFilters] = useState(false);
   // mobile navigation: the rail collapses into a hamburger drawer, and the
   // stream/type sub-items sit in a dropdown under «الكل».
   const [mobileNav, setMobileNav] = useState(false);
@@ -2124,6 +2126,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               {n.label}
               {typeof n.count === 'number' && (
                 <span
+                  data-r="navcount"
                   style={{
                     marginInlineStart: 'auto',
                     minWidth: 22,
@@ -2536,6 +2539,45 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>{vm.shownCount === 1 ? '1 من 1 مدخل' : `${vm.shownCount} من ${vm.totalCount} مدخلات`}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                {/* mobile: single trigger that opens the full-screen filter sheet */}
+                <button
+                  data-r="filterbtn"
+                  onClick={() => setMobileFilters(true)}
+                  style={{
+                    display: 'none',
+                    alignItems: 'center',
+                    gap: 8,
+                    height: 40,
+                    background: '#fff',
+                    border: '1px solid #E7ECF4',
+                    boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
+                    borderRadius: 11,
+                    padding: '0 14px',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: '#42506B',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <Icon d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" size={14} color="#2563EB" />
+                  الفلاتر والبحث
+                  {vm.anyFilterActive && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB', flex: 'none' }} />}
+                </button>
+                <div
+                  data-r="filters"
+                  className={mobileFilters ? 'mfilters-open' : ''}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}
+                >
+                <div data-r="mfhead" style={{ display: 'none', alignItems: 'center', gap: 10 }}>
+                  <span className="hd" style={{ fontSize: 17, fontWeight: 800, color: '#13213C', flex: 1 }}>الفلاتر والبحث</span>
+                  <button
+                    onClick={() => setMobileFilters(false)}
+                    style={{ width: 38, height: 38, borderRadius: 11, border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', cursor: 'pointer', fontSize: 17, fontFamily: 'inherit' }}
+                  >
+                    ✕
+                  </button>
+                </div>
                 <div style={{ position: 'relative' }}>
                   <input
                     value={vm.searchValue}
@@ -2617,6 +2659,27 @@ export function Dashboard({ vm }: { vm: VM }) {
                   <Icon d="M3 2v6h6M3 8a9 9 0 1 0 2.6-4.5L3 8" size={13} color={vm.anyFilterActive ? '#42506B' : '#B4BECE'} />
                   إعادة ضبط الفلاتر
                 </button>
+                <button
+                  data-r="mfapply"
+                  onClick={() => setMobileFilters(false)}
+                  style={{
+                    display: 'none',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
+                    color: '#fff',
+                    border: 'none',
+                    boxShadow: '0 8px 18px -8px rgba(37,99,235,.7)',
+                    borderRadius: 12,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  تطبيق الفلاتر
+                </button>
+                </div>
                 <div style={{ flex: 1 }} />
                 {/* cards / table view switcher */}
                 <div

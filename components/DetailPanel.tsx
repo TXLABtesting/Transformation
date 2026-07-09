@@ -138,6 +138,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
       />
       {/* panel */}
       <div
+        data-r="panel"
         style={{
           position: 'absolute',
           top: 0,
