@@ -1437,7 +1437,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfBg,
     isReturned: rawRole === 'coord' && !!i.ret,
     retBannerLabel: 'ملاحظات ممثل الجهة',
-    retNote: i.ret ? i.ret.note || (i.ret.type === 'info' ? 'طُلبت معلومات إضافية' : 'تمت الإعادة للتعديل') : '',
+    retNote: i.ret ? i.ret.note || (i.ret.type === 'info' ? 'طُلبت تفاصيل إضافية' : 'تمت الإعادة للتعديل') : '',
     retFrom: i.ret?.from || '',
     stepBadge: 'المرحلة ' + step,
     priority: i.priority,
@@ -1595,7 +1595,7 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
     } else {
       if (i.funded && i.nom && i.nom.by === myName) push('mf-' + i.id, 'ok', 'wallet', 'اعتمدت اللجنة الوطنية تمويل ترشيحك', tl + ' · ' + i.title, i.id);
       if (i.fyi) push('fy-' + i.id, 'info', 'inbox', 'للعلم: تعديل من ممثل الجهة — بانتظار اعتماد اللجنة الوطنية', tl + ' · ' + i.title, i.id);
-      if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب معلومات إضافية من ' : 'تمت الإعادة من ') + (i.ret.from || ''), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
+      if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تمت الإعادة من ') + (i.ret.from || ''), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
       if (i.stageMove)
         push(
           'sm-' + i.id,
@@ -1922,7 +1922,7 @@ function buildLogRows(i: Item) {
     if (e.action === 'approve') return 'تم الاعتماد من ' + (e.role || '');
     if (e.action === 'pending') return 'قيد الاعتماد لدى ' + (e.role || '');
     if (e.action === 'reject') return 'رفض';
-    if (e.action === 'info') return 'طلب معلومات إضافية';
+    if (e.action === 'info') return 'طلب تفاصيل إضافية';
     // fund / nominate / unfund / declineNom / cancelFund / budget … → Arabic
     return ALOG[e.action]?.t || e.action;
   };

@@ -281,7 +281,7 @@ export const ALOG: Record<string, { t: string; c: string }> = {
   approve: { t: 'اعتمد', c: '#0B8A4B' },
   pending: { t: 'قيد الاعتماد', c: '#B45309' },
   reject: { t: 'رفض', c: '#C0303B' },
-  info: { t: 'طلب معلومات إضافية', c: '#B45309' },
+  info: { t: 'طلب تفاصيل إضافية', c: '#B45309' },
   budget: { t: 'أرسل الميزانية ونطاق العمل', c: '#2563EB' },
   nominate: { t: 'رشّح للتمويل', c: '#0E7C86' },
   fund: { t: 'اعتمد التمويل', c: '#0B8A4B' },

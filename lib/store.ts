@@ -1279,7 +1279,7 @@ export const useStore = create<Store>((set, get) => {
         log: withLog(s, i, info ? 'info' : 'reject', rm.note),
       }));
       setUi({ reqModal: null });
-      toast(info ? 'تم طلب معلومات إضافية من رئيس المسار' : 'تمت إعادة ' + typeLabelDef(it.type) + ' إلى رئيس المسار');
+      toast(info ? 'تم طلب تفاصيل إضافية من رئيس المسار' : 'تمت إعادة ' + typeLabelDef(it.type) + ' إلى رئيس المسار');
     },
     closeReqModal: () => setUi({ reqModal: null }),
 
