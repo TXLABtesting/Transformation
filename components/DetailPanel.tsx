@@ -24,7 +24,7 @@ const valueStyle: React.CSSProperties = {
 
 const sectionCard: React.CSSProperties = {
   background: '#fff',
-  border: '1px solid #E7ECF4',
+  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
   borderRadius: 14,
   padding: '16px 18px',
 };
@@ -49,7 +49,7 @@ function DetailSecHead({ iconD, title }: { iconD: string; title: string }) {
 
 function DetailGrid({ cols, tint, children }: { cols: number; tint?: boolean; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols},minmax(0,1fr))`, gap: 1, background: '#EAEEF5', border: '1px solid #E7ECF4', borderRadius: 16, overflow: 'hidden' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols},minmax(0,1fr))`, gap: 1, background: '#EAEEF5', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, overflow: 'hidden' }}>
       {children}
     </div>
   );
@@ -205,7 +205,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 width: 34,
                 height: 34,
                 borderRadius: 10,
-                border: '1px solid #E7ECF4',
+                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                 background: '#fff',
                 color: '#54627B',
                 fontSize: 16,
@@ -321,7 +321,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
             <div
               style={{
                 background: '#fff',
-                border: '1px solid #E7ECF4',
+                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                 borderRadius: 13,
                 padding: '12px 13px',
               }}
@@ -344,7 +344,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
             <div
               style={{
                 background: '#fff',
-                border: '1px solid #E7ECF4',
+                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                 borderRadius: 13,
                 padding: '12px 13px',
               }}
@@ -372,7 +372,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
             <div
               style={{
                 background: '#fff',
-                border: '1px solid #E7ECF4',
+                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                 borderRadius: 13,
                 padding: '12px 13px',
               }}
@@ -383,7 +383,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
             <div
               style={{
                 background: '#fff',
-                border: '1px solid #E7ECF4',
+                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                 borderRadius: 13,
                 padding: '12px 13px',
               }}
@@ -779,7 +779,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               <div
                 style={{
                   background: '#fff',
-                  border: '1px solid #E7ECF4',
+                  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                   borderRadius: 16,
                   padding: 16,
                 }}
@@ -818,7 +818,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
           <div
             style={{
               background: '#fff',
-              border: '1px solid #E7ECF4',
+              border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
               borderRadius: 16,
               padding: 16,
             }}
@@ -879,7 +879,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
           <div
             style={{
               background: '#fff',
-              border: '1px solid #E7ECF4',
+              border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
               borderRadius: 16,
               padding: 16,
             }}
@@ -1048,7 +1048,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
           <div style={{ display: 'contents' }}>
           {/* ===== SIMPLIFIED DELIVERY STATUS ===== */}
           {d.showExecView && !d.isAgentifiable && (
-            <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 16 }}>
+            <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 16 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>حالة التطوير</div>
               <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginTop: 6 }}>
                 هذا البند غير قابل للتحول بالذكاء الاصطناعي — لا تنطبق عليه خطة إطلاق أو حالة تنفيذ.
@@ -1056,7 +1056,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
             </div>
           )}
           {d.showExecView && d.isAgentifiable && (
-            <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 16 }}>
+            <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 16 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>حالة التطوير</div>
               <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, margin: '6px 0 14px' }}>
                 حدّدوا الحالة الحالية — قيد التطوير، ثم تم التطوير، وصولاً إلى تم الإطلاق.
@@ -1065,7 +1065,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 style={{
                   display: 'flex',
                   background: '#F4F7FC',
-                  border: '1px solid #E7ECF4',
+                  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                   borderRadius: 12,
                   padding: 4,
                   gap: 4,
@@ -1148,7 +1148,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                       height: 48,
                       flex: 'none',
                       borderRadius: 12,
-                      border: '1px solid #E7ECF4',
+                      border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                       background: '#fff',
                       color: '#54627B',
                       cursor: 'pointer',
@@ -1166,7 +1166,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                     flex: 1,
                     background: '#fff',
                     color: '#33405A',
-                    border: '1px solid #E7ECF4',
+                    border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                     borderRadius: 12,
                     padding: '13px 14px',
                     fontWeight: 700,

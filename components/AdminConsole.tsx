@@ -20,7 +20,7 @@ const IC_TRASH = 'M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1
 const IC_CHECK = 'M20 6 9 17l-5-5';
 const IC_X = 'M18 6 6 18M6 6l12 12';
 
-const card: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16 };
+const card: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16 };
 const labelSt: CSSProperties = { fontSize: 12, fontWeight: 700, color: '#54627B', marginBottom: 6, display: 'block' };
 const inputSt: CSSProperties = {
   width: '100%', border: '1px solid #DDE5F0', borderRadius: 10, padding: '10px 12px',
@@ -73,7 +73,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {vm.showRoleSwitcher && (
-            <div style={{ display: 'flex', background: '#F4F7FC', border: '1px solid #E7ECF4', borderRadius: 12, padding: 3, gap: 2 }}>
+            <div style={{ display: 'flex', background: '#F4F7FC', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 12, padding: 3, gap: 2 }}>
               {vm.rolePills.map((p) => (
                 <button key={p.key} onClick={p.onClick} style={{ borderRadius: 9, padding: '7px 11px', fontWeight: 700, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', ...(p.active ? { background: '#fff', color: '#B45309', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #F0DCC0' } : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }) }}>
                   {p.label}
@@ -81,7 +81,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
               ))}
             </div>
           )}
-          <button onClick={s.logout} style={{ border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', borderRadius: 10, padding: '9px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={s.logout} style={{ border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', background: '#fff', color: '#54627B', borderRadius: 10, padding: '9px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
             تسجيل الخروج
           </button>
         </div>
@@ -243,7 +243,7 @@ function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) 
           {a.streams.map((st) => {
             const h = headByStream(st.id);
             return (
-              <div key={st.id} style={{ border: '1px solid #E7ECF4', borderRadius: 13, padding: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <div key={st.id} style={{ border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 13, padding: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 700 }}>{st.name}</div>
                   <div style={{ fontWeight: 800, fontSize: 13.5, marginTop: 3 }}>{h?.name || 'لم يُعيّن بعد'}</div>
@@ -271,7 +271,7 @@ function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) 
         </div>
         <div style={{ padding: 16, display: 'grid', gap: 10 }}>
           {committee.map((c) => (
-            <div key={c.id} style={{ border: '1px solid #E7ECF4', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <div key={c.id} style={{ border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 800, fontSize: 13.5 }}>{c.name}</div>
                 <div style={{ fontSize: 11, color: '#9AA6BC', direction: 'ltr', textAlign: 'right' }}>{c.email || c.title}</div>
@@ -387,7 +387,7 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
           <button disabled={!valid} onClick={() => valid && onSave({ ...f, name: f.name.trim(), email: f.email.trim(), entityName: needsEntity ? f.entityName : undefined, streamId: needsStream ? f.streamId : undefined })} style={{ border: 'none', background: valid ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', borderRadius: 11, padding: '11px 22px', fontWeight: 800, fontSize: 13, cursor: valid ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
             حفظ
           </button>
-          <button onClick={onClose} style={{ border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', borderRadius: 11, padding: '11px 20px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={onClose} style={{ border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', background: '#fff', color: '#54627B', borderRadius: 11, padding: '11px 20px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
             إلغاء
           </button>
         </div>
