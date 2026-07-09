@@ -312,7 +312,7 @@ function EntityOverview({ vm }: { vm: VM }) {
   const sec2Cards = useTypes ? vm.typeOverviewCards : vm.streamOverviewCards;
   const sec2Title = useTypes ? 'توزيع المدخلات حسب النوع' : 'توزيع مدخلات الجهة حسب المسارات';
   const sec2Sub = useTypes ? 'تصنيف مدخلات المسار حسب النوع، مراحل التقدم، والتكلفة التقديرية.' : 'عرض مدخلات الجهة في كل مسار حسب مراحل التقدم والتكلفة التقديرية.';
-  const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
+  const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
   const money = (label: string) => {
     const p = label.split(' ');
     return { num: p[0], unit: p.slice(1).join(' ') };
@@ -501,9 +501,9 @@ function EntityOverview({ vm }: { vm: VM }) {
         <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{sec2Title}</div>
         <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>{sec2Sub}</div>
       </div>
-      <div data-tour="type-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
+      <div data-r="seccards" data-tour="type-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
         {sec2Cards.map((st) => (
-          <div key={st.id} data-tour="sec2-card" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div key={st.id} data-tour="sec2-card" style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>
               <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>{st.name}</div>
               <span style={{ width: 38, height: 38, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
@@ -581,10 +581,10 @@ function EntityOverview({ vm }: { vm: VM }) {
         return (
           <>
             <div>
-              <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب مراحل التقدم</div>
-              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>عرض عدد المدخلات في كل مرحلة من مراحل التقدم.</div>
+              <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب المراحل</div>
+              <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>عرض عدد المدخلات في كل مرحلة من المراحل.</div>
             </div>
-            <div data-tour="stage-dist" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 20px', marginTop: -8 }}>
+            <div data-tour="stage-dist" style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 20px', marginTop: -8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ display: 'inline-flex', background: '#F1F5FB', borderRadius: 12, padding: 4, gap: 2, flexWrap: 'wrap' }}>
                   {tabs.map((t) => (
@@ -769,7 +769,7 @@ function StageCard({ b, showStream, onManage }: { b: VM['batchSummary'][number];
   const tot = b.count || 1;
   const segs = STAGE_STATUSES.map((s) => ({ key: s.key, frac: b[s.key] / tot, color: s.c, label: s.label, value: b[s.key] })).filter((x) => x.frac > 0.0001);
   return (
-    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
         <div>
@@ -1102,7 +1102,7 @@ function PieCard({ title, data }: { title: string; data: { label: string; value:
   const C = 2 * Math.PI * R;
   let acc = 0;
   return (
-    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '15px 17px' }}>
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 14, padding: '15px 17px' }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7A93', lineHeight: 1.5 }}>{title}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
         <svg viewBox="0 0 90 90" width={104} height={104} style={{ flex: 'none' }}>
@@ -1182,14 +1182,14 @@ function RankBars({ title, rows }: { title: string; rows: { label: string; value
   const max = rows.reduce((a, r) => Math.max(a, r.value), 0) || 1;
   const shown = showAll ? rows : rows.slice(0, TOP);
   return (
-    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '15px 17px' }}>
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 14, padding: '15px 17px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7A93', lineHeight: 1.5 }}>{title}</div>
         {rows.length > TOP && (
           <button
             onClick={() => setShowAll((v) => !v)}
             style={{
-              border: '1px solid #E7ECF4',
+              border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
               background: '#fff',
               color: '#54627B',
               borderRadius: 9,
@@ -1473,7 +1473,7 @@ function ExportMenu({ onExcel, onPpt, label }: { onExcel: () => void; onPpt: () 
           gap: 8,
           height: 34,
           padding: '0 13px',
-          border: '1px solid #E7ECF4',
+          border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
           background: '#fff',
           borderRadius: 10,
           color: '#42506B',
@@ -1556,6 +1556,10 @@ export function Dashboard({ vm }: { vm: VM }) {
   const [itemsMgrFor, setItemsMgrFor] = useState<string | null>(null);
   const [launchMgrFor, setLaunchMgrFor] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  // mobile navigation: the rail collapses into a hamburger drawer, and the
+  // stream/type sub-items sit in a dropdown under «الكل».
+  const [mobileNav, setMobileNav] = useState(false);
+  const [allOpen, setAllOpen] = useState(false);
 
   return (
     <div
@@ -1587,6 +1591,28 @@ export function Dashboard({ vm }: { vm: VM }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* Hamburger — mobile only (shown via globals.css ≤900px); toggles the
+              navigation drawer. */}
+          <button
+            data-r="hamburger"
+            onClick={() => setMobileNav((o) => !o)}
+            aria-label="القائمة"
+            style={{
+              display: 'none',
+              width: 42,
+              height: 42,
+              flex: 'none',
+              borderRadius: 11,
+              border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
+              background: '#fff',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            <Icon d={mobileNav ? 'M18 6 6 18M6 6l12 12' : 'M3 6h18M3 12h18M3 18h18'} size={19} color="#33405A" strokeWidth={2.2} />
+          </button>
           {/* Role switcher: demo builds only (production role comes from the
               UAE PASS / IdP mapping wired by IT). */}
           {vm.showRoleSwitcher && (
@@ -1595,7 +1621,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               style={{
                 display: 'flex',
                 background: '#F4F7FC',
-                border: '1px solid #E7ECF4',
+                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                 borderRadius: 12,
                 padding: 3,
                 gap: 2,
@@ -1634,7 +1660,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 height: 44,
                 padding: '0 13px',
                 borderRadius: 12,
-                border: '1px solid #E7ECF4',
+                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                 background: '#fff',
                 color: '#54627B',
                 fontSize: 12,
@@ -1668,7 +1694,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 width: 38,
                 height: 38,
                 borderRadius: 11,
-                border: '1px solid #E7ECF4',
+                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                 background: '#fff',
                 color: '#54627B',
                 cursor: 'pointer',
@@ -1803,7 +1829,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                               }}
                               style={{
                                 background: '#fff',
-                                border: '1px solid #E7ECF4',
+                                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                                 color: '#C0303B',
                                 borderRadius: 8,
                                 padding: '6px 11px',
@@ -1821,7 +1847,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                               }}
                               style={{
                                 background: '#fff',
-                                border: '1px solid #E7ECF4',
+                                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                                 color: '#54627B',
                                 borderRadius: 8,
                                 padding: '6px 11px',
@@ -1977,9 +2003,11 @@ export function Dashboard({ vm }: { vm: VM }) {
         data-r="work"
         style={{ display: 'flex', gap: 16, padding: '16px 24px 44px', alignItems: 'flex-start' }}
       >
-        {/* Sidebar navigation — full-height panel on the right edge */}
+        {/* Sidebar navigation — full-height panel on the right edge (desktop);
+            on mobile it collapses behind the hamburger (mnav-closed hides it). */}
         <aside
           data-r="rail"
+          className={mobileNav ? '' : 'mnav-closed'}
           style={{
             width: 248,
             position: 'fixed',
@@ -2015,7 +2043,18 @@ export function Dashboard({ vm }: { vm: VM }) {
           {vm.navItems.map((n) => (
             <button
               key={n.key}
-              onClick={n.onClick}
+              className={n.sub ? 'mnav-sub' + (allOpen ? '' : ' mnav-collapsed') : ''}
+              onClick={() => {
+                if (n.key === 'all') {
+                  // «الكل»: navigate and toggle the stream/type dropdown; keep the
+                  // mobile drawer open so the sub-items can be reached
+                  n.onClick();
+                  setAllOpen((o) => !o);
+                } else {
+                  n.onClick();
+                  setMobileNav(false);
+                }
+              }}
               data-tour={n.key === 'all' ? 'nav-all' : n.key === 'projects' ? 'nav-projects' : n.key === 'operations' ? 'nav-operations' : n.key === 'services' ? 'nav-services' : n.key === 'launchplans' ? 'nav-exec' : n.key === 'lplan' ? 'nav-launch' : n.key === 'team' ? 'nav-team' : n.key === 'entities' ? 'nav-entities' : undefined}
               style={{
                 position: 'relative',
@@ -2070,6 +2109,19 @@ export function Dashboard({ vm }: { vm: VM }) {
                   {n.count}
                 </span>
               )}
+              {n.key === 'all' && (
+                <span
+                  data-r="navchev"
+                  style={{
+                    display: 'none',
+                    marginInlineStart: 6,
+                    transition: 'transform .2s',
+                    transform: allOpen ? 'rotate(180deg)' : 'none',
+                  }}
+                >
+                  <Icon d="M6 9l6 6 6-6" size={14} color="#8A97AD" strokeWidth={2.4} />
+                </span>
+              )}
             </button>
           ))}
           </div>
@@ -2086,7 +2138,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   gap: 10,
                   padding: '11px 13px',
                   borderRadius: 11,
-                  border: '1px solid #E7ECF4',
+                  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                   background: '#fff',
                   color: '#42506B',
                   fontWeight: 800,
@@ -2281,7 +2333,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>ملخص المدخلات والترشيحات</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>نظرة سريعة على حالة المدخلات ومشاركة الجهات.</div>
               </div>
-              <div data-r="kpi" data-tour="kpis" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: 14, marginTop: -8, display: 'flex', alignItems: 'stretch', gap: 12, flexWrap: 'wrap' }}>
+              <div data-r="kpi" data-tour="kpis" style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: 14, marginTop: -8, display: 'flex', alignItems: 'stretch', gap: 12, flexWrap: 'wrap' }}>
                 <CmtStat value={vm.aiStats.entCount} label="الجهات المشاركة" sub={vm.aiStats.entCount > 2 ? 'جهات مشاركة' : 'جهة مشاركة'} iconD="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01" info="عدد الجهات الاتحادية التي قدّمت مدخلات ضمن المشروع." />
                 <div style={{ width: 1, background: '#EEF1F6', alignSelf: 'stretch', margin: '2px 0' }} />
                 <CmtStat value={vm.aiStats.total} label="إجمالي المدخلات" sub={vm.aiStats.total > 2 ? 'مدخلات مسجلة' : 'مُدخل مسجّل'} iconD="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" info="كل ما قدّمته الجهات عبر مسارات المشروع ووصل إلى اللجنة الوطنية." />
@@ -2303,9 +2355,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب المسار</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع المدخلات حسب المسار ونوع المدخل.</div>
               </div>
-              <div data-tour="ai-streams" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
+              <div data-r="seccards" data-tour="ai-streams" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
                 {vm.committeeStreamCards.map((st) => (
-                  <div key={st.id} data-tour="ai-stream-card" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div key={st.id} data-tour="ai-stream-card" style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>
                       <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5 }}>{st.name}</div>
                       <span style={{ width: 38, height: 38, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
@@ -2359,7 +2411,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>الجهات المشاركة</div>
                     <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>ترتيب الجهات حسب عدد المدخلات المقدمة.</div>
                   </div>
-                  <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 22px', marginTop: -8, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 22px', marginTop: -8, display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {vm.entityRanking.map((r) => (
                       <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                         <div className="hd" style={{ width: 300, flex: 'none', textAlign: 'right', fontSize: 14, fontWeight: 800, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
@@ -2462,7 +2514,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     style={{
                       height: 40,
                       width: 220,
-                      border: '1px solid #E7ECF4',
+                      border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                       backgroundColor: '#fff',
                       borderRadius: 11,
                       padding: '0 36px 0 13px',
@@ -2519,7 +2571,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     alignItems: 'center',
                     gap: 7,
                     background: '#fff',
-                    border: '1px solid #E7ECF4',
+                    border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                     borderRadius: 11,
                     padding: '0 14px',
                     fontSize: 12.5,
@@ -2538,7 +2590,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   style={{
                     display: 'flex',
                     background: '#F4F7FC',
-                    border: '1px solid #E7ECF4',
+                    border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                     borderRadius: 11,
                     padding: 3,
                     gap: 2,
@@ -2644,7 +2696,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     <HoverDiv
                       key={e2.name}
                       onClick={e2.onOpen}
-                      base={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: 20, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 15 }}
+                      base={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: 20, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 15 }}
                       hover={{ borderColor: '#C7D6EE', boxShadow: '0 18px 40px -22px rgba(15,31,61,.35)' }}
                     >
                       {/* icon badge (left) + entity name (right) */}
@@ -2733,14 +2785,14 @@ export function Dashboard({ vm }: { vm: VM }) {
                   >
                     <div style={{ padding: '18px 22px 12px', display: 'flex', alignItems: 'flex-start', gap: 12, borderBottom: '1px solid #F0F3F8' }}>
                       <div style={{ flex: 1 }}>
-                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>خطة التنفيذ — {itemsMgrFor.replace(/^إطلاق /, '')}</div>
+                        <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>تخطيط {itemsMgrFor.replace(/^إطلاق /, '')}</div>
                         <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3, lineHeight: 1.7 }}>
-                          حدِّدوا ما يندرج ضمن هذه المرحلة — نقل بند من مرحلة أخرى يتطلب تأكيداً ويصل إشعار به لجميع المعنيين.
+                          اختر المدخلات التي سيتم تنفيذها ضمن هذه المرحلة من خطة التنفيذ.
                         </div>
                       </div>
                       <button
                         onClick={() => setItemsMgrFor(null)}
-                        style={{ width: 34, height: 34, borderRadius: 10, border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', cursor: 'pointer', fontSize: 16 }}
+                        style={{ width: 34, height: 34, borderRadius: 10, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', background: '#fff', color: '#54627B', cursor: 'pointer', fontSize: 16 }}
                       >
                         ✕
                       </button>
@@ -2768,11 +2820,15 @@ export function Dashboard({ vm }: { vm: VM }) {
                           <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 400, color: '#33415C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {x.title}
                           </span>
-                          {x.batch && x.batch !== itemsMgrFor && (
-                            <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
-                              في {x.batch.replace(/^إطلاق /, '')}
+                          {x.batch === itemsMgrFor ? (
+                            <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#EAF1FE', color: '#1D4ED8' }}>
+                              ضمن هذه المرحلة
                             </span>
-                          )}
+                          ) : x.batch ? (
+                            <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#FFF3DE', color: '#B45309', whiteSpace: 'nowrap' }}>
+                              {'مخطط حاليًا ' + x.batch.replace(/^إطلاق /, '').replace(/^المرحلة/, 'للمرحلة')}
+                            </span>
+                          ) : null}
                         </div>
                       ))}
                     </div>
@@ -2830,7 +2886,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       </button>
                       <button
                         onClick={() => setLaunchMgrFor(null)}
-                        style={{ width: 34, height: 34, borderRadius: 10, border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', cursor: 'pointer', fontSize: 16, flex: 'none' }}
+                        style={{ width: 34, height: 34, borderRadius: 10, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', background: '#fff', color: '#54627B', cursor: 'pointer', fontSize: 16, flex: 'none' }}
                       >
                         ✕
                       </button>
@@ -3025,7 +3081,7 @@ const selectStyle: CSSProperties = {
   height: 40,
   width: 170,
   minWidth: 170,
-  border: '1px solid #E7ECF4',
+  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
   backgroundColor: '#fff',
   borderRadius: 11,
   padding: '0 13px',
@@ -3103,7 +3159,7 @@ function KpiCard({
       <div
         style={{
           background: '#fff',
-          border: '1px solid #E7ECF4',
+          border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
           borderRadius: 14,
           padding: '13px 15px',
           display: 'flex',
@@ -3146,7 +3202,7 @@ function KpiCard({
     <div
       style={{
         background: '#fff',
-        border: '1px solid #E7ECF4',
+        border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
         borderRadius: 14,
         padding: '13px 15px',
         display: 'flex',
@@ -3174,7 +3230,7 @@ const BLUE_STEPS = ['#2563EB', '#7DA4F2', '#C2D5FA'];
 // right, big centred figure below
 function CommitteeKpi({ value, label, dot, info }: { value: number; label: string; dot?: string; info?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '15px 18px', minHeight: 120, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: '15px 18px', minHeight: 120, display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
           <span style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400, lineHeight: 1.5 }}>{label}</span>
@@ -3225,7 +3281,7 @@ function CmtMini({ value, label, info, green }: { value: number; label: string; 
 
 function StatCard({ value, label, dot, info, suffix }: { value: number; label: string; dot?: string; info?: string; suffix?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 14, padding: '13px 15px' }}>
       <div
         style={{
           fontSize: 11.5,
@@ -3287,7 +3343,7 @@ function ListView({ cards }: { cards: CardVM[] }) {
     <div
       style={{
         background: '#fff',
-        border: '1px solid #E7ECF4',
+        border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
         borderRadius: 16,
         overflowX: 'auto',
       }}
@@ -3436,7 +3492,7 @@ function ListView({ cards }: { cards: CardVM[] }) {
                       style={{
                         background: '#fff',
                         color: '#33405A',
-                        border: '1px solid #E7ECF4',
+                        border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                         borderRadius: 9,
                         padding: '7px 12px',
                         fontWeight: 700,
@@ -3533,7 +3589,7 @@ function CardItem({ c }: { c: CardVM }) {
       onMouseLeave={() => setHover(false)}
       style={{
         background: '#fff',
-        border: '1px solid #E7ECF4',
+        border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
         borderRadius: 16,
         padding: 22,
         display: 'flex',

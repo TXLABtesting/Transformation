@@ -166,14 +166,22 @@ select {
     width: 100% !important;
     max-width: 100% !important;
   }
+  /* the two summary donut cards (cost + inputs) are a GRID — collapse to one
+     full-width column per row (flex-direction is a no-op on a grid) */
   [data-r='dash-top'] {
-    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
     align-items: stretch !important;
     gap: 14px !important;
   }
   [data-r='form2'] {
     grid-template-columns: 1fr !important;
   }
+}
+/* reusable responsive grids: collapse dense multi-column field grids (used in
+   the detail drawer + dense stat rows) on phones */
+@media (max-width: 640px) {
+  .rgrid-1 { grid-template-columns: 1fr !important; }
+  .rgrid-2 { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 600px) {
   [data-r='cards'] {
@@ -227,9 +235,27 @@ select {
   [data-r='kpi'] { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; }
 }
 @media (max-width: 900px) {
-  /* المرحلة and الجهات cards stack in one column */
+  /* On mobile EVERY card grid becomes a single full-width column per row. */
   [data-tour='stages'] { grid-template-columns: 1fr !important; }
   [data-r='entcards'] { grid-template-columns: 1fr !important; }
+  [data-r='seccards'] { grid-template-columns: 1fr !important; }
+  [data-r='cards'] { grid-template-columns: 1fr !important; }
+  [data-r='reco'] { grid-template-columns: 1fr !important; }
+  [data-r='dash-top'] { grid-template-columns: 1fr !important; }
+  /* ---- mobile navigation: hamburger drawer + «الكل» dropdown ---- */
+  /* hamburger button + «الكل» chevron become visible (inline display:none is
+     overridden here) */
+  [data-r='hamburger'], [data-r='navchev'] { display: inline-flex !important; }
+  /* the rail is hidden until the hamburger opens it */
+  [data-r='rail'].mnav-closed { display: none !important; }
+  /* when open it drops down as a full-width panel with a soft shadow */
+  [data-r='rail'] {
+    border: 1px solid #e7ecf4 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 45px -22px rgba(2, 12, 35, .35) !important;
+  }
+  /* stream/type sub-items stay collapsed under «الكل» until it is expanded */
+  .mnav-collapsed { display: none !important; }
 }
 @media (max-width: 820px) {
   [data-r='cards'] { grid-template-columns: 1fr !important; }

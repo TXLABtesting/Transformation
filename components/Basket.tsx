@@ -167,7 +167,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
             </div>
             <button
               onClick={() => vm.store.closeBasket()}
-              style={{ width: 34, height: 34, flex: 'none', borderRadius: 10, border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', fontSize: 16, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}
+              style={{ width: 34, height: 34, flex: 'none', borderRadius: 10, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', background: '#fff', color: '#54627B', fontSize: 16, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}
             >
               ✕
             </button>
@@ -230,7 +230,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
           {b.items.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {b.items.map((it) => (
-                <div key={it.id} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: 14 }}>
+                <div key={it.id} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 14, padding: 14 }}>
                   <div onClick={it.onOpen} style={{ cursor: 'pointer' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                       <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: '#EEF3FA', color: '#42506B' }}>
@@ -276,7 +276,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                       </span>
                       <button
                         onClick={it.onWithdraw}
-                        style={{ background: '#fff', color: '#C0303B', border: '1px solid #E7ECF4', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+                        style={{ background: '#fff', color: '#C0303B', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
                       >
                         سحب الترشيح
                       </button>

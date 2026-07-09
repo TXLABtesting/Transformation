@@ -370,12 +370,13 @@ function build(s: Store) {
 
   // ---- per-batch (مرحلة) summary: items + total execution cost ----
   // short stream names + chip colours for the stage-distribution cards
+  // one consistent brand colour for all streams (no rainbow of dots)
   const STREAM_META: Record<string, { short: string; color: string }> = {
-    ops: { short: 'العمليات والدعم المؤسسي', color: '#14B8A6' },
-    strategy: { short: 'العمل الحكومي الاستراتيجي', color: '#C2410C' },
-    services: { short: 'الخدمات', color: '#10B981' },
+    ops: { short: 'العمليات والدعم المؤسسي', color: '#2563EB' },
+    strategy: { short: 'العمل الحكومي الاستراتيجي', color: '#2563EB' },
+    services: { short: 'الخدمات', color: '#2563EB' },
     capacity: { short: 'بناء القدرات والتدريب', color: '#2563EB' },
-    tech: { short: 'تقنيات الذكاء الاصطناعي والبيانات', color: '#8B5CF6' },
+    tech: { short: 'تقنيات الذكاء الاصطناعي والبيانات', color: '#2563EB' },
   };
   // مراحل التنفيذ / خطة الإطلاق title-row filters narrow the phase cards + their
   // contents. Role scope is already baked into roleBase; committee (ai) can

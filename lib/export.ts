@@ -22,49 +22,218 @@ function row(i: Item, entityName: string) {
   };
 }
 
+// ---- shared workbook styling (government-report look) ----------------------
+const BRAND = 'FF1D4ED8'; // primary blue
+const BRAND_DARK = 'FF0F1F3D';
+const HEAD_TXT = 'FFFFFFFF';
+const ZEBRA = 'FFF6F9FD';
+const BORDER = 'FFE2E8F2';
+const NOTE_BG = 'FFEAF1FE';
+
+type XLWorksheet = import('exceljs').Worksheet;
+type XLColor = { argb: string };
+
+const thin = (c: string) => ({ style: 'thin' as const, color: { argb: c } });
+function boxAll(ws: XLWorksheet, r1: number, r2: number, cols: number) {
+  for (let r = r1; r <= r2; r++)
+    for (let c = 1; c <= cols; c++) {
+      const cell = ws.getCell(r, c);
+      cell.border = { top: thin(BORDER), bottom: thin(BORDER), left: thin(BORDER), right: thin(BORDER) };
+    }
+}
+// Title banner + subtitle across `cols`, returns the next free row.
+function banner(ws: XLWorksheet, cols: number, title: string, subtitle: string) {
+  ws.mergeCells(1, 1, 1, cols);
+  const t = ws.getCell(1, 1);
+  t.value = title;
+  t.font = { bold: true, size: 15, color: { argb: 'FFFFFFFF' } };
+  t.alignment = { horizontal: 'right', vertical: 'middle' };
+  t.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_DARK } as XLColor };
+  ws.getRow(1).height = 30;
+  ws.mergeCells(2, 1, 2, cols);
+  const sub = ws.getCell(2, 1);
+  sub.value = subtitle;
+  sub.font = { size: 10.5, color: { argb: 'FF54627B' } };
+  sub.alignment = { horizontal: 'right', vertical: 'middle' };
+  ws.getRow(2).height = 18;
+  return 3;
+}
+function headerRow(ws: XLWorksheet, rowIdx: number, headers: string[], widths: number[]) {
+  headers.forEach((h, i) => {
+    ws.getColumn(i + 1).width = widths[i] || 16;
+    const cell = ws.getCell(rowIdx, i + 1);
+    cell.value = h;
+    cell.font = { bold: true, color: { argb: HEAD_TXT }, size: 11 };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } as XLColor };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = { top: thin(BRAND), bottom: thin(BRAND), left: thin('FFFFFFFF'), right: thin('FFFFFFFF') };
+  });
+  ws.getRow(rowIdx).height = 24;
+}
+
 export async function exportExcel(items: Item[], entityName: string) {
   const mod = await import('exceljs');
   const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet('المشاريع والعمليات والخدمات', { views: [{ rightToLeft: true }] });
+  wb.creator = 'منصة التحول للذكاء الاصطناعي المساعد';
+  const ws = wb.addWorksheet('المدخلات', { views: [{ rightToLeft: true, showGridLines: false }] });
+
   const headers = Object.keys(row(items[0] || ({} as Item), entityName));
-  const widths = [12, 34, 24, 24, 20, 12, 18, 40, 12, 12, 12];
-  ws.columns = headers.map((h, idx) => ({ header: h, key: h, width: widths[idx] || 16 }));
-  ws.getRow(1).font = { bold: true };
-  items.forEach((i) => ws.addRow(row(i, entityName)));
+  const widths = [14, 36, 24, 24, 22, 12, 18, 44, 13, 13, 13];
+  const cols = headers.length;
+
+  banner(ws, cols, 'منصة التحول للذكاء الاصطناعي المساعد — تقرير المدخلات', `الجهة: ${entityName}  ·  عدد المدخلات: ${items.length}`);
+  const headRow = 3;
+  headerRow(ws, headRow, headers, widths);
+
+  items.forEach((it, i) => {
+    const data = row(it, entityName);
+    const r = headRow + 1 + i;
+    headers.forEach((h, c) => {
+      const cell = ws.getCell(r, c + 1);
+      cell.value = (data as Record<string, string | number>)[h] as string;
+      cell.alignment = { horizontal: c === 1 || c === 7 ? 'right' : 'center', vertical: 'middle', wrapText: c === 1 || c === 7 };
+      cell.font = { size: 10.5, color: { argb: 'FF16233F' } };
+      if (i % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ZEBRA } as XLColor };
+    });
+    ws.getRow(r).height = 20;
+  });
+
+  boxAll(ws, headRow, headRow + items.length, cols);
+  ws.views = [{ rightToLeft: true, showGridLines: false, state: 'frozen', ySplit: headRow }];
+  ws.autoFilter = { from: { row: headRow, column: 1 }, to: { row: headRow, column: cols } };
 
   const buf = await wb.xlsx.writeBuffer();
   downloadBlob(
-    new Blob([buf], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    }),
-    'المشاريع_والعمليات_والخدمات.xlsx'
+    new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    'تقرير_المدخلات.xlsx'
   );
 }
 
-// Bulk-upload template: النوع (dropdown limited to the stream's types) + العنوان + الوصف
+// Bulk-upload template: النوع (dropdown limited to the stream's types) + العنوان
+// + الوصف, laid out as a proper branded, guided sheet.
 export async function downloadBulkTemplate(types: { key: string; label: string }[]) {
   const mod = await import('exceljs');
   const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet('القالب', { views: [{ rightToLeft: true }] });
-  ws.columns = [
-    { header: 'النوع', key: 't', width: 22 },
-    { header: 'العنوان', key: 'ti', width: 38 },
-    { header: 'الوصف', key: 'd', width: 52 },
-  ];
-  ws.getRow(1).font = { bold: true };
+  wb.creator = 'منصة التحول للذكاء الاصطناعي المساعد';
+  const ws = wb.addWorksheet('القالب', { views: [{ rightToLeft: true, showGridLines: false }] });
+
+  const headers = ['النوع', 'العنوان', 'الوصف'];
+  const widths = [22, 40, 60];
+  const cols = 3;
+
+  banner(ws, cols, 'قالب رفع المدخلات', 'اختر «النوع» من القائمة المنسدلة، ثم أدخل «العنوان» و«الوصف». احذف الصف التوضيحي قبل الرفع.');
+  // guidance note row
+  ws.mergeCells(3, 1, 3, cols);
+  const note = ws.getCell(3, 1);
+  note.value = 'ملاحظة: العنوان والوصف حقلان إلزاميان لكل مدخل. يمكن إضافة عدة مدخلات، صفٌّ لكل مدخل.';
+  note.font = { size: 10, color: { argb: 'FF1D4ED8' }, italic: true };
+  note.alignment = { horizontal: 'right', vertical: 'middle' };
+  note.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NOTE_BG } as XLColor };
+  ws.getRow(3).height = 20;
+
+  const headRow = 4;
+  headerRow(ws, headRow, headers, widths);
+
+  // example row (light, italic) — a filled-in sample
+  const ex = headRow + 1;
+  const sample = [types[0]?.label || 'مشروع / مبادرة', 'مثال: مساعد ذكي لخدمة المتعاملين', 'وصف مختصر للمدخل وأهدافه ونطاقه.'];
+  sample.forEach((v, c) => {
+    const cell = ws.getCell(ex, c + 1);
+    cell.value = v;
+    cell.font = { italic: true, color: { argb: 'FF9AA6BC' }, size: 10.5 };
+    cell.alignment = { horizontal: c === 0 ? 'center' : 'right', vertical: 'middle', wrapText: true };
+  });
+
   const list = '"' + types.map((t) => t.label).join(',') + '"';
-  for (let r = 2; r <= 60; r++) {
-    ws.getCell('A' + r).dataValidation = { type: 'list', allowBlank: true, formulae: [list] };
+  for (let r = ex; r <= 60; r++) {
+    ws.getCell(r, 1).dataValidation = { type: 'list', allowBlank: true, formulae: [list] };
+    ws.getRow(r).height = 20;
   }
+  boxAll(ws, headRow, 60, cols);
+  ws.views = [{ rightToLeft: true, showGridLines: false, state: 'frozen', ySplit: headRow }];
+
   const buf = await wb.xlsx.writeBuffer();
   downloadBlob(
-    new Blob([buf], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    }),
-    'قالب_الرفع_الجماعي.xlsx'
+    new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    'قالب_رفع_المدخلات.xlsx'
   );
+}
+
+// ---- Admin: users bulk template + reader -----------------------------------
+export async function downloadUsersTemplate(roleLabels: string[], entities: string[], streamNames: string[]) {
+  const mod = await import('exceljs');
+  const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'منصة التحول للذكاء الاصطناعي المساعد';
+  const ws = wb.addWorksheet('المستخدمون', { views: [{ rightToLeft: true, showGridLines: false }] });
+
+  const headers = ['الاسم الكامل', 'البريد الإلكتروني', 'الدور', 'الجهة', 'المسار'];
+  const widths = [30, 34, 26, 34, 26];
+  const cols = headers.length;
+
+  banner(ws, cols, 'قالب رفع المستخدمين', 'عبّئ صفًّا لكل مستخدم. «الاسم» و«البريد» إلزاميان. اختر «الدور» من القائمة؛ «الجهة»/«المسار» حسب الدور.');
+  ws.mergeCells(3, 1, 3, cols);
+  const note = ws.getCell(3, 1);
+  note.value = 'ملاحظة: منسق المسار يحتاج الجهة والمسار · ممثل الجهة يحتاج الجهة · رئيس المسار يحتاج المسار · المشرف واللجنة لا يحتاجان أيًّا منهما. احذف الصف التوضيحي قبل الرفع.';
+  note.font = { size: 10, color: { argb: 'FF1D4ED8' }, italic: true };
+  note.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+  note.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NOTE_BG } as XLColor };
+  ws.getRow(3).height = 30;
+
+  const headRow = 4;
+  headerRow(ws, headRow, headers, widths);
+
+  const ex = headRow + 1;
+  const sample = ['محمد أحمد العامري', 'm.alameri@aigp.gov.ae', roleLabels[0] || 'منسق المسار في الجهة', entities[0] || '', streamNames[0] || ''];
+  sample.forEach((v, c) => {
+    const cell = ws.getCell(ex, c + 1);
+    cell.value = v;
+    cell.font = { italic: true, color: { argb: 'FF9AA6BC' }, size: 10.5 };
+    cell.alignment = { horizontal: c === 1 ? 'left' : 'right', vertical: 'middle' };
+  });
+
+  const listOf = (arr: string[]) => '"' + arr.join(',').slice(0, 250) + '"';
+  for (let r = ex; r <= 80; r++) {
+    ws.getCell(r, 3).dataValidation = { type: 'list', allowBlank: true, formulae: [listOf(roleLabels)] };
+    if (entities.length) ws.getCell(r, 4).dataValidation = { type: 'list', allowBlank: true, formulae: [listOf(entities)] };
+    ws.getCell(r, 5).dataValidation = { type: 'list', allowBlank: true, formulae: [listOf(streamNames)] };
+    ws.getRow(r).height = 20;
+  }
+  boxAll(ws, headRow, 80, cols);
+  ws.views = [{ rightToLeft: true, showGridLines: false, state: 'frozen', ySplit: headRow }];
+
+  const buf = await wb.xlsx.writeBuffer();
+  downloadBlob(
+    new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    'قالب_رفع_المستخدمين.xlsx'
+  );
+}
+
+// Read a filled .xlsx (or .csv) into rows of trimmed cell strings, skipping the
+// title/note/header/example rows heuristically (caller filters further).
+export async function readSheetRows(file: File): Promise<string[][]> {
+  const buf = await file.arrayBuffer();
+  if (/\.csv$/i.test(file.name)) {
+    const text = new TextDecoder('utf-8').decode(buf).replace(/^﻿/, '');
+    return text.split(/\r?\n/).map((l) => l.split(/[,\t]/).map((c) => c.trim())).filter((r) => r.some((c) => c));
+  }
+  const mod = await import('exceljs');
+  const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buf);
+  const ws = wb.worksheets[0];
+  const rows: string[][] = [];
+  ws.eachRow((r) => {
+    const cells: string[] = [];
+    r.eachCell({ includeEmpty: true }, (c) => {
+      const v = c.value as unknown;
+      cells.push(v == null ? '' : typeof v === 'object' && v && 'text' in (v as object) ? String((v as { text: string }).text).trim() : String(v).trim());
+    });
+    if (cells.some((c) => c)) rows.push(cells);
+  });
+  return rows;
 }
 
 function downloadBlob(blob: Blob, name: string) {

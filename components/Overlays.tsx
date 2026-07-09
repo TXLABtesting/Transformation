@@ -85,7 +85,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   width: 34,
                   height: 34,
                   borderRadius: 10,
-                  border: '1px solid #E7ECF4',
+                  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                   background: '#fff',
                   color: '#54627B',
                   cursor: 'pointer',
@@ -98,7 +98,7 @@ export function Overlays({ vm }: { vm: VM }) {
             {/* body */}
             <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* official rep card */}
-              <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 16 }}>
+              <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 16 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: '#54627B', marginBottom: 12 }}>
                   الممثل الرسمي للجهة
                 </div>
@@ -130,7 +130,7 @@ export function Overlays({ vm }: { vm: VM }) {
                 </div>
               </div>
               {/* path owners card */}
-              <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 16 }}>
+              <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 16 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: '#54627B', marginBottom: 12 }}>
                   مسؤولو المسارات
                 </div>
@@ -230,7 +230,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   width: 34,
                   height: 34,
                   borderRadius: 10,
-                  border: '1px solid #E7ECF4',
+                  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                   background: '#fff',
                   color: '#54627B',
                   cursor: 'pointer',
@@ -367,7 +367,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   width: 34,
                   height: 34,
                   borderRadius: 10,
-                  border: '1px solid #E7ECF4',
+                  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                   background: '#fff',
                   color: '#54627B',
                   cursor: 'pointer',
@@ -391,7 +391,7 @@ export function Overlays({ vm }: { vm: VM }) {
                     alignItems: 'center',
                     gap: 11,
                     background: '#FBFCFE',
-                    border: '1px solid #E7ECF4',
+                    border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                     borderRadius: 12,
                     padding: '12px 13px',
                     cursor: 'grab',
@@ -513,7 +513,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   width: 34,
                   height: 34,
                   borderRadius: 10,
-                  border: '1px solid #E7ECF4',
+                  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                   background: '#fff',
                   color: '#54627B',
                   cursor: 'pointer',
@@ -641,7 +641,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   width: 34,
                   height: 34,
                   borderRadius: 10,
-                  border: '1px solid #E7ECF4',
+                  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                   background: '#fff',
                   color: '#54627B',
                   cursor: 'pointer',
@@ -1059,7 +1059,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   width: 34,
                   height: 34,
                   borderRadius: 10,
-                  border: '1px solid #E7ECF4',
+                  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                   background: '#fff',
                   color: '#54627B',
                   cursor: 'pointer',
@@ -1185,7 +1185,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   width: 34,
                   height: 34,
                   borderRadius: 10,
-                  border: '1px solid #E7ECF4',
+                  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                   background: '#fff',
                   color: '#54627B',
                   cursor: 'pointer',
@@ -1201,7 +1201,7 @@ export function Overlays({ vm }: { vm: VM }) {
               {vm.launchPlanMgr.map((g) => (
                 <div
                   key={g.batch}
-                  style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '15px 17px' }}
+                  style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: '15px 17px' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                     <div>
@@ -1341,7 +1341,7 @@ export function Overlays({ vm }: { vm: VM }) {
                             <label style={assignLabel}>ما يُطلق في هذا الإطلاق ({selCount} محدد)</label>
                             <div
                               style={{
-                                border: '1px solid #E7ECF4',
+                                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                                 borderRadius: 11,
                                 background: '#fff',
                                 maxHeight: 150,
