@@ -32,7 +32,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){var w=window.innerWidth;document.body.style.zoom=w>=1101?'1.15':(w<=480?'0.9':'1');})();",
+              "(function(){var w=window.innerWidth;document.body.style.zoom=w>=1101?'1.15':'1';})();",
           }}
         />
         {children}

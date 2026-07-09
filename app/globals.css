@@ -329,8 +329,10 @@ select {
     overflow-y: auto;
   }
   [data-r='filters'].mfilters-open > * { width: 100% !important; }
-  [data-r='filters'].mfilters-open input,
-  [data-r='filters'].mfilters-open select {
+  /* only the sheet's own controls — NOT inputs nested inside dropdown panels
+     (the entity picker has its own compact search box) */
+  [data-r='filters'].mfilters-open > div > input,
+  [data-r='filters'].mfilters-open > select {
     width: 100% !important;
     max-width: 100% !important;
     height: 46px !important;
@@ -345,6 +347,13 @@ select {
     align-items: center;
   }
   [data-r='filters'].mfilters-open [data-r='entfilter'] > div:last-of-type:not(:first-of-type) { width: 100% !important; max-width: 100% !important; }
+  /* the entity dropdown panel anchors LEFT to its trigger, which shoves it
+     off-screen in RTL on phones — anchor it to the trigger's right edge so it
+     always opens inward */
+  [data-r='entfilter'] > div:last-of-type:not(:first-of-type) {
+    left: auto !important;
+    right: 0 !important;
+  }
   [data-r='mfhead'] { display: flex !important; }
   [data-r='mfhead'] button { width: 38px !important; height: 38px !important; font-size: 17px !important; flex: none !important; }
   [data-r='mfapply'] { display: inline-flex !important; margin-top: auto; height: 48px !important; font-size: 15px !important; }
