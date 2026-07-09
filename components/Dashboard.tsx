@@ -516,7 +516,7 @@ function EntityOverview({ vm }: { vm: VM }) {
               <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.total}</span>
             </div>
             <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
-              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>توزيع مراحل التقدم</div>
+              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>توزيع المدخلات حسب المراحل</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {(() => {
                   const maxN = Math.max(...st.stages.map((x) => x.n), 1);
