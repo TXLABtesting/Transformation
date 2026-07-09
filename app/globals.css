@@ -166,14 +166,22 @@ select {
     width: 100% !important;
     max-width: 100% !important;
   }
+  /* the two summary donut cards (cost + inputs) are a GRID — collapse to one
+     full-width column per row (flex-direction is a no-op on a grid) */
   [data-r='dash-top'] {
-    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
     align-items: stretch !important;
     gap: 14px !important;
   }
   [data-r='form2'] {
     grid-template-columns: 1fr !important;
   }
+}
+/* reusable responsive grids: collapse dense multi-column field grids (used in
+   the detail drawer + dense stat rows) on phones */
+@media (max-width: 640px) {
+  .rgrid-1 { grid-template-columns: 1fr !important; }
+  .rgrid-2 { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 600px) {
   [data-r='cards'] {

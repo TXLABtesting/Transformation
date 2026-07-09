@@ -312,6 +312,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
           <div style={{ display: 'contents' }}>
           {/* ===== INFO GRID ===== */}
           <div
+            className="rgrid-2"
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(4,1fr)',
@@ -480,7 +481,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <div style={labelStyle}>النتائج المتوقعة</div>
                   <RichTextView html={d.expectedOutcomes} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   <div>
                     <div style={labelStyle}>الأثر المتوقع</div>
                     <RichTextView html={d.expectedImpact} style={valueStyle} />
@@ -494,7 +495,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                     <div style={valueStyle}>{d.targetPct}%</div>
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   <div>
                     <div style={labelStyle}>قابلية التحول</div>
                     <div><TransformPill v={d.transformability} /></div>
@@ -566,7 +567,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                     <RichTextView html={d.expectedOutcomes} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
                   </div>
                 )}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   {d.expectedImpact && (
                     <div>
                       <div style={labelStyle}>الأثر المتوقع</div>
@@ -794,7 +795,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 >
                   معايير التقييم
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                   <div>
                     <div style={labelStyle}>الأولوية</div>
                     <div><LevelPill v={d.priority} /></div>
