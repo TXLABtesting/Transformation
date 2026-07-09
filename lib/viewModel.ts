@@ -129,7 +129,7 @@ function build(s: Store) {
   if (ui.stepFilter != null) visible = visible.filter((i) => stepIndexOf(i) === ui.stepFilter);
 
   // ---- KPI scope (counts what this role can actually see) ----
-  const scope = effActivePath === 'all' ? roleBase : roleBase.filter((i) => i.path === effActivePath);
+  const scope = filterStream === 'all' ? roleBase : roleBase.filter((i) => i.path === filterStream);
   const cnt = (f: (i: Item) => boolean) => scope.filter(f).length;
   const completion = scope.length
     ? Math.round(scope.reduce((a, i) => a + stageWeight(i), 0) / scope.length)
@@ -516,11 +516,11 @@ function build(s: Store) {
   const streamSummary = summaryText(effActivePath);
   // scope-aware type enumeration — replaces the generic word "عناصر"
   const typesPhrase =
-    effActivePath === 'all'
+    filterStream === 'all'
       ? 'المشاريع والمبادرات والعمليات والخدمات'
       : 'المشاريع والمبادرات' +
-        (streamHasType(effActivePath, 'operation') ? ' والعمليات' : '') +
-        (streamHasType(effActivePath, 'service') ? ' والخدمات' : '');
+        (streamHasType(filterStream, 'operation') ? ' والعمليات' : '') +
+        (streamHasType(filterStream, 'service') ? ' والخدمات' : '');
 
   // ---- empty-state copy: nothing entered yet (role-specific) vs filters ----
   const emptyDesc =
@@ -535,7 +535,7 @@ function build(s: Store) {
         : 'لا توجد نتائج مطابقة للمرشحات الحالية — يمكنكم تعديل المرشحات أو البحث.';
 
   // ---- type filter tabs ----
-  const tabs = tabDefs(effActivePath, scope);
+  const tabs = tabDefs(filterStream, scope);
 
   // status filter options — ai/path (oversight roles) drop the action/pending
   // options they can't act on
@@ -1006,8 +1006,8 @@ function build(s: Store) {
     streamTypeKeys,
     stageDist,
     committeeStreamCards,
-    showOpsKpi: effActivePath === 'all' || streamHasType(effActivePath, 'operation'),
-    showSvcKpi: effActivePath === 'all' || streamHasType(effActivePath, 'service'),
+    showOpsKpi: filterStream === 'all' || streamHasType(filterStream, 'operation'),
+    showSvcKpi: filterStream === 'all' || streamHasType(filterStream, 'service'),
     notAiRole: !isAiRole,
     // filters
     tabs,
@@ -1053,7 +1053,7 @@ function build(s: Store) {
     fundFilterValue: ui.fundFilter,
     entityRank,
     // entity rep, all-streams view: type counts expand to per-stream totals
-    showStreamDist: rawRole === 'entity' && effActivePath === 'all',
+    showStreamDist: rawRole === 'entity' && filterStream === 'all',
     showFundFilter: rawRole === 'entity',
     searchValue: ui.search,
     pathOptions,
@@ -1225,9 +1225,9 @@ function tabDefs(activePath: string, _scope: Item[]) {
     { key: 'all', label: 'جميع الأنواع', optLabel: 'جميع الأنواع' },
     { key: 'projinit', label: 'المشاريع / المبادرات', optLabel: 'المشاريع / المبادرات' },
   ];
-  if (activePath === 'all' || activePath === 'ops')
+  if (activePath === 'all' || streamHasType(activePath, 'operation'))
     defs.push({ key: 'operation', label: 'العمليات', optLabel: 'العمليات' });
-  if (activePath === 'all' || activePath === 'services')
+  if (activePath === 'all' || streamHasType(activePath, 'service'))
     defs.push({ key: 'service', label: 'الخدمات', optLabel: 'الخدمات' });
   return defs;
 }
