@@ -235,11 +235,13 @@ select {
   [data-r='kpi'] { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; }
 }
 @media (max-width: 900px) {
-  /* المرحلة and الجهات cards stack in one column */
+  /* On mobile EVERY card grid becomes a single full-width column per row. */
   [data-tour='stages'] { grid-template-columns: 1fr !important; }
   [data-r='entcards'] { grid-template-columns: 1fr !important; }
-  /* stream / type distribution cards (توزيع المدخلات حسب المسار) — one per row */
   [data-r='seccards'] { grid-template-columns: 1fr !important; }
+  [data-r='cards'] { grid-template-columns: 1fr !important; }
+  [data-r='reco'] { grid-template-columns: 1fr !important; }
+  [data-r='dash-top'] { grid-template-columns: 1fr !important; }
   /* ---- mobile navigation: hamburger drawer + «الكل» dropdown ---- */
   /* hamburger button + «الكل» chevron become visible (inline display:none is
      overridden here) */

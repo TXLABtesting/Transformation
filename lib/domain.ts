@@ -124,35 +124,36 @@ export const ROLE: Record<
   RoleKey,
   { label: string; sub: string; badge: string; bg: string }
 > = {
+  // one unified badge colour for every role (brand blue) — no rainbow of chips
   entity: {
     label: 'قيادة الجهة',
     sub: 'متابعة شاملة لمسارات الجهة والممثلين',
-    badge: '#2563EB',
-    bg: '#E5EEFF',
+    badge: '#1D4ED8',
+    bg: '#EAF1FE',
   },
   path: {
     label: 'رئيس المسار',
     sub: 'تعبئة ومتابعة بيانات المسار',
-    badge: '#0B8A4B',
-    bg: '#E3F6EC',
+    badge: '#1D4ED8',
+    bg: '#EAF1FE',
   },
   coord: {
     label: 'منسق المسار في الجهة',
     sub: 'تنسيق ومتابعة بيانات المسار في الجهة',
-    badge: '#0E7C86',
-    bg: '#DCF3F5',
+    badge: '#1D4ED8',
+    bg: '#EAF1FE',
   },
   ai: {
     label: 'اللجنة الوطنية',
     sub: 'مراجعة واعتماد المشاريع والعمليات والخدمات عبر الجهات',
-    badge: '#6D28D9',
-    bg: '#EFEAFE',
+    badge: '#1D4ED8',
+    bg: '#EAF1FE',
   },
   admin: {
     label: 'مشرف النظام',
     sub: 'إدارة المستخدمين والأدوار وتعيين رؤساء المسارات واللجنة',
-    badge: '#B45309',
-    bg: '#FDF0DC',
+    badge: '#1D4ED8',
+    bg: '#EAF1FE',
   },
 };
 

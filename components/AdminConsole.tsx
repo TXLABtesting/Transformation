@@ -19,6 +19,7 @@ const IC_EDIT = 'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z';
 const IC_TRASH = 'M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6';
 const IC_CHECK = 'M20 6 9 17l-5-5';
 const IC_X = 'M18 6 6 18M6 6l12 12';
+const IC_UPLOAD = 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12';
 
 const card: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16 };
 const labelSt: CSSProperties = { fontSize: 12, fontWeight: 700, color: '#54627B', marginBottom: 6, display: 'block' };
@@ -39,6 +40,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
   const [tab, setTab] = useState<Tab>('users');
   const [roleFilter, setRoleFilter] = useState<RoleKey | 'all'>('all');
   const [editing, setEditing] = useState<UserRec | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const filtered = useMemo(
     () => (roleFilter === 'all' ? a.users : a.users.filter((u) => u.role === roleFilter)),
@@ -48,8 +50,8 @@ export function AdminConsole({ vm }: { vm: VM }) {
   const kpis = [
     { label: 'إجمالي المستخدمين', value: a.counts.total, icon: IC_USERS, c: '#2563EB', bg: '#EAF0FE' },
     { label: 'الحسابات النشطة', value: a.counts.active, icon: IC_CHECK, c: '#0B8A4B', bg: '#E7F6EE' },
-    { label: 'رؤساء المسارات', value: a.counts.heads, icon: IC_STAR, c: '#0E7C86', bg: '#DEF4F6' },
-    { label: 'أعضاء اللجنة الوطنية', value: a.counts.committee, icon: IC_SHIELD, c: '#6D28D9', bg: '#EFEAFE' },
+    { label: 'رؤساء المسارات', value: a.counts.heads, icon: IC_STAR, c: '#1D4ED8', bg: '#EAF1FE' },
+    { label: 'أعضاء اللجنة الوطنية', value: a.counts.committee, icon: IC_SHIELD, c: '#1D4ED8', bg: '#EAF1FE' },
   ];
 
   const tabs: { key: Tab; label: string }[] = [
@@ -63,7 +65,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
       {/* header */}
       <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#fff', borderBottom: '1px solid #E7ECF4', padding: '12px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#B45309,#D97706)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+          <span style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#1D4ED8,#2E74EE)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
             <Icon d={IC_SHIELD} size={20} color="#fff" />
           </span>
           <div>
@@ -75,7 +77,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
           {vm.showRoleSwitcher && (
             <div style={{ display: 'flex', background: '#F4F7FC', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 12, padding: 3, gap: 2 }}>
               {vm.rolePills.map((p) => (
-                <button key={p.key} onClick={p.onClick} style={{ borderRadius: 9, padding: '7px 11px', fontWeight: 700, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', ...(p.active ? { background: '#fff', color: '#B45309', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #F0DCC0' } : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }) }}>
+                <button key={p.key} onClick={p.onClick} style={{ borderRadius: 9, padding: '7px 11px', fontWeight: 700, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', ...(p.active ? { background: '#fff', color: '#1D4ED8', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #D8E3F5' } : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }) }}>
                   {p.label}
                 </button>
               ))}
@@ -106,14 +108,14 @@ export function AdminConsole({ vm }: { vm: VM }) {
         {/* tabs */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 16, borderBottom: '1px solid #E2E8F2' }}>
           {tabs.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', padding: '10px 14px', fontSize: 13, fontWeight: 800, color: tab === t.key ? '#B45309' : '#8A97AD', borderBottom: tab === t.key ? '2px solid #B45309' : '2px solid transparent', marginBottom: -1 }}>
+            <button key={t.key} onClick={() => setTab(t.key)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', padding: '10px 14px', fontSize: 13, fontWeight: 800, color: tab === t.key ? '#1D4ED8' : '#8A97AD', borderBottom: tab === t.key ? '2px solid #1D4ED8' : '2px solid transparent', marginBottom: -1 }}>
               {t.label}
             </button>
           ))}
         </div>
 
         {tab === 'users' && (
-          <UsersTab a={a} filtered={filtered} roleFilter={roleFilter} setRoleFilter={setRoleFilter} onAdd={() => setEditing(blankUser())} onEdit={setEditing} onToggle={a.toggleUser} onRemove={a.removeUser} />
+          <UsersTab a={a} filtered={filtered} roleFilter={roleFilter} setRoleFilter={setRoleFilter} onAdd={() => setEditing(blankUser())} onBulk={() => setBulkOpen(true)} onEdit={setEditing} onToggle={a.toggleUser} onRemove={a.removeUser} />
         )}
         {tab === 'assign' && <AssignTab a={a} onEdit={setEditing} onAdd={(u) => setEditing(u)} />}
         {tab === 'roles' && <RolesTab a={a} />}
@@ -130,6 +132,8 @@ export function AdminConsole({ vm }: { vm: VM }) {
           }}
         />
       )}
+
+      {bulkOpen && <BulkUsers a={a} onClose={() => setBulkOpen(false)} />}
     </div>
   );
 }
@@ -141,12 +145,13 @@ function hashStr(x: string): number {
 }
 
 // ---- Users table ----------------------------------------------------------
-function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onEdit, onToggle, onRemove }: {
+function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onBulk, onEdit, onToggle, onRemove }: {
   a: VM['admin'];
   filtered: VM['admin']['users'];
   roleFilter: RoleKey | 'all';
   setRoleFilter: (r: RoleKey | 'all') => void;
   onAdd: () => void;
+  onBulk: () => void;
   onEdit: (u: UserRec) => void;
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
@@ -160,14 +165,19 @@ function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onEdit, onTog
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {chips.map((c) => (
-            <button key={c.key} onClick={() => setRoleFilter(c.key)} style={{ border: '1px solid ' + (roleFilter === c.key ? '#B45309' : '#E2E8F2'), background: roleFilter === c.key ? '#FDF0DC' : '#fff', color: roleFilter === c.key ? '#B45309' : '#54627B', borderRadius: 999, padding: '6px 12px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button key={c.key} onClick={() => setRoleFilter(c.key)} style={{ border: '1px solid ' + (roleFilter === c.key ? '#1D4ED8' : '#E2E8F2'), background: roleFilter === c.key ? '#EAF1FE' : '#fff', color: roleFilter === c.key ? '#1D4ED8' : '#54627B', borderRadius: 999, padding: '6px 12px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               {c.label}
             </button>
           ))}
         </div>
-        <button onClick={onAdd} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: 'none', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', borderRadius: 10, padding: '9px 15px', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 18px -8px rgba(37,99,235,.7)' }}>
-          <Icon d={IC_PLUS} size={15} color="#fff" /> إضافة مستخدم
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={onBulk} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: '1px solid #DDE5F0', background: '#fff', color: '#1D4ED8', borderRadius: 10, padding: '9px 15px', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <Icon d={IC_UPLOAD} size={15} color="#1D4ED8" /> رفع دفعة مستخدمين
+          </button>
+          <button onClick={onAdd} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: 'none', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', borderRadius: 10, padding: '9px 15px', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 18px -8px rgba(37,99,235,.7)' }}>
+            <Icon d={IC_PLUS} size={15} color="#fff" /> إضافة مستخدم
+          </button>
+        </div>
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
@@ -237,7 +247,7 @@ function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) 
     <div style={{ display: 'grid', gap: 18 }}>
       <div style={card}>
         <div style={{ padding: '15px 18px', borderBottom: '1px solid #EEF2F8', fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Icon d={IC_STAR} size={16} color="#0E7C86" /> رؤساء المسارات
+          <Icon d={IC_STAR} size={16} color="#1D4ED8" /> رؤساء المسارات
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 12, padding: 16 }}>
           {a.streams.map((st) => {
@@ -251,7 +261,7 @@ function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) 
                 </div>
                 <button
                   onClick={() => (h ? onEdit(h) : onAdd({ id: '', role: 'path', name: '', title: `رئيس مسار ${st.name}`, email: '', phone: '', streamId: st.id, active: true }))}
-                  style={{ border: '1px solid #DDE9E9', background: '#F1F9F9', color: '#0E7C86', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flex: 'none' }}>
+                  style={{ border: '1px solid #D8E3F5', background: '#F1F5FB', color: '#1D4ED8', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flex: 'none' }}>
                   {h ? 'تعديل' : 'تعيين'}
                 </button>
               </div>
@@ -263,10 +273,10 @@ function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) 
       <div style={card}>
         <div style={{ padding: '15px 18px', borderBottom: '1px solid #EEF2F8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
           <div style={{ fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Icon d={IC_SHIELD} size={16} color="#6D28D9" /> اللجنة الوطنية
+            <Icon d={IC_SHIELD} size={16} color="#1D4ED8" /> اللجنة الوطنية
           </div>
-          <button onClick={() => onAdd({ id: '', role: 'ai', name: '', title: 'عضو اللجنة الوطنية', email: '', phone: '', active: true })} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #E7DBFB', background: '#F5F0FE', color: '#6D28D9', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-            <Icon d={IC_PLUS} size={14} color="#6D28D9" /> إضافة عضو
+          <button onClick={() => onAdd({ id: '', role: 'ai', name: '', title: 'عضو اللجنة الوطنية', email: '', phone: '', active: true })} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #D8E3F5', background: '#F1F5FB', color: '#1D4ED8', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <Icon d={IC_PLUS} size={14} color="#1D4ED8" /> إضافة عضو
           </button>
         </div>
         <div style={{ padding: 16, display: 'grid', gap: 10 }}>
@@ -276,7 +286,7 @@ function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) 
                 <div style={{ fontWeight: 800, fontSize: 13.5 }}>{c.name}</div>
                 <div style={{ fontSize: 11, color: '#9AA6BC', direction: 'ltr', textAlign: 'right' }}>{c.email || c.title}</div>
               </div>
-              <button onClick={() => onEdit(c)} style={{ border: '1px solid #E7DBFB', background: '#F5F0FE', color: '#6D28D9', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}>تعديل</button>
+              <button onClick={() => onEdit(c)} style={{ border: '1px solid #D8E3F5', background: '#F1F5FB', color: '#1D4ED8', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}>تعديل</button>
             </div>
           ))}
           {committee.length === 0 && <div style={{ padding: 14, textAlign: 'center', color: '#9AA6BC', fontSize: 13 }}>لا يوجد أعضاء بعد.</div>}
@@ -391,6 +401,144 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
             إلغاء
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- Bulk user upload -----------------------------------------------------
+// Admins import many accounts at once: paste rows or load a .csv, one user per
+// line as «الاسم,البريد,الدور,الجهة,المسار». Role accepts the key
+// (admin|coord|entity|path|ai) or the Arabic name; stream accepts the id or
+// its Arabic name. Rows missing a name/email are skipped.
+function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
+  const [text, setText] = useState('');
+  const [done, setDone] = useState<{ added: number; skipped: number } | null>(null);
+
+  const roleFromToken = (t: string): RoleKey | null => {
+    const s = t.trim();
+    const byKey = a.roleInfo.find((r) => r.key === s);
+    if (byKey) return byKey.key;
+    const byName = a.roleInfo.find((r) => r.nameAr === s);
+    return byName ? byName.key : null;
+  };
+  const streamFromToken = (t: string): string | undefined => {
+    const s = t.trim();
+    if (!s) return undefined;
+    const byId = a.streams.find((x) => x.id === s);
+    if (byId) return byId.id;
+    const byName = a.streams.find((x) => x.name === s);
+    return byName ? byName.id : undefined;
+  };
+  const entityFromToken = (t: string): string | undefined => {
+    const s = t.trim();
+    return s ? (a.entities.find((e) => e === s) || s) : undefined;
+  };
+
+  const rows = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !/^#/.test(l) && !/^الاسم\s*,/.test(l) && !/^name\s*,/i.test(l));
+
+  const parsed = rows.map((line) => {
+    const c = line.split(/[,\t]/).map((x) => x.trim());
+    const [name, email, roleTok = '', entTok = '', streamTok = ''] = c;
+    const role = roleFromToken(roleTok) || 'coord';
+    const needsEntity = role === 'entity' || role === 'coord';
+    const needsStream = role === 'coord' || role === 'path';
+    const valid = !!(name && /^\S+@\S+\.\S+$/.test(email || ''));
+    return {
+      valid,
+      rec: {
+        id: '',
+        role,
+        name: name || '',
+        title: '',
+        email: email || '',
+        phone: '',
+        entityName: needsEntity ? entityFromToken(entTok) : undefined,
+        streamId: needsStream ? streamFromToken(streamTok) : undefined,
+        active: true,
+      } as UserRec,
+    };
+  });
+  const validCount = parsed.filter((p) => p.valid).length;
+
+  const doImport = () => {
+    let added = 0;
+    parsed.forEach((p, i) => {
+      if (!p.valid) return;
+      a.saveUser({ ...p.rec, id: 'u-b' + Math.abs(hashStr(p.rec.email + p.rec.name + i)).toString(36) });
+      added++;
+    });
+    setDone({ added, skipped: parsed.length - added });
+  };
+
+  const template = 'الاسم,البريد الإلكتروني,الدور,الجهة,المسار\nمحمد أحمد,m.ahmed@aigp.gov.ae,coord,وزارة شؤون مجلس الوزراء,services\nسارة خالد,s.khaled@aigp.gov.ae,entity,وزارة الاقتصاد والسياحة,';
+  const templateHref = 'data:text/csv;charset=utf-8,%EF%BB%BF' + encodeURIComponent(template);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
+      <div style={{ position: 'relative', width: 'min(620px,calc(100vw-32px))', maxHeight: '90vh', overflowY: 'auto', background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>رفع دفعة مستخدمين</div>
+          <button onClick={onClose} style={{ border: 'none', background: '#F1F5FB', borderRadius: 9, width: 32, height: 32, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon d={IC_X} size={16} color="#54627B" />
+          </button>
+        </div>
+
+        {done ? (
+          <div style={{ textAlign: 'center', padding: '18px 8px' }}>
+            <span style={{ width: 54, height: 54, borderRadius: 16, background: '#E7F6EE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon d={IC_CHECK} size={26} color="#0B8A4B" strokeWidth={2.6} />
+            </span>
+            <div style={{ fontSize: 15, fontWeight: 800, marginTop: 12 }}>تمت إضافة {done.added} مستخدمًا</div>
+            {done.skipped > 0 && <div style={{ fontSize: 12.5, color: '#8A97AD', marginTop: 4 }}>تم تجاهل {done.skipped} صفًا غير مكتمل</div>}
+            <button onClick={onClose} style={{ marginTop: 18, border: 'none', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', borderRadius: 11, padding: '11px 26px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>تم</button>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 12.5, color: '#54627B', lineHeight: 1.9, background: '#F7F9FD', border: '1px solid #EEF2F8', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
+              أدخل مستخدمًا واحدًا في كل سطر بالصيغة: <b>الاسم، البريد الإلكتروني، الدور، الجهة، المسار</b>.
+              <br />الدور: <code>admin</code> / <code>coord</code> / <code>entity</code> / <code>path</code> / <code>ai</code> (أو الاسم بالعربية). الجهة والمسار مطلوبان حسب الدور.
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: '1px solid #DDE5F0', background: '#fff', color: '#1D4ED8', borderRadius: 10, padding: '8px 13px', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>
+                <Icon d={IC_UPLOAD} size={14} color="#1D4ED8" /> اختيار ملف CSV
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    const rd = new FileReader();
+                    rd.onload = () => setText(String(rd.result || ''));
+                    rd.readAsText(f);
+                  }}
+                />
+              </label>
+              <a href={templateHref} download="users-template.csv" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: '1px solid #DDE5F0', background: '#fff', color: '#54627B', borderRadius: 10, padding: '8px 13px', fontWeight: 800, fontSize: 12, textDecoration: 'none' }}>
+                تنزيل قالب
+              </a>
+            </div>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={template}
+              spellCheck={false}
+              style={{ width: '100%', minHeight: 160, border: '1px solid #DDE5F0', borderRadius: 12, padding: 12, fontSize: 12.5, fontFamily: 'ui-monospace,monospace', direction: 'ltr', textAlign: 'right', resize: 'vertical', outline: 'none' }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, gap: 10 }}>
+              <div style={{ fontSize: 12.5, color: '#54627B' }}>{validCount} مستخدم جاهز للإضافة</div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={onClose} style={{ border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', borderRadius: 11, padding: '11px 18px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+                <button disabled={!validCount} onClick={doImport} style={{ border: 'none', background: validCount ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', borderRadius: 11, padding: '11px 22px', fontWeight: 800, fontSize: 13, cursor: validCount ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>استيراد</button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
