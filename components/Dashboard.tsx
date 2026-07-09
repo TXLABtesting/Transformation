@@ -893,8 +893,9 @@ function LpEntryRow({ e, launched }: { e: VM['batchSummary'][number]['launches']
       onMouseLeave={() => setHov(false)}
       style={{
         display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
-        border: '1px solid ' + (hov ? '#C7D6EE' : '#EEF1F7'), borderRadius: 11,
-        background: hov ? '#F4F8FE' : '#FBFCFE', cursor: 'pointer', transition: 'background .12s,border-color .12s',
+        border: '1px solid ' + (hov ? '#D3DEEE' : '#E9EDF4'), borderRadius: 11,
+        background: '#fff', boxShadow: hov ? '0 2px 8px -4px rgba(15,31,61,.14)' : '0 1px 2px rgba(15,31,61,.04)',
+        cursor: 'pointer', transition: 'box-shadow .12s,border-color .12s',
       }}
     >
       <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</span>
@@ -916,12 +917,12 @@ function LpLaunchCard({ l, idx, hideMoney }: { l: VM['batchSummary'][number]['la
       : 'dev';
   const lst = LPE_STATUS[lstatus];
   return (
-    <div style={{ border: '1px solid #E6EBF3', borderRadius: 14, background: '#fff', overflow: 'hidden' }}>
+    <div style={{ border: '1px solid #E6EBF3', borderRadius: 14, background: '#F3F5FA', overflow: 'hidden' }}>
       <div
         onClick={() => setOpen((o) => !o)}
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
-        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', cursor: 'pointer', background: hov ? '#FAFBFE' : '#fff', transition: 'background .12s' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', cursor: 'pointer', background: hov ? '#ECEFF5' : 'transparent', transition: 'background .12s' }}
       >
         <span style={{ width: 38, height: 38, flex: 'none', borderRadius: 11, background: '#EAF0FE', color: '#2563EB', fontWeight: 900, fontSize: 15, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</span>
         <Icon d={open ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} size={17} color="#AEB8C7" />
@@ -945,7 +946,7 @@ function LpLaunchCard({ l, idx, hideMoney }: { l: VM['batchSummary'][number]['la
         )}
       </div>
       {open && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 15px 15px', borderTop: '1px solid #ECF0F6' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 15px 15px', borderTop: '1px solid #E3E8F0' }}>
           <div style={{ height: 4 }} />
           {l.items.map((e) => (
             <LpEntryRow key={e.id} e={e} launched={l.launched} />
@@ -2931,11 +2932,11 @@ export function Dashboard({ vm }: { vm: VM }) {
                         const ord =
                           ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع', 'العاشر'][pi] || String(pi + 1);
                         return (
-                          <div key={p.id} style={{ border: '1px solid #EBEFF6', borderRadius: 12, overflow: 'hidden' }}>
+                          <div key={p.id} style={{ border: '1px solid #E6EBF3', borderRadius: 12, overflow: 'hidden', background: '#F3F5FA' }}>
                             <HoverDiv
                               onClick={() => setOpenLaunch(pOpen ? null : key)}
-                              base={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', cursor: 'pointer', background: '#FAFCFF' }}
-                              hover={{ background: '#F2F6FD' }}
+                              base={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', cursor: 'pointer', background: 'transparent' }}
+                              hover={{ background: '#ECEFF5' }}
                             >
                               <Icon d={pOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#8A97AD" />
                               <span className="hd" style={{ flex: 'none', fontSize: 13, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
@@ -2968,7 +2969,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                               </button>
                             </HoverDiv>
                             {pOpen && (
-                              <div style={{ padding: '14px 13px', borderTop: '1px solid #F0F3F8', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                              <div style={{ padding: '14px 13px', borderTop: '1px solid #E3E8F0', display: 'flex', flexDirection: 'column', gap: 14 }}>
                                 {/* 1) name / type / date */}
                                 <div data-r="form3" style={{ display: 'grid', gridTemplateColumns: '1fr 170px 150px', gap: 8 }}>
                                   <div>
@@ -2998,7 +2999,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                                   <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', marginBottom: 7 }}>
                                     ماذا سيشمل الإطلاق؟
                                   </div>
-                                  <div style={{ border: '1px solid #EBEFF6', borderRadius: 10, maxHeight: 220, overflowY: 'auto' }}>
+                                  <div style={{ border: '1px solid #E6EBF3', borderRadius: 10, maxHeight: 220, overflowY: 'auto', background: '#fff' }}>
                                     {p.items.length === 0 && (
                                       <div style={{ padding: '12px 13px', fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>لا توجد إضافات بعد.</div>
                                     )}
