@@ -29,6 +29,7 @@ model Entity {
   reps         EntityRep[]
   streamOwners StreamOwner[]
   users        User[]
+  userScopes   UserEntityScope[]
 
   @@map("entities")
 }
@@ -44,6 +45,7 @@ model Stream {
   items        Item[]
   streamOwners StreamOwner[]
   users        User[]
+  userScopes   UserStreamScope[]
 
   @@map("streams")
 }
@@ -400,7 +402,9 @@ model AppState {
 /// added later for sign-in mapping (UAE PASS / IdP).
 model User {
   id        String    @id @default(cuid())
-  role      String // entity | coord | path | ai  (FK → roles.key)
+  // Legacy UI role kept for the client screens: entity | coord | path | ai |
+  // admin. Production permissions come from user_roles / role_permissions.
+  role      String
   name      String
   title     String    @default("")
   email     String?   @unique
@@ -409,54 +413,162 @@ model User {
   entityId  String?   @map("entity_id")
   isActive  Boolean   @default(true) @map("is_active")
   lastLogin DateTime? @map("last_login")
-  createdAt DateTime  @default(now()) @map("created_at")
 
-  roleRef       Role           @relation(fields: [role], references: [key])
+  // Production access-management fields.
+  status        String  @default("pending")
+  accessEnabled Boolean @default(false) @map("access_enabled")
+  authProvider  String? @map("auth_provider")
+  externalSub   String? @map("external_sub")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
   stream        Stream?        @relation(fields: [streamId], references: [id])
   entity        Entity?        @relation(fields: [entityId], references: [id])
-  sessions      Session[]
   notifications Notification[]
 
+  roles        UserRole[]
+  entityScopes UserEntityScope[]
+  streamScopes UserStreamScope[]
+  auditLogs    AuditLog[]
+
   @@index([role])
+  @@index([status])
+  @@index([authProvider, externalSub])
   @@index([entityId])
   @@index([streamId])
   @@map("users")
 }
 
 // ---------------------------------------------------------------------------
-// Access control, sessions & notifications
+// Production RBAC, data scopes, audit logs & notifications
+// (sessions are stateless HMAC-signed cookies — no table; see lib/security/)
 // ---------------------------------------------------------------------------
 
-/// Access role (الأدوار) reference table. The four roles the platform assumes;
-/// `permissions` is a capability list the API can enforce against.
+/// Backend access role, keyed by a stable `code` (e.g. system_admin,
+/// entity_representative). users.role keeps the legacy UI key for the client;
+/// APIs enforce permissions via user_roles / role_permissions.
 model Role {
-  key         String @id // entity | coord | path | ai
-  nameAr      String @map("name_ar")
-  descAr      String @default("") @map("desc_ar")
-  scope       String @default("") // entity+stream | entity | stream | national
-  permissions Json   @default("[]") // string[] of capability keys
-  sortOrder   Int    @default(0) @map("sort_order")
+  id          String   @id @default(cuid())
+  code        String   @unique
+  nameAr      String   @map("name_ar")
+  description String?
+  isSystem    Boolean  @default(true) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  users User[]
+  users       UserRole[]
+  permissions RolePermission[]
 
   @@map("roles")
 }
 
-/// Server-side auth session (UAE PASS / IdP). One row per signed-in session;
-/// the opaque `token` is stored in an httpOnly cookie.
-model Session {
+model Permission {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
-  token     String   @unique
-  expiresAt DateTime @map("expires_at")
-  ip        String?
-  userAgent String?  @map("user_agent")
+  roleId    String   @map("role_id")
   createdAt DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@map("sessions")
+  @@unique([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserEntityScope {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  entityId  String   @map("entity_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityId])
+  @@index([entityId])
+  @@map("user_entity_scopes")
+}
+
+model UserStreamScope {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  streamId  String   @map("stream_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stream Stream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, streamId])
+  @@index([streamId])
+  @@map("user_stream_scopes")
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String?  @map("actor_user_id")
+  action       String
+  resourceType String?  @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  entityId     String?  @map("entity_id")
+  streamId     String?  @map("stream_id")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  metadata     Json     @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([entityId])
+  @@index([streamId])
+  @@index([resourceType, resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Pre-configured email-to-role mapping for auto-assignment on registration.
+/// Admin team adds rules before users register; on first login the system
+/// automatically assigns the specified role + entity/stream scopes.
+model RoleAssignmentRule {
+  id          String    @id @default(cuid())
+  email       String    @unique // the email that triggers this rule
+  roleCode    String    @map("role_code") // e.g. entity_coordinator, entity_representative, stream_owner, ai_committee
+  entityId    String?   @map("entity_id") // optional: assign user to this entity
+  streamId    String?   @map("stream_id") // optional: assign user to this stream
+  displayName String?   @map("display_name") // optional: pre-set display name
+  isConsumed  Boolean   @default(false) @map("is_consumed") // true after user registers
+  consumedAt  DateTime? @map("consumed_at")
+  consumedBy  String?   @map("consumed_by") // user ID who consumed this rule
+  createdBy   String?   @map("created_by") // admin who created the rule
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@index([roleCode])
+  @@index([isConsumed])
+  @@map("role_assignment_rules")
 }
 
 /// Persisted notification (الإشعارات). Targeted to a user, or broadcast to a

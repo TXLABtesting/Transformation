@@ -27,6 +27,9 @@ services:
         NEXT_PUBLIC_UAEPASS_MODE: live
         NEXT_PUBLIC_DEMO_MODE: '0'
         NEXT_PUBLIC_DEMO_DATA: '0'
+        # Backend-auth mode: 'mock' (dev), 'uaepass' or 'workspaceone' (prod).
+        # Must match AUTH_PROVIDER in .env; baked into the client at build time.
+        NEXT_PUBLIC_AUTH_PROVIDER: mock
     restart: unless-stopped
     depends_on:
       db:
@@ -40,7 +43,7 @@ services:
       DATABASE_URL: postgresql://portal:portal@db:5432/transformation?schema=public
     ports:
       - '3000:3000'
-    # Apply the versioned migrations (0001→0008), seed reference data (streams,
+    # Apply the versioned migrations (0001→0009), seed reference data (streams,
     # entities, phases, roles, and starter accounts — NO portfolio items), then
     # start the server. `migrate deploy` is idempotent and safe to re-run.
     command: sh -c "npx prisma migrate deploy && npx tsx prisma/seed.ts && npm run start"

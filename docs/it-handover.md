@@ -18,7 +18,7 @@ managed by Prisma.
 ```bash
 cp .env.example .env         # then fill in the (REQUIRED) values — see §2
 npm ci
-npm run db:setup             # migrate deploy (0001 → 0007) + generate + seed
+npm run db:setup             # migrate deploy (0001 → 0009) + generate + seed
 npm run build && npm start   # serves on PORT (default 3000)
 ```
 
@@ -43,8 +43,11 @@ to `.env` and fill in the blanks. Summary:
 | --- | --- |
 | `DATABASE_URL` | Postgres connection string (REQUIRED) |
 | `NEXT_PUBLIC_DATA_MODE` | `api` in production (build-time); `local` = static demo |
-| `SESSION_SECRET` | Signs session cookies — `openssl rand -hex 32` (REQUIRED) |
-| `SESSION_TTL_HOURS` | Session lifetime (default 12) |
+| `SESSION_SECRET` | Signs the stateless session cookie — `openssl rand -hex 32` (REQUIRED) |
+| `SESSION_TTL_HOURS` | Session lifetime (default 12; `SESSION_TTL_SECONDS` overrides) |
+| `AUTH_PROVIDER` / `NEXT_PUBLIC_AUTH_PROVIDER` | `mock` (dev only) \| `uaepass` \| `workspaceone` |
+| `BOOTSTRAP_ADMIN_EMAILS` | Auto-provision these emails as `system_admin` on first login |
+| `OIDC_ISSUER` / `_CLIENT_ID` / `_CLIENT_SECRET` / `_REDIRECT_URI` | Workspace ONE OIDC (REQUIRED for `workspaceone`) |
 | `STATE_API_TOKEN` | Bearer guard for `/api/state` on shared deployments |
 | `NEXT_PUBLIC_UAEPASS_MODE` | `live` in production; `mock` for the demo (build-time) |
 | `UAEPASS_CLIENT_ID` / `_SECRET` / `_REDIRECT_URI` | UAE PASS OIDC — see §5 (REQUIRED for live) |
@@ -59,7 +62,7 @@ Secrets belong in the host's secret manager — never in the repository.
 ## 3. Database structure (Prisma → Postgres)
 
 Schema: `prisma/schema.prisma` (tables/columns are snake_case via `@map`;
-the client uses camelCase). Migrations: `prisma/migrations/0001…0006`.
+the client uses camelCase). Migrations: `prisma/migrations/0001…0009`.
 
 **Reference data**
 - `streams` — the five transformation streams (ids: `ops`, `strategy`,
@@ -100,14 +103,27 @@ the client uses camelCase). Migrations: `prisma/migrations/0001…0006`.
 - `fundings` / `funding_cancellations` — committee funding decisions with
   the mandatory cancellation reason.
 
-**Access control, sessions & notifications** (migrations `0007`/`0008`)
-- `roles` — the access roles (`admin`, `coord`, `entity`, `path`, `ai`) with an
-  Arabic name, scope, and a `permissions` JSON capability list. `users.role`
-  is a foreign key into this table, so every account resolves to a valid role.
-  The `admin` role (migration `0008`) runs the admin console — managing
-  users/roles and assigning the stream heads and national committee.
-- `sessions` — one row per signed-in session (opaque token in an httpOnly
-  cookie, expiry, IP/user-agent). Populated by the UAE PASS callback (§5).
+**Access control (RBAC), audit & notifications** (migrations `0007`–`0009`)
+- `roles` — backend access roles keyed by a stable `code` (nine codes, see
+  §4). `users.role` keeps the *legacy UI key* (`admin`, `coord`, `entity`,
+  `path`, `ai`) as a plain string for the client screens; server enforcement
+  goes through `user_roles`/`role_permissions`.
+- `permissions` — stable permission codes (`items:approve`,
+  `funding:cancel`, …).
+- `role_permissions` — role → permission matrix (seeded, editable).
+- `user_roles` — role assignment per user (the app enforces one role per
+  user).
+- `user_entity_scopes` / `user_stream_scopes` — per-user data scopes; the
+  API filters every item query by them (`lib/security/rbac.ts`).
+- `audit_logs` — server-side audit trail written inside the same
+  transaction as every enforced mutation (actor, action, resource,
+  entity/stream, IP, user-agent, metadata).
+- `role_assignment_rules` — pre-configured email→role(+scopes) mappings;
+  applied automatically on the user's first login (team setup and
+  `/api/admin/role-rules` create them).
+- `sessions` — **removed** (migration `0009`). Sessions are now stateless
+  HMAC-signed httpOnly cookies (`lib/security/session.ts`), signed with
+  `SESSION_SECRET`; nothing is stored server-side.
 - `notifications` — persisted الإشعارات, targeted to a user or broadcast to a
   role / entity / stream, with `kind`, title/body, and `read_at`. The client
   currently derives notifications from data state; this table lets IT persist
@@ -118,33 +134,48 @@ the client uses camelCase). Migrations: `prisma/migrations/0001…0006`.
   persistence. Harmless in production; can stay empty.
 
 The full table list (with columns) lives in `prisma/schema.prisma`; the
-versioned DDL is in `prisma/migrations/0001…0008`.
+versioned DDL is in `prisma/migrations/0001…0009`.
 
 ## 4. Role management
 
-`users` table drives access; `users.role` is a FK into the `roles` reference
-table. The roles (seeded by migrations `0007`/`0008` and the seed script):
+Access is enforced server-side: nine backend role codes (in `roles`) carry
+the permission matrix; the client keeps rendering its four UI roles + the
+admin console via the legacy `users.role` key. Mapping:
 
-| role | Arabic | Scope columns | scope |
+| Backend code | Arabic | UI role | Scope enforced by the API |
 | --- | --- | --- | --- |
-| `admin` | مشرف النظام | — | `system` |
-| `coord` | منسق المسار في الجهة | `entity_id` + `stream_id` | `entity+stream` |
-| `entity` | ممثل الجهة | `entity_id` | `entity` |
-| `path` | رئيس المسار | `stream_id` | `stream` |
-| `ai` | اللجنة الوطنية | — | `national` |
+| `system_admin` | مدير النظام | `admin` | global (bypasses permission checks) |
+| `program_admin` | مدير البرنامج | `ai` | global |
+| `ai_committee` | اللجنة الوطنية | `ai` | global, approved items only |
+| `stream_owner` | رئيس المسار | `path` | own stream across all entities |
+| `entity_representative` | ممثل الجهة | `entity` | own entity across all streams, no drafts |
+| `entity_admin` | مسؤول الجهة | `entity` | own entity + entity updates |
+| `entity_coordinator` | منسق المسار في الجهة | `coord` | own entity + own stream, incl. drafts |
+| `viewer` | مستعرض | `entity` | read-only within scopes |
+| `auditor` | مدقق | `entity` | read-only + `audit:view` |
 
-**Who provisions whom:** the `admin` manages all accounts and specifically
-assigns the stream heads (`path`) and national committee (`ai`) from the admin
-console; the entity rep (`entity`) provisions its own coordinators (`coord`)
-in team setup.
+Role → permission assignments live in `role_permissions` (seeded from
+`prisma/seed.ts`). **Deliberate deviation from the reference permission
+matrix:** `entity_representative` is granted `items:approve` and
+`items:reject` — in our confirmed business flow the entity representative is
+the sole approver at the `ent1` gate (the upstream reference seed omitted
+these, contradicting its own client behaviour).
+
+**Who provisions whom:** `system_admin` manages all accounts and role rules
+(`/api/admin/users`, `/api/admin/role-rules`) and assigns the stream heads
+(`stream_owner`) and national committee (`ai_committee`); the entity rep
+provisions its own coordinators in team setup (`/api/team/register` creates
+`role_assignment_rules` consumed on the coordinator's first login).
+`BOOTSTRAP_ADMIN_EMAILS` auto-provisions the very first system admin(s) on
+login.
 
 **Seeded starter accounts** (in `users`, keyed by email on the
 `@aigp.gov.ae` placeholder domain): the system admin (`admin@…`), the national
 committee, the five stream heads (`head.<stream>@…`), the default entity
 representative (`rep@…`), and one coordinator per stream (`coord.<stream>@…`).
-To go live, re-point each account's `email` to the verified UAE PASS identity
-(or deactivate and create real ones). `roles.permissions` carries the
-capability list the API can enforce against.
+Each is seeded active with its backend role in `user_roles` plus the matching
+entity/stream scopes. To go live, re-point each account's `email` to the
+verified UAE PASS identity (or deactivate and create real ones).
 
 Rules the application assumes (enforce when provisioning users):
 - `coord` and `entity` **must** have `entity_id`; `coord` and `path`
@@ -160,7 +191,35 @@ Data visibility implemented by the app (for reference):
 - `ent1` (awaiting entity approval) is visible to coord + entity rep.
 - The committee acts only on nominations (`nominations`), not raw items.
 
-## 5. Authentication (UAE PASS)
+## 5. Server API (enforced endpoints)
+
+Every route below runs `requireAuthUser` → `assertPermission` →
+`assertItemAccess` (entity/stream scope), mutates inside a transaction and
+writes an `audit_logs` row (`lib/security/`):
+
+- **Auth**: `GET /api/auth/login` (provider dispatch: mock / uaepass /
+  workspaceone), `POST /api/auth/logout`, `GET /api/auth/me` (roles +
+  permissions + scopes), `GET /callback` (Workspace ONE OIDC redirect),
+  `GET /api/auth/uaepass/login|callback` (UAE PASS, §6).
+- **Items**: `GET|POST /api/items`, `GET|PATCH|DELETE /api/items/:id`,
+  `POST /api/items/:id/submit|approve|reject|return` (workflow actions with
+  log entries + audit).
+- **Portfolio reads**: `GET /api/funding`, `GET /api/nominations`,
+  `GET /api/launch-plans` — all scope-filtered.
+- **Team setup**: `POST /api/team/register` — upserts `entity_reps` /
+  `stream_owners` and creates `role_assignment_rules` for the team.
+- **Admin**: `GET|POST /api/admin/users`, `GET|PATCH /api/admin/users/:id`,
+  `POST /api/admin/users/:id/enable|disable`,
+  `POST /api/admin/users/:id/roles` (+ `DELETE …/roles/:roleId`),
+  `GET /api/admin/roles|permissions|entities|streams`,
+  `GET|POST|DELETE /api/admin/role-rules`, `GET /api/admin/audit-logs`.
+- **Ops**: `GET /api/health` (liveness), `GET /api/ready` (DB probe).
+- **Demo compatibility**: `GET|PUT /api/state` — the demo-mode blob
+  persistence (optionally guarded by `STATE_API_TOKEN`); production clients
+  should use the enforced endpoints above. `POST /api/ai-review` — internal
+  AI reviewer proxy.
+
+## 6. Authentication (UAE PASS)
 
 `app/api/auth/uaepass/login` and `…/callback` contain the integration
 points; the demo build bypasses them behind the "Sign in with UAE PASS"
@@ -168,18 +227,21 @@ button. To go live:
 1. Register the redirect URI with UAE PASS and set the client id/secret in
    the environment.
 2. In the callback, map the verified Emirates ID / email to a row in
-   `users` (email is unique) and reject users with no active row.
-3. Create a `sessions` row (opaque token → httpOnly cookie, signed with
-   `SESSION_SECRET`, `expires_at = now + SESSION_TTL_HOURS`) and resolve
-   `{role, entityId, streamId, name}` from the joined `users`/`roles` rows;
-   the client reads the role from the session — the role-switcher tabs only
-   exist when `NEXT_PUBLIC_DEMO_MODE=1`.
+   `users` (email is unique) and reject users with no active row —
+   `lib/security/user-access.ts` (`ensureUserFromIdentity`) implements this
+   mapping including bootstrap admins and role-assignment rules.
+3. Set the stateless session cookie (HMAC-signed with `SESSION_SECRET`,
+   `maxAge = SESSION_TTL_HOURS`, httpOnly) via `lib/security/session.ts`;
+   there is no sessions table. `/api/auth/me` resolves
+   `{role, entityId, streamId, name}` plus backend roles/permissions — the
+   client reads the role from it — the role-switcher tabs only exist when
+   `NEXT_PUBLIC_DEMO_MODE=1`.
 
 Invitation emails for entity reps and coordinators are drafted in
 `docs/email-templates.md` — wire them to the mail gateway when accounts are
 provisioned.
 
-## 6. Operational notes
+## 7. Operational notes
 
 - **Budgets**: item budgets are free-text in Arabic; the parsed numeric
   value is mirrored into `budget_amount` (BigInt, drhm) for reporting.

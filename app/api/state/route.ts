@@ -8,6 +8,11 @@ export const dynamic = 'force-dynamic';
 // client store mirrors its localStorage payload here when
 // NEXT_PUBLIC_DATA_MODE=api, giving durable multi-session persistence without
 // re-modelling every action as a REST endpoint.
+//
+// NOTE: this is the DEMO-mode persistence path only. Production should use the
+// enforced, per-action APIs (/api/items…, /api/funding, /api/nominations,
+// /api/launch-plans, /api/admin/…) which run requireAuthUser -> assertPermission
+// -> assertItemAccess with audit logging (see lib/security/).
 export async function GET() {
   try {
     const row = await prisma.appState.findUnique({ where: { id: 'singleton' } });

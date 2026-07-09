@@ -316,6 +316,21 @@ export type Store = State & Actions;
 
 const PERSIST_KEY = 'aitp_state';
 const API_MODE = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
+// Backend-auth mode (ported from the roles-access reference): when the auth
+// provider is not "mock", /api/auth/me is the source of truth for the UI role.
+const BACKEND_AUTH = (process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'mock') !== 'mock';
+// Backend RBAC role codes → the UI role keys (adapted: system_admin maps to
+// our dedicated 'admin' UI role instead of 'ai' as in the reference).
+const roleFromBackend = (roles: string[] = []): RoleKey =>
+  roles.includes('system_admin')
+    ? 'admin'
+    : roles.includes('ai_committee') || roles.includes('program_admin')
+      ? 'ai'
+      : roles.includes('stream_owner')
+        ? 'path'
+        : roles.includes('entity_coordinator')
+          ? 'coord'
+          : 'entity';
 
 // Fire-and-forget sync of the persisted blob to Postgres (server mode only).
 function apiPut(data: unknown) {
@@ -586,6 +601,24 @@ export const useStore = create<Store>((set, get) => {
           })
           .catch(() => {});
       }
+      // Backend-auth mode: /api/auth/me is the source of truth for access,
+      // legacy UI role, entity and stream selection. Frontend checks are UX
+      // only; the backend APIs still enforce permission/scope.
+      if (BACKEND_AUTH) {
+        fetch('/api/auth/me', { credentials: 'include' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((res) => {
+            if (!res?.user) return;
+            const roles = Array.isArray(res.roles) ? (res.roles as string[]) : [];
+            set((s) => ({
+              ...s,
+              view: s.setupDone ? 'dashboard' : 'setup',
+              role: roleFromBackend(roles),
+              myPath: res.user.streamId || s.myPath,
+            }));
+          })
+          .catch(() => {});
+      }
       // countdown ticker
       if (!(window as unknown as { _aitpTick?: number })._aitpTick) {
         (window as unknown as { _aitpTick?: number })._aitpTick = window.setInterval(
@@ -605,6 +638,13 @@ export const useStore = create<Store>((set, get) => {
       persist();
     },
     logout: () => {
+      if (BACKEND_AUTH && typeof window !== 'undefined') {
+        fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).finally(() => {
+          set({ view: 'login', ui: { ...defaultUi() } });
+          persist();
+        });
+        return;
+      }
       set({ view: 'login', ui: { ...defaultUi() } });
       persist();
     },
@@ -646,6 +686,28 @@ export const useStore = create<Store>((set, get) => {
       set({ setupDone: true, view: 'dashboard' });
       persist();
       toast('تم حفظ فريق العمل');
+
+      // Auto-register team roles (role-assignment rules) when the server
+      // security layer is active — the backend creates RoleAssignmentRule
+      // rows so the team gets its roles on first login.
+      if (BACKEND_AUTH || API_MODE) {
+        const s = get();
+        fetch('/api/team/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            entityName: s.entityName,
+            rep: s.setup.rep,
+            owners: s.setup.owners,
+          }),
+        })
+          .then((r) => r.json())
+          .then((res) => {
+            if (res.ok) toast('تم إنشاء صلاحيات الفريق تلقائياً');
+          })
+          .catch(() => {});
+      }
     },
     skipSetup: () => {
       set({ setupDone: true, view: 'dashboard' });

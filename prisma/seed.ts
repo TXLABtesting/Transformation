@@ -22,23 +22,73 @@ import { FEDERAL_ENTITIES } from '../lib/entities';
 
 const prisma = new PrismaClient();
 
-// The access roles (mirrors migrations 0007/0008; upsert keeps them in sync).
-const ROLES: Array<{ key: string; nameAr: string; descAr: string; scope: string; permissions: string[]; sortOrder: number }> = [
-  { key: 'admin', nameAr: 'مشرف النظام', descAr: 'يدير المستخدمين والأدوار، ويعيّن رؤساء المسارات وأعضاء اللجنة الوطنية.', scope: 'system', permissions: ['users.manage', 'roles.view', 'streamhead.assign', 'committee.assign'], sortOrder: 0 },
-  { key: 'coord', nameAr: 'منسق المسار في الجهة', descAr: 'يضيف ويحدّث مدخلات مسار واحد داخل جهته.', scope: 'entity+stream', permissions: ['item.create', 'item.update', 'item.submit', 'plan.edit'], sortOrder: 1 },
-  { key: 'entity', nameAr: 'ممثل الجهة', descAr: 'يتابع كل مسارات جهته ويعتمد المدخلات الجاهزة.', scope: 'entity', permissions: ['item.view.entity', 'item.approve', 'item.return', 'team.manage'], sortOrder: 2 },
-  { key: 'path', nameAr: 'رئيس المسار', descAr: 'يراجع مدخلات كل الجهات ضمن مساره ويرشّح للتمويل.', scope: 'stream', permissions: ['item.view.stream', 'item.nominate', 'plan.view'], sortOrder: 3 },
-  { key: 'ai', nameAr: 'اللجنة الوطنية', descAr: 'إشراف وطني على كل الجهات والمسارات واعتماد التمويل النهائي.', scope: 'national', permissions: ['item.view.all', 'nomination.review', 'funding.approve', 'funding.cancel', 'phase.edit', 'budget.set'], sortOrder: 4 },
+// Production RBAC roles (code-based, mirrors migration 0009). UI labels stay
+// Arabic while the server APIs enforce the stable permission codes.
+const RBAC_ROLES = [
+  ['system_admin', 'مدير النظام'],
+  ['program_admin', 'مدير البرنامج'],
+  ['entity_representative', 'ممثل الجهة'],
+  ['entity_admin', 'مسؤول الجهة'],
+  ['entity_coordinator', 'منسق المسار في الجهة'],
+  ['stream_owner', 'رئيس المسار'],
+  ['ai_committee', 'اللجنة الوطنية'],
+  ['viewer', 'مستعرض'],
+  ['auditor', 'مدقق'],
+] as const;
+
+const PERMISSIONS = [
+  'users:view','users:create','users:update','users:disable','roles:view','roles:assign',
+  'entities:view','entities:update','streams:view','streams:update',
+  'items:view','items:create','items:update','items:submit','items:approve','items:reject','items:export',
+  'launch_plans:view','launch_plans:create','launch_plans:update','launch_plans:approve',
+  'funding:view','funding:create','funding:approve','funding:reject','funding:cancel',
+  'nominations:view','nominations:create','nominations:update','nominations:approve','nominations:reject',
+  'reports:view','reports:export','ai_review:run','audit:view','settings:view','settings:update',
 ];
 
+// Role → permission matrix.
+// NOTE: deliberate deviation from the reference seed — entity_representative
+// also gets items:approve / items:reject: our confirmed business flow has the
+// entity rep as the sole ent1 approver.
+const ROLE_PERMISSION_MATRIX: Record<string, string[]> = {
+  system_admin: PERMISSIONS,
+  program_admin: PERMISSIONS.filter((p) => !p.startsWith('settings:')),
+  entity_representative: ['entities:view','streams:view','items:view','items:create','items:update','items:submit','items:approve','items:reject','items:export','launch_plans:view','funding:view','nominations:view','reports:view','reports:export'],
+  entity_admin: ['entities:view','entities:update','streams:view','items:view','items:create','items:update','items:submit','items:export','launch_plans:view','funding:view','nominations:view','reports:view','reports:export'],
+  entity_coordinator: ['entities:view','streams:view','items:view','items:create','items:update','items:submit','items:export','launch_plans:view','funding:view','nominations:view','reports:view'],
+  stream_owner: ['entities:view','streams:view','items:view','items:approve','items:reject','items:export','launch_plans:view','launch_plans:approve','funding:view','nominations:view','nominations:approve','nominations:reject','reports:view'],
+  ai_committee: ['entities:view','streams:view','items:view','items:approve','items:reject','items:export','launch_plans:view','funding:view','funding:approve','funding:reject','funding:cancel','nominations:view','reports:view','reports:export','ai_review:run'],
+  viewer: ['entities:view','streams:view','items:view','launch_plans:view','funding:view','nominations:view','reports:view'],
+  auditor: ['entities:view','streams:view','items:view','items:export','launch_plans:view','funding:view','nominations:view','reports:view','reports:export','audit:view'],
+};
+
+// Legacy UI role key (users.role) → backend RBAC role code.
+const LEGACY_TO_RBAC: Record<string, string> = {
+  admin: 'system_admin',
+  ai: 'ai_committee',
+  entity: 'entity_representative',
+  coord: 'entity_coordinator',
+  path: 'stream_owner',
+};
+
 async function main() {
-  // 0) Roles (الأدوار) — must exist before any user (users.role → roles.key)
-  for (const r of ROLES) {
-    await prisma.role.upsert({
-      where: { key: r.key },
-      update: { nameAr: r.nameAr, descAr: r.descAr, scope: r.scope, permissions: r.permissions, sortOrder: r.sortOrder },
-      create: { key: r.key, nameAr: r.nameAr, descAr: r.descAr, scope: r.scope, permissions: r.permissions, sortOrder: r.sortOrder },
-    });
+  // 0) RBAC roles, permissions and the role→permission matrix
+  for (const [code, nameAr] of RBAC_ROLES) {
+    await prisma.role.upsert({ where: { code }, update: { nameAr }, create: { code, nameAr } });
+  }
+  for (const code of PERMISSIONS) {
+    await prisma.permission.upsert({ where: { code }, update: {}, create: { code } });
+  }
+  for (const [roleCode, permissionCodes] of Object.entries(ROLE_PERMISSION_MATRIX)) {
+    const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } });
+    for (const permissionCode of permissionCodes) {
+      const permission = await prisma.permission.findUniqueOrThrow({ where: { code: permissionCode } });
+      await prisma.rolePermission.upsert({
+        where: { roleId_permissionId: { roleId: role.id, permissionId: permission.id } },
+        update: {},
+        create: { roleId: role.id, permissionId: permission.id },
+      });
+    }
   }
 
   // 1) Streams (المسارات) + heads (رؤساء المسارات)
@@ -120,10 +170,13 @@ async function main() {
   // 6b) Users (المستخدمون) — realistic starter accounts keyed by email so IT
   // only re-points the email to the verified UAE PASS identity (or deactivates
   // and re-creates). Placeholder emails use the @aigp.gov.ae domain.
-  const upsertUser = (email: string, data: { role: string; name: string; title?: string; streamId?: string | null; entityId?: string | null }) =>
-    prisma.user.upsert({
+  // Each account keeps its legacy UI role key (users.role) AND is assigned the
+  // matching backend RBAC role (user_roles) plus entity/stream scopes, active
+  // and access-enabled so the enforced APIs accept them out of the box.
+  const upsertUser = async (email: string, data: { role: string; name: string; title?: string; streamId?: string | null; entityId?: string | null }) => {
+    const user = await prisma.user.upsert({
       where: { email },
-      update: {},
+      update: { status: 'active', accessEnabled: true, isActive: true },
       create: {
         email,
         role: data.role,
@@ -131,8 +184,35 @@ async function main() {
         title: data.title || '',
         streamId: data.streamId ?? null,
         entityId: data.entityId ?? null,
+        status: 'active',
+        accessEnabled: true,
       },
     });
+    const roleCode = LEGACY_TO_RBAC[data.role];
+    if (roleCode) {
+      const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } });
+      await prisma.userRole.upsert({
+        where: { userId_roleId: { userId: user.id, roleId: role.id } },
+        update: {},
+        create: { userId: user.id, roleId: role.id },
+      });
+    }
+    if (data.entityId) {
+      await prisma.userEntityScope.upsert({
+        where: { userId_entityId: { userId: user.id, entityId: data.entityId } },
+        update: {},
+        create: { userId: user.id, entityId: data.entityId },
+      });
+    }
+    if (data.streamId) {
+      await prisma.userStreamScope.upsert({
+        where: { userId_streamId: { userId: user.id, streamId: data.streamId } },
+        update: {},
+        create: { userId: user.id, streamId: data.streamId },
+      });
+    }
+    return user;
+  };
 
   // System administrator (مشرف النظام) — provisions stream heads & committee
   await upsertUser('admin@aigp.gov.ae', { role: 'admin', name: 'مشرف النظام', title: 'مسؤول المنصة' });
@@ -327,7 +407,10 @@ async function main() {
 
   const counts = {
     roles: await prisma.role.count(),
+    permissions: await prisma.permission.count(),
+    rolePermissions: await prisma.rolePermission.count(),
     users: await prisma.user.count(),
+    userRoles: await prisma.userRole.count(),
     streams: await prisma.stream.count(),
     entities: await prisma.entity.count(),
     batches: await prisma.execBatch.count(),
