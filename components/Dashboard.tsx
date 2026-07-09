@@ -831,7 +831,7 @@ function LpScopeChip({ label, title }: { label: string; title?: string }) {
   return (
     <span
       title={title || label}
-      style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 700, color: '#42506B', background: '#fff', border: '1px solid #E3E8F0', borderRadius: 999, padding: '3px 10px', maxWidth: 230, overflow: 'hidden' }}
+      style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 700, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', maxWidth: 230, overflow: 'hidden' }}
     >
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
     </span>
@@ -880,18 +880,18 @@ function LpLaunchCard({ l, idx, hideMoney, showStream, showEnt }: { l: VM['batch
       : 'dev';
   const lst = LPE_STATUS[lstatus];
   return (
-    <div style={{ border: '1px solid #E6EBF3', borderRadius: 14, background: '#F3F5FA', overflow: 'hidden' }}>
+    <div style={{ border: '1px solid #E6EBF3', borderRadius: 14, background: '#fff', overflow: 'hidden' }}>
       <div
         onClick={() => setOpen((o) => !o)}
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
-        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', cursor: 'pointer', background: hov ? '#ECEFF5' : 'transparent', transition: 'background .12s' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', cursor: 'pointer', background: hov ? '#FAFBFE' : 'transparent', transition: 'background .12s' }}
       >
         <Icon d={open ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} size={17} color="#AEB8C7" />
         <span style={{ width: 38, height: 38, flex: 'none', borderRadius: 11, background: '#EAF0FE', color: '#2563EB', fontWeight: 900, fontSize: 15, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</span>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{l.title}</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#5A6B86', background: '#fff', border: '1px solid #E3E8F0', borderRadius: 999, padding: '3px 10px' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#5A6B86', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>
             <Icon d="M3 6h18M3 12h18M3 18h18" size={11} color="#5A6B86" />
             إجمالي المدخلات <b style={{ color: '#13213C', fontWeight: 900 }}>{l.count}</b>
           </span>
@@ -904,14 +904,13 @@ function LpLaunchCard({ l, idx, hideMoney, showStream, showEnt }: { l: VM['batch
             <div style={{ fontSize: 15, fontWeight: 900, color: '#13213C', marginTop: 2 }}>{l.budgetLabel}</div>
           </div>
         )}
-        <span style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: lst.c, background: '#fff', border: '1px solid #E3E8F0', borderRadius: 999, padding: '5px 12px' }}>
+        <span style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: lst.c, background: lst.bg, borderRadius: 999, padding: '5px 12px' }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: lst.c, flex: 'none' }} />
           {lst.label}
         </span>
       </div>
       {open && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 15px 15px', borderTop: '1px solid #E3E8F0' }}>
-          <div style={{ height: 4 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '2px 15px 15px', background: '#F3F5FA', border: '1px solid #ECF0F6', borderRadius: 12, padding: 10 }}>
           {l.items.map((e) => (
             <LpEntryRow key={e.id} e={e} launched={l.launched} showStream={showStream} showEnt={showEnt} />
           ))}
