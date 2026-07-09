@@ -900,7 +900,10 @@ function LpEntryRow({ e, launched }: { e: VM['batchSummary'][number]['launches']
     >
       <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</span>
       <span style={{ flex: 'none', fontSize: 11, fontWeight: 700, color: '#64748B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>{e.typeLabel}</span>
-      <span style={{ flex: 'none', fontSize: 11, fontWeight: 800, color: st.c, background: st.bg, borderRadius: 999, padding: '4px 11px' }}>{st.label}</span>
+      <span style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: st.c, background: st.bg, borderRadius: 999, padding: '4px 11px' }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: st.c, flex: 'none' }} />
+        {st.label}
+      </span>
       <Icon d="M15 18l-6-6 6-6" size={13} color="#AEB8C7" />
     </div>
   );
@@ -924,26 +927,25 @@ function LpLaunchCard({ l, idx, hideMoney }: { l: VM['batchSummary'][number]['la
         onMouseLeave={() => setHov(false)}
         style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', cursor: 'pointer', background: hov ? '#ECEFF5' : 'transparent', transition: 'background .12s' }}
       >
-        <span style={{ width: 38, height: 38, flex: 'none', borderRadius: 11, background: '#EAF0FE', color: '#2563EB', fontWeight: 900, fontSize: 15, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</span>
         <Icon d={open ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} size={17} color="#AEB8C7" />
+        <span style={{ width: 38, height: 38, flex: 'none', borderRadius: 11, background: '#EAF0FE', color: '#2563EB', fontWeight: 900, fontSize: 15, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</span>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{l.title}</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#5A6B86', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#5A6B86', background: '#fff', border: '1px solid #E3E8F0', borderRadius: 999, padding: '3px 10px' }}>
             <Icon d="M3 6h18M3 12h18M3 18h18" size={11} color="#5A6B86" />
             إجمالي المدخلات <b style={{ color: '#13213C', fontWeight: 900 }}>{l.count}</b>
           </span>
         </div>
-        {hideMoney ? (
-          <span style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: lst.c, background: lst.bg, borderRadius: 999, padding: '5px 12px' }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: lst.c, flex: 'none' }} />
-            {lst.label}
-          </span>
-        ) : (
+        {!hideMoney && (
           <div style={{ flex: 'none', textAlign: 'left' }}>
             <div style={{ fontSize: 10.5, color: '#AEB8C7', fontWeight: 400 }}>تكلفة الإطلاق التقديرية</div>
             <div style={{ fontSize: 15, fontWeight: 900, color: '#13213C', marginTop: 2 }}>{l.budgetLabel}</div>
           </div>
         )}
+        <span style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: lst.c, background: '#fff', border: '1px solid #E3E8F0', borderRadius: 999, padding: '5px 12px' }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: lst.c, flex: 'none' }} />
+          {lst.label}
+        </span>
       </div>
       {open && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 15px 15px', borderTop: '1px solid #E3E8F0' }}>
