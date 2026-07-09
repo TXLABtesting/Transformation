@@ -459,7 +459,7 @@ function EntityOverview({ vm }: { vm: VM }) {
         <div data-tour="cost-card" style={cardStyle}>
           <EoCardHead title="ملخص التكلفة التقديرية" iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-            <EoDonut frac={costDonut.frac} dark="#2563EB" light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} arcMeta={costArcMeta} />
+            <EoDonut frac={costDonut.frac} dark={costHov ? costHov.c : '#2563EB'} light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} arcMeta={costArcMeta} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {costItems.map((r) => (
                 <div
