@@ -571,12 +571,14 @@ function EntityOverview({ vm }: { vm: VM }) {
       {/* ===== Section 3: التوزيع حسب المرحلة (coordinator / path) ===== */}
       {useTypes && (() => {
         const sd = vm.stageDist[stageTab];
-        const tabs = [
-          { id: 'all', label: 'الكل' },
-          { id: 'projinit', label: 'مشروع / مبادرة' },
-          { id: 'operation', label: 'عملية' },
-          { id: 'service', label: 'خدمة' },
-        ] as const;
+        const tabs = (
+          [
+            { id: 'all', label: 'الكل' },
+            { id: 'projinit', label: 'مشروع / مبادرة' },
+            { id: 'operation', label: 'عملية' },
+            { id: 'service', label: 'خدمة' },
+          ] as const
+        ).filter((t) => t.id === 'all' || vm.streamTypeKeys.includes(t.id));
         const maxN = Math.max(...sd.stages.map((x) => x.n), 1);
         return (
           <>
@@ -891,8 +893,9 @@ function LpEntryRow({ e, launched }: { e: VM['batchSummary'][number]['launches']
       onMouseLeave={() => setHov(false)}
       style={{
         display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
-        border: '1px solid ' + (hov ? '#C7D6EE' : '#EEF1F7'), borderRadius: 11,
-        background: hov ? '#F4F8FE' : '#FBFCFE', cursor: 'pointer', transition: 'background .12s,border-color .12s',
+        border: '1px solid ' + (hov ? '#D3DEEE' : '#E9EDF4'), borderRadius: 11,
+        background: '#fff', boxShadow: hov ? '0 2px 8px -4px rgba(15,31,61,.14)' : '0 1px 2px rgba(15,31,61,.04)',
+        cursor: 'pointer', transition: 'box-shadow .12s,border-color .12s',
       }}
     >
       <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</span>
@@ -914,12 +917,12 @@ function LpLaunchCard({ l, idx, hideMoney }: { l: VM['batchSummary'][number]['la
       : 'dev';
   const lst = LPE_STATUS[lstatus];
   return (
-    <div style={{ border: '1px solid #E6EBF3', borderRadius: 14, background: '#fff', overflow: 'hidden' }}>
+    <div style={{ border: '1px solid #E6EBF3', borderRadius: 14, background: '#F3F5FA', overflow: 'hidden' }}>
       <div
         onClick={() => setOpen((o) => !o)}
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
-        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', cursor: 'pointer', background: hov ? '#FAFBFE' : '#fff', transition: 'background .12s' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', cursor: 'pointer', background: hov ? '#ECEFF5' : 'transparent', transition: 'background .12s' }}
       >
         <span style={{ width: 38, height: 38, flex: 'none', borderRadius: 11, background: '#EAF0FE', color: '#2563EB', fontWeight: 900, fontSize: 15, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</span>
         <Icon d={open ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} size={17} color="#AEB8C7" />
@@ -943,7 +946,7 @@ function LpLaunchCard({ l, idx, hideMoney }: { l: VM['batchSummary'][number]['la
         )}
       </div>
       {open && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 15px 15px', borderTop: '1px solid #ECF0F6' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 15px 15px', borderTop: '1px solid #E3E8F0' }}>
           <div style={{ height: 4 }} />
           {l.items.map((e) => (
             <LpEntryRow key={e.id} e={e} launched={l.launched} />
@@ -2031,8 +2034,33 @@ export function Dashboard({ vm }: { vm: VM }) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 12,
+              position: 'relative',
             }}
           >
+            {/* close button — only visible inside the mobile full-screen drawer */}
+            <button
+              data-r="railclose"
+              onClick={() => setMobileNav(false)}
+              aria-label="إغلاق القائمة"
+              style={{
+                display: 'none',
+                position: 'absolute',
+                right: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: 38,
+                height: 38,
+                borderRadius: 11,
+                border: '1px solid #E7ECF4',
+                background: '#fff',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              <Icon d="M18 6 6 18M6 6l12 12" size={18} color="#33405A" strokeWidth={2.2} />
+            </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="assets/uae-crest.png" alt="UAE" style={{ height: 46, flex: 'none' }} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2342,7 +2370,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>حالة المدخلات المرشحة</span>
                     <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>من أصل {vm.aiStats.total} مدخلات</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                  <div className="rgrid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                     <CmtMini value={vm.aiStats.nominatedHeads} label="مرشحة من رؤساء المسارات" info="ما رشّحه رؤساء المسارات وينتظر قرار اللجنة." />
                     <CmtMini value={vm.aiStats.nominatedCommittee} label="مرشحة للجنة الوطنية" info="ما رشّحته اللجنة الوطنية مباشرة وينتظر الاعتماد." />
                     <CmtMini value={vm.aiStats.funded} label="معتمدة للتمويل" green info="ما اعتمدته اللجنة الوطنية للتمويل." />
@@ -2904,11 +2932,11 @@ export function Dashboard({ vm }: { vm: VM }) {
                         const ord =
                           ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع', 'العاشر'][pi] || String(pi + 1);
                         return (
-                          <div key={p.id} style={{ border: '1px solid #EBEFF6', borderRadius: 12, overflow: 'hidden' }}>
+                          <div key={p.id} style={{ border: '1px solid #E6EBF3', borderRadius: 12, overflow: 'hidden', background: '#F3F5FA' }}>
                             <HoverDiv
                               onClick={() => setOpenLaunch(pOpen ? null : key)}
-                              base={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', cursor: 'pointer', background: '#FAFCFF' }}
-                              hover={{ background: '#F2F6FD' }}
+                              base={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', cursor: 'pointer', background: 'transparent' }}
+                              hover={{ background: '#ECEFF5' }}
                             >
                               <Icon d={pOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={14} color="#8A97AD" />
                               <span className="hd" style={{ flex: 'none', fontSize: 13, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>
@@ -2941,7 +2969,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                               </button>
                             </HoverDiv>
                             {pOpen && (
-                              <div style={{ padding: '14px 13px', borderTop: '1px solid #F0F3F8', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                              <div style={{ padding: '14px 13px', borderTop: '1px solid #E3E8F0', display: 'flex', flexDirection: 'column', gap: 14 }}>
                                 {/* 1) name / type / date */}
                                 <div data-r="form3" style={{ display: 'grid', gridTemplateColumns: '1fr 170px 150px', gap: 8 }}>
                                   <div>
@@ -2971,7 +2999,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                                   <div className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', marginBottom: 7 }}>
                                     ماذا سيشمل الإطلاق؟
                                   </div>
-                                  <div style={{ border: '1px solid #EBEFF6', borderRadius: 10, maxHeight: 220, overflowY: 'auto' }}>
+                                  <div style={{ border: '1px solid #E6EBF3', borderRadius: 10, maxHeight: 220, overflowY: 'auto', background: '#fff' }}>
                                     {p.items.length === 0 && (
                                       <div style={{ padding: '12px 13px', fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>لا توجد إضافات بعد.</div>
                                     )}
@@ -3560,17 +3588,25 @@ const BTN_BASE: React.CSSProperties = {
   justifyContent: 'center',
   gap: 6,
   fontSize: 12.5,
-  fontWeight: 700,
-  padding: '9px 12px',
-  borderRadius: 9,
+  fontWeight: 800,
+  padding: '10px 14px',
+  borderRadius: 10,
   cursor: 'pointer',
   fontFamily: 'inherit',
   lineHeight: 1,
 };
-const BTN_PRIMARY: React.CSSProperties = { ...BTN_BASE, background: '#2563EB', color: '#fff', border: 'none' };
-const BTN_APPROVE: React.CSSProperties = { ...BTN_BASE, background: '#0B8A4B', color: '#fff', border: 'none' };
-const BTN_REJECT: React.CSSProperties = { ...BTN_BASE, background: '#fff', border: '1px solid #F0D2CC', color: '#C0392B' };
-const BTN_NEUTRAL: React.CSSProperties = { ...BTN_BASE, background: '#fff', border: '1px solid #E4E9F2', color: '#64748B' };
+// One unified 3-tier button system.
+// primary   — filled brand blue, the main action
+// secondary — white with a blue outline, the alternative action
+// tertiary  — ghost / low-emphasis
+const BTN_PRIMARY: React.CSSProperties = { ...BTN_BASE, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', boxShadow: '0 8px 18px -8px rgba(37,99,235,.7)' };
+const BTN_SECONDARY: React.CSSProperties = { ...BTN_BASE, background: '#fff', border: '1px solid #D8E3F5', color: '#1D4ED8' };
+const BTN_TERTIARY: React.CSSProperties = { ...BTN_BASE, background: 'transparent', border: '1px solid transparent', color: '#54627B' };
+// semantic aliases map onto the three tiers (approve = primary, reject =
+// secondary, other neutral actions = secondary)
+const BTN_APPROVE = BTN_PRIMARY;
+const BTN_REJECT = BTN_SECONDARY;
+const BTN_NEUTRAL = BTN_SECONDARY;
 
 const CLOCK_D = 'M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z';
 const CHECK_D = 'M20 6 9 17l-5-5';
