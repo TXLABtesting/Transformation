@@ -1176,7 +1176,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  طلب معلومات إضافية
+                  طلب تفاصيل إضافية
                 </button>
                 <button
                   onClick={d.onApprove}
