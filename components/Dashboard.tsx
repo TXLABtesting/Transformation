@@ -571,12 +571,14 @@ function EntityOverview({ vm }: { vm: VM }) {
       {/* ===== Section 3: التوزيع حسب المرحلة (coordinator / path) ===== */}
       {useTypes && (() => {
         const sd = vm.stageDist[stageTab];
-        const tabs = [
-          { id: 'all', label: 'الكل' },
-          { id: 'projinit', label: 'مشروع / مبادرة' },
-          { id: 'operation', label: 'عملية' },
-          { id: 'service', label: 'خدمة' },
-        ] as const;
+        const tabs = (
+          [
+            { id: 'all', label: 'الكل' },
+            { id: 'projinit', label: 'مشروع / مبادرة' },
+            { id: 'operation', label: 'عملية' },
+            { id: 'service', label: 'خدمة' },
+          ] as const
+        ).filter((t) => t.id === 'all' || vm.streamTypeKeys.includes(t.id));
         const maxN = Math.max(...sd.stages.map((x) => x.n), 1);
         return (
           <>
@@ -2031,8 +2033,33 @@ export function Dashboard({ vm }: { vm: VM }) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 12,
+              position: 'relative',
             }}
           >
+            {/* close button — only visible inside the mobile full-screen drawer */}
+            <button
+              data-r="railclose"
+              onClick={() => setMobileNav(false)}
+              aria-label="إغلاق القائمة"
+              style={{
+                display: 'none',
+                position: 'absolute',
+                right: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: 38,
+                height: 38,
+                borderRadius: 11,
+                border: '1px solid #E7ECF4',
+                background: '#fff',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              <Icon d="M18 6 6 18M6 6l12 12" size={18} color="#33405A" strokeWidth={2.2} />
+            </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="assets/uae-crest.png" alt="UAE" style={{ height: 46, flex: 'none' }} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2342,7 +2369,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>حالة المدخلات المرشحة</span>
                     <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>من أصل {vm.aiStats.total} مدخلات</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                  <div className="rgrid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                     <CmtMini value={vm.aiStats.nominatedHeads} label="مرشحة من رؤساء المسارات" info="ما رشّحه رؤساء المسارات وينتظر قرار اللجنة." />
                     <CmtMini value={vm.aiStats.nominatedCommittee} label="مرشحة للجنة الوطنية" info="ما رشّحته اللجنة الوطنية مباشرة وينتظر الاعتماد." />
                     <CmtMini value={vm.aiStats.funded} label="معتمدة للتمويل" green info="ما اعتمدته اللجنة الوطنية للتمويل." />
@@ -3560,17 +3587,25 @@ const BTN_BASE: React.CSSProperties = {
   justifyContent: 'center',
   gap: 6,
   fontSize: 12.5,
-  fontWeight: 700,
-  padding: '9px 12px',
-  borderRadius: 9,
+  fontWeight: 800,
+  padding: '10px 14px',
+  borderRadius: 10,
   cursor: 'pointer',
   fontFamily: 'inherit',
   lineHeight: 1,
 };
-const BTN_PRIMARY: React.CSSProperties = { ...BTN_BASE, background: '#2563EB', color: '#fff', border: 'none' };
-const BTN_APPROVE: React.CSSProperties = { ...BTN_BASE, background: '#0B8A4B', color: '#fff', border: 'none' };
-const BTN_REJECT: React.CSSProperties = { ...BTN_BASE, background: '#fff', border: '1px solid #F0D2CC', color: '#C0392B' };
-const BTN_NEUTRAL: React.CSSProperties = { ...BTN_BASE, background: '#fff', border: '1px solid #E4E9F2', color: '#64748B' };
+// One unified 3-tier button system.
+// primary   — filled brand blue, the main action
+// secondary — white with a blue outline, the alternative action
+// tertiary  — ghost / low-emphasis
+const BTN_PRIMARY: React.CSSProperties = { ...BTN_BASE, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', boxShadow: '0 8px 18px -8px rgba(37,99,235,.7)' };
+const BTN_SECONDARY: React.CSSProperties = { ...BTN_BASE, background: '#fff', border: '1px solid #D8E3F5', color: '#1D4ED8' };
+const BTN_TERTIARY: React.CSSProperties = { ...BTN_BASE, background: 'transparent', border: '1px solid transparent', color: '#54627B' };
+// semantic aliases map onto the three tiers (approve = primary, reject =
+// secondary, other neutral actions = secondary)
+const BTN_APPROVE = BTN_PRIMARY;
+const BTN_REJECT = BTN_SECONDARY;
+const BTN_NEUTRAL = BTN_SECONDARY;
 
 const CLOCK_D = 'M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z';
 const CHECK_D = 'M20 6 9 17l-5-5';

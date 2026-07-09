@@ -255,12 +255,20 @@ function build(s: Store) {
     };
   });
 
-  // per-TYPE cards (coordinator view — التوزيع حسب نوع المدخل)
+  // per-TYPE cards (coordinator/stream-head view — التوزيع حسب نوع المدخل).
+  // Scoped to the types the stream actually has: العمليات stream has no
+  // services, so a coordinator there never sees «خدمة».
   const typeGroups = [
     { id: 'projinit', name: 'مشروع / مبادرة', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7', section: 'projects', match: (i: Item) => isProjInit(i.type) },
-    { id: 'operation', name: 'عملية', icon: 'M3 6h18M3 12h18M3 18h18', section: 'operations', match: (i: Item) => i.type === 'operation' },
-    { id: 'service', name: 'خدمة', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z', section: 'services', match: (i: Item) => i.type === 'service' },
+    ...(streamHasType(myPath, 'operation')
+      ? [{ id: 'operation', name: 'عملية', icon: 'M3 6h18M3 12h18M3 18h18', section: 'operations', match: (i: Item) => i.type === 'operation' }]
+      : []),
+    ...(streamHasType(myPath, 'service')
+      ? [{ id: 'service', name: 'خدمة', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z', section: 'services', match: (i: Item) => i.type === 'service' }]
+      : []),
   ];
+  // type keys available in the current stream (drives the type tabs/filters)
+  const streamTypeKeys = ['projinit', ...typeGroups.filter((g) => g.id !== 'projinit').map((g) => g.id)];
   const typeOverviewCards = typeGroups.map((g) => {
     const inType = roleBase.filter(g.match);
     const execCost = inType.reduce((a, i) => a + parseBudget(i.budget), 0);
@@ -983,6 +991,7 @@ function build(s: Store) {
     nomCard,
     streamOverviewCards,
     typeOverviewCards,
+    streamTypeKeys,
     stageDist,
     committeeStreamCards,
     showOpsKpi: effActivePath === 'all' || streamHasType(effActivePath, 'operation'),

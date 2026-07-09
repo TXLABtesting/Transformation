@@ -242,18 +242,38 @@ select {
   [data-r='cards'] { grid-template-columns: 1fr !important; }
   [data-r='reco'] { grid-template-columns: 1fr !important; }
   [data-r='dash-top'] { grid-template-columns: 1fr !important; }
-  /* ---- mobile navigation: hamburger drawer + «الكل» dropdown ---- */
-  /* hamburger button + «الكل» chevron become visible (inline display:none is
-     overridden here) */
-  [data-r='hamburger'], [data-r='navchev'] { display: inline-flex !important; }
+  /* ---- mobile navigation: full-screen hamburger drawer ---- */
+  /* hamburger button + «الكل» chevron + drawer close become visible */
+  [data-r='hamburger'], [data-r='navchev'], [data-r='railclose'] { display: inline-flex !important; }
   /* the rail is hidden until the hamburger opens it */
   [data-r='rail'].mnav-closed { display: none !important; }
-  /* when open it drops down as a full-width panel with a soft shadow */
+  /* when open it takes over the whole screen as a vertical menu */
   [data-r='rail'] {
-    border: 1px solid #e7ecf4 !important;
-    border-radius: 16px !important;
-    box-shadow: 0 20px 45px -22px rgba(2, 12, 35, .35) !important;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    z-index: 80 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow-y: auto !important;
   }
+  /* items run vertically, one under the other (override the ≤1100 row-wrap) */
+  [data-r='navlist'] {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    overflow: visible !important;
+    padding: 14px !important;
+    gap: 4px !important;
+  }
+  [data-r='navlist'] button {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    border-radius: 12px !important;
+    padding: 13px 14px !important;
+  }
+  /* restore the nav icons inside the drawer */
+  [data-r='navlist'] button > span:first-child { display: inline-flex !important; }
   /* stream/type sub-items stay collapsed under «الكل» until it is expanded */
   .mnav-collapsed { display: none !important; }
 }
