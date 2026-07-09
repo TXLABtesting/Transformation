@@ -395,12 +395,13 @@ function build(s: Store) {
     tech: { short: 'تقنيات الذكاء الاصطناعي والبيانات', color: '#2563EB' },
   };
   // مراحل التنفيذ / خطة الإطلاق title-row filters narrow the phase cards + their
-  // contents. Role scope is already baked into roleBase; committee (ai) can
-  // filter by entity AND stream, stream-head (path) by entity only.
+  // contents. Role scope is already baked into roleBase; committee (ai)
+  // filters by entity AND stream, stream-head (path) by entity only, entity
+  // rep by stream only (their entity is fixed).
   let batchBase = roleBase;
   if ((rawRole === 'ai' || rawRole === 'path') && ui.execEnt !== 'all')
     batchBase = batchBase.filter((i) => ent(i) === ui.execEnt);
-  if (rawRole === 'ai' && ui.execStream !== 'all')
+  if ((rawRole === 'ai' || rawRole === 'entity') && ui.execStream !== 'all')
     batchBase = batchBase.filter((i) => i.path === ui.execStream);
   const batchSummary = launchBatches().map((b) => {
     const inBatch = batchBase.filter((i) => i.execBatch === b.name);
@@ -452,9 +453,14 @@ function build(s: Store) {
           // the items THIS role can see, so it always matches the card totals
           const visItems = batchBase.filter((i) => (i.launchPlanIds || []).includes(p.id));
           const visCost = visItems.reduce((a, i) => a + parseBudget(i.budget), 0);
+          // scope chips: which streams/entities this launch spans (role-scoped)
+          const launchStreams = Array.from(new Set(visItems.map((i) => pathById(i.path).name)));
+          const launchEntities = Array.from(new Set(visItems.map((i) => ent(i))));
           return {
             id: p.id,
             title: p.title || 'خطة إطلاق جديدة',
+            streams: launchStreams,
+            entities: launchEntities,
             execLabel: visCost > 0 ? formatMoney(visCost) : '—',
             launchLabel: parseBudget(p.launchBudget) > 0 ? formatMoney(parseBudget(p.launchBudget)) : '',
             // launch-plan (خطة الإطلاق) display fields
@@ -468,6 +474,8 @@ function build(s: Store) {
                 id: i.id,
                 title: i.title,
                 typeLabel: typeLabel(i.type),
+                streamName: pathById(i.path).name,
+                entityName: ent(i),
                 budgetLabel: (i.budget || '').trim() || 'لم يتم تحديد الميزانية',
                 launched: ds === 'launched',
                 status: (ds === 'launched' ? 'done' : ds === 'developed' ? 'launch' : 'dev') as 'dev' | 'launch' | 'done',
@@ -1069,8 +1077,13 @@ function build(s: Store) {
       stream: ui.execStream,
       entOptions: [{ v: 'all', label: 'كل الجهات' }, ...entValues.map((e) => ({ v: e, label: e }))],
       streamOptions: [{ v: 'all', label: 'كل المسارات' }, ...PATHS.map((p) => ({ v: p.id, label: p.name }))],
+      // filters per role: committee = entities + streams, stream head =
+      // entities only, entity rep = streams only (their entity is fixed)
       showEnt: rawRole === 'ai' || rawRole === 'path',
-      showStream: rawRole === 'ai',
+      showStream: rawRole === 'ai' || rawRole === 'entity',
+      // scope-info chips on launch cards/entries follow the same logic
+      showStreamInfo: rawRole === 'ai' || rawRole === 'entity',
+      showEntInfo: rawRole === 'ai' || rawRole === 'path',
       // «المسار» breakdown row in exec phase cards is only meaningful across streams
       // (committee spans all streams; an entity spans several within itself)
       showStreamBreak: rawRole === 'ai' || rawRole === 'entity',

@@ -907,7 +907,22 @@ const LPE_STATUS: Record<'dev' | 'launch' | 'done', { label: string; c: string; 
   done: { label: 'تم الإطلاق', c: '#0B8A4B', bg: '#E6F6EE' },
 };
 
-function LpEntryRow({ e, launched }: { e: VM['batchSummary'][number]['launches'][number]['items'][number]; launched: boolean }) {
+// small scope chip (stream / entity) on launch cards and entry rows
+const LP_STREAM_IC = 'M4 20V10M10 20V4M16 20v-8M21 20H3';
+const LP_ENTITY_IC = 'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M15 9h.01M15 13h.01';
+function LpScopeChip({ label, iconD, title }: { label: string; iconD: string; title?: string }) {
+  return (
+    <span
+      title={title || label}
+      style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#42506B', background: '#EEF2F8', borderRadius: 999, padding: '3px 10px', maxWidth: 210, overflow: 'hidden' }}
+    >
+      <Icon d={iconD} size={11} color="#5A6B86" />
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+    </span>
+  );
+}
+
+function LpEntryRow({ e, launched, showStream, showEnt }: { e: VM['batchSummary'][number]['launches'][number]['items'][number]; launched: boolean; showStream?: boolean; showEnt?: boolean }) {
   const [hov, setHov] = useState(false);
   const st = LPE_STATUS[launched ? 'done' : e.status];
   return (
@@ -916,13 +931,15 @@ function LpEntryRow({ e, launched }: { e: VM['batchSummary'][number]['launches']
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
+        display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', flexWrap: 'wrap',
         border: '1px solid ' + (hov ? '#D3DEEE' : '#E9EDF4'), borderRadius: 11,
         background: '#fff', boxShadow: hov ? '0 2px 8px -4px rgba(15,31,61,.14)' : '0 1px 2px rgba(15,31,61,.04)',
         cursor: 'pointer', transition: 'box-shadow .12s,border-color .12s',
       }}
     >
-      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</span>
+      <span style={{ flex: 1, minWidth: 120, fontSize: 13, fontWeight: 700, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</span>
+      {showEnt && e.entityName && <LpScopeChip label={e.entityName} iconD={LP_ENTITY_IC} />}
+      {showStream && e.streamName && <LpScopeChip label={e.streamName} iconD={LP_STREAM_IC} />}
       <span style={{ flex: 'none', fontSize: 11, fontWeight: 700, color: '#64748B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>{e.typeLabel}</span>
       <span style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: st.c, background: st.bg, borderRadius: 999, padding: '4px 11px' }}>
         <span style={{ width: 6, height: 6, borderRadius: '50%', background: st.c, flex: 'none' }} />
@@ -933,9 +950,12 @@ function LpEntryRow({ e, launched }: { e: VM['batchSummary'][number]['launches']
   );
 }
 
-function LpLaunchCard({ l, idx, hideMoney }: { l: VM['batchSummary'][number]['launches'][number]; idx: number; hideMoney: boolean }) {
+function LpLaunchCard({ l, idx, hideMoney, showStream, showEnt }: { l: VM['batchSummary'][number]['launches'][number]; idx: number; hideMoney: boolean; showStream?: boolean; showEnt?: boolean }) {
   const [open, setOpen] = useState(false);
   const [hov, setHov] = useState(false);
+  // header scope summaries: exact name when single, count when several
+  const streamsLabel = l.streams.length === 1 ? l.streams[0] : l.streams.length === 2 ? 'مساران' : `${l.streams.length} مسارات`;
+  const entitiesLabel = l.entities.length === 1 ? l.entities[0] : l.entities.length === 2 ? 'جهتان' : `${l.entities.length} جهات`;
   // launch-level rollup for the header status pill (scoped to visible items)
   const lstatus: 'dev' | 'launch' | 'done' = l.launched
     ? 'done'
@@ -959,6 +979,8 @@ function LpLaunchCard({ l, idx, hideMoney }: { l: VM['batchSummary'][number]['la
             <Icon d="M3 6h18M3 12h18M3 18h18" size={11} color="#5A6B86" />
             إجمالي المدخلات <b style={{ color: '#13213C', fontWeight: 900 }}>{l.count}</b>
           </span>
+          {showEnt && l.entities.length > 0 && <LpScopeChip label={entitiesLabel} iconD={LP_ENTITY_IC} title={l.entities.join('، ')} />}
+          {showStream && l.streams.length > 0 && <LpScopeChip label={streamsLabel} iconD={LP_STREAM_IC} title={l.streams.join('، ')} />}
         </div>
         {!hideMoney && (
           <div style={{ flex: 'none', textAlign: 'left' }}>
@@ -975,7 +997,7 @@ function LpLaunchCard({ l, idx, hideMoney }: { l: VM['batchSummary'][number]['la
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 15px 15px', borderTop: '1px solid #E3E8F0' }}>
           <div style={{ height: 4 }} />
           {l.items.map((e) => (
-            <LpEntryRow key={e.id} e={e} launched={l.launched} />
+            <LpEntryRow key={e.id} e={e} launched={l.launched} showStream={showStream} showEnt={showEnt} />
           ))}
         </div>
       )}
@@ -983,7 +1005,7 @@ function LpLaunchCard({ l, idx, hideMoney }: { l: VM['batchSummary'][number]['la
   );
 }
 
-function LpPhaseCard({ b, hideMoney, onManage }: { b: VM['batchSummary'][number]; hideMoney: boolean; onManage?: () => void }) {
+function LpPhaseCard({ b, hideMoney, onManage, showStream, showEnt }: { b: VM['batchSummary'][number]; hideMoney: boolean; onManage?: () => void; showStream?: boolean; showEnt?: boolean }) {
   const [showAll, setShowAll] = useState(false);
   const launches = b.launches;
   const visible = showAll ? launches : launches.slice(0, 3);
@@ -1021,7 +1043,7 @@ function LpPhaseCard({ b, hideMoney, onManage }: { b: VM['batchSummary'][number]
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {visible.map((l, i) => (
-            <LpLaunchCard key={l.id} l={l} idx={i} hideMoney={hideMoney} />
+            <LpLaunchCard key={l.id} l={l} idx={i} hideMoney={hideMoney} showStream={showStream} showEnt={showEnt} />
           ))}
           {launches.length > 3 && (
             <button
@@ -1048,7 +1070,14 @@ function LaunchPlan({ vm, onManage }: { vm: VM; onManage?: (batch: string) => vo
       />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {vm.batchSummary.map((b) => (
-          <LpPhaseCard key={b.name} b={b} hideMoney={hideMoney} onManage={onManage ? () => onManage(b.name) : undefined} />
+          <LpPhaseCard
+            key={b.name}
+            b={b}
+            hideMoney={hideMoney}
+            onManage={onManage ? () => onManage(b.name) : undefined}
+            showStream={vm.execFilter.showStreamInfo}
+            showEnt={vm.execFilter.showEntInfo}
+          />
         ))}
       </div>
     </>
@@ -3561,11 +3590,11 @@ function ListView({ cards }: { cards: CardVM[] }) {
                         fontFamily: 'inherit',
                       }}
                     >
-                      اعتماد المدخل
+                      اعتماد
                     </button>
                     <button
-                      title="رفض المدخل"
-                      aria-label="رفض المدخل"
+                      title="رفض"
+                      aria-label="رفض"
                       onClick={(e) => {
                         stop(e);
                         c.onReject();
@@ -3677,8 +3706,9 @@ const BTN_SECONDARY: React.CSSProperties = { ...BTN_BASE, background: '#fff', bo
 const BTN_TERTIARY: React.CSSProperties = { ...BTN_BASE, background: 'transparent', border: '1px solid transparent', color: '#54627B' };
 // semantic aliases map onto the three tiers (approve = primary, reject =
 // secondary, other neutral actions = secondary)
-const BTN_APPROVE = BTN_PRIMARY;
-const BTN_REJECT = BTN_SECONDARY;
+// approval is always GREEN and rejection always RED — flat, no shadow
+const BTN_APPROVE: React.CSSProperties = { ...BTN_BASE, background: '#0B8A4B', color: '#fff', border: 'none' };
+const BTN_REJECT: React.CSSProperties = { ...BTN_BASE, background: '#fff', border: '1px solid #F0C4C8', color: '#C0303B' };
 const BTN_NEUTRAL = BTN_SECONDARY;
 
 const CLOCK_D = 'M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z';
@@ -4082,7 +4112,7 @@ function CardItem({ c }: { c: CardVM }) {
             style={{ ...BTN_APPROVE, flex: 1 }}
           >
             <Icon d={CHECK_D} size={13} color="#fff" strokeWidth={3} />
-            اعتماد المدخل
+            اعتماد
           </button>
           <button
             onClick={(e) => {
@@ -4091,7 +4121,7 @@ function CardItem({ c }: { c: CardVM }) {
             }}
             style={{ ...BTN_REJECT, flex: 1 }}
           >
-            رفض المدخل
+            رفض
           </button>
           <button
             onClick={(e) => {
