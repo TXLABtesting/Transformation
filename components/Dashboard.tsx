@@ -501,7 +501,7 @@ function EntityOverview({ vm }: { vm: VM }) {
         <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{sec2Title}</div>
         <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>{sec2Sub}</div>
       </div>
-      <div data-tour="type-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
+      <div data-r="seccards" data-tour="type-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
         {sec2Cards.map((st) => (
           <div key={st.id} data-tour="sec2-card" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>
@@ -2303,7 +2303,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب المسار</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع المدخلات حسب المسار ونوع المدخل.</div>
               </div>
-              <div data-tour="ai-streams" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
+              <div data-r="seccards" data-tour="ai-streams" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
                 {vm.committeeStreamCards.map((st) => (
                   <div key={st.id} data-tour="ai-stream-card" style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>

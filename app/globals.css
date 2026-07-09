@@ -230,6 +230,8 @@ select {
   /* المرحلة and الجهات cards stack in one column */
   [data-tour='stages'] { grid-template-columns: 1fr !important; }
   [data-r='entcards'] { grid-template-columns: 1fr !important; }
+  /* stream / type distribution cards (توزيع المدخلات حسب المسار) — one per row */
+  [data-r='seccards'] { grid-template-columns: 1fr !important; }
 }
 @media (max-width: 820px) {
   [data-r='cards'] { grid-template-columns: 1fr !important; }
