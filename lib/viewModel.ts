@@ -79,6 +79,9 @@ function build(s: Store) {
   else base = s.items;
 
   const effActivePath = role === 'path' ? myPath : ui.activePath;
+  // stream that scopes the FILTER BAR options: heads/coordinators are locked to
+  // their own stream; entity rep + committee follow the streams select.
+  const filterStream = role === 'path' ? myPath : ui.navStream || effActivePath;
 
   // visibility of drafts / ent1 — this is the role's whole universe: KPIs and
   // stats must count from it too, or numbers won't match the visible cards
@@ -95,9 +98,14 @@ function build(s: Store) {
   if (effActivePath !== 'all') visible = visible.filter((i) => i.path === effActivePath);
   // sidebar stream selection (entity rep / committee) narrows the list too
   if (ui.navStream) visible = visible.filter((i) => i.path === ui.navStream);
-  if (ui.filter !== 'all')
+  // a type filter that the selected stream doesn't offer falls back to «all»
+  const effTypeFilter =
+    ui.filter !== 'all' && ui.filter !== 'projinit' && filterStream !== 'all' && !streamHasType(filterStream, ui.filter as 'operation' | 'service')
+      ? 'all'
+      : ui.filter;
+  if (effTypeFilter !== 'all')
     visible = visible.filter((i) =>
-      ui.filter === 'projinit' ? isProjInit(i.type) : i.type === ui.filter
+      effTypeFilter === 'projinit' ? isProjInit(i.type) : i.type === effTypeFilter
     );
   // status filter
   if (ui.statusFilter !== 'all') visible = visible.filter((i) => statusMatch(i, ui.statusFilter, rawRole, s));
@@ -564,12 +572,16 @@ function build(s: Store) {
   // path filter (ai only) + entity filter options
   const pathOptions = [{ v: 'all', label: 'جميع المسارات' }, ...PATHS.map((p) => ({ v: p.id, label: p.name }))];
   const entValues = Array.from(new Set([...s.items.map((i) => ent(i)), entityName]));
-  const entOptions = [{ v: 'all', label: 'جميع الجهات' }, ...entValues.map((e) => ({ v: e, label: e }))];
+  // the filter-bar options follow the selected stream: only entities and input
+  // types that actually exist in that stream are offered
+  const entScope = filterStream === 'all' ? s.items : s.items.filter((i) => i.path === filterStream);
+  const entFilterValues = filterStream === 'all' ? entValues : Array.from(new Set(entScope.map((i) => ent(i))));
+  const entOptions = [{ v: 'all', label: 'جميع الجهات' }, ...entFilterValues.map((e) => ({ v: e, label: e }))];
   const typeOptions = [
     { v: 'all', label: 'جميع الأنواع' },
     { v: 'projinit', label: 'مشروع / مبادرة' },
-    { v: 'operation', label: 'عملية' },
-    { v: 'service', label: 'خدمة' },
+    ...(filterStream === 'all' || streamHasType(filterStream, 'operation') ? [{ v: 'operation', label: 'عملية' }] : []),
+    ...(filterStream === 'all' || streamHasType(filterStream, 'service') ? [{ v: 'service', label: 'خدمة' }] : []),
   ];
   // is any filter currently active (drives the reset button + count)
   const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!(ui.search || '').trim();
@@ -999,7 +1011,7 @@ function build(s: Store) {
     notAiRole: !isAiRole,
     // filters
     tabs,
-    filterValue: ui.filter,
+    filterValue: effTypeFilter,
     statusOptions,
     statusFilterValue: ui.statusFilter,
     emptyDesc,

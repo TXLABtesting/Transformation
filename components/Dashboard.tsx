@@ -2559,13 +2559,16 @@ export function Dashboard({ vm }: { vm: VM }) {
                     <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" size={15} color="#9AA6BC" />
                   </span>
                 </div>
-                <select value={vm.pathFilterValue} onChange={(e) => { const v = e.target.value; if (vm.role === 'entity' || vm.role === 'ai') s.setNavStream(v === 'all' ? null : v); else s.setActivePath(v); }} style={{ ...selectStyle, width: 'auto', minWidth: 170, maxWidth: 280 }}>
-                  {vm.pathOptions.map((o) => (
-                    <option key={o.v} value={o.v}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                {/* heads/coordinators are locked to their own stream — no streams filter */}
+                {vm.role !== 'path' && vm.role !== 'coord' && (
+                  <select value={vm.pathFilterValue} onChange={(e) => { const v = e.target.value; if (vm.role === 'entity' || vm.role === 'ai') s.setNavStream(v === 'all' ? null : v); else s.setActivePath(v); }} style={{ ...selectStyle, width: 'auto', minWidth: 170, maxWidth: 280 }}>
+                    {vm.pathOptions.map((o) => (
+                      <option key={o.v} value={o.v}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 {vm.showEntFilter && (
                   <EntityFilter value={vm.entFilterValue} options={vm.entOptions} onChange={(v) => s.setEntFilter(v)} />
                 )}
