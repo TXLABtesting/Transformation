@@ -339,18 +339,22 @@ select {
     font-size: 14.5px !important;
   }
   [data-r='filters'].mfilters-open > button { height: 46px !important; font-size: 14px !important; }
-  /* the entity picker (custom dropdown) stretches like the native selects */
-  [data-r='filters'].mfilters-open [data-r='entfilter'] > div:first-of-type {
+  /* the custom dropdowns (entity picker + filter selects) stretch full width */
+  [data-r='filters'].mfilters-open [data-r='entfilter'],
+  [data-r='filters'].mfilters-open [data-r='fselect'] { width: 100% !important; }
+  [data-r='filters'].mfilters-open [data-r='entfilter'] > div:first-of-type,
+  [data-r='filters'].mfilters-open [data-r='fselect'] > div:first-of-type {
     display: flex !important;
     width: 100% !important;
     height: 46px;
     align-items: center;
   }
-  [data-r='filters'].mfilters-open [data-r='entfilter'] > div:last-of-type:not(:first-of-type) { width: 100% !important; max-width: 100% !important; }
-  /* the entity dropdown panel anchors LEFT to its trigger, which shoves it
-     off-screen in RTL on phones — anchor it to the trigger's right edge so it
-     always opens inward */
-  [data-r='entfilter'] > div:last-of-type:not(:first-of-type) {
+  [data-r='filters'].mfilters-open [data-r='entfilter'] > div:last-of-type:not(:first-of-type),
+  [data-r='filters'].mfilters-open [data-r='fselect'] > div:last-of-type:not(:first-of-type) { width: 100% !important; max-width: 100% !important; }
+  /* dropdown panels anchor LEFT to their trigger, which shoves them off-screen
+     in RTL on phones — anchor to the trigger's right edge so they open inward */
+  [data-r='entfilter'] > div:last-of-type:not(:first-of-type),
+  [data-r='fselect'] > div:last-of-type:not(:first-of-type) {
     left: auto !important;
     right: 0 !important;
   }
