@@ -9,16 +9,19 @@ import type { Item } from './domain';
 import type { LaunchPlan } from './domain';
 
 export const DEMO_DATA = process.env.NEXT_PUBLIC_DEMO_DATA === '1';
+// Server-side opt-in for the DB seed (prisma/seed.ts): loads the sample
+// portfolio into a demo/staging database. Never set in production.
+const demoSeedOn = () => DEMO_DATA || process.env.SEED_DEMO_ITEMS === '1';
 
 const T = (s: string) => Date.parse(s); // fixed, deterministic timestamps
 
 export function seedItems(): Item[] {
-  if (!DEMO_DATA) return [];
+  if (!demoSeedOn()) return [];
   return demoItems();
 }
 
 export function seedLaunchPlans(): LaunchPlan[] {
-  if (!DEMO_DATA) return [];
+  if (!demoSeedOn()) return [];
   return demoLaunchPlans();
 }
 

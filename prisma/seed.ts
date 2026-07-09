@@ -247,6 +247,11 @@ async function main() {
     });
   }
 
+  // 7+8) DEMO PORTFOLIO — sample launch plans + items. OFF by default:
+  // production starts with an EMPTY portfolio (reference data + accounts
+  // only). Set SEED_DEMO_ITEMS=1 for a demo/staging database.
+  let created = 0;
+  if (process.env.SEED_DEMO_ITEMS === '1') {
   // 7) Centrally managed launch plans (إدارة خطط الإطلاق)
   for (const lp of seedLaunchPlans()) {
     await prisma.launchPlan.upsert({
@@ -268,7 +273,6 @@ async function main() {
   }
 
   // 8) Items — decomposed into relational rows
-  let created = 0;
   for (const m of seedItems()) {
     const exists = await prisma.item.findUnique({ where: { id: m.id } });
     if (exists) continue;
@@ -404,6 +408,7 @@ async function main() {
     }
     created++;
   }
+  } // end SEED_DEMO_ITEMS
 
   const counts = {
     roles: await prisma.role.count(),

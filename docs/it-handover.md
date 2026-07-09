@@ -29,6 +29,11 @@ cp .env.example .env         # fill in the (REQUIRED) values
 docker compose up --build    # app on :3000, Postgres on :5432
 ```
 
+The seed loads **reference data and starter accounts only** — streams,
+entities, phases, stages, roles/permissions, and the placeholder users. The
+portfolio starts **empty**; set `SEED_DEMO_ITEMS=1` only on a demo/staging
+database if sample items are wanted.
+
 **What IT changes:** only the values in `.env` (DB URL, `SESSION_SECRET`,
 UAE PASS client id/secret/redirect, optional AI endpoint). No code edits are
 required. `NEXT_PUBLIC_*` values are build-time — set them before the build.
