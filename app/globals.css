@@ -306,6 +306,9 @@ select {
   /* keep the count badge next to its label instead of drifting to the far edge */
   [data-r='navcount'] { margin-inline-start: 8px !important; font-size: 12.5px !important; }
   [data-tour='basket'] button { font-size: 15px !important; padding: 13px 15px !important; }
+  /* the usage-guide card returns inside the full-screen drawer (the ≤1100
+     tablet row-nav hides it) */
+  [data-r='rail'] [data-r='railhelp'] { display: block !important; }
   /* stream/type sub-items stay collapsed under «الكل» until it is expanded */
   .mnav-collapsed { display: none !important; }
 }
