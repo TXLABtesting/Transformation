@@ -894,16 +894,14 @@ const LPE_STATUS: Record<'dev' | 'launch' | 'done', { label: string; c: string; 
   done: { label: 'تم الإطلاق', c: '#0B8A4B', bg: '#E6F6EE' },
 };
 
-// small scope chip (stream / entity) on launch cards and entry rows
-const LP_STREAM_IC = 'M4 20V10M10 20V4M16 20v-8M21 20H3';
-const LP_ENTITY_IC = 'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M15 9h.01M15 13h.01';
-function LpScopeChip({ label, iconD, title }: { label: string; iconD: string; title?: string }) {
+// small scope chip (stream / entity) on launch cards and entry rows —
+// white like the neighbouring pills, text only
+function LpScopeChip({ label, title }: { label: string; title?: string }) {
   return (
     <span
       title={title || label}
-      style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#42506B', background: '#EEF2F8', borderRadius: 999, padding: '3px 10px', maxWidth: 210, overflow: 'hidden' }}
+      style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 700, color: '#42506B', background: '#fff', border: '1px solid #E3E8F0', borderRadius: 999, padding: '3px 10px', maxWidth: 230, overflow: 'hidden' }}
     >
-      <Icon d={iconD} size={11} color="#5A6B86" />
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
     </span>
   );
@@ -925,8 +923,8 @@ function LpEntryRow({ e, launched, showStream, showEnt }: { e: VM['batchSummary'
       }}
     >
       <span style={{ flex: 1, minWidth: 120, fontSize: 13, fontWeight: 700, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</span>
-      {showEnt && e.entityName && <LpScopeChip label={e.entityName} iconD={LP_ENTITY_IC} />}
-      {showStream && e.streamName && <LpScopeChip label={e.streamName} iconD={LP_STREAM_IC} />}
+      {showEnt && e.entityName && <LpScopeChip label={e.entityName} />}
+      {showStream && e.streamName && <LpScopeChip label={'مسار ' + e.streamName} />}
       <span style={{ flex: 'none', fontSize: 11, fontWeight: 700, color: '#64748B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>{e.typeLabel}</span>
       <span style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: st.c, background: st.bg, borderRadius: 999, padding: '4px 11px' }}>
         <span style={{ width: 6, height: 6, borderRadius: '50%', background: st.c, flex: 'none' }} />
@@ -941,7 +939,7 @@ function LpLaunchCard({ l, idx, hideMoney, showStream, showEnt }: { l: VM['batch
   const [open, setOpen] = useState(false);
   const [hov, setHov] = useState(false);
   // header scope summaries: exact name when single, count when several
-  const streamsLabel = l.streams.length === 1 ? l.streams[0] : l.streams.length === 2 ? 'مساران' : `${l.streams.length} مسارات`;
+  const streamsLabel = l.streams.length === 1 ? 'مسار ' + l.streams[0] : l.streams.length === 2 ? 'مساران' : `${l.streams.length} مسارات`;
   const entitiesLabel = l.entities.length === 1 ? l.entities[0] : l.entities.length === 2 ? 'جهتان' : `${l.entities.length} جهات`;
   // launch-level rollup for the header status pill (scoped to visible items)
   const lstatus: 'dev' | 'launch' | 'done' = l.launched
@@ -966,8 +964,8 @@ function LpLaunchCard({ l, idx, hideMoney, showStream, showEnt }: { l: VM['batch
             <Icon d="M3 6h18M3 12h18M3 18h18" size={11} color="#5A6B86" />
             إجمالي المدخلات <b style={{ color: '#13213C', fontWeight: 900 }}>{l.count}</b>
           </span>
-          {showEnt && l.entities.length > 0 && <LpScopeChip label={entitiesLabel} iconD={LP_ENTITY_IC} title={l.entities.join('، ')} />}
-          {showStream && l.streams.length > 0 && <LpScopeChip label={streamsLabel} iconD={LP_STREAM_IC} title={l.streams.join('، ')} />}
+          {showEnt && l.entities.length > 0 && <LpScopeChip label={entitiesLabel} title={l.entities.join('، ')} />}
+          {showStream && l.streams.length > 0 && <LpScopeChip label={streamsLabel} title={l.streams.map((n) => 'مسار ' + n).join('، ')} />}
         </div>
         {!hideMoney && (
           <div style={{ flex: 'none', textAlign: 'left' }}>
