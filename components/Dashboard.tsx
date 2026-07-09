@@ -518,21 +518,12 @@ function EntityOverview({ vm }: { vm: VM }) {
             <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
               <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>توزيع المدخلات حسب المراحل</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {(() => {
-                  const maxN = Math.max(...st.stages.map((x) => x.n), 1);
-                  return st.stages.map((sg) => {
-                    const pct = sg.n === 0 ? 0 : Math.max(6, Math.round((sg.n / maxN) * 100));
-                    return (
-                      <div key={sg.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400, flex: 'none', minWidth: 82, textAlign: 'right' }}>{sg.label}</span>
-                        <div style={{ flex: 1, height: 9, background: '#E9EEF7', borderRadius: 999, position: 'relative', overflow: 'hidden', minWidth: 40 }}>
-                          <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: pct + '%', background: '#3B6FE8', borderRadius: 999 }} />
-                        </div>
-                        <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', flex: 'none', minWidth: 12, textAlign: 'left' }}>{sg.n}</span>
-                      </div>
-                    );
-                  });
-                })()}
+                {st.stages.map((sg) => (
+                  <div key={sg.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                    <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400 }}>{sg.label}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{sg.n}</span>
+                  </div>
+                ))}
               </div>
             </div>
             <div style={{ height: 1, background: '#EEF1F6', marginTop: 'auto' }} />
@@ -579,7 +570,6 @@ function EntityOverview({ vm }: { vm: VM }) {
             { id: 'service', label: 'خدمة' },
           ] as const
         ).filter((t) => t.id === 'all' || vm.streamTypeKeys.includes(t.id));
-        const maxN = Math.max(...sd.stages.map((x) => x.n), 1);
         return (
           <>
             <div>
@@ -604,16 +594,16 @@ function EntityOverview({ vm }: { vm: VM }) {
                 <span style={{ fontSize: 34, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{sd.total}</span>
                 <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>إجمالي المدخلات</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginTop: 18, height: 200 }}>
+              {/* numbers only — one tile per stage (hover keeps the numeric breakdown) */}
+              <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginTop: 18 }}>
                 {sd.stages.map((sg) => {
-                  const hpct = sg.n === 0 ? 0 : Math.max(6, Math.round((sg.n / maxN) * 100));
                   const on = hovBar === sg.label;
                   return (
                     <div
                       key={sg.label}
                       onMouseEnter={() => setHovBar(sg.label)}
                       onMouseLeave={() => setHovBar(null)}
-                      style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, height: '100%', cursor: 'default' }}
+                      style={{ position: 'relative', background: on ? '#F2F7FF' : '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 14, padding: '16px 16px', textAlign: 'center', cursor: 'default', transition: 'background .12s' }}
                     >
                       {on && (
                         <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 10, background: '#16233F', borderRadius: 14, padding: '11px 16px', boxShadow: '0 14px 30px -10px rgba(11,27,58,.55)', zIndex: 6, minWidth: 150, pointerEvents: 'none' }}>
@@ -628,11 +618,8 @@ function EntityOverview({ vm }: { vm: VM }) {
                           </div>
                         </div>
                       )}
-                      <span style={{ fontSize: 15, fontWeight: 800, color: on ? '#1D4ED8' : '#13213C', transition: 'color .12s' }}>{sg.n}</span>
-                      <div style={{ position: 'relative', flex: 1, width: '100%', background: '#EEF3FB', borderRadius: 14, overflow: 'hidden', minHeight: 0 }}>
-                        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: hpct + '%', background: on ? '#1D4ED8' : '#3B6FE8', borderRadius: 14, transition: 'background .12s' }} />
-                      </div>
-                      <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400 }}>{sg.label}</span>
+                      <div style={{ fontSize: 26, fontWeight: 800, color: on ? '#1D4ED8' : '#13213C', lineHeight: 1, transition: 'color .12s' }}>{sg.n}</div>
+                      <div style={{ fontSize: 12, color: '#54627B', fontWeight: 400, marginTop: 8 }}>{sg.label}</div>
                     </div>
                   );
                 })}
@@ -2456,25 +2443,22 @@ export function Dashboard({ vm }: { vm: VM }) {
                       <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.entCount}</span>
                     </div>
                     <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 9 }}>
-                        <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>توزيع المدخلات حسب النوع</span>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{st.total}</span>
-                      </div>
+                      <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 9, textAlign: 'right' }}>توزيع المدخلات حسب النوع</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                          <span style={{ fontSize: 12, color: '#13213C', fontWeight: 800 }}>الإجمالي</span>
+                          <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.total}</span>
+                        </div>
                         {(() => {
-                          const maxN = Math.max(...st.byType.map((x) => x.n), 1);
-                          return st.byType.map((tp) => {
-                            const pct = tp.n === 0 ? 0 : Math.max(6, Math.round((tp.n / maxN) * 100));
-                            return (
-                              <div key={tp.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400, flex: 'none', minWidth: 94, textAlign: 'right' }}>{tp.label}</span>
-                                <div style={{ flex: 1, height: 9, background: '#E9EEF7', borderRadius: 999, position: 'relative', overflow: 'hidden', minWidth: 34 }}>
-                                  <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: pct + '%', background: '#3B6FE8', borderRadius: 999 }} />
-                                </div>
-                                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', flex: 'none', minWidth: 12, textAlign: 'left' }}>{tp.n}</span>
+                          const order = ['مشروع / مبادرة', 'خدمة', 'عملية'];
+                          return [...st.byType]
+                            .sort((a, b) => order.indexOf(a.label) - order.indexOf(b.label))
+                            .map((tp) => (
+                              <div key={tp.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                                <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400 }}>{tp.label}</span>
+                                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{tp.n}</span>
                               </div>
-                            );
-                          });
+                            ));
                         })()}
                       </div>
                     </div>
@@ -2499,14 +2483,11 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                   <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 22px', marginTop: -8, display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {vm.entityRanking.map((r) => (
-                      <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                        <div className="hd" style={{ width: 300, flex: 'none', textAlign: 'right', fontSize: 14, fontWeight: 800, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
-                        <div style={{ flex: 1, height: 10, background: '#EFF2F7', borderRadius: 999, position: 'relative', overflow: 'hidden', minWidth: 60 }}>
-                          <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: Math.max(6, Math.round(r.frac * 100)) + '%', borderRadius: 999, background: r.top ? 'linear-gradient(90deg,#7DA9F7,#2563EB)' : '#1E2F4F' }} />
-                        </div>
-                        <div style={{ width: 64, flex: 'none', textAlign: 'center' }}>
-                          <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{r.n}</div>
-                          <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>مدخلات</div>
+                      <div key={r.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+                        <div className="hd" style={{ minWidth: 0, textAlign: 'right', fontSize: 14, fontWeight: 800, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                        <div style={{ flex: 'none', display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                          <span style={{ fontSize: 17, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{r.n}</span>
+                          <span style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400 }}>مدخلات</span>
                         </div>
                       </div>
                     ))}
