@@ -346,13 +346,13 @@ function EntityOverview({ vm }: { vm: VM }) {
   // cost legend items (hoverable)
   const costItems = [
     { key: 'exec', label: 'تكلفة التنفيذ', short: 'تكلفة التنفيذ', val: cc.execLabel, pct: cc.execPct, frac: cc.execFrac, c: '#2563EB' },
-    { key: 'launch', label: 'تكلفة الإطلاق', short: 'تكلفة الإطلاق', val: cc.launchLabel, pct: cc.launchPct, frac: 1 - cc.execFrac, c: '#BFD3F5' },
+    { key: 'launch', label: 'تكلفة الإطلاق', short: 'تكلفة الإطلاق', val: cc.launchLabel, pct: cc.launchPct, frac: 1 - cc.execFrac, c: '#16408F' },
   ];
   const costHov = costItems.find((x) => x.key === hovCost);
   const costM = costHov ? money(costHov.val) : costTot;
   const costDonut = costHov
     ? { frac: clampFrac(costHov.frac), light: '#EDF1F8', top: costHov.short, center: costM.num, sub: costM.unit }
-    : { frac: cc.execFrac, light: '#BFD3F5', top: 'إجمالي التكلفة', center: costTot.num, sub: costTot.unit };
+    : { frac: cc.execFrac, light: '#16408F', top: 'إجمالي التكلفة', center: costTot.num, sub: costTot.unit };
   // arc-level hover figures for the cost donut (exec = dark arc, launch = light arc)
   const execM = money(cc.execLabel);
   const launchM = money(cc.launchLabel);
