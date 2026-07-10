@@ -519,11 +519,6 @@ export function Overlays({ vm }: { vm: VM }) {
               </button>
             </div>
             <div style={{ padding: '0 22px', maxHeight: '52vh', overflowY: 'auto' }}>
-              {vm.reqModal.mode !== 'info' && (
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', marginBottom: 8 }}>
-                  سبب الرفض والملاحظات المطلوبة<span style={{ color: '#94A3B8' }}>*</span>
-                </div>
-              )}
               <textarea
                 value={vm.reqModal.note}
                 onChange={(e) => s.setReqNote(e.target.value)}
