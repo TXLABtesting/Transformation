@@ -499,7 +499,7 @@ export function Overlays({ vm }: { vm: VM }) {
             <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>
-                  {vm.reqModal.mode === 'info' ? 'طلب تفاصيل إضافية' : 'الاعتذار عن الاعتماد'}
+                  {vm.reqModal.mode === 'info' ? 'طلب تفاصيل إضافية' : 'سبب الرفض'}
                 </div>
               </div>
               <button
@@ -519,10 +519,15 @@ export function Overlays({ vm }: { vm: VM }) {
               </button>
             </div>
             <div style={{ padding: '0 22px', maxHeight: '52vh', overflowY: 'auto' }}>
+              {vm.reqModal.mode !== 'info' && (
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', marginBottom: 8 }}>
+                  سبب الرفض والملاحظات المطلوبة<span style={{ color: '#94A3B8' }}>*</span>
+                </div>
+              )}
               <textarea
                 value={vm.reqModal.note}
                 onChange={(e) => s.setReqNote(e.target.value)}
-                placeholder="نرجو التكرم بتوضيح النقاط أو الحقول المطلوب استكمالها أو تصحيحها قبل الاعتماد…"
+                placeholder={vm.reqModal.mode === 'info' ? 'نرجو التكرم بتوضيح النقاط أو الحقول المطلوب استكمالها أو تصحيحها قبل الاعتماد…' : 'يرجى توضيح مبررات الرفض، مع تحديد الملاحظات المطلوب معالجتها قبل إعادة المراجعة.'}
                 style={{
                   width: '100%',
                   minHeight: 130,
@@ -555,13 +560,14 @@ export function Overlays({ vm }: { vm: VM }) {
               </button>
               <button
                 onClick={() => s.confirmReqModal()}
+                className={vm.reqModal.mode === 'info' ? undefined : 'btn-danger'}
                 style={{
                   flex: 1,
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  background: BLUE_GRAD,
+                  background: vm.reqModal.mode === 'info' ? BLUE_GRAD : '#DC2626',
                   color: '#fff',
                   border: 'none',
                   borderRadius: 12,
@@ -569,11 +575,11 @@ export function Overlays({ vm }: { vm: VM }) {
                   fontWeight: 800,
                   fontSize: 14,
                   cursor: 'pointer',
-                  boxShadow: BLUE_SHADOW,
+                  boxShadow: vm.reqModal.mode === 'info' ? BLUE_SHADOW : 'none',
                 }}
               >
                 <Icon d={IC_SEND} size={17} color="#fff" />
-                {vm.reqModal.mode === 'info' ? 'إرسال الطلب' : 'تأكيد عدم الاعتماد'}
+                {vm.reqModal.mode === 'info' ? 'إرسال الطلب' : 'تأكيد الرفض'}
               </button>
             </div>
           </div>

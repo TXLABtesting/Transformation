@@ -378,3 +378,6 @@ select {
   [data-r='statband'] > div { border-left: none !important; }
   [data-r='statband'] > div + div { border-top: 1px solid #ebeff6 !important; }
 }
+
+/* rejection CTA: slightly darker red on hover (inline styles can't hover) */
+.btn-danger:hover { background: #B91C1C !important; }
