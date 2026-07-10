@@ -461,51 +461,32 @@ export function DetailPanel({ vm }: { vm: VM }) {
               gap: 12,
             }}
           >
-            <div>
-              <div style={labelStyle}>الوصف</div>
-              <RichTextView html={d.desc} style={{ fontSize: 13.5, color: '#54627B', lineHeight: 1.8 }} />
-            </div>
-            <div style={{ height: 1, background: '#EAEEF5', margin: '2px 0 4px' }} />
+            <DetailGrid cols={1}>
+              <DetailCell label="الوصف">
+                <RichTextView html={d.desc} style={{ fontSize: 13.5, color: '#33415C', lineHeight: 1.8, fontWeight: 400 }} />
+              </DetailCell>
+            </DetailGrid>
 
             {/* --- PROJECT / INITIATIVE --- */}
             {d.isProj && (
               <>
-                <div>
-                  <div style={labelStyle}>المخرجات المتوقعة</div>
-                  <RichTextView html={d.expectedOutputs} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
-                </div>
-                <div>
-                  <div style={labelStyle}>النتائج المتوقعة</div>
-                  <RichTextView html={d.expectedOutcomes} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
-                </div>
-                <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                  <div>
-                    <div style={labelStyle}>الأثر المتوقع</div>
-                    <RichTextView html={d.expectedImpact} style={valueStyle} />
-                  </div>
-                  <div>
-                    <div style={labelStyle}>نماذج الذكاء</div>
-                    <div style={valueStyle}>{d.aiModels}</div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>نسبة التحول</div>
-                    <div style={valueStyle}>{d.targetPct}%</div>
-                  </div>
-                </div>
-                <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                  <div>
-                    <div style={labelStyle}>قابلية التحول</div>
-                    <div><TransformPill v={d.transformability} /></div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>أولوية التحول</div>
-                    <div><LevelPill v={d.transformPriority} /></div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>جاهزية التحول</div>
-                    <div style={valueStyle}>{d.readiness}</div>
-                  </div>
-                </div>
+                <DetailSecHead title="النتائج المتوقعة" />
+                <DetailGrid cols={2}>
+                  <DetailCell label="المخرجات المتوقعة"><RichTextView html={d.expectedOutputs} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
+                  <DetailCell label="النتائج المتوقعة"><RichTextView html={d.expectedOutcomes} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
+                </DetailGrid>
+                <DetailGrid cols={3}>
+                  <DetailCell label="الأثر المتوقع"><RichTextView html={d.expectedImpact} style={valueStyle} /></DetailCell>
+                  <DetailCell label="نماذج الذكاء">{d.aiModels}</DetailCell>
+                  <DetailCell label="نسبة التحول">{d.targetPct}%</DetailCell>
+                </DetailGrid>
+
+                <DetailSecHead title="جاهزية التحول" />
+                <DetailGrid cols={3}>
+                  <DetailCell label="قابلية التحول"><TransformPill v={d.transformability} /></DetailCell>
+                  <DetailCell label="أولوية التحول"><LevelPill v={d.transformPriority} /></DetailCell>
+                  <DetailCell label="جاهزية التحول">{d.readiness}</DetailCell>
+                </DetailGrid>
               </>
             )}
 
@@ -552,66 +533,39 @@ export function DetailPanel({ vm }: { vm: VM }) {
             {/* --- OUTCOMES for non-project types (entered in step 3) --- */}
             {!d.isProj && (d.expectedOutputs || d.expectedOutcomes || d.expectedImpact || !!d.targetPct || !!d.aiModels) && (
               <>
-                {d.expectedOutputs && (
-                  <div>
-                    <div style={labelStyle}>المخرجات المتوقعة</div>
-                    <RichTextView html={d.expectedOutputs} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
-                  </div>
+                <DetailSecHead title="النتائج المتوقعة" />
+                {(d.expectedOutputs || d.expectedOutcomes) && (
+                  <DetailGrid cols={d.expectedOutputs && d.expectedOutcomes ? 2 : 1}>
+                    {d.expectedOutputs ? <DetailCell label="المخرجات المتوقعة"><RichTextView html={d.expectedOutputs} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell> : null}
+                    {d.expectedOutcomes ? <DetailCell label="النتائج المتوقعة"><RichTextView html={d.expectedOutcomes} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell> : null}
+                  </DetailGrid>
                 )}
-                {d.expectedOutcomes && (
-                  <div>
-                    <div style={labelStyle}>النتائج المتوقعة</div>
-                    <RichTextView html={d.expectedOutcomes} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
-                  </div>
-                )}
-                <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                  {d.expectedImpact && (
-                    <div>
-                      <div style={labelStyle}>الأثر المتوقع</div>
-                      <RichTextView html={d.expectedImpact} style={valueStyle} />
-                    </div>
-                  )}
-                  {!!d.aiModels && (
-                    <div>
-                      <div style={labelStyle}>نماذج الذكاء</div>
-                      <div style={valueStyle}>{d.aiModels}</div>
-                    </div>
-                  )}
-                  {!!d.targetPct && (
-                    <div>
-                      <div style={labelStyle}>نسبة التحول</div>
-                      <div style={valueStyle}>{d.targetPct}%</div>
-                    </div>
-                  )}
-                </div>
+                {(() => {
+                  const cells = [
+                    ...(d.expectedImpact ? [<DetailCell key="imp" label="الأثر المتوقع"><RichTextView html={d.expectedImpact} style={valueStyle} /></DetailCell>] : []),
+                    ...(d.aiModels ? [<DetailCell key="ai" label="نماذج الذكاء">{d.aiModels}</DetailCell>] : []),
+                    ...(d.targetPct ? [<DetailCell key="pct" label="نسبة التحول">{d.targetPct}%</DetailCell>] : []),
+                  ];
+                  return cells.length ? <DetailGrid cols={Math.min(3, cells.length)}>{cells}</DetailGrid> : null;
+                })()}
               </>
             )}
 
             {/* --- SERVICE --- */}
             {d.isSvc && (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-                  <div>
-                    <div style={labelStyle}>مالك الخدمة</div>
-                    <div style={valueStyle}>{d.serviceOwner}</div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>الفئة المستهدفة</div>
-                    <div style={valueStyle}>{d.targetUsers}</div>
-                  </div>
-                </div>
-                <div>
-                  <div style={labelStyle}>رحلة المتعامل الحالية</div>
-                  <RichTextView html={d.currentJourney} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
-                </div>
-                <div>
-                  <div style={labelStyle}>نقاط الألم</div>
-                  <RichTextView html={d.painPoints} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
-                </div>
-                <div>
-                  <div style={labelStyle}>التحسين المتوقع</div>
-                  <RichTextView html={d.expectedImprovement} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
-                </div>
+                <DetailSecHead title="بيانات الخدمة" />
+                <DetailGrid cols={2}>
+                  <DetailCell label="مالك الخدمة">{d.serviceOwner}</DetailCell>
+                  <DetailCell label="الفئة المستهدفة">{d.targetUsers}</DetailCell>
+                </DetailGrid>
+
+                <DetailSecHead title="رحلة المتعامل" />
+                <DetailGrid cols={1}>
+                  <DetailCell label="رحلة المتعامل الحالية"><RichTextView html={d.currentJourney} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
+                  <DetailCell label="نقاط الألم"><RichTextView html={d.painPoints} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
+                  <DetailCell label="التحسين المتوقع"><RichTextView html={d.expectedImprovement} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
+                </DetailGrid>
               </>
             )}
           </div>
@@ -1115,85 +1069,35 @@ export function DetailPanel({ vm }: { vm: VM }) {
           >
             {d.canApproveGateView ? (
               <>
-                {/* all three decisions visible so no action feels forced */}
+                {/* same sequence as the cards: اعتماد ← رفض ← طلب تفاصيل، والتعديل أخيراً */}
                 <button
-                  title="عدم الاعتماد"
-                  aria-label="عدم الاعتماد"
-                  onClick={d.onReject}
-                  style={{
-                    width: 48,
-                    height: 48,
-                    flex: 'none',
-                    borderRadius: 12,
-                    border: '1px solid #F5D8DB',
-                    background: '#FCEEEF',
-                    color: '#C0303B',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                  onClick={d.onApprove}
+                  style={{ flex: 1, background: '#0B8A4B', color: '#fff', border: 'none', borderRadius: 12, padding: '13px 20px', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
                 >
-                  <Icon d="M18 6L6 18M6 6l12 12" size={17} color="#C0303B" strokeWidth={2.4} />
+                  اعتماد
+                </button>
+                <button
+                  onClick={d.onReject}
+                  style={{ flex: 'none', background: '#fff', color: '#C0303B', border: '1px solid #F0C4C8', borderRadius: 12, padding: '13px 20px', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  رفض
+                </button>
+                <button
+                  onClick={d.onReqInfo}
+                  style={{ flex: 1, background: '#fff', color: '#33405A', border: '1px solid #E7ECF4', borderRadius: 12, padding: '13px 14px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                >
+                  طلب تفاصيل إضافية
                 </button>
                 {d.showMenuEdit && (
                   <button
                     title="تعديل البيانات"
                     aria-label="تعديل البيانات"
                     onClick={d.onEdit}
-                    style={{
-                      width: 48,
-                      height: 48,
-                      flex: 'none',
-                      borderRadius: 12,
-                      border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-                      background: '#fff',
-                      color: '#54627B',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
+                    style={{ width: 48, height: 48, flex: 'none', borderRadius: 12, border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={16} />
                   </button>
                 )}
-                <button
-                  onClick={d.onReqInfo}
-                  style={{
-                    flex: 1,
-                    background: '#fff',
-                    color: '#33405A',
-                    border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-                    borderRadius: 12,
-                    padding: '13px 14px',
-                    fontWeight: 700,
-                    fontSize: 13,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  طلب تفاصيل إضافية
-                </button>
-                <button
-                  onClick={d.onApprove}
-                  style={{
-                    flex: 1,
-                    background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 12,
-                    padding: '13px 20px',
-                    fontWeight: 800,
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    boxShadow: '0 10px 22px -10px rgba(11,138,75,.6)',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  اعتماد
-                </button>
               </>
             ) : (
               <button
