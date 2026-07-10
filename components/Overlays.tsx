@@ -501,11 +501,6 @@ export function Overlays({ vm }: { vm: VM }) {
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>
                   {vm.reqModal.mode === 'info' ? 'طلب تفاصيل إضافية' : 'الاعتذار عن الاعتماد'}
                 </div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
-                  {vm.reqModal.mode === 'info'
-                    ? 'نرجو تحديد ما يلزم استكماله أو توضيحه قبل المتابعة'
-                    : 'نرجو التكرم بتوضيح أسباب عدم الاعتماد والنقاط المطلوب معالجتها'}
-                </div>
               </div>
               <button
                 onClick={() => s.closeReqModal()}
@@ -524,13 +519,6 @@ export function Overlays({ vm }: { vm: VM }) {
               </button>
             </div>
             <div style={{ padding: '0 22px', maxHeight: '52vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB' }} />
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B' }}>
-                  الملاحظات المطلوب معالجتها للمتابعة
-                </span>
-                <span style={{ color: '#94A3B8' }}>*</span>
-              </div>
               <textarea
                 value={vm.reqModal.note}
                 onChange={(e) => s.setReqNote(e.target.value)}
@@ -547,9 +535,6 @@ export function Overlays({ vm }: { vm: VM }) {
                   boxSizing: 'border-box',
                 }}
               />
-              <div style={{ fontSize: 11.5, color: '#9AA6BC', marginTop: 8, lineHeight: 1.7 }}>
-                ستصل هذه الملاحظات إلى رئيس المسار، ولن يتم الانتقال للمرحلة التالية حتى تتم معالجتها.
-              </div>
             </div>
             <div style={{ padding: '16px 22px 20px', display: 'flex', gap: 10 }}>
               <button
