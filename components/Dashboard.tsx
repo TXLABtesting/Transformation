@@ -2475,13 +2475,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </>
               )}
 
-              {/* filters + search (the entity rep page drops the list-title row) */}
-              {vm.role !== 'entity' && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                  <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? (vm.navStream ? 'المدخلات المرشحة للتمويل ضمن المسار' : 'المدخلات المرشحة للتمويل') : vm.role === 'coord' ? 'قائمة متابعة مدخلات المسار' : vm.navStream ? 'قائمة مراجعة مدخلات المسار' : 'القائمة التفصيلية للمدخلات'}</div>
-                  <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>{vm.shownCount === 1 ? '1 من 1 مدخل' : `${vm.shownCount} من ${vm.totalCount} مدخلات`}</span>
-                </div>
-              )}
+              {/* filters + search (the list-title/count row is dropped for all roles) */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 {/* mobile: single trigger that opens the full-screen filter sheet */}
                 <button
