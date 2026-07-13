@@ -4,7 +4,7 @@ import { stripHtml } from './richtext';
 // list — replaces the prototype's CDN SheetJS / PptxGenJS with bundled deps.
 // Libraries are dynamically imported so they stay out of the initial bundle.
 // ============================================================================
-import { type Item, typeLabel, pathById, wfMeta, transformScore, stageWeight, entOf, parseBudget, formatMoney } from './domain';
+import { type Item, typeLabel, pathById, wfMeta, transformScore, stageWeight, entOf, parseBudget, formatMoney, execMilestones, isEntityApproved, isProjInit } from './domain';
 
 const argb = (hex: string) => 'FF' + hex.replace('#', '').toUpperCase();
 const today = () => new Date().toLocaleDateString('ar-AE', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -74,11 +74,225 @@ function headerRow(ws: XLWorksheet, rowIdx: number, headers: string[], widths: n
   ws.getRow(rowIdx).height = 24;
 }
 
+// The report follows the official workplan template (public/assets/
+// workplan_template.xlsx) that entities already know: the same sheets and
+// sections, filled with the live data. Falls back to the styled report
+// workbook if the template asset cannot be fetched.
 export async function exportExcel(items: Item[], entityName: string) {
+  const mod = await import('exceljs');
+  const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+  try {
+    const res = await fetch((process.env.NEXT_PUBLIC_BASE_PATH || '') + '/assets/workplan_template.xlsx');
+    if (!res.ok) throw new Error('template fetch failed');
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(await res.arrayBuffer());
+    fillWorkplan(wb, items, entityName);
+    const buf = await wb.xlsx.writeBuffer();
+    downloadBlob(
+      new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      'تقرير_المدخلات.xlsx'
+    );
+  } catch {
+    await exportExcelStyled(items, entityName);
+  }
+}
+
+// Fill the 8 template sections from the live items (RTL sheets, layout kept).
+function fillWorkplan(wb: import('exceljs').Workbook, items: Item[], entityName: string) {
+  const put = (ws: XLWorksheet | undefined, r: number, c: number, v: string | number) => {
+    if (!ws) return;
+    if (v !== '' && v != null) ws.getCell(r, c).value = v;
+  };
+  const wrap = (ws: XLWorksheet | undefined, r: number, c: number) => {
+    if (ws) ws.getCell(r, c).alignment = { horizontal: 'right', vertical: 'top', wrapText: true };
+  };
+
+  // 1) المعلومات العامة
+  const info = wb.getWorksheet('المعلومات العامة');
+  const streams = [...new Set(items.map((i) => pathById(i.path).name))].join('، ');
+  put(info, 4, 2, streams);
+  put(info, 7, 2, entityName);
+  const ms = execMilestones();
+  put(info, 8, 2, ms[0]?.start || '');
+  put(info, 9, 2, ms[ms.length - 1]?.end || '');
+
+  // 2) المشاريع القائمة وقيد التنفيذ · 3) المشاريع الجديدة
+  const projs = items.filter((i) => isProjInit(i.type));
+  const existing = projs.filter((i) => isEntityApproved(i));
+  const fresh = projs.filter((i) => !isEntityApproved(i));
+  const cur = wb.getWorksheet('المشاريع القائمة');
+  existing.forEach((i, k) => {
+    const r = 4 + k;
+    put(cur, r, 1, k + 1);
+    put(cur, r, 2, i.title);
+    put(cur, r, 3, stripHtml(i.desc || ''));
+    put(cur, r, 4, i.expectedOutputs || '');
+    put(cur, r, 5, i.endDate || '');
+    put(cur, r, 6, wfMeta(i).label);
+    put(cur, r, 7, pathById(i.path).name);
+    wrap(cur, r, 3); wrap(cur, r, 4);
+  });
+  const nw = wb.getWorksheet('المشاريع الجديدة');
+  fresh.forEach((i, k) => {
+    const r = 4 + k;
+    put(nw, r, 1, k + 1);
+    put(nw, r, 2, i.title);
+    put(nw, r, 3, stripHtml(i.desc || ''));
+    put(nw, r, 4, i.expectedOutputs || '');
+    put(nw, r, 5, i.expectedImpact || '');
+    put(nw, r, 6, pathById(i.path).name);
+    wrap(nw, r, 3); wrap(nw, r, 4);
+  });
+
+  // 4) العمليات والدعم المؤسسي — العمليات والخدمات معًا (نفس أعمدة القالب)
+  const ops = items.filter((i) => i.type === 'operation' || i.type === 'service');
+  const op = wb.getWorksheet('العمليات والدعم المؤسسي');
+  ops.forEach((i, k) => {
+    const r = 4 + k;
+    put(op, r, 1, k + 1);
+    put(op, r, 2, i.title);
+    put(op, r, 3, i.opType || typeLabel(i.type));
+    put(op, r, 4, i.subActivities || '');
+    put(op, r, 6, i.sector || '');
+    put(op, r, 7, i.dept || '');
+    put(op, r, 8, i.section || '');
+    put(op, r, 9, i.automationLevel || '');
+    put(op, r, 10, i.automationPct != null ? i.automationPct + '%' : '');
+    put(op, r, 11, i.automationSystem || '');
+    put(op, r, 12, i.usageIntensity || '');
+    put(op, r, 14, i.transformability || '');
+    put(op, r, 15, i.readiness != null ? String(i.readiness) : '');
+    put(op, r, 16, i.transformPriority || '');
+    put(op, r, 17, i.impact || '');
+    put(op, r, 18, i.complexityLevel || i.complexity || '');
+    put(op, r, 19, pathById(i.path).name);
+  });
+
+  // 5) المستهدفات والنتائج — مجمّعة من مدخلات الجهة
+  const tg = wb.getWorksheet('المستهدفات والنتائج');
+  const outputs = items.map((i) => i.expectedOutputs).filter(Boolean).slice(0, 8);
+  const outcomes = items.map((i) => i.expectedOutcomes).filter(Boolean).slice(0, 8);
+  if (outputs.length) { put(tg, 4, 1, outputs.map((o) => '• ' + o).join('\n')); wrap(tg, 4, 1); if (tg) tg.getRow(4).height = Math.min(120, 16 * outputs.length + 6); }
+  if (outcomes.length) { put(tg, 7, 1, outcomes.map((o) => '• ' + o).join('\n')); wrap(tg, 7, 1); if (tg) tg.getRow(7).height = Math.min(120, 16 * outcomes.length + 6); }
+  const models = items.reduce((a, i) => a + (i.aiModels || 0), 0);
+  const targets = items.map((i) => i.targetPct).filter((v): v is number => v != null);
+  put(tg, 9, 2, models || '');
+  put(tg, 10, 2, targets.length ? Math.round(targets.reduce((a, b) => a + b, 0) / targets.length) + '%' : '');
+
+  // 6) البرنامج الزمني — أنشطة كل مرحلة من المدخلات المخطط لها
+  const sch = wb.getWorksheet('البرنامج الزمني');
+  ms.forEach((b, k) => {
+    const inBatch = items.filter((i) => i.execBatch === b.name);
+    if (!inBatch.length) return;
+    const r = 4 + k;
+    put(sch, r, 3, inBatch.map((i) => i.title).join('، '));
+    put(sch, r, 4, b.start || '');
+    put(sch, r, 5, b.end || '');
+    wrap(sch, r, 3);
+  });
+
+  // 7) الإطلاقات — من إطلاقات المدخلات (بدون تكرار)
+  const la = wb.getWorksheet('الإطلاقات');
+  const seen = new Set<string>();
+  let n = 0;
+  items.forEach((i) =>
+    (i.launches || []).forEach((l) => {
+      const key = (l.title || '') + '|' + (l.date || '');
+      if (!(l.title || '').trim() || seen.has(key)) return;
+      seen.add(key);
+      n++;
+      const r = 3 + n;
+      put(la, r, 1, n);
+      put(la, r, 2, l.date || '');
+      put(la, r, 3, l.title + (l.desc ? ' — ' + l.desc : ''));
+      wrap(la, r, 3);
+    })
+  );
+}
+
+// Fallback: the styled standalone report workbook (summary + detailed table).
+async function exportExcelStyled(items: Item[], entityName: string) {
   const mod = await import('exceljs');
   const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
   const wb = new ExcelJS.Workbook();
   wb.creator = 'منصة التحول للذكاء الاصطناعي المساعد';
+
+  // ---- sheet 1: الملخص — mirrors the PPT summary slide -----------------------
+  const sm = wb.addWorksheet('الملخص', { views: [{ rightToLeft: true, showGridLines: false }] });
+  {
+    const totalBudget = items.reduce((a, i) => a + parseBudget(i.budget), 0);
+    const avgDone = items.length ? Math.round(items.reduce((a, i) => a + stageWeight(i), 0) / items.length) : 0;
+    for (let c = 1; c <= 9; c++) sm.getColumn(c).width = 15;
+    banner(sm, 9, 'منصة التحول للذكاء الاصطناعي المساعد — ملخص المدخلات', `الجهة: ${entityName}  ·  ${today()}`);
+
+    // KPI cards: big value + label, styled like the dashboard cards
+    const kpis: [string, string][] = [
+      ['إجمالي المدخلات', String(items.length)],
+      ['معتمدة للتمويل', String(items.filter((i) => i.funded).length)],
+      ['إجمالي الميزانية', totalBudget ? formatMoney(totalBudget) : '—'],
+      ['متوسط نسبة الإنجاز', avgDone + '%'],
+    ];
+    const kSpans: [number, number][] = [[1, 2], [3, 4], [5, 6], [7, 8]];
+    sm.getRow(4).height = 34;
+    sm.getRow(5).height = 20;
+    kpis.forEach(([label, value], k) => {
+      const [c1, c2] = kSpans[k];
+      sm.mergeCells(4, c1, 4, c2);
+      sm.mergeCells(5, c1, 5, c2);
+      const v = sm.getCell(4, c1);
+      v.value = value;
+      v.font = { bold: true, size: k === 2 ? 14 : 20, color: { argb: k === 2 ? 'FF1D4ED8' : 'FF13213C' } };
+      v.alignment = { horizontal: 'center', vertical: 'middle' };
+      const l = sm.getCell(5, c1);
+      l.value = label;
+      l.font = { size: 10.5, color: { argb: 'FF54627B' } };
+      l.alignment = { horizontal: 'center', vertical: 'middle' };
+      for (const r of [4, 5])
+        for (let c = c1; c <= c2; c++) {
+          sm.getCell(r, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F9FC' } as XLColor };
+          sm.getCell(r, c).border = {
+            top: r === 4 ? thin(BORDER) : undefined,
+            bottom: r === 5 ? thin(BORDER) : undefined,
+            left: c === c1 ? thin(BORDER) : undefined,
+            right: c === c2 ? thin(BORDER) : undefined,
+          };
+        }
+    });
+
+    // distribution tables: by type (right) + by status (left)
+    const countBy = (f: (i: Item) => string) => {
+      const m = new Map<string, number>();
+      items.forEach((i) => m.set(f(i), (m.get(f(i)) || 0) + 1));
+      return [...m.entries()];
+    };
+    const dist = (c1: number, titleTxt: string, rows: [string, number][]) => {
+      const c2 = c1 + 2;
+      sm.mergeCells(7, c1, 7, c2);
+      const h = sm.getCell(7, c1);
+      h.value = titleTxt;
+      h.font = { bold: true, size: 11.5, color: { argb: 'FF54627B' } };
+      h.alignment = { horizontal: 'right', vertical: 'middle' };
+      rows.forEach(([k, n], j) => {
+        const r = 8 + j;
+        sm.mergeCells(r, c1, r, c2 - 1);
+        const kc = sm.getCell(r, c1);
+        kc.value = k;
+        kc.font = { size: 10.5, color: { argb: 'FF16233F' } };
+        kc.alignment = { horizontal: 'right', vertical: 'middle' };
+        const nc = sm.getCell(r, c2);
+        nc.value = n;
+        nc.font = { bold: true, size: 10.5, color: { argb: 'FF1D4ED8' } };
+        nc.alignment = { horizontal: 'center', vertical: 'middle' };
+        for (let c = c1; c <= c2; c++)
+          sm.getCell(r, c).border = { top: thin(BORDER), bottom: thin(BORDER), left: thin(BORDER), right: thin(BORDER) };
+        sm.getRow(r).height = 20;
+      });
+    };
+    dist(1, 'التوزيع حسب النوع', countBy((i) => typeLabel(i.type)));
+    dist(5, 'التوزيع حسب الحالة', countBy((i) => wfMeta(i).label));
+  }
+
+  // ---- sheet 2: المدخلات — the detailed table --------------------------------
   const ws = wb.addWorksheet('المدخلات', { views: [{ rightToLeft: true, showGridLines: false }] });
 
   const headers = Object.keys(row(items[0] || ({} as Item), entityName));
