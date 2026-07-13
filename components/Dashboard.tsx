@@ -345,7 +345,7 @@ function EntityOverview({ vm }: { vm: VM }) {
 
   // cost legend items (hoverable)
   const costItems = [
-    { key: 'exec', label: 'تكلفة التنفيذ', short: 'تكلفة التنفيذ', val: cc.execLabel, pct: cc.execPct, frac: cc.execFrac, c: '#2563EB' },
+    { key: 'exec', label: 'تكلفة التحويل', short: 'تكلفة التحويل', val: cc.execLabel, pct: cc.execPct, frac: cc.execFrac, c: '#2563EB' },
     { key: 'launch', label: 'تكلفة الإطلاق', short: 'تكلفة الإطلاق', val: cc.launchLabel, pct: cc.launchPct, frac: 1 - cc.execFrac, c: '#16408F' },
   ];
   const costHov = costItems.find((x) => x.key === hovCost);
@@ -357,7 +357,7 @@ function EntityOverview({ vm }: { vm: VM }) {
   const execM = money(cc.execLabel);
   const launchM = money(cc.launchLabel);
   const costArcMeta = {
-    exec: { center: execM.num, sub: execM.unit, top: 'تكلفة التنفيذ' },
+    exec: { center: execM.num, sub: execM.unit, top: 'تكلفة التحويل' },
     launch: { center: launchM.num, sub: launchM.unit, top: 'تكلفة الإطلاق' },
   };
 
@@ -528,7 +528,7 @@ function EntityOverview({ vm }: { vm: VM }) {
             <div style={{ height: 1, background: '#EEF1F6', marginTop: 'auto' }} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التنفيذ</span>
+                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التحويل</span>
                 <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.execLabel}</span>
               </div>
               {/* launch budget hidden for track head — execution budget only */}
@@ -783,7 +783,7 @@ function StageCard({ b, showStream, onManage }: { b: VM['batchSummary'][number];
       <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>
           <Icon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h4" size={13} color="#9AA6BC" />
-          تكلفة التنفيذ التقديرية للمرحلة
+          تكلفة التحويل التقديرية للمرحلة
         </span>
         <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{b.costLabel}</span>
       </div>
