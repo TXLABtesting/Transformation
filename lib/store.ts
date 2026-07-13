@@ -633,12 +633,21 @@ export const useStore = create<Store>((set, get) => {
           .then((res) => {
             if (!res?.user) return;
             const roles = Array.isArray(res.roles) ? (res.roles as string[]) : [];
-            set((s) => ({
-              ...s,
-              view: s.setupDone ? 'dashboard' : 'setup',
-              role: roleFromBackend(roles),
-              myPath: res.user.streamId || s.myPath,
-            }));
+            // stream scopes drive the multi-stream coordinator switcher
+            const scopes = Array.isArray(res.user.streamScopes)
+              ? (res.user.streamScopes as string[]).filter(Boolean)
+              : [];
+            set((s) => {
+              const myPath = res.user.streamId || scopes[0] || s.myPath;
+              const myPaths = scopes.length ? scopes : [myPath];
+              return {
+                ...s,
+                view: s.setupDone ? 'dashboard' : 'setup',
+                role: roleFromBackend(roles),
+                myPath: myPaths.includes(myPath) ? myPath : myPaths[0],
+                myPaths,
+              };
+            });
           })
           .catch(() => {});
       }
