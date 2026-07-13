@@ -75,6 +75,14 @@ export function AdminConsole({ vm }: { vm: VM }) {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* open the monitoring dashboards with the committee-wide scope */}
+          <button
+            onClick={() => s.setAdminDash(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: 'none', background: 'linear-gradient(135deg,#1D4ED8,#2E74EE)', color: '#fff', borderRadius: 11, padding: '9px 15px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            <Icon d="M4 20V10M10 20V4M16 20v-8M21 20H3" size={14} color="#fff" />
+            لوحات المتابعة
+          </button>
           {vm.showRoleSwitcher && (
             <div style={{ display: 'flex', background: '#F4F7FC', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 12, padding: 3, gap: 2 }}>
               {vm.rolePills.map((p) => (

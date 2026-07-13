@@ -64,6 +64,9 @@ export const PATHS: Path[] = [
   },
 ];
 
+// «للتحديد بعد الدراسة»: execution stage deferred until the study concludes
+export const TBD_BATCH = 'للتحديد بعد الدراسة';
+
 export const pathById = (id: string): Path =>
   PATHS.find((p) => p.id === id) || PATHS[0];
 

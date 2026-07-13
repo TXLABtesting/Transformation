@@ -3,7 +3,7 @@ import { Fragment, useState, type CSSProperties, type ReactNode } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
 import { Tour, TOUR_EVENT, type TourStep } from './Tour';
-import { LAUNCH_TYPES } from '@/lib/domain';
+import { LAUNCH_TYPES, TBD_BATCH } from '@/lib/domain';
 
 // first-login walkthrough: sections are matched by [data-tour] anchors and
 // steps whose anchor is not rendered for the current role are skipped
@@ -275,7 +275,7 @@ function EoDonutSeg({ segs, dim, top, center, sub }: { segs: { frac: number; col
   );
 }
 
-function EoCardHead({ title, iconD, onArrow }: { title: string; iconD: string; onArrow?: () => void }) {
+function EoCardHead({ title, iconD, onArrow, info }: { title: string; iconD: string; onArrow?: () => void; info?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -283,7 +283,7 @@ function EoCardHead({ title, iconD, onArrow }: { title: string; iconD: string; o
           <Icon d={iconD} size={18} color="#2563EB" />
         </span>
         <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{title}</span>
-        <InfoTip text={title} />
+        {info && <InfoTip text={info} keep />}
       </div>
       <button
         onClick={onArrow}
@@ -406,17 +406,17 @@ function EntityOverview({ vm }: { vm: VM }) {
         {isPath ? (() => {
           const nomItems = [
             { key: 'nominated', label: 'المدخلات المرشحة من قبلي', v: nc.nominated, dot: '#2563EB', square: true, bold: true, numColor: '#2563EB', labelColor: '#13213C' },
-            { key: 'funded', label: 'معتمدة للتمويل', v: nc.funded, dot: '#2563EB', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
-            { key: 'pending', label: 'قيد مراجعة اللجنة', v: nc.pending, dot: '#93B4F5', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
-            { key: 'notNominated', label: 'غير مرشّحة', v: nc.notNominated, dot: '#C7D9F5', square: true, bold: true, divider: true, numColor: '#9AA6BC', labelColor: '#9AA6BC' },
+            { key: 'funded', label: 'المدخلات المعتمدة للتمويل', v: nc.funded, dot: '#2563EB', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
+            { key: 'pending', label: 'المدخلات قيد مراجعة اللجنة', v: nc.pending, dot: '#93B4F5', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
+            { key: 'notNominated', label: 'المدخلات غير المرشّحة', v: nc.notNominated, dot: '#C7D9F5', square: true, bold: true, divider: true, numColor: '#9AA6BC', labelColor: '#9AA6BC' },
           ];
           const nomHov = nomItems.find((x) => x.key === hovNom);
           const nomCenter = nomHov ? { center: String(nomHov.v), sub: nomHov.label } : { center: String(nc.total), sub: 'إجمالي المدخلات' };
           const t = nc.total || 1;
           const nomSegs = [
-            { key: 'funded', frac: nc.funded / t, color: '#2563EB', label: 'معتمدة للتمويل', value: nc.funded },
-            { key: 'pending', frac: nc.pending / t, color: '#93B4F5', label: 'قيد مراجعة اللجنة', value: nc.pending },
-            { key: 'notNominated', frac: nc.notNominated / t, color: '#C7D9F5', label: 'غير مرشّحة', value: nc.notNominated },
+            { key: 'funded', frac: nc.funded / t, color: '#2563EB', label: 'المدخلات المعتمدة للتمويل', value: nc.funded },
+            { key: 'pending', frac: nc.pending / t, color: '#93B4F5', label: 'المدخلات قيد مراجعة اللجنة', value: nc.pending },
+            { key: 'notNominated', frac: nc.notNominated / t, color: '#C7D9F5', label: 'المدخلات غير المرشّحة', value: nc.notNominated },
           ].filter((x) => x.frac > 0.0001);
           return (
             <div data-tour="nom-card" style={cardStyle}>
@@ -1855,6 +1855,22 @@ export function Dashboard({ vm }: { vm: VM }) {
             )}
           </div>
 
+          {/* admin viewing the dashboards: back to the admin console */}
+          {vm.adminReturn && (
+            <button
+              onClick={() => s.setAdminDash(false)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 40, background: '#fff', border: '1px solid #E7ECF4', borderRadius: 11, padding: '0 14px', fontSize: 12.5, fontWeight: 800, color: '#1D4ED8', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              <Icon d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" size={14} color="#1D4ED8" />
+              لوحة الإدارة
+            </button>
+          )}
+
+          {/* multi-stream coordinator: active-stream switcher */}
+          {vm.streamSwitcher.show && (
+            <FilterSelect value={vm.streamSwitcher.value} options={vm.streamSwitcher.options} minWidth={190} onChange={(v) => s.setMyPath(v)} />
+          )}
+
           {/* Avatar / profile */}
           <div data-tour="profile" style={{ position: 'relative' }}>
             <div
@@ -2728,7 +2744,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       </div>
                       {/* by-stream breakdown — stream name right, count left */}
                       <div style={{ background: '#F7F9FC', border: '1px solid #EDF1F7', borderRadius: 14, padding: '14px 15px' }}>
-                        <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, textAlign: 'right', marginBottom: 11 }}>المدخلات حسب المسار</div>
+                        <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, textAlign: 'right', marginBottom: 11 }}>{e2.byStreamTitle}</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
                           {e2.byStream.map((sBrk) => (
                             <div key={sBrk.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -2740,8 +2756,14 @@ export function Dashboard({ vm }: { vm: VM }) {
                       </div>
                       {/* approved for funding + approved cost — label right, value left */}
                       <div style={{ borderTop: '1px solid #EEF1F7', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {e2.myNominated != null && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                            <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>المدخلات المرشحة من قبلي</div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.myNominated}</div>
+                          </div>
+                        )}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>العناصر المعتمدة للتمويل</div>
+                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>{e2.myNominated != null ? 'المدخلات المعتمدة للتمويل' : 'العناصر المعتمدة للتمويل'}</div>
                           <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.funded}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
@@ -3626,11 +3648,6 @@ function CardItem({ c }: { c: CardVM }) {
           : null),
       }}
     >
-      {/* Caption above the meta — hidden when it merely repeats the status pill */}
-      {c.cardCaption && c.cardCaption !== (c.pillLabel || pill.label) && (
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#9AA6BA', marginBottom: -6 }}>{c.cardCaption}</div>
-      )}
-
       {/* Meta row: type chip + status pill + optional checkbox */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
@@ -3733,7 +3750,12 @@ function CardItem({ c }: { c: CardVM }) {
       {/* Launch phase + linked launch */}
       {(c.batchLabel || (c.launchNames && c.launchNames.length > 0)) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          {c.batchLabel && (
+          {c.batchLabel === TBD_BATCH ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
+              <Icon d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" size={11} color="#B45309" />
+              للتحديد بعد الدراسة
+            </span>
+          ) : c.batchLabel ? (
             <span
               style={{
                 display: 'inline-flex',
@@ -3750,7 +3772,7 @@ function CardItem({ c }: { c: CardVM }) {
               <Icon d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" size={11} color="#2563EB" />
               التنفيذ ضمن {c.batchLabel.replace('إطلاق ', '')}
             </span>
-          )}
+          ) : null}
           {c.launchNames && c.launchNames.length > 0 && (
             <span
               style={{

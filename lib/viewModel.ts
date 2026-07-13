@@ -29,6 +29,7 @@ import {
   isEntityApproved,
   isProjInit,
   streamHasType,
+  TBD_BATCH,
   execAllDone,
   parseBudget,
   formatMoney,
@@ -63,7 +64,9 @@ export type VM = ReturnType<typeof build>;
 type Store = ReturnType<typeof useStore.getState>;
 
 function build(s: Store) {
-  const rawRole = s.role;
+  // the admin can flip into the monitoring dashboards: rendered with the
+  // committee's all-seeing scope while a header button returns to the console
+  const rawRole = s.role === 'admin' && s.ui.adminDash ? 'ai' : s.role;
   const role = logicRole(rawRole);
   const myPath = s.myPath;
   const entityName = s.entityName;
@@ -127,6 +130,14 @@ function build(s: Store) {
     visible = visible.filter((i) => ent(i) === ui.entFilter);
   // step filter
   if (ui.stepFilter != null) visible = visible.filter((i) => stepIndexOf(i) === ui.stepFilter);
+  // stage order: المرحلة الأولى first, then الثانية … ; no stage / «للتحديد بعد الدراسة» last
+  const msOrder = execMilestones().map((b) => b.name);
+  const stageOrderOf = (i: Item) => {
+    if (!i.execBatch || i.execBatch === TBD_BATCH) return msOrder.length;
+    const idx = msOrder.indexOf(i.execBatch);
+    return idx === -1 ? msOrder.length : idx;
+  };
+  visible.sort((a, b) => stageOrderOf(a) - stageOrderOf(b));
 
   // ---- KPI scope (counts what this role can actually see) ----
   const scope = filterStream === 'all' ? roleBase : roleBase.filter((i) => i.path === filterStream);
@@ -741,6 +752,7 @@ function build(s: Store) {
           if (!q2) return true;
           return (i.title || '').toLowerCase().includes(q2) || stripHtml(i.desc || '').toLowerCase().includes(q2);
         })
+        .sort((a, b) => stageOrderOf(a) - stageOrderOf(b))
         .map((i) => mkCard(i, s, { rawRole, role, myName, ent }));
 
   // committee «الجهات» page: one card per entity
@@ -752,11 +764,31 @@ function build(s: Store) {
           const execBudget = inEnt.reduce((a, i) => a + parseBudget(i.budget), 0);
           const fundedItems = inEnt.filter((i) => !!i.funded);
           const approvedCost = fundedItems.reduce((a, i) => a + parseBudget(i.budget), 0);
+          // committee: broken down across every stream (full names, fixed order);
+          // stream head: by type, only the types his stream carries (items are
+          // already scoped to his stream via roleBase)
+          const byStream =
+            rawRole === 'path'
+              ? [
+                  { name: 'المشاريع والمبادرات', count: inEnt.filter((i) => isProjInit(i.type)).length },
+                  ...(streamHasType(myPath, 'operation')
+                    ? [{ name: 'العمليات', count: inEnt.filter((i) => i.type === 'operation').length }]
+                    : []),
+                  ...(streamHasType(myPath, 'service')
+                    ? [{ name: 'الخدمات', count: inEnt.filter((i) => i.type === 'service').length }]
+                    : []),
+                ]
+              : PATHS.map((p) => ({ name: p.name, count: inEnt.filter((i) => i.path === p.id).length }));
           return {
             name: e,
             total: inEnt.length,
-            // items broken down across every stream (full names, fixed order)
-            byStream: PATHS.map((p) => ({ name: p.name, count: inEnt.filter((i) => i.path === p.id).length })),
+            byStreamTitle: rawRole === 'path' ? 'المدخلات حسب النوع' : 'المدخلات حسب المسار',
+            byStream,
+            // stream head: nominations he made in this entity (pending funding)
+            myNominated:
+              rawRole === 'path'
+                ? inEnt.filter((i) => !!i.nom && !i.funded && i.nom.by === myName).length
+                : null,
             funded: fundedItems.length,
             approvedCostLabel: approvedCost > 0 ? formatMoney(approvedCost) : '—',
             execBudgetLabel: execBudget > 0 ? formatMoney(execBudget) : '—',
@@ -949,6 +981,7 @@ function build(s: Store) {
 
   return {
     isAdmin,
+    adminReturn: s.role === 'admin' && !!s.ui.adminDash,
     admin,
     // view
     view: s.view,
@@ -962,6 +995,13 @@ function build(s: Store) {
     roleLabel: ROLE[rawRole].label,
     rolePills,
     showRoleSwitcher: process.env.NEXT_PUBLIC_DEMO_MODE === '1',
+    // coordinator assigned to several streams: header dropdown to switch the
+    // ACTIVE stream (everything on screen is scoped to it)
+    streamSwitcher: {
+      show: rawRole === 'coord' && (s.myPaths?.length || 0) > 1,
+      value: myPath,
+      options: (s.myPaths?.length ? s.myPaths : [myPath]).map((id) => ({ v: id, label: pathById(id).name })),
+    },
     repName,
     repPos,
     repInitials,
@@ -1050,7 +1090,8 @@ function build(s: Store) {
         id: i.id,
         title: i.title,
         typeLabel: typeLabel(i.type),
-        batch: i.execBatch || '',
+        // «للتحديد بعد الدراسة» counts as unplanned in the stage-planning modal
+        batch: i.execBatch === TBD_BATCH ? '' : i.execBatch || '',
       })),
     // active مرحلة drill-down chip on portfolio pages
     batchChip: batchFilter
@@ -2053,10 +2094,13 @@ function buildModal(s: Store) {
     fStepHint: fHints[ui.fStep - 1] || '',
     fNextLabel: ui.fStep >= 5 ? 'إرسال للاعتماد' : 'التالي',
     // execution batches (خطة التنفيذ والإطلاق) + centrally-managed launch plans
-    batchOptions: launchBatches().map((b) => ({
-      name: b.name,
-      label: (b.period ? b.name + ' · ' + b.period : b.name).replace(/^إطلاق /, ''),
-    })),
+    batchOptions: [
+      ...launchBatches().map((b) => ({
+        name: b.name,
+        label: (b.period ? b.name + ' · ' + b.period : b.name).replace(/^إطلاق /, ''),
+      })),
+      { name: TBD_BATCH, label: TBD_BATCH },
+    ],
     startStates: START_STATES,
     // ai review
     aiLoading: ui.aiLoading,
