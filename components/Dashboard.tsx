@@ -367,7 +367,7 @@ function EntityOverview({ vm }: { vm: VM }) {
       <div data-r="dash-top" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* --- إجمالي المدخلات (right) --- */}
         <div data-tour="inputs-card" style={cardStyle}>
-          <EoCardHead title={isPath ? 'إجمالي المدخلات' : isCoord ? 'ملخص مدخلات المسار' : 'ملخص مدخلات الجهة'} iconD={EO_GRID} onArrow={() => s.setNavSection('all')} info="ملخص عددي للمدخلات ضمن نطاقك موزعة حسب حالة التطوير — من الجاهزة للتحويل حتى ما تم إطلاقه." />
+          <EoCardHead title={isPath ? 'إجمالي المدخلات' : isCoord ? 'ملخص مدخلات المسار' : 'ملخص مدخلات الجهة'} iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
             <EoDonutSeg segs={inSegs} dim={hovIn} center={inDonut.center} sub={inDonut.sub} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -420,7 +420,7 @@ function EntityOverview({ vm }: { vm: VM }) {
           ].filter((x) => x.frac > 0.0001);
           return (
             <div data-tour="nom-card" style={cardStyle}>
-              <EoCardHead title="ملخّص الترشيحات" iconD={EO_WALLET} onArrow={() => s.setNavSection('all')} info="حالة المدخلات المرشحة للتمويل: ما اعتمدته اللجنة، وما زال قيد مراجعتها، وما لم يُرشَّح بعد." />
+              <EoCardHead title="ملخّص الترشيحات" iconD={EO_WALLET} onArrow={() => s.setNavSection('all')} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
                 <EoDonutSeg segs={nomSegs} dim={hovNom === 'nominated' ? null : hovNom} center={nomCenter.center} sub={nomCenter.sub} />
                 <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -457,7 +457,7 @@ function EntityOverview({ vm }: { vm: VM }) {
           );
         })() : (
         <div data-tour="cost-card" style={cardStyle}>
-          <EoCardHead title="ملخص التكلفة التقديرية" info="إجمالي التكاليف التقديرية ضمن نطاقك — تكلفة التحويل تُحتسب من ميزانيات المدخلات، وتكلفة الإطلاق من خطط الإطلاق المرتبطة بها." iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
+          <EoCardHead title="ملخص التكلفة التقديرية" iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
             <EoDonut frac={costDonut.frac} dark={costHov ? costHov.c : '#2563EB'} light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} arcMeta={costArcMeta} />
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -503,7 +503,7 @@ function EntityOverview({ vm }: { vm: VM }) {
         {sec2Cards.map((st) => (
           <div key={st.id} data-tour="sec2-card" style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, minHeight: 44 }}>
-              <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>{st.name} <InfoTip text={useTypes ? 'عدد مدخلات هذا النوع في نطاقك، وتوزيعها على إطلاقات المراحل، مع تكلفتي التحويل والإطلاق.' : 'مدخلات الجهة ضمن هذا المسار موزعة على إطلاقات المراحل مع التكلفة التقديرية.'} keep /></div>
+              <div className="hd" style={{ flex: 1, fontSize: 14.5, fontWeight: 800, color: '#13213C', lineHeight: 1.5, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>{st.name}</div>
               <span style={{ width: 38, height: 38, borderRadius: 11, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
                 <Icon d={st.icon} size={18} color="#2563EB" />
               </span>
@@ -1861,7 +1861,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               onClick={() => s.setAdminDash(false)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 40, background: '#fff', border: '1px solid #E7ECF4', borderRadius: 11, padding: '0 14px', fontSize: 12.5, fontWeight: 800, color: '#1D4ED8', cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              <Icon d="M12 3v18M3 12h18" size={13} color="#1D4ED8" />
+              <Icon d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" size={14} color="#1D4ED8" />
               لوحة الإدارة
             </button>
           )}
@@ -3648,11 +3648,6 @@ function CardItem({ c }: { c: CardVM }) {
           : null),
       }}
     >
-      {/* Caption above the meta — hidden when it merely repeats the status pill */}
-      {c.cardCaption && c.cardCaption !== (c.pillLabel || pill.label) && (
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#9AA6BA', marginBottom: -6 }}>{c.cardCaption}</div>
-      )}
-
       {/* Meta row: type chip + status pill + optional checkbox */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>

@@ -130,6 +130,14 @@ function build(s: Store) {
     visible = visible.filter((i) => ent(i) === ui.entFilter);
   // step filter
   if (ui.stepFilter != null) visible = visible.filter((i) => stepIndexOf(i) === ui.stepFilter);
+  // stage order: المرحلة الأولى first, then الثانية … ; no stage / «للتحديد بعد الدراسة» last
+  const msOrder = execMilestones().map((b) => b.name);
+  const stageOrderOf = (i: Item) => {
+    if (!i.execBatch || i.execBatch === TBD_BATCH) return msOrder.length;
+    const idx = msOrder.indexOf(i.execBatch);
+    return idx === -1 ? msOrder.length : idx;
+  };
+  visible.sort((a, b) => stageOrderOf(a) - stageOrderOf(b));
 
   // ---- KPI scope (counts what this role can actually see) ----
   const scope = filterStream === 'all' ? roleBase : roleBase.filter((i) => i.path === filterStream);
@@ -744,6 +752,7 @@ function build(s: Store) {
           if (!q2) return true;
           return (i.title || '').toLowerCase().includes(q2) || stripHtml(i.desc || '').toLowerCase().includes(q2);
         })
+        .sort((a, b) => stageOrderOf(a) - stageOrderOf(b))
         .map((i) => mkCard(i, s, { rawRole, role, myName, ent }));
 
   // committee «الجهات» page: one card per entity
