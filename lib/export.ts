@@ -208,6 +208,73 @@ function fillWorkplan(wb: import('exceljs').Workbook, items: Item[], entityName:
       wrap(la, r, 3);
     })
   );
+
+  // ---- layout pass: sized columns, styled headers, borders -------------------
+  // The raw template ships with default column widths; make every sheet read
+  // like a finished report while keeping its structure untouched.
+  const layout: Record<string, { widths: number[]; headerRow?: number; dataRows?: number }> = {
+    'المعلومات العامة': { widths: [30, 60] },
+    'المشاريع القائمة': { widths: [5, 30, 44, 34, 15, 20, 24], headerRow: 3, dataRows: existing.length },
+    'المشاريع الجديدة': { widths: [5, 30, 44, 34, 34, 24], headerRow: 3, dataRows: fresh.length },
+    'العمليات والدعم المؤسسي': { widths: [5, 30, 18, 30, 14, 18, 22, 16, 15, 12, 18, 15, 14, 15, 15, 14, 16, 14, 24, 28], headerRow: 3, dataRows: ops.length },
+    'المستهدفات والنتائج': { widths: [50, 26] },
+    'البرنامج الزمني': { widths: [40, 26, 60, 13, 13], headerRow: 3, dataRows: ms.length },
+    'الإطلاقات': { widths: [5, 15, 80], headerRow: 3, dataRows: n },
+    'فريق العمل': { widths: [5, 24, 24, 24, 24, 30, 18] },
+  };
+  for (const [name, cfg] of Object.entries(layout)) {
+    const ws = wb.getWorksheet(name);
+    if (!ws) continue;
+    cfg.widths.forEach((w, c) => (ws.getColumn(c + 1).width = w));
+    // section title (row 1)
+    const t = ws.getCell(1, 1);
+    t.font = { bold: true, size: 13, color: { argb: BRAND_DARK } };
+    // header row: brand blue, white bold, centered + wrapped
+    if (cfg.headerRow) {
+      const hr = ws.getRow(cfg.headerRow);
+      for (let c = 1; c <= cfg.widths.length; c++) {
+        const cell = hr.getCell(c);
+        if (cell.value == null || String(cell.value).trim() === '') continue;
+        cell.font = { bold: true, size: 10.5, color: { argb: HEAD_TXT } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } as XLColor };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        cell.border = { top: thin(BRAND), bottom: thin(BRAND), left: thin('FFFFFFFF'), right: thin('FFFFFFFF') };
+      }
+      hr.height = 30;
+      // data rows: wrapped, top-aligned, bordered, zebra
+      const first = cfg.headerRow + 1;
+      const last = cfg.headerRow + Math.max(cfg.dataRows || 0, 0);
+      for (let r = first; r <= last; r++) {
+        for (let c = 1; c <= cfg.widths.length; c++) {
+          const cell = ws.getCell(r, c);
+          const horiz = c === 1 ? 'center' : 'right';
+          cell.alignment = { horizontal: horiz, vertical: 'top', wrapText: true };
+          cell.border = { top: thin(BORDER), bottom: thin(BORDER), left: thin(BORDER), right: thin(BORDER) };
+          if ((r - first) % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ZEBRA } as XLColor };
+        }
+      }
+      ws.views = [{ rightToLeft: true, state: 'frozen', ySplit: cfg.headerRow }];
+    }
+  }
+  // المعلومات العامة: label column as light chips
+  if (info) {
+    for (const r of [4, 7, 8, 9, 10, 11, 12]) {
+      const lc = info.getCell(r, 1);
+      lc.font = { bold: true, size: 10.5, color: { argb: 'FF33405A' } };
+      lc.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F5FA' } as XLColor };
+      lc.border = { top: thin(BORDER), bottom: thin(BORDER), left: thin(BORDER), right: thin(BORDER) };
+      const vc = info.getCell(r, 2);
+      vc.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+      vc.border = { top: thin(BORDER), bottom: thin(BORDER), left: thin(BORDER), right: thin(BORDER) };
+    }
+    info.getCell(6, 1).font = { bold: true, size: 12, color: { argb: BRAND } };
+  }
+  // المستهدفات والنتائج: bold section labels
+  if (tg) {
+    for (const r of [3, 6, 9, 10]) {
+      tg.getCell(r, 1).font = { bold: true, size: 11, color: { argb: 'FF33405A' } };
+    }
+  }
 }
 
 // Fallback: the styled standalone report workbook (summary + detailed table).
