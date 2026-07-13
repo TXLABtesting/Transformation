@@ -2569,6 +2569,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 )}
                 <FilterSelect value={vm.filterValue} options={vm.typeOptions} onChange={(v) => s.setFilter(v)} />
                 <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
+                <FilterSelect value={vm.batchFilterValue} options={vm.batchFilterOptions} minWidth={170} onChange={(v) => s.setBatchFilter(v === 'all' ? null : v)} />
                 {vm.showFundFilter && (
                   <FilterSelect value={vm.fundFilterValue} options={vm.fundOptions} minWidth={200} onChange={(v) => s.setFundFilter(v)} />
                 )}
