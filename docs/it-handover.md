@@ -85,7 +85,9 @@ the client uses camelCase). Migrations: `prisma/migrations/0001…0009`.
 **Portfolio**
 - `items` — every مشروع/مبادرة/عملية/خدمة. Carries the assessment fields,
   outcome/scope fields, type-specific fields, the execution stage
-  (`exec_batch`), the returned-with-notes state (`ret_*`), and the
+  (`exec_batch` — one of the four stages or the literal
+  «للتحديد بعد الدراسة» when the stage is deferred pending study), the
+  returned-with-notes state (`ret_*`), and the
   stage-move marker (`stage_move_*` — set when an item is moved between
   stages; the client notifies all stakeholders).
   `wf` is the workflow enum:
@@ -119,7 +121,9 @@ the client uses camelCase). Migrations: `prisma/migrations/0001…0009`.
 - `user_roles` — role assignment per user (the app enforces one role per
   user).
 - `user_entity_scopes` / `user_stream_scopes` — per-user data scopes; the
-  API filters every item query by them (`lib/security/rbac.ts`).
+  API filters every item query by them (`lib/security/rbac.ts`). A
+  coordinator with several `user_stream_scopes` rows gets a stream switcher
+  in the header (`/api/auth/me` returns `streamScopes`).
 - `audit_logs` — server-side audit trail written inside the same
   transaction as every enforced mutation (actor, action, resource,
   entity/stream, IP, user-agent, metadata).

@@ -46,8 +46,11 @@ in `services`.
 
 ### 3.1 منسق المسار في الجهة — `coord` / `entity_coordinator`
 
-**Who:** the working-level user inside a federal entity, responsible for ONE
-stream. Appointed by their entity representative in team setup.
+**Who:** the working-level user inside a federal entity, responsible for one
+stream — or several: when the account carries more than one row in
+`user_stream_scopes`, the header shows a **stream switcher** and the whole
+workspace (lists, dashboards, wizard) re-scopes to the selected stream.
+Appointed by their entity representative in team setup.
 
 **Pages (sidebar):**
 - الرئيسية — stream dashboard (cost + inputs summaries, type cards)
@@ -56,6 +59,11 @@ stream. Appointed by their entity representative in team setup.
 - مراحل التنفيذ — execution stages with «تخطيط المرحلة» (assign entries)
 - خطة الإطلاق — scheduled launches + «إدارة الإطلاقات» (create/edit launches)
 - دليل الاستخدام
+
+All entry lists carry a **stages filter (المراحل)** — the four stages plus
+«للتحديد بعد الدراسة»; the wizard can defer the stage decision with that same
+option, which shows as an amber chip on the card until a stage is assigned.
+Lists are ordered by stage (المرحلة الأولى first; unassigned/TBD last).
 
 **Can do:** create entries (زر «إضافة مدخل جديد» + bulk upload), edit drafts,
 resubmit returned entries, submit for approval, plan stages and launches,
@@ -95,6 +103,9 @@ entities. Assigned by the system admin.
   filter** (no streams filter — the stream is fixed)
 - مراحل التنفيذ / خطة الإطلاق — with the entities filter; launches show the
   **entity chip** on every launch and entry; budgets hidden, status pills shown
+- الجهات — one card per participating entity: entries broken down **by type**
+  within his stream, plus «المدخلات المرشحة من قبلي» and «المدخلات المعتمدة
+  للتمويل» with the approved cost
 - سلة التمويل — the nomination basket
 - دليل الاستخدام
 
@@ -130,7 +141,9 @@ reviewer, export.
 **Who:** IT / platform administration. Bypasses permission checks server-side;
 every action is still audit-logged.
 
-**Pages:** the admin console instead of the dashboards —
+**Pages:** the admin console instead of the dashboards — plus a
+«لوحات المتابعة» button that opens **all monitoring dashboards with the
+committee-wide scope** (a «لوحة الإدارة» button returns to the console) —
 - المستخدمون — create/edit/enable/disable users, bulk upload from the Excel
   template
 - رؤساء المسارات واللجنة — assign the five stream heads and the committee
