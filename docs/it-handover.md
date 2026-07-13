@@ -269,7 +269,10 @@ provisioned.
   later, the same triggers can be raised from the API layer; templates are
   in `docs/email-templates.md`.
 - **Exports** (Excel/PowerPoint) are generated client-side; no server
-  dependency.
+  dependency. The Excel report fills the official workplan template
+  (`public/assets/workplan_template.xlsx`) — the same sections entities use
+  for bulk upload (team sheet omitted) — and the PowerPoint deck carries a
+  branded title slide, a KPI summary, and one card-style slide per entry.
 - **Backups**: standard Postgres dumps; all state is in the tables above
   (nothing critical lives in `app_state`).
 - **Security**: run behind the government gateway/WAF; the app sets no
