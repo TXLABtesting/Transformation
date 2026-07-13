@@ -519,7 +519,7 @@ function EntityOverview({ vm }: { vm: VM }) {
                 {st.stages.map((sg, i) => (
                   <div key={sg.label} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                     <span style={{ width: 21, height: 21, flex: 'none', borderRadius: 7, background: '#EAF0FE', color: '#2563EB', fontWeight: 800, fontSize: 11.5, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
-                    <span style={{ flex: 1, fontSize: 12, color: '#54627B', fontWeight: 400 }}>{sg.label}</span>
+                    <span style={{ flex: 1, fontSize: 12, color: '#54627B', fontWeight: 400 }}>{'إطلاقات ' + sg.label}</span>
                     <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{sg.n}</span>
                   </div>
                 ))}
