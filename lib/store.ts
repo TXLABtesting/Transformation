@@ -73,6 +73,8 @@ export type AssignState = {
 };
 
 export type UiState = {
+  // admin toggled into the monitoring dashboards (committee-wide view)
+  adminDash?: boolean;
   // create wizard
   modalOpen: boolean;
   mStep: MStep;
@@ -149,6 +151,7 @@ type State = {
   lang: 'ar' | 'en';
   role: RoleKey;
   myPath: string;
+  myPaths: string[];
   entityName: string;
   setupDone: boolean;
   items: Item[];
@@ -201,6 +204,8 @@ type Actions = {
   setPhaseDeadline: (i: number, v: string) => void;
   // filters
   setActivePath: (p: string) => void;
+  setMyPath: (p: string) => void;
+  setAdminDash: (v: boolean) => void;
   setFilter: (v: string) => void;
   setStatusFilter: (v: string) => void;
   setDevStage: (id: string, stage: string, mode?: 'all' | 'single') => void;
@@ -343,6 +348,7 @@ function defaultSetup(): Setup {
 
 function defaultUi(): UiState {
   return {
+    adminDash: false,
     modalOpen: false,
     mStep: 'path',
     method: 'manual',
@@ -402,6 +408,9 @@ function initialState(): State {
     // entity rep. Production will map roles from the IdP / users table.
     role: (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'entity',
     myPath: 'ops',
+    // streams this coordinator is assigned to (entity rep can assign several);
+    // the header shows a switcher when there is more than one
+    myPaths: process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? ['ops', 'services'] : ['ops'],
     entityName: DEFAULT_ENTITY,
     setupDone: false,
     items: seedItems(),
@@ -475,6 +484,7 @@ export const useStore = create<Store>((set, get) => {
       entityName: s.entityName,
       role: s.role,
       myPath: s.myPath,
+      myPaths: s.myPaths,
       setupDone: s.setupDone,
       seedV: SEED_V,
       items: s.items,
@@ -548,6 +558,7 @@ export const useStore = create<Store>((set, get) => {
             ? ((process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'entity')
             : ((saved!.role as RoleKey) || (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'entity'),
           myPath: (saved!.myPath as string) || 'ops',
+          myPaths: Array.isArray(saved!.myPaths) && (saved!.myPaths as string[]).length ? (saved!.myPaths as string[]) : s.myPaths,
           setupDone: !!saved!.setupDone,
           users: !fresh && Array.isArray(saved!.users) ? (saved!.users as UserRec[]) : seedUsers(DEFAULT_ENTITY),
           items,
@@ -576,6 +587,7 @@ export const useStore = create<Store>((set, get) => {
               entityName: d.entityName || s.entityName,
               role: d.role || s.role,
               myPath: d.myPath || s.myPath,
+              myPaths: Array.isArray(d.myPaths) && d.myPaths.length ? d.myPaths : s.myPaths,
               setupDone: !!d.setupDone,
               items,
               phase: d.phase || s.phase,
@@ -719,6 +731,14 @@ export const useStore = create<Store>((set, get) => {
 
     // ---- filters ----
     setActivePath: (p) => setUi({ activePath: p, filter: 'all', stepFilter: null }),
+    setAdminDash: (v) => setUi({ adminDash: v, navSection: 'overview' }),
+    // coordinator stream switcher: change the ACTIVE stream among the assigned ones
+    setMyPath: (p) => {
+      const st = get();
+      if (!st.myPaths.includes(p) || st.myPath === p) return;
+      set({ myPath: p, ui: { ...st.ui, filter: 'all', stepFilter: null } });
+      persist();
+    },
     setFilter: (v) => setUi({ filter: v }),
     setStatusFilter: (v) => setUi({ statusFilter: v }),
     // simplified delivery status: قيد التطوير / تم التطوير / تم الإطلاق
@@ -1147,7 +1167,20 @@ export const useStore = create<Store>((set, get) => {
     },
     closeRank: () => setUi({ rankOpen: false }),
     saveRank: () => {
-      setUi({ rankOpen: false });
+      const s = get();
+      const rankById = new Map(s.ui.rankRows.map((r, i) => [r.id, i + 1]));
+      set((st) => {
+        const draft = st.ui.draft;
+        const nextDraft =
+          draft && rankById.has(draft.id) ? { ...draft, rank: rankById.get(draft.id)! } : draft;
+        return {
+          items: st.items.map((it) =>
+            rankById.has(it.id) ? { ...it, rank: rankById.get(it.id)! } : it
+          ),
+          ui: { ...st.ui, draft: nextDraft, rankOpen: false },
+        };
+      });
+      persist();
       toast('تم حفظ ترتيب الأولوية');
     },
     rankDragStart: (i) => setUi({ rankDragFrom: i }),
