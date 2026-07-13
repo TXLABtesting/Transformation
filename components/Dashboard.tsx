@@ -2574,28 +2574,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                   <FilterSelect value={vm.fundFilterValue} options={vm.fundOptions} minWidth={200} onChange={(v) => s.setFundFilter(v)} />
                 )}
                 <button
-                  onClick={() => s.resetFilters()}
-                  disabled={!vm.anyFilterActive}
-                  style={{
-                    height: 40,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 7,
-                    background: '#fff',
-                    border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-                    borderRadius: 11,
-                    padding: '0 14px',
-                    fontSize: 12.5,
-                    fontWeight: 700,
-                    color: vm.anyFilterActive ? '#42506B' : '#B4BECE',
-                    cursor: vm.anyFilterActive ? 'pointer' : 'default',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  <Icon d="M3 2v6h6M3 8a9 9 0 1 0 2.6-4.5L3 8" size={13} color={vm.anyFilterActive ? '#42506B' : '#B4BECE'} />
-                  إعادة ضبط الفلاتر
-                </button>
-                <button
                   data-r="mfapply"
                   onClick={() => setMobileFilters(false)}
                   style={{
