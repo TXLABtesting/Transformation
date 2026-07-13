@@ -130,6 +130,8 @@ function build(s: Store) {
     visible = visible.filter((i) => ent(i) === ui.entFilter);
   // step filter
   if (ui.stepFilter != null) visible = visible.filter((i) => stepIndexOf(i) === ui.stepFilter);
+  // stage filter (المراحل) — including «للتحديد بعد الدراسة»
+  if (ui.batchFilter) visible = visible.filter((i) => (i.execBatch || '') === ui.batchFilter);
   // stage order: المرحلة الأولى first, then الثانية … ; no stage / «للتحديد بعد الدراسة» last
   const msOrder = execMilestones().map((b) => b.name);
   const stageOrderOf = (i: Item) => {
@@ -588,6 +590,13 @@ function build(s: Store) {
     { v: 'notfunded', label: 'غير معتمد للتمويل' },
   ];
 
+  // stage filter (المراحل) — the four launch stages + «للتحديد بعد الدراسة»
+  const batchFilterOptions = [
+    { v: 'all', label: 'جميع المراحل' },
+    ...launchBatches().map((b) => ({ v: b.name, label: b.name.replace(/^إطلاق /, '') })),
+    { v: TBD_BATCH, label: TBD_BATCH },
+  ];
+
   // path filter (ai only) + entity filter options
   const pathOptions = [{ v: 'all', label: 'جميع المسارات' }, ...PATHS.map((p) => ({ v: p.id, label: p.name }))];
   const entValues = Array.from(new Set([...s.items.map((i) => ent(i)), entityName]));
@@ -603,7 +612,7 @@ function build(s: Store) {
     ...(filterStream === 'all' || streamHasType(filterStream, 'service') ? [{ v: 'service', label: 'خدمة' }] : []),
   ];
   // is any filter currently active (drives the reset button + count)
-  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!(ui.search || '').trim();
+  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim();
 
   // ---- cards ----
   // ---- sidebar navigation (§redesign v2) ----
@@ -1100,6 +1109,8 @@ function build(s: Store) {
     launchedCount: roleBase.filter((i) => devStatusOfItem(i) === 'launched').length,
     fundOptions,
     fundFilterValue: ui.fundFilter,
+    batchFilterOptions,
+    batchFilterValue: ui.batchFilter || 'all',
     entityRank,
     // entity rep, all-streams view: type counts expand to per-stream totals
     showStreamDist: rawRole === 'entity' && filterStream === 'all',
