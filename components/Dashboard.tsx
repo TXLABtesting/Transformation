@@ -1873,7 +1873,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 cursor: 'pointer',
               }}
             >
-              {vm.profileInitials}
+              <Icon d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8" size={18} color="#fff" strokeWidth={2.2} />
             </div>
             {vm.profileOpen && (
               <div
@@ -1915,7 +1915,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       flex: 'none',
                     }}
                   >
-                    {vm.profileInitials}
+                    <Icon d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8" size={18} color="#fff" strokeWidth={2.2} />
                   </span>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{vm.profileName}</div>
