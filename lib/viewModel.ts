@@ -659,7 +659,7 @@ function build(s: Store) {
     ...subNav,
     { key: 'launchplans', label: 'مراحل التنفيذ', icon: NAV_CAL },
     { key: 'lplan', label: 'خطة الإطلاق', icon: NAV_ROCKET },
-    ...(rawRole === 'ai' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
+    ...(rawRole === 'ai' || rawRole === 'path' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
   ].map((n) => ({
     sub: false,
@@ -745,7 +745,7 @@ function build(s: Store) {
 
   // committee «الجهات» page: one card per entity
   const entityCards =
-    rawRole !== 'ai'
+    rawRole !== 'ai' && rawRole !== 'path'
       ? []
       : [...new Set(roleBase.map((i) => ent(i)))].map((e) => {
           const inEnt = roleBase.filter((i) => ent(i) === e);

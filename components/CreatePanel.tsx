@@ -1141,22 +1141,6 @@ function BulkStep({ vm }: { vm: VM }) {
             وما ينقص يُستكمل يدوياً بعد الاستيراد.
           </div>
         </label>
-        <button
-          onClick={() => s.bulkDemo()}
-          style={{
-            marginTop: 8,
-            background: 'none',
-            border: 'none',
-            color: '#8A97AD',
-            fontSize: 11.5,
-            fontWeight: 700,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            textDecoration: 'underline',
-          }}
-        >
-          أو جرّب ببيانات نموذجية
-        </button>
       </div>
 
       <button
