@@ -405,7 +405,7 @@ function EntityOverview({ vm }: { vm: VM }) {
         {/* --- left card: nominations summary (path) OR cost (entity/coord) --- */}
         {isPath ? (() => {
           const nomItems = [
-            { key: 'nominated', label: 'المرشّحة من قِبلي', v: nc.nominated, dot: '#2563EB', square: true, bold: true, numColor: '#2563EB', labelColor: '#13213C' },
+            { key: 'nominated', label: 'المدخلات المرشحة من قبلي', v: nc.nominated, dot: '#2563EB', square: true, bold: true, numColor: '#2563EB', labelColor: '#13213C' },
             { key: 'funded', label: 'معتمدة للتمويل', v: nc.funded, dot: '#2563EB', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
             { key: 'pending', label: 'قيد مراجعة اللجنة', v: nc.pending, dot: '#93B4F5', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
             { key: 'notNominated', label: 'غير مرشّحة', v: nc.notNominated, dot: '#C7D9F5', square: true, bold: true, divider: true, numColor: '#9AA6BC', labelColor: '#9AA6BC' },

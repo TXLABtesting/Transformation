@@ -194,7 +194,7 @@ function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onBulk, onEdi
               <tr key={u.id} style={{ borderTop: '1px solid #EEF2F8', opacity: u.active ? 1 : 0.55 }}>
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ width: 34, height: 34, borderRadius: 10, background: u.roleBg, color: u.roleBadge, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, flex: 'none' }}>{u.initials}</span>
+                    <span style={{ width: 34, height: 34, borderRadius: 10, background: u.roleBg, color: u.roleBadge, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, flex: 'none' }}><Icon d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8" size={16} color={u.roleBadge} strokeWidth={2.2} /></span>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: 800, fontSize: 13 }}>{u.name || '—'}</div>
                       <div style={{ fontSize: 11, color: '#9AA6BC' }}>{u.title || '—'}</div>
