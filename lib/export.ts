@@ -209,6 +209,10 @@ function fillWorkplan(wb: import('exceljs').Workbook, items: Item[], entityName:
     })
   );
 
+  // the report doesn't carry the team-entry section — drop the sheet
+  const team = wb.getWorksheet('فريق العمل');
+  if (team) wb.removeWorksheet(team.id);
+
   // ---- layout pass: sized columns, styled headers, borders -------------------
   // The raw template ships with default column widths; make every sheet read
   // like a finished report while keeping its structure untouched.
@@ -220,7 +224,6 @@ function fillWorkplan(wb: import('exceljs').Workbook, items: Item[], entityName:
     'المستهدفات والنتائج': { widths: [50, 26] },
     'البرنامج الزمني': { widths: [40, 26, 60, 13, 13], headerRow: 3, dataRows: ms.length },
     'الإطلاقات': { widths: [5, 15, 80], headerRow: 3, dataRows: n },
-    'فريق العمل': { widths: [5, 24, 24, 24, 24, 30, 18] },
   };
   for (const [name, cfg] of Object.entries(layout)) {
     const ws = wb.getWorksheet(name);
