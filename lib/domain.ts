@@ -776,6 +776,7 @@ export function blankItem(type: ItemType, path: string): Item {
   };
   if (type === 'operation') {
     Object.assign(base, {
+      status: 'عملية جديدة',
       opType: 'العمليات التخصصية',
       subActivities: '',
       sector: '',
@@ -793,6 +794,7 @@ export function blankItem(type: ItemType, path: string): Item {
     });
   } else if (type === 'service') {
     Object.assign(base, {
+      status: 'خدمة جديدة',
       serviceOwner: '',
       targetUsers: '',
       currentJourney: '',

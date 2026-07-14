@@ -928,6 +928,17 @@ export const useStore = create<Store>((set, get) => {
             : 'نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة'
         );
       }
+      // numeric/attachment fields marked * that the text check above can't see
+      if (s.ui.fStep === 2 && !Number(dd.rank)) {
+        return toast('نرجو تحديد ترتيب الأولوية (بالسحب والإفلات) قبل المتابعة');
+      }
+      if (s.ui.fStep === 3) {
+        if (!Number(dd.targetPct)) return toast('نرجو تحديد نسبة التحول المستهدفة قبل المتابعة');
+        if (!Number(dd.aiModels)) return toast('نرجو إدخال عدد نماذج وأنظمة الذكاء الاصطناعي المتوقعة قبل المتابعة');
+      }
+      if (s.ui.fStep === 4 && !filled(dd.scopeFile)) {
+        return toast('نرجو إرفاق مستند نطاق العمل قبل المتابعة');
+      }
       if (s.ui.fStep < 5) {
         setUi({ fStep: s.ui.fStep + 1 });
         return;
