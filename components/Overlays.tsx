@@ -76,7 +76,7 @@ export function Overlays({ vm }: { vm: VM }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>فريق العمل</div>
                 <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>
-                  الفريق المسؤول عن التحول بالذكاء الاصطناعي
+                  الفريق المسؤول عن مشروع الذكاء الاصطناعي المساعد
                 </div>
               </div>
               <button
