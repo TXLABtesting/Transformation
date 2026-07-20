@@ -915,7 +915,7 @@ export const useStore = create<Store>((set, get) => {
       const isSvc = d?.type === 'service';
       const requiredByStep: Record<number, string[]> = {
         1: ['title', 'desc', ...(isOp ? ['subActivities', 'sector', 'dept', 'section'] : []), ...(isSvc ? ['serviceOwner', 'targetUsers'] : [])],
-        2: [...(isOp ? ['automationSystem'] : []), ...(isSvc ? ['currentJourney', 'painPoints', 'expectedImprovement', 'endDate'] : [])],
+        2: [...(isOp ? ['automationSystem'] : []), ...(isSvc ? ['currentJourney', 'painPoints', 'expectedImprovement', 'endDate'] : []), ...(isOp || isSvc ? ['durationBefore', 'durationAfter'] : [])],
         3: ['expectedOutputs', 'aiModels', 'endDate'],
         4: ['scopeOfWork'],
         5: [],

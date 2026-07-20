@@ -363,6 +363,9 @@ export type Item = {
   automationPct?: number;
   automationLevel?: string;
   automationSystem?: string;
+  // المدة الزمنية للإنجاز قبل/بعد التحويل (للعمليات والخدمات فقط)
+  durationBefore?: string;
+  durationAfter?: string;
   complexityLevel?: string;
   progress?: number;
   scopeOfWork?: string;
@@ -787,6 +790,8 @@ export function blankItem(type: ItemType, path: string): Item {
       automationSystem: '',
       usageIntensity: 'متوسطة',
       complexityLevel: 'متوسط',
+      durationBefore: '',
+      durationAfter: '',
       readiness: 60,
       transformability: 'قابل جزئياً',
       transformPriority: 'متوسطة',
@@ -803,6 +808,8 @@ export function blankItem(type: ItemType, path: string): Item {
       automationLevel: 'لا',
       automationPct: 0,
       usageIntensity: 'متوسطة',
+      durationBefore: '',
+      durationAfter: '',
       transformability: 'قابل جزئياً',
       transformPriority: 'متوسطة',
       readiness: 60,

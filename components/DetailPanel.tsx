@@ -507,6 +507,12 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <DetailCell label="جاهزية التحول">{d.readiness}</DetailCell>
                 </DetailGrid>
 
+                {(d.durationBefore || d.durationAfter) && (
+                  <DetailGrid cols={2}>
+                    <DetailCell label="المدة الزمنية للإنجاز قبل التحويل">{d.durationBefore || '—'}</DetailCell>
+                    <DetailCell label="المدة الزمنية للإنجاز بعد التحويل">{d.durationAfter || '—'}</DetailCell>
+                  </DetailGrid>
+                )}
                 <DetailSecHead title="الأتمتة" />
                 {(() => {
                   const cells = [
@@ -559,6 +565,12 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <DetailCell label="مالك الخدمة">{d.serviceOwner}</DetailCell>
                   <DetailCell label="الفئة المستهدفة">{d.targetUsers}</DetailCell>
                 </DetailGrid>
+                {(d.durationBefore || d.durationAfter) && (
+                  <DetailGrid cols={2}>
+                    <DetailCell label="المدة الزمنية للإنجاز قبل التحويل">{d.durationBefore || '—'}</DetailCell>
+                    <DetailCell label="المدة الزمنية للإنجاز بعد التحويل">{d.durationAfter || '—'}</DetailCell>
+                  </DetailGrid>
+                )}
 
                 <DetailSecHead title="رحلة المتعامل" />
                 <DetailGrid cols={1}>

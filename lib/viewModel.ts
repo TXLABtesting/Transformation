@@ -1904,6 +1904,8 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     automationPct: i.automationPct,
     automationSystem: i.automationSystem,
     complexityLevel: i.complexityLevel,
+    durationBefore: i.durationBefore,
+    durationAfter: i.durationAfter,
     sector: i.sector,
     dept: i.dept,
     section: i.section,

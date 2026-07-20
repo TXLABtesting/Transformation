@@ -658,6 +658,18 @@ function F2({
       </select>
     </div>
   );
+  const durs = (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+      <div>
+        <label style={labelStyle}>المدة الزمنية للإنجاز قبل التحويل <span style={{ color: '#D23B45' }}>*</span></label>
+        <input value={gv('durationBefore')} onChange={(e) => setField('durationBefore', e.target.value)} placeholder="مثال: 3 أيام عمل" style={inputStyle} />
+      </div>
+      <div>
+        <label style={labelStyle}>المدة الزمنية للإنجاز بعد التحويل <span style={{ color: '#D23B45' }}>*</span></label>
+        <input value={gv('durationAfter')} onChange={(e) => setField('durationAfter', e.target.value)} placeholder="مثال: 10 دقائق" style={inputStyle} />
+      </div>
+    </div>
+  );
   const range = (label: string, key: string) => (
     <div style={{ marginBottom: 14 }}>
       <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
@@ -710,6 +722,7 @@ function F2({
             {sel('أولوية التحول', 'transformPriority', ['منخفضة', 'متوسطة', 'عالية'])}
             {range('جاهزية التحول', 'readiness')}
             {sel('مستوى الأثر المتوقع', 'impact', ['منخفض', 'متوسط', 'عالٍ'])}
+            {durs}
           </div>
           <div style={cardStyle}>
             <div style={cardTitle}>معلومات الأتمتة</div>
@@ -756,6 +769,7 @@ function F2({
               minHeight={96}
             />
           </div>
+          {durs}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={labelStyle}>مستوى الأثر المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
