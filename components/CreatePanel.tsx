@@ -319,7 +319,7 @@ function MethodStep({ vm }: { vm: VM }) {
         '#0B8A4B',
         IC.upload,
         'رفع المستند',
-        'نزّل قالب خطة العمل، عبّئ عدّة صفوف دفعة واحدة، ثم ارفعه لاستيرادها ومراجعتها قبل الإرسال.'
+        'نزّل نموذج خطة العمل، عبّئ عدّة صفوف دفعة واحدة، ثم ارفعه لاستيرادها ومراجعتها قبل الإرسال.'
       )}
       </div>
     </div>
@@ -1091,11 +1091,11 @@ function BulkStep({ vm }: { vm: VM }) {
 
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 10 }}>
-          الخطوة ١ · تنزيل القالب
+          الخطوة ١ · تنزيل النموذج
         </div>
         <a
           href="assets/workplan_template.xlsx"
-          download="قالب_خطة_العمل.xlsx"
+          download="نموذج_خطة_العمل.xlsx"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -1116,7 +1116,7 @@ function BulkStep({ vm }: { vm: VM }) {
           }}
         >
           <Icon d={IC.download} size={18} color="#2563EB" />
-          قالب خطة العمل (Excel)
+          نموذج خطة العمل (Excel)
         </a>
       </div>
 
@@ -1148,10 +1148,10 @@ function BulkStep({ vm }: { vm: VM }) {
             }}
           />
           <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49', marginBottom: 6 }}>
-            اضغط لاختيار ملف خطة العمل
+            اضغط لاختيار الملف
           </div>
           <div style={{ fontSize: 11.5, color: '#9AA6BC', lineHeight: 1.7 }}>
-            ملف Excel بصيغة .xlsx بقالب خطة العمل — تُقرأ المشاريع والعمليات والخدمات وخطة الإطلاقات،
+            ملف Excel بصيغة .xlsx بنموذج خطة العمل — تُقرأ المشاريع والعمليات والخدمات وخطة الإطلاقات،
             وما ينقص يُستكمل يدوياً بعد الاستيراد.
           </div>
         </label>

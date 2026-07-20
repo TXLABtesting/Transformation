@@ -510,10 +510,10 @@ function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
             <div style={{ border: '1px solid #E7ECF4', borderRadius: 14, padding: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
               {stepNum(1, true)}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800, fontSize: 13.5 }}>تنزيل القالب</div>
-                <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, margin: '4px 0 10px' }}>نزّل قالب Excel المنظّم، وعبّئ صفًّا لكل مستخدم (الاسم، البريد، الدور، الجهة، المسار) مع قوائم منسدلة جاهزة.</div>
+                <div style={{ fontWeight: 800, fontSize: 13.5 }}>تنزيل النموذج</div>
+                <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, margin: '4px 0 10px' }}>نزّل نموذج Excel المنظّم، وعبّئ صفًّا لكل مستخدم (الاسم، البريد، الدور، الجهة، المسار) مع قوائم منسدلة جاهزة.</div>
                 <button disabled={busy} onClick={download} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: '1px solid #DDE5F0', background: '#fff', color: '#1D4ED8', borderRadius: 10, padding: '9px 15px', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  <Icon d="M12 3v12M7 10l5 5 5-5M5 21h14" size={15} color="#1D4ED8" /> تنزيل قالب Excel
+                  <Icon d="M12 3v12M7 10l5 5 5-5M5 21h14" size={15} color="#1D4ED8" /> تنزيل نموذج Excel
                 </button>
               </div>
             </div>

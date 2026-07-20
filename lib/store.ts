@@ -1111,7 +1111,7 @@ export const useStore = create<Store>((set, get) => {
         const parsed = await parseWorkplan(buf);
         if (!parsed.rows.length && !parsed.launches.length) {
           setUi({ mStep: 'bulk', bulkLoading: false });
-          return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام قالب خطة العمل');
+          return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام نموذج خطة العمل');
         }
         const rows: BulkRow[] = parsed.rows.map((r) => ({
           type: r.type,
@@ -1128,7 +1128,7 @@ export const useStore = create<Store>((set, get) => {
         });
       } catch {
         setUi({ mStep: 'bulk', bulkLoading: false });
-        toast('تعذّرت قراءة الملف — تأكد أنه بصيغة .xlsx وبالقالب الصحيح');
+        toast('تعذّرت قراءة الملف — تأكد أنه بصيغة .xlsx وبالنموذج الصحيح');
       }
     },
     submitBulk: () => {
