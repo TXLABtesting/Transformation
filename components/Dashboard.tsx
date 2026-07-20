@@ -309,7 +309,7 @@ function EntityOverview({ vm }: { vm: VM }) {
   const nc = vm.nomCard;
   const sec2Cards = useTypes ? vm.typeOverviewCards : vm.streamOverviewCards;
   const sec2Title = useTypes ? 'توزيع المدخلات حسب النوع' : 'توزيع مدخلات الجهة حسب المسارات';
-  const sec2Sub = useTypes ? 'تصنيف مدخلات المسار حسب النوع، مراحل التقدم، والتكلفة التقديرية.' : 'عرض مدخلات الجهة في كل مسار حسب مراحل التقدم والإنجاز.';
+  const sec2Sub = useTypes ? 'تصنيف مدخلات المسار حسب النوع ومراحل التقدم.' : 'عرض مدخلات الجهة في كل مسار حسب مراحل التقدم والإنجاز.';
   const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
   const money = (label: string) => {
     const p = label.split(' ');
