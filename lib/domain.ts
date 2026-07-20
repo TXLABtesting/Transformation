@@ -622,12 +622,47 @@ export function execMilestones(): Phase[] {
       fixed: true,
       subs: [{ name: '', start: '', end: '' }],
     },
+    {
+      name: 'إطلاق المرحلة الخامسة',
+      period: 'سبتمبر – نوفمبر 2027',
+      desc: 'توسعة نطاق التحول على مستوى الجهات',
+      start: '2027-09-01',
+      end: '2027-11-30',
+      status: 'لم تبدأ',
+      fixed: true,
+      subs: [{ name: '', start: '', end: '' }],
+    },
+    {
+      name: 'إطلاق المرحلة السادسة',
+      period: 'ديسمبر 2027 – فبراير 2028',
+      desc: 'استكمال إطلاق النماذج والأنظمة المتبقية',
+      start: '2027-12-01',
+      end: '2028-02-28',
+      status: 'لم تبدأ',
+      fixed: true,
+      subs: [{ name: '', start: '', end: '' }],
+    },
   ];
 }
 
-// Launch-eligible batches (المراحل الأربع) — التقييم والتهيئة is excluded
+// Launch-eligible batches (الدفعات) — التقييم والتهيئة is excluded
 export function launchBatches(): Phase[] {
   return execMilestones().filter((b) => b.name !== 'التقييم والتهيئة');
+}
+
+// الدفعتان الخامسة والسادسة متاحتان لكل المسارات عدا مسار تقنيات الذكاء
+// الاصطناعي والبيانات (يقتصر على الدفعات الأربع الأولى)
+export const AI_STREAM_ID = 'tech';
+export function streamLaunchBatches(streamId?: string | null): Phase[] {
+  const bs = launchBatches();
+  return streamId === AI_STREAM_ID ? bs.slice(0, 4) : bs;
+}
+
+// «الدفعة الأولى…السادسة» display label for a batch name
+const BATCH_ORDINALS = ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة'];
+export function batchDafaaLabel(name: string): string {
+  const idx = launchBatches().findIndex((b) => b.name === name);
+  return idx >= 0 && BATCH_ORDINALS[idx] ? 'الدفعة ' + BATCH_ORDINALS[idx] : name.replace(/^إطلاق /, '');
 }
 
 // Centrally managed launch plan (defined per batch via "إدارة خطط الإطلاق")

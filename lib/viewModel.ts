@@ -42,6 +42,8 @@ import {
   countdown,
   execMilestones,
   launchBatches,
+  streamLaunchBatches,
+  batchDafaaLabel,
   START_STATES,
   DEFAULT_PROGRAM_PHASES,
   TWO_STEP_PHASES,
@@ -262,8 +264,8 @@ function build(s: Store) {
       name: p.name,
       icon: PIC[p.id],
       total: inStream.length,
-      stages: launchBatches().map((b) => ({
-        label: b.name.replace(/^إطلاق /, ''),
+      stages: streamLaunchBatches(p.id).map((b) => ({
+        label: batchDafaaLabel(b.name),
         n: inStream.filter((i) => i.execBatch === b.name).length,
       })),
       execLabel: compactM(execCost),
@@ -305,7 +307,7 @@ function build(s: Store) {
       name: g.name,
       icon: g.icon,
       total: inType.length,
-      stages: launchBatches().map((b) => ({ label: b.name.replace(/^إطلاق /, ''), n: inType.filter((i) => i.execBatch === b.name).length })),
+      stages: streamLaunchBatches(myPath).map((b) => ({ label: batchDafaaLabel(b.name), n: inType.filter((i) => i.execBatch === b.name).length })),
       execLabel: compactM(execCost),
       launchLabel: compactM(launchCost),
       totalLabel: compactM(execCost + launchCost),
@@ -318,7 +320,7 @@ function build(s: Store) {
     const items = roleBase.filter(match);
     return {
       total: items.length,
-      stages: launchBatches().map((b) => {
+      stages: streamLaunchBatches(myPath).map((b) => {
         const inStage = items.filter((i) => i.execBatch === b.name);
         return {
           label: b.name.replace(/^إطلاق /, ''),
@@ -416,7 +418,13 @@ function build(s: Store) {
     batchBase = batchBase.filter((i) => ent(i) === ui.execEnt);
   if ((rawRole === 'ai' || rawRole === 'entity') && ui.execStream !== 'all')
     batchBase = batchBase.filter((i) => i.path === ui.execStream);
-  const batchSummary = launchBatches().map((b) => {
+  const batchStreamScope =
+    rawRole === 'coord' || rawRole === 'path'
+      ? myPath
+      : ui.execStream !== 'all'
+        ? ui.execStream
+        : null;
+  const batchSummary = streamLaunchBatches(batchStreamScope).map((b) => {
     const inBatch = batchBase.filter((i) => i.execBatch === b.name);
     const cost = inBatch.reduce((a, i) => a + parseBudget(i.budget), 0);
     const launchTotal = s.launchPlans
@@ -593,7 +601,7 @@ function build(s: Store) {
   // stage filter (المراحل) — the four launch stages + «للتحديد بعد الدراسة»
   const batchFilterOptions = [
     { v: 'all', label: 'جميع المراحل' },
-    ...launchBatches().map((b) => ({ v: b.name, label: b.name.replace(/^إطلاق /, '') })),
+    ...streamLaunchBatches(filterStream === 'all' ? null : filterStream).map((b) => ({ v: b.name, label: b.name.replace(/^إطلاق /, '') })),
     { v: TBD_BATCH, label: TBD_BATCH },
   ];
 
@@ -1165,7 +1173,7 @@ function build(s: Store) {
           batch: ui.assign.batch,
           isChange: assignIsChange,
           currentBatches: assignSelBatches,
-          batchOptions: launchBatches().map((b) => ({
+          batchOptions: streamLaunchBatches(myPath).map((b) => ({
             name: b.name,
             label: (b.period ? b.name + ' · ' + b.period : b.name).replace(/^إطلاق /, ''),
           })),
@@ -1179,7 +1187,7 @@ function build(s: Store) {
     modalOpen: ui.modalOpen,
     // launch-plan manager (إدارة خطط الإطلاق)
     launchPlansOpen: ui.launchPlansOpen,
-    launchPlanMgr: launchBatches().map((b) => ({
+    launchPlanMgr: streamLaunchBatches(rawRole === 'coord' || rawRole === 'path' ? myPath : null).map((b) => ({
       batch: b.name,
       period: b.period || '',
       plans: s.launchPlans
@@ -2108,7 +2116,7 @@ function buildModal(s: Store) {
     fNextLabel: ui.fStep >= 5 ? 'إرسال للاعتماد' : 'التالي',
     // execution batches (خطة التنفيذ والإطلاق) + centrally-managed launch plans
     batchOptions: [
-      ...launchBatches().map((b) => ({
+      ...streamLaunchBatches(path).map((b) => ({
         name: b.name,
         label: (b.period ? b.name + ' · ' + b.period : b.name).replace(/^إطلاق /, ''),
       })),
