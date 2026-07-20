@@ -541,7 +541,7 @@ function F1({
       )}
 
       <div style={{ marginBottom: 14 }}>
-        <label style={labelStyle}>اسم {m.mTypeLabel} <span style={{ color: '#D23B45' }}>*</span></label>
+        <label style={labelStyle}>{m.mIsProjectish ? 'اسم المشروع' : 'اسم ' + m.mTypeLabel} <span style={{ color: '#D23B45' }}>*</span></label>
         <input
           value={gv('title')}
           onChange={(e) => setField('title', e.target.value)}
@@ -713,7 +713,7 @@ function F2({
       {m.mIsOp && (
         <>
           <div style={cardStyle}>
-            <div style={cardTitle}>تقييم التحول للمساعد الذكي</div>
+            <div style={cardTitle}>تقييم التحول للذكاء الاصطناعي المساعد</div>
             {sel('الأولوية', 'priority', ['عالية', 'متوسطة', 'منخفضة'])}
             {sel('مستوى التعقيد', 'complexity', ['عالٍ', 'متوسط', 'منخفض'])}
             {sel('وضع العملية', 'status', ['عملية جديدة', 'قيد التنفيذ', 'قائمة', 'مكتملة'])}
@@ -1056,10 +1056,6 @@ function FPhases({ vm }: { vm: VM }) {
             </option>
           ))}
         </select>
-        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 7, lineHeight: 1.7 }}>
-          حدّد مرحلة التنفيذ والإطلاق — يتم الربط بخطة إطلاق لاحقاً من صفحة
-          «مراحل التنفيذ والإطلاق».
-        </div>
       </div>
       )}
     </div>

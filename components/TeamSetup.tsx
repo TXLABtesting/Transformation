@@ -310,7 +310,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                         />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49' }}>
-                            {path.name}
+                            {'مسار ' + path.name}
                           </div>
                           <div
                             style={{

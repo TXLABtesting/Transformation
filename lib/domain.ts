@@ -82,7 +82,7 @@ export const PIC: Record<string, string> = {
 // Allowed item types per path — project & initiative are ONE merged type
 export type TypeOption = { key: ItemType; label: string };
 export function availTypes(path: string): TypeOption[] {
-  const base: TypeOption[] = [{ key: 'project', label: 'مشروع / مبادرة' }];
+  const base: TypeOption[] = [{ key: 'project', label: 'مشروع' }];
   // operations exist in the operations stream and العمل الحكومي الاستراتيجي only
   if (path === 'ops' || path === 'strategy') base.push({ key: 'operation', label: 'عملية' });
   // services exist in the services stream only
@@ -96,16 +96,16 @@ export const streamHasType = (path: string, t: 'operation' | 'service'): boolean
 
 // ---- 1.2 TYPE map (project/initiative merged for display) ------------------
 export const TYPE: Record<ItemType, { label: string; color: string; bg: string }> = {
-  project: { label: 'مشروع / مبادرة', color: '#2563EB', bg: '#E5EEFF' },
-  initiative: { label: 'مشروع / مبادرة', color: '#2563EB', bg: '#E5EEFF' },
+  project: { label: 'مشروع', color: '#2563EB', bg: '#E5EEFF' },
+  initiative: { label: 'مشروع', color: '#2563EB', bg: '#E5EEFF' },
   operation: { label: 'عملية', color: '#2563EB', bg: '#E5EEFF' },
   service: { label: 'خدمة', color: '#2563EB', bg: '#E5EEFF' },
 };
 
 export const typeLabel = (t: string): string =>
   ({
-    project: 'مشروع / مبادرة',
-    initiative: 'مشروع / مبادرة',
+    project: 'مشروع',
+    initiative: 'مشروع',
     operation: 'عملية',
     service: 'خدمة',
   } as Record<string, string>)[t] || 'عنصر';
@@ -113,8 +113,8 @@ export const typeLabel = (t: string): string =>
 // definite form for sentences: «تم إرسال المشروع / المبادرة…»
 export const typeLabelDef = (t: string): string =>
   ({
-    project: 'المشروع / المبادرة',
-    initiative: 'المشروع / المبادرة',
+    project: 'المشروع',
+    initiative: 'المشروع',
     operation: 'العملية',
     service: 'الخدمة',
   } as Record<string, string>)[t] || 'العنصر';

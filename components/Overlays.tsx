@@ -1029,7 +1029,7 @@ export function Overlays({ vm }: { vm: VM }) {
             <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#13213C' }}>
-                  {vm.assignModal.isChange ? 'تغيير خطة التنفيذ والإطلاق' : 'تعيين خطة التنفيذ والإطلاق'}
+                  {vm.assignModal.isChange ? 'تغيير البرنامج الزمني' : 'تعيين البرنامج الزمني'}
                 </div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                   {vm.assignModal.isChange
@@ -1058,7 +1058,7 @@ export function Overlays({ vm }: { vm: VM }) {
 
             <div style={{ padding: '0 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={assignLabel}>خطة التنفيذ والإطلاق (المرحلة)</label>
+                <label style={assignLabel}>البرنامج الزمني (المرحلة)</label>
                 <select
                   value={vm.assignModal.batch}
                   onChange={(e) => s.setAssign({ batch: e.target.value })}

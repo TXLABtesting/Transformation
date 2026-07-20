@@ -282,7 +282,7 @@ function build(s: Store) {
   // Scoped to the types the stream actually has: العمليات stream has no
   // services, so a coordinator there never sees «خدمة».
   const typeGroups = [
-    { id: 'projinit', name: 'مشروع / مبادرة', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7', section: 'projects', match: (i: Item) => isProjInit(i.type) },
+    { id: 'projinit', name: 'مشروع', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7', section: 'projects', match: (i: Item) => isProjInit(i.type) },
     ...(streamHasType(myPath, 'operation')
       ? [{ id: 'operation', name: 'عملية', icon: 'M3 6h18M3 12h18M3 18h18', section: 'operations', match: (i: Item) => i.type === 'operation' }]
       : []),
@@ -326,7 +326,7 @@ function build(s: Store) {
           label: b.name.replace(/^إطلاق /, ''),
           n: inStage.length,
           typeBreak: [
-            { label: 'مشروع / مبادرة', n: inStage.filter((i) => isProjInit(i.type)).length },
+            { label: 'مشروع', n: inStage.filter((i) => isProjInit(i.type)).length },
             { label: 'عملية', n: inStage.filter((i) => i.type === 'operation').length },
             { label: 'خدمة', n: inStage.filter((i) => i.type === 'service').length },
           ],
@@ -366,7 +366,7 @@ function build(s: Store) {
       entCount: new Set(inStream.map((i) => ent(i))).size,
       total: inStream.length,
       byType: [
-        { label: 'مشروع / مبادرة', n: inStream.filter((i) => isProjInit(i.type)).length },
+        { label: 'مشروع', n: inStream.filter((i) => isProjInit(i.type)).length },
         { label: 'عملية', n: inStream.filter((i) => i.type === 'operation').length },
         { label: 'خدمة', n: inStream.filter((i) => i.type === 'service').length },
       ],
@@ -405,7 +405,7 @@ function build(s: Store) {
   const STREAM_META: Record<string, { short: string; color: string }> = {
     ops: { short: 'العمليات والدعم المؤسسي', color: '#2563EB' },
     strategy: { short: 'العمل الحكومي الاستراتيجي', color: '#2563EB' },
-    services: { short: 'الخدمات', color: '#2563EB' },
+    services: { short: 'الخدمات الحكومية', color: '#2563EB' },
     capacity: { short: 'بناء القدرات والتدريب', color: '#2563EB' },
     tech: { short: 'تقنيات الذكاء الاصطناعي والبيانات', color: '#2563EB' },
   };
@@ -450,7 +450,7 @@ function build(s: Store) {
       // stage-distribution breakdowns (entity rep view)
       typeBreak: [
         { label: 'المشاريع والمبادرات', n: inBatch.filter((i) => isProjInit(i.type)).length },
-        { label: 'الخدمات', n: inBatch.filter((i) => i.type === 'service').length },
+        { label: 'الخدمات الحكومية', n: inBatch.filter((i) => i.type === 'service').length },
         { label: 'العمليات', n: inBatch.filter((i) => i.type === 'operation').length },
       ].filter((x) => x.n > 0),
       streamBreak: PATHS.map((p) => ({
@@ -614,8 +614,8 @@ function build(s: Store) {
   const entFilterValues = filterStream === 'all' ? entValues : Array.from(new Set(entScope.map((i) => ent(i))));
   const entOptions = [{ v: 'all', label: 'جميع الجهات' }, ...entFilterValues.map((e) => ({ v: e, label: e }))];
   const typeOptions = [
-    { v: 'all', label: 'جميع الأنواع' },
-    { v: 'projinit', label: 'مشروع / مبادرة' },
+    { v: 'all', label: 'جميع التصنيفات' },
+    { v: 'projinit', label: 'مشروع' },
     ...(filterStream === 'all' || streamHasType(filterStream, 'operation') ? [{ v: 'operation', label: 'عملية' }] : []),
     ...(filterStream === 'all' || streamHasType(filterStream, 'service') ? [{ v: 'service', label: 'خدمة' }] : []),
   ];
@@ -677,13 +677,13 @@ function build(s: Store) {
           ? [{ key: 'operations', label: 'العمليات', icon: NAV_SLIDERS, sub: true, count: cntOperations }]
           : []),
         ...(roleStreams.some((p) => streamHasType(p.id, 'service'))
-          ? [{ key: 'services', label: 'الخدمات', icon: NAV_GRID4, sub: true, count: cntServices }]
+          ? [{ key: 'services', label: 'الخدمات الحكومية', icon: NAV_GRID4, sub: true, count: cntServices }]
           : []),
       ];
 
   const navItems = [
     { key: 'overview', label: 'الرئيسية', icon: NAV_HOME },
-    { key: 'all', label: streamSub ? 'جميع المسارات' : 'جميع الأنواع', icon: NAV_DOTS, count: roleBase.length, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
+    { key: 'all', label: streamSub ? 'جميع المسارات' : 'جميع التصنيفات', icon: NAV_DOTS, count: roleBase.length, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
     ...subNav,
     { key: 'launchplans', label: 'مراحل التنفيذ', icon: NAV_CAL },
     { key: 'lplan', label: 'خطة الإطلاق', icon: NAV_ROCKET },
@@ -701,7 +701,7 @@ function build(s: Store) {
     all: 'جميع المدخلات',
     projects: 'المشاريع والمبادرات',
     operations: 'العمليات',
-    services: 'الخدمات',
+    services: 'الخدمات الحكومية',
   };
   const isTypeSection = navSection in typeSections;
   // committee/stream-head entity filter applies to the whole portfolio page
@@ -792,14 +792,14 @@ function build(s: Store) {
                     ? [{ name: 'العمليات', count: inEnt.filter((i) => i.type === 'operation').length }]
                     : []),
                   ...(streamHasType(myPath, 'service')
-                    ? [{ name: 'الخدمات', count: inEnt.filter((i) => i.type === 'service').length }]
+                    ? [{ name: 'الخدمات الحكومية', count: inEnt.filter((i) => i.type === 'service').length }]
                     : []),
                 ]
               : PATHS.map((p) => ({ name: p.name, count: inEnt.filter((i) => i.path === p.id).length }));
           return {
             name: e,
             total: inEnt.length,
-            byStreamTitle: rawRole === 'path' ? 'المدخلات حسب النوع' : 'المدخلات حسب المسار',
+            byStreamTitle: rawRole === 'path' ? 'المدخلات حسب التصنيف' : 'المدخلات حسب المسار',
             byStream,
             // stream head: nominations he made in this entity (pending funding)
             myNominated:
@@ -1166,7 +1166,7 @@ function build(s: Store) {
     assignBar: {
       show: rawRole === 'coord' && ui.assignSel.length > 0,
       count: ui.assignSel.length,
-      actionLabel: assignIsChange ? 'تغيير خطة التنفيذ والإطلاق' : 'تعيين خطة التنفيذ والإطلاق',
+      actionLabel: assignIsChange ? 'تغيير البرنامج الزمني' : 'تعيين البرنامج الزمني',
     },
     assignModal: ui.assign
       ? {
@@ -1295,13 +1295,13 @@ function summaryText(activePath: string): string {
 function tabDefs(activePath: string, _scope: Item[]) {
   // project & initiative are one merged bucket
   const defs: { key: string; label: string; optLabel: string }[] = [
-    { key: 'all', label: 'جميع الأنواع', optLabel: 'جميع الأنواع' },
+    { key: 'all', label: 'جميع التصنيفات', optLabel: 'جميع التصنيفات' },
     { key: 'projinit', label: 'المشاريع / المبادرات', optLabel: 'المشاريع / المبادرات' },
   ];
   if (activePath === 'all' || streamHasType(activePath, 'operation'))
     defs.push({ key: 'operation', label: 'العمليات', optLabel: 'العمليات' });
   if (activePath === 'all' || streamHasType(activePath, 'service'))
-    defs.push({ key: 'service', label: 'الخدمات', optLabel: 'الخدمات' });
+    defs.push({ key: 'service', label: 'الخدمات الحكومية', optLabel: 'الخدمات الحكومية' });
   return defs;
 }
 
@@ -2080,8 +2080,8 @@ function buildModal(s: Store) {
   const step2Label =
     ({ project: 'تقييم المشروع', initiative: 'تقييم المبادرة', operation: 'تقييم العملية', service: 'تقييم الخدمة' } as Record<string, string>)[type] ||
     'التقييم';
-  const fLabels = [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'خطة التنفيذ والإطلاق'];
-  const fTitles = [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'خطة التنفيذ والإطلاق'];
+  const fLabels = [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
+  const fTitles = [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
   const fHints = [
     'ابدأ بالمعلومات الأساسية',
     'حدّد الأولوية وقابلية التحول',
@@ -2114,7 +2114,7 @@ function buildModal(s: Store) {
     fStepTitle: fTitles[ui.fStep - 1] || '',
     fStepHint: fHints[ui.fStep - 1] || '',
     fNextLabel: ui.fStep >= 5 ? 'إرسال للاعتماد' : 'التالي',
-    // execution batches (خطة التنفيذ والإطلاق) + centrally-managed launch plans
+    // execution batches (البرنامج الزمني) + centrally-managed launch plans
     batchOptions: [
       ...streamLaunchBatches(path).map((b) => ({
         name: b.name,
