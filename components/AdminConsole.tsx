@@ -370,7 +370,7 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
               <input style={{ ...inputSt, direction: 'ltr', textAlign: 'right' }} value={f.email} onChange={(e) => set({ email: e.target.value })} placeholder="name@aigp.gov.ae" />
             </div>
             <div>
-              <label style={labelSt}>رقم الهاتف</label>
+              <label style={labelSt}>رقم الهاتف المتحرك</label>
               <input style={{ ...inputSt, direction: 'ltr', textAlign: 'right' }} value={f.phone} onChange={(e) => set({ phone: e.target.value })} placeholder="+971 5x xxx xxxx" />
             </div>
           </div>

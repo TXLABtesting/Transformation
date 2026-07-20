@@ -189,7 +189,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
           {step1 && (
             <div style={{ animation: 'fadeUp .35s ease both' }}>
               <div style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', marginBottom: 7 }}>
-                الجهة الحكومية
+                الجهة الاتحادية
               </div>
               <div
                 style={{
@@ -263,7 +263,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>رقم الهاتف {star}</label>
+                  <label style={labelStyle}>رقم الهاتف المتحرك {star}</label>
                   <input
                     type="tel"
                     inputMode="tel"
@@ -375,7 +375,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                             direction: 'ltr',
                             textAlign: 'right',
                           }}
-                          placeholder={'⁧رقم الهاتف *⁩'}
+                          placeholder={'⁧رقم الهاتف المتحرك *⁩'}
                           value={owner?.phone || ''}
                           onChange={(e) => s.updOwner(path.id, 'phone', e.target.value)}
                         />
