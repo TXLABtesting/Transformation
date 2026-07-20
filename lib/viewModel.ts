@@ -882,7 +882,7 @@ function build(s: Store) {
       rawRole === 'coord' || rawRole === 'path'
         ? 'مسار ' + pathById(myPath).name
         : rawRole === 'entity'
-          ? 'لوحة متابعة مدخلات الجهة'
+          ? 'لوحة متابعة الإدخال'
           : 'مشروع الذكاء الاصطناعي المساعد',
     // small title inside the blue box
     boxTitle: 'ملخص التقدم',

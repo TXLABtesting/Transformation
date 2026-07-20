@@ -171,7 +171,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                 marginTop: 8,
               }}
             >
-              مسؤولو المسارات
+              منسقي المسارات
             </div>
           </div>
         </div>

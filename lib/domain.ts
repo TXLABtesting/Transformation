@@ -43,7 +43,7 @@ export const PATHS: Path[] = [
   },
   {
     id: 'services',
-    name: 'الخدمات',
+    name: 'الخدمات الحكومية',
     desc: 'تحويل الخدمات وباقات الخدمات لتطبيق نماذج وأنظمة الذكاء الاصطناعي المساعد',
     color: '#2563EB',
     extra: 'service',

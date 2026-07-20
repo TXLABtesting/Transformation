@@ -132,7 +132,7 @@ export function Overlays({ vm }: { vm: VM }) {
               {/* path owners card */}
               <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 16 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: '#54627B', marginBottom: 12 }}>
-                  مسؤولو المسارات
+                  منسقي المسارات
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {vm.tmOwners.map((o, i) => (

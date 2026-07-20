@@ -76,7 +76,7 @@ const COORD_TOUR_STEPS: TourStep[] = [
 // entity, reviews submissions, and approves the ready ones for the next stage.
 const ENTITY_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="profile"]', title: 'الملف الشخصي وفريق العمل', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك، والاطلاع على منسقي المسارات المرتبطين بجهتك عند توفرهم.' },
-  { sel: '[data-tour="kpis"]', title: 'لوحة متابعة مدخلات الجهة', desc: 'تعرض هذه اللوحة نظرة شاملة على مدخلات الجهة حسب المسارات، مع حالة التقدم، التكلفة التقديرية، وحالة الاعتماد.' },
+  { sel: '[data-tour="kpis"]', title: 'لوحة متابعة الإدخال', desc: 'تعرض هذه اللوحة نظرة شاملة على مدخلات الجهة حسب المسارات، مع حالة التقدم، التكلفة التقديرية، وحالة الاعتماد.' },
   { sel: '[data-tour="nav-all"]', title: 'صفحات المسارات', desc: 'تتيح لك هذه الصفحات متابعة مدخلات الجهة حسب المسارات المختلفة، ومراجعة مستوى التقدم والجاهزية قبل الاعتماد.' },
   { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ وخطة الإطلاق', desc: 'يمكنك من هنا متابعة تقدم مدخلات الجهة عبر مراحل التنفيذ، ومعرفة المدخلات الجاهزة أو القريبة من الإطلاق.' },
   { sel: '[data-tour="nav-team"]', title: 'فريق العمل', desc: 'يعرض هذا القسم منسقي المسارات التابعين لجهتك، لمتابعة الأدوار والتأكد من استكمال المدخلات المطلوبة.' },
@@ -309,7 +309,7 @@ function EntityOverview({ vm }: { vm: VM }) {
   const nc = vm.nomCard;
   const sec2Cards = useTypes ? vm.typeOverviewCards : vm.streamOverviewCards;
   const sec2Title = useTypes ? 'توزيع المدخلات حسب النوع' : 'توزيع مدخلات الجهة حسب المسارات';
-  const sec2Sub = useTypes ? 'تصنيف مدخلات المسار حسب النوع، مراحل التقدم، والتكلفة التقديرية.' : 'عرض مدخلات الجهة في كل مسار حسب مراحل التقدم والتكلفة التقديرية.';
+  const sec2Sub = useTypes ? 'تصنيف مدخلات المسار حسب النوع، مراحل التقدم، والتكلفة التقديرية.' : 'عرض مدخلات الجهة في كل مسار حسب مراحل التقدم والإنجاز.';
   const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
   const money = (label: string) => {
     const p = label.split(' ');
@@ -514,7 +514,7 @@ function EntityOverview({ vm }: { vm: VM }) {
               <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.total}</span>
             </div>
             <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
-              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>توزيع المدخلات حسب المراحل</div>
+              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>دفعات الإطلاقات</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {st.stages.map((sg) => (
                   <div key={sg.label} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -2323,7 +2323,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                           {
                             label: 'الخدمات',
                             value: String(vm.kpis.services),
-                            info: 'عدد الخدمات المسجّلة للتحول في مسار الخدمات. اضغطوا على البطاقة لاستعراض البطاقات التفصيلية.',
+                            info: 'عدد الخدمات المسجّلة للتحول في مسار الخدمات الحكومية. اضغطوا على البطاقة لاستعراض البطاقات التفصيلية.',
                             dist: vm.showStreamDist ? vm.kpiDist.services : undefined,
                             mini: vm.kpiBreak.services,
                             onOpen: () => s.setNavSection('services'),
