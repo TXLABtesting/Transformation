@@ -1111,7 +1111,7 @@ export const useStore = create<Store>((set, get) => {
         const parsed = await parseWorkplan(buf);
         if (!parsed.rows.length && !parsed.launches.length) {
           setUi({ mStep: 'bulk', bulkLoading: false });
-          return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام نموذج خطة العمل');
+          return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام النموذج');
         }
         const rows: BulkRow[] = parsed.rows.map((r) => ({
           type: r.type,

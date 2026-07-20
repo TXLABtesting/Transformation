@@ -319,7 +319,7 @@ function MethodStep({ vm }: { vm: VM }) {
         '#0B8A4B',
         IC.upload,
         'رفع المستند',
-        'نزّل نموذج خطة العمل، عبّئ عدّة صفوف دفعة واحدة، ثم ارفعه لاستيرادها ومراجعتها قبل الإرسال.'
+        'نزّل النموذج، عبّئ عدّة صفوف دفعة واحدة، ثم ارفعه لاستيرادها ومراجعتها قبل الإرسال.'
       )}
       </div>
     </div>
@@ -1095,7 +1095,7 @@ function BulkStep({ vm }: { vm: VM }) {
         </div>
         <a
           href="assets/workplan_template.xlsx"
-          download="نموذج_خطة_العمل.xlsx"
+          download="النموذج.xlsx"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -1116,7 +1116,7 @@ function BulkStep({ vm }: { vm: VM }) {
           }}
         >
           <Icon d={IC.download} size={18} color="#2563EB" />
-          نموذج خطة العمل (Excel)
+          النموذج (Excel)
         </a>
       </div>
 
