@@ -436,6 +436,17 @@ function initialState(): State {
 
 // The plan's EXECUTION budget is derived automatically: the sum of the
 // execution budgets of the items attached to it (empty when none carry one).
+// legacy batch naming («إطلاق المرحلة …») → the current «إطلاق الدفعة …»
+const normBatch = (b?: string) => (b ? b.replace(/^إطلاق المرحلة /, 'إطلاق الدفعة ') : b);
+function normalizeBatches(items: Item[], plans: LaunchPlan[]): void {
+  items.forEach((it) => {
+    if (it.execBatch) it.execBatch = normBatch(it.execBatch)!;
+  });
+  plans.forEach((pl) => {
+    if (pl.batch) pl.batch = normBatch(pl.batch)!;
+  });
+}
+
 function recalcPlanBudgets(items: Item[], plans: LaunchPlan[]): LaunchPlan[] {
   return plans.map((p) => {
     const sum = items
@@ -547,6 +558,7 @@ export const useStore = create<Store>((set, get) => {
           !fresh && Array.isArray(saved.launchPlans)
             ? (saved.launchPlans as LaunchPlan[])
             : seedLaunchPlans();
+        normalizeBatches(items, launchPlansRaw);
         const launchPlans = recalcPlanBudgets(items, launchPlansRaw);
         set((s) => ({
           ...s,
@@ -581,6 +593,7 @@ export const useStore = create<Store>((set, get) => {
             const d = res?.data;
             if (!d) return;
             const items = d.seedV === SEED_V && Array.isArray(d.items) ? (d.items as Item[]) : seedItems();
+            normalizeBatches(items, []);
             set((s) => ({
               ...s,
               view: d.view || s.view,

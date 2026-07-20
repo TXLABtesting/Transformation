@@ -188,11 +188,11 @@ function parseTimeline(ws: Sheet | undefined): { name: string; start: string; en
   return out;
 }
 
-// legacy wording → this portal's batch names (المراحل الأربع)
+// legacy wording → this portal's batch names (الدفعات الست)
 function normBatchName(n: string): string {
-  let s = n.replace(/الدفعة/g, 'المرحلة').trim();
-  // the old plan had six batches + a closing phase — fold the tail into الرابعة
-  if (/(الخامسة|السادسة|التحسين والتوسع)/.test(s)) s = 'إطلاق المرحلة الرابعة';
+  let s = n.replace(/المرحلة/g, 'الدفعة').trim();
+  // the closing phase is not a launch batch — fold it into the last one
+  if (/التحسين والتوسع|التوسع في التطبيق/.test(s)) s = 'إطلاق الدفعة السادسة';
   return s;
 }
 
@@ -201,7 +201,7 @@ function batchForDate(date: string, timeline: { name: string; start: string; end
   for (const t of launchable) {
     if (t.start && t.end && date >= t.start && date <= t.end) return t.name;
   }
-  return launchable[0]?.name || 'إطلاق المرحلة الأولى';
+  return launchable[0]?.name || 'إطلاق الدفعة الأولى';
 }
 
 export async function parseWorkplan(buf: ArrayBuffer): Promise<WorkplanResult> {

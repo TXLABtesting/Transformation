@@ -526,20 +526,6 @@ function F1({
         </div>
       )}
 
-      {m.mIsProjectish && (
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>التصنيف <span style={{ color: '#D23B45' }}>*</span></label>
-          <select
-            value={gv('type') === 'initiative' ? 'مبادرة' : 'مشروع'}
-            onChange={(e) => setField('type', e.target.value === 'مبادرة' ? 'initiative' : 'project')}
-            style={inputStyle}
-          >
-            <option>مشروع</option>
-            <option>مبادرة</option>
-          </select>
-        </div>
-      )}
-
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>{m.mIsProjectish ? 'اسم المشروع' : 'اسم ' + m.mTypeLabel} <span style={{ color: '#D23B45' }}>*</span></label>
         <input

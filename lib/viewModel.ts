@@ -1960,7 +1960,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     // execution plan as entered by the coordinator (visible before approval)
     execBatchName: i.execBatch || '',
     execBatchPeriod:
-      execMilestones().find((b) => b.name === i.execBatch)?.period || '',
+      execMilestones(i.path).find((b) => b.name === i.execBatch)?.period || '',
     subMilestones: (i.phases || [])
       .filter((p) => !i.execBatch || p.name === i.execBatch)
       .flatMap((p) => p.subs || [])
