@@ -43,7 +43,7 @@ export const PATHS: Path[] = [
   },
   {
     id: 'services',
-    name: 'الخدمات',
+    name: 'الخدمات الحكومية',
     desc: 'تحويل الخدمات وباقات الخدمات لتطبيق نماذج وأنظمة الذكاء الاصطناعي المساعد',
     color: '#2563EB',
     extra: 'service',
@@ -82,7 +82,7 @@ export const PIC: Record<string, string> = {
 // Allowed item types per path — project & initiative are ONE merged type
 export type TypeOption = { key: ItemType; label: string };
 export function availTypes(path: string): TypeOption[] {
-  const base: TypeOption[] = [{ key: 'project', label: 'مشروع / مبادرة' }];
+  const base: TypeOption[] = [{ key: 'project', label: 'مشروع' }];
   // operations exist in the operations stream and العمل الحكومي الاستراتيجي only
   if (path === 'ops' || path === 'strategy') base.push({ key: 'operation', label: 'عملية' });
   // services exist in the services stream only
@@ -96,16 +96,16 @@ export const streamHasType = (path: string, t: 'operation' | 'service'): boolean
 
 // ---- 1.2 TYPE map (project/initiative merged for display) ------------------
 export const TYPE: Record<ItemType, { label: string; color: string; bg: string }> = {
-  project: { label: 'مشروع / مبادرة', color: '#2563EB', bg: '#E5EEFF' },
-  initiative: { label: 'مشروع / مبادرة', color: '#2563EB', bg: '#E5EEFF' },
+  project: { label: 'مشروع', color: '#2563EB', bg: '#E5EEFF' },
+  initiative: { label: 'مشروع', color: '#2563EB', bg: '#E5EEFF' },
   operation: { label: 'عملية', color: '#2563EB', bg: '#E5EEFF' },
   service: { label: 'خدمة', color: '#2563EB', bg: '#E5EEFF' },
 };
 
 export const typeLabel = (t: string): string =>
   ({
-    project: 'مشروع / مبادرة',
-    initiative: 'مشروع / مبادرة',
+    project: 'مشروع',
+    initiative: 'مشروع',
     operation: 'عملية',
     service: 'خدمة',
   } as Record<string, string>)[t] || 'عنصر';
@@ -113,8 +113,8 @@ export const typeLabel = (t: string): string =>
 // definite form for sentences: «تم إرسال المشروع / المبادرة…»
 export const typeLabelDef = (t: string): string =>
   ({
-    project: 'المشروع / المبادرة',
-    initiative: 'المشروع / المبادرة',
+    project: 'المشروع',
+    initiative: 'المشروع',
     operation: 'العملية',
     service: 'الخدمة',
   } as Record<string, string>)[t] || 'العنصر';
@@ -363,6 +363,9 @@ export type Item = {
   automationPct?: number;
   automationLevel?: string;
   automationSystem?: string;
+  // المدة الزمنية للإنجاز قبل/بعد التحويل (للعمليات والخدمات فقط)
+  durationBefore?: string;
+  durationAfter?: string;
   complexityLevel?: string;
   progress?: number;
   scopeOfWork?: string;
@@ -567,64 +570,63 @@ export const DEFAULT_PROGRAM_PHASES: ProgramPhase[] = [
   },
 ];
 
-export function execMilestones(): Phase[] {
+// مسار تقنيات الذكاء الاصطناعي والبيانات — له برنامج زمني مختلف
+export const AI_STREAM_ID = 'tech';
+
+const MS = (name: string, period: string, desc: string, start: string, end: string): Phase => ({
+  name,
+  period,
+  desc,
+  start,
+  end,
+  status: 'لم تبدأ',
+  fixed: true,
+  subs: [{ name: '', start: '', end: '' }],
+});
+
+// البرنامج الزمني للبرنامج (٨ مراحل): يختلف مسار الذكاء الاصطناعي عن بقية
+// المسارات — مرحلة تأسيسية بعد التقييم وخمس دفعات بمواعيد مزاحة، بينما بقية
+// المسارات ست دفعات، وتنتهي جميعها بمرحلة «التوسع في التطبيق».
+export function execMilestones(streamId?: string | null): Phase[] {
+  const assess = MS('التقييم والتهيئة', 'يونيو – أغسطس 2026', 'تقييم الوضع الحالي وتحديد الأولويات', '2026-06-01', '2026-08-31');
+  const expand = MS('التوسع في التطبيق', 'مارس – مايو 2028', 'التوسع في تطبيق النماذج والأنظمة على نطاق أوسع', '2028-03-01', '2028-05-31');
+  if (streamId === AI_STREAM_ID) {
+    return [
+      assess,
+      MS('المرحلة التأسيسية', 'سبتمبر – نوفمبر 2026', 'بناء الأساس التقني والبنية المؤسسية للمساعد الذكي', '2026-09-01', '2026-11-30'),
+      MS('إطلاق الدفعة الأولى', 'ديسمبر 2026 – فبراير 2027', 'تطوير وإطلاق أول النماذج', '2026-12-01', '2027-02-28'),
+      MS('إطلاق الدفعة الثانية', 'مارس – مايو 2027', 'تطوير نماذج إضافية', '2027-03-01', '2027-05-31'),
+      MS('إطلاق الدفعة الثالثة', 'يونيو – أغسطس 2027', 'توسيع التطبيق ليشمل خدمات جديدة', '2027-06-01', '2027-08-31'),
+      MS('إطلاق الدفعة الرابعة', 'سبتمبر – نوفمبر 2027', 'إطلاق خدمات الذكاء الاصطناعي للمتعاملين', '2027-09-01', '2027-11-30'),
+      MS('إطلاق الدفعة الخامسة', 'ديسمبر 2027 – فبراير 2028', 'استكمال إطلاق النماذج والأنظمة', '2027-12-01', '2028-02-29'),
+      expand,
+    ];
+  }
   return [
-    {
-      name: 'التقييم والتهيئة',
-      period: 'يونيو – أغسطس 2026',
-      desc: 'تقييم الوضع الحالي وتحديد الأولويات',
-      start: '2026-06-01',
-      end: '2026-07-31',
-      status: 'لم تبدأ',
-      fixed: true,
-      subs: [{ name: '', start: '', end: '' }],
-    },
-    {
-      name: 'إطلاق المرحلة الأولى',
-      period: 'سبتمبر – نوفمبر 2026',
-      desc: 'تطوير وإطلاق أول 3 نماذج',
-      start: '2026-07-15',
-      end: '2026-11-30',
-      status: 'لم تبدأ',
-      fixed: true,
-      subs: [{ name: '', start: '', end: '' }],
-    },
-    {
-      name: 'إطلاق المرحلة الثانية',
-      period: 'ديسمبر 2026 – فبراير 2027',
-      desc: 'تطوير 4 نماذج إضافية',
-      start: '2026-12-01',
-      end: '2027-02-28',
-      status: 'لم تبدأ',
-      fixed: true,
-      subs: [{ name: '', start: '', end: '' }],
-    },
-    {
-      name: 'إطلاق المرحلة الثالثة',
-      period: 'مارس – مايو 2027',
-      desc: 'توسيع التطبيق ليشمل 5 خدمات جديدة',
-      start: '2027-03-01',
-      end: '2027-05-31',
-      status: 'لم تبدأ',
-      fixed: true,
-      subs: [{ name: '', start: '', end: '' }],
-    },
-    {
-      name: 'إطلاق المرحلة الرابعة',
-      period: 'يونيو – أغسطس 2027',
-      desc: 'إطلاق خدمات الذكاء الاصطناعي للمتعاملين',
-      start: '2027-06-01',
-      end: '2027-08-31',
-      status: 'لم تبدأ',
-      fixed: true,
-      subs: [{ name: '', start: '', end: '' }],
-    },
+    assess,
+    MS('إطلاق الدفعة الأولى', 'سبتمبر – نوفمبر 2026', 'تطوير وإطلاق أول 3 نماذج', '2026-09-01', '2026-11-30'),
+    MS('إطلاق الدفعة الثانية', 'ديسمبر 2026 – فبراير 2027', 'تطوير 4 نماذج إضافية', '2026-12-01', '2027-02-28'),
+    MS('إطلاق الدفعة الثالثة', 'مارس – مايو 2027', 'توسيع التطبيق ليشمل 5 خدمات جديدة', '2027-03-01', '2027-05-31'),
+    MS('إطلاق الدفعة الرابعة', 'يونيو – أغسطس 2027', 'إطلاق خدمات الذكاء الاصطناعي للمتعاملين', '2027-06-01', '2027-08-31'),
+    MS('إطلاق الدفعة الخامسة', 'سبتمبر – نوفمبر 2027', 'توسعة نطاق التحول على مستوى الجهات', '2027-09-01', '2027-11-30'),
+    MS('إطلاق الدفعة السادسة', 'ديسمبر 2027 – فبراير 2028', 'استكمال إطلاق النماذج والأنظمة المتبقية', '2027-12-01', '2028-02-29'),
+    expand,
   ];
 }
 
-// Launch-eligible batches (المراحل الأربع) — التقييم والتهيئة is excluded
-export function launchBatches(): Phase[] {
-  return execMilestones().filter((b) => b.name !== 'التقييم والتهيئة');
+// Launch-eligible batches (الدفعات) — assessment/foundation/expansion excluded
+export function launchBatches(streamId?: string | null): Phase[] {
+  return execMilestones(streamId).filter((b) => b.name.startsWith('إطلاق الدفعة'));
+}
+
+// stream-aware alias: مسار الذكاء الاصطناعي خمس دفعات، والبقية ست
+export function streamLaunchBatches(streamId?: string | null): Phase[] {
+  return launchBatches(streamId);
+}
+
+// «الدفعة الأولى…السادسة» display label for a batch name
+export function batchDafaaLabel(name: string): string {
+  return name.replace(/^إطلاق /, '');
 }
 
 // Centrally managed launch plan (defined per batch via "إدارة خطط الإطلاق")
@@ -769,7 +771,7 @@ export function blankItem(type: ItemType, path: string): Item {
       { key: 'testing', label: 'الاختبار وضمان الجودة', status: 'لم تبدأ', newDate: '', reason: '' },
       { key: 'pilot', label: 'الإطلاق', status: 'لم تبدأ', newDate: '', reason: '' },
     ],
-    phases: execMilestones(),
+    phases: execMilestones(path),
     milestones: [],
     launches: [],
     links: [],
@@ -787,6 +789,8 @@ export function blankItem(type: ItemType, path: string): Item {
       automationSystem: '',
       usageIntensity: 'متوسطة',
       complexityLevel: 'متوسط',
+      durationBefore: '',
+      durationAfter: '',
       readiness: 60,
       transformability: 'قابل جزئياً',
       transformPriority: 'متوسطة',
@@ -803,6 +807,8 @@ export function blankItem(type: ItemType, path: string): Item {
       automationLevel: 'لا',
       automationPct: 0,
       usageIntensity: 'متوسطة',
+      durationBefore: '',
+      durationAfter: '',
       transformability: 'قابل جزئياً',
       transformPriority: 'متوسطة',
       readiness: 60,

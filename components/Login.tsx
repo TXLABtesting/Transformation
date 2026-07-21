@@ -44,17 +44,6 @@ export function Login({ vm }: { vm: VM }) {
       />
       <div
         style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px)',
-          backgroundSize: '46px 46px',
-          maskImage: 'radial-gradient(110% 80% at 50% 30%,#000,transparent 75%)',
-          WebkitMaskImage: 'radial-gradient(110% 80% at 50% 30%,#000,transparent 75%)',
-        }}
-      />
-      <div
-        style={{
           position: 'relative',
           zIndex: 1,
           width: '100%',
@@ -75,18 +64,7 @@ export function Login({ vm }: { vm: VM }) {
             style={{ height: 96 }}
           />
         </div>
-        <p
-          style={{
-            color: '#AFC6E8',
-            fontSize: 14,
-            fontWeight: 500,
-            margin: '40px auto 22px',
-            lineHeight: 1.9,
-            maxWidth: 410,
-          }}
-        >
-          المنصة الحكومية لتخطيط ومتابعة مشروع الذكاء الاصطناعي المساعد.
-        </p>
+        <div style={{ height: 40 }} />
         <div
           style={{
             background: 'rgba(255,255,255,.08)',

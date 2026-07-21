@@ -93,7 +93,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
             lineHeight: 1.8,
           }}
         >
-          عرّف الفريق المسؤول عن أعمال التحول بالذكاء الاصطناعي في جهتك.
+          يرجى تحديد فريق العمل المعني بمشروع الذكاء الاصطناعي المساعد في جهتكم.
         </p>
 
         {/* Stepper */}
@@ -171,7 +171,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                 marginTop: 8,
               }}
             >
-              مسؤولو المسارات
+              منسقي المسارات
             </div>
           </div>
         </div>
@@ -189,7 +189,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
           {step1 && (
             <div style={{ animation: 'fadeUp .35s ease both' }}>
               <div style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', marginBottom: 7 }}>
-                الجهة الحكومية
+                الجهة الاتحادية
               </div>
               <div
                 style={{
@@ -263,7 +263,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>رقم الهاتف {star}</label>
+                  <label style={labelStyle}>رقم الهاتف المتحرك {star}</label>
                   <input
                     type="tel"
                     inputMode="tel"
@@ -310,7 +310,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                         />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49' }}>
-                            {path.name}
+                            {'مسار ' + path.name}
                           </div>
                           <div
                             style={{
@@ -375,7 +375,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                             direction: 'ltr',
                             textAlign: 'right',
                           }}
-                          placeholder={'⁧رقم الهاتف *⁩'}
+                          placeholder={'⁧رقم الهاتف المتحرك *⁩'}
                           value={owner?.phone || ''}
                           onChange={(e) => s.updOwner(path.id, 'phone', e.target.value)}
                         />

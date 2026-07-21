@@ -26,7 +26,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     sel: '[data-tour="nav-all"]',
     title: 'استعراض جميع المدخلات',
-    desc: 'من القائمة الجانبية تفتح «جميع المسارات / جميع الأنواع» قائمة بكل المدخلات (المشاريع والمبادرات والعمليات والخدمات) في مكان واحد، مع تصفية حسب النوع والحالة والمسار والبحث بالاسم للوصول السريع إلى أي مدخل.',
+    desc: 'من القائمة الجانبية تفتح «جميع المسارات / جميع التصنيفات» قائمة بكل المدخلات (المشاريع والمبادرات والعمليات والخدمات) في مكان واحد، مع تصفية حسب التصنيف والحالة والمسار والبحث بالاسم للوصول السريع إلى أي مدخل.',
   },
   {
     sel: '[data-tour="nav-exec"]',
@@ -76,7 +76,7 @@ const COORD_TOUR_STEPS: TourStep[] = [
 // entity, reviews submissions, and approves the ready ones for the next stage.
 const ENTITY_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="profile"]', title: 'الملف الشخصي وفريق العمل', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك، والاطلاع على منسقي المسارات المرتبطين بجهتك عند توفرهم.' },
-  { sel: '[data-tour="kpis"]', title: 'لوحة متابعة مدخلات الجهة', desc: 'تعرض هذه اللوحة نظرة شاملة على مدخلات الجهة حسب المسارات، مع حالة التقدم، التكلفة التقديرية، وحالة الاعتماد.' },
+  { sel: '[data-tour="kpis"]', title: 'لوحة متابعة الإدخال', desc: 'تعرض هذه اللوحة نظرة شاملة على مدخلات الجهة حسب المسارات، مع حالة التقدم، التكلفة التقديرية، وحالة الاعتماد.' },
   { sel: '[data-tour="nav-all"]', title: 'صفحات المسارات', desc: 'تتيح لك هذه الصفحات متابعة مدخلات الجهة حسب المسارات المختلفة، ومراجعة مستوى التقدم والجاهزية قبل الاعتماد.' },
   { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ وخطة الإطلاق', desc: 'يمكنك من هنا متابعة تقدم مدخلات الجهة عبر مراحل التنفيذ، ومعرفة المدخلات الجاهزة أو القريبة من الإطلاق.' },
   { sel: '[data-tour="nav-team"]', title: 'فريق العمل', desc: 'يعرض هذا القسم منسقي المسارات التابعين لجهتك، لمتابعة الأدوار والتأكد من استكمال المدخلات المطلوبة.' },
@@ -308,8 +308,8 @@ function EntityOverview({ vm }: { vm: VM }) {
   const [hovNom, setHovNom] = useState<string | null>(null);
   const nc = vm.nomCard;
   const sec2Cards = useTypes ? vm.typeOverviewCards : vm.streamOverviewCards;
-  const sec2Title = useTypes ? 'توزيع المدخلات حسب النوع' : 'توزيع مدخلات الجهة حسب المسارات';
-  const sec2Sub = useTypes ? 'تصنيف مدخلات المسار حسب النوع، مراحل التقدم، والتكلفة التقديرية.' : 'عرض مدخلات الجهة في كل مسار حسب مراحل التقدم والتكلفة التقديرية.';
+  const sec2Title = useTypes ? 'توزيع المدخلات حسب التصنيف' : 'توزيع مدخلات الجهة حسب المسارات';
+  const sec2Sub = useTypes ? 'تصنيف مدخلات المسار حسب النوع ومراحل التقدم.' : 'عرض مدخلات الجهة في كل مسار حسب مراحل التقدم والإنجاز.';
   const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
   const money = (label: string) => {
     const p = label.split(' ');
@@ -514,12 +514,12 @@ function EntityOverview({ vm }: { vm: VM }) {
               <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.total}</span>
             </div>
             <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
-              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>توزيع المدخلات حسب المراحل</div>
+              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 8, textAlign: 'right' }}>دفعات الإطلاقات</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {st.stages.map((sg) => (
                   <div key={sg.label} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                     <span style={{ width: 5, height: 5, flex: 'none', borderRadius: '50%', background: '#2563EB' }} />
-                    <span style={{ flex: 1, fontSize: 12, color: '#54627B', fontWeight: 400 }}>{'إطلاقات ' + sg.label}</span>
+                    <span style={{ flex: 1, fontSize: 12, color: '#54627B', fontWeight: 400 }}>{sg.label}</span>
                     <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{sg.n}</span>
                   </div>
                 ))}
@@ -551,7 +551,7 @@ function EntityOverview({ vm }: { vm: VM }) {
               data-tour="type-details"
               style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 11, padding: '10px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              {useTypes ? 'عرض تفاصيل النوع' : 'عرض تفاصيل المسار'}
+              {useTypes ? 'عرض تفاصيل التصنيف' : 'عرض تفاصيل المسار'}
               <Icon d="M15 18l-6-6 6-6" size={12} color="#1D4ED8" />
             </button>
           </div>
@@ -2321,9 +2321,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                     ...(vm.showSvcKpi
                       ? [
                           {
-                            label: 'الخدمات',
+                            label: 'الخدمات الحكومية',
                             value: String(vm.kpis.services),
-                            info: 'عدد الخدمات المسجّلة للتحول في مسار الخدمات. اضغطوا على البطاقة لاستعراض البطاقات التفصيلية.',
+                            info: 'عدد الخدمات المسجّلة للتحول في مسار الخدمات الحكومية. اضغطوا على البطاقة لاستعراض البطاقات التفصيلية.',
                             dist: vm.showStreamDist ? vm.kpiDist.services : undefined,
                             mini: vm.kpiBreak.services,
                             onOpen: () => s.setNavSection('services'),
@@ -2387,14 +2387,14 @@ export function Dashboard({ vm }: { vm: VM }) {
                       <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.entCount}</span>
                     </div>
                     <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
-                      <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 9, textAlign: 'right' }}>توزيع المدخلات حسب النوع</div>
+                      <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 9, textAlign: 'right' }}>توزيع المدخلات حسب التصنيف</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                           <span style={{ fontSize: 12, color: '#13213C', fontWeight: 800 }}>الإجمالي</span>
                           <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.total}</span>
                         </div>
                         {(() => {
-                          const order = ['مشروع / مبادرة', 'خدمة', 'عملية'];
+                          const order = ['مشروع', 'خدمة', 'عملية'];
                           return [...st.byType]
                             .sort((a, b) => order.indexOf(a.label) - order.indexOf(b.label))
                             .map((tp) => (

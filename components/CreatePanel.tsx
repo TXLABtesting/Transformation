@@ -319,7 +319,7 @@ function MethodStep({ vm }: { vm: VM }) {
         '#0B8A4B',
         IC.upload,
         'رفع المستند',
-        'نزّل قالب خطة العمل، عبّئ عدّة صفوف دفعة واحدة، ثم ارفعه لاستيرادها ومراجعتها قبل الإرسال.'
+        'نزّل النموذج، عبّئ عدّة صفوف دفعة واحدة، ثم ارفعه لاستيرادها ومراجعتها قبل الإرسال.'
       )}
       </div>
     </div>
@@ -526,22 +526,8 @@ function F1({
         </div>
       )}
 
-      {m.mIsProjectish && (
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>التصنيف <span style={{ color: '#D23B45' }}>*</span></label>
-          <select
-            value={gv('type') === 'initiative' ? 'مبادرة' : 'مشروع'}
-            onChange={(e) => setField('type', e.target.value === 'مبادرة' ? 'initiative' : 'project')}
-            style={inputStyle}
-          >
-            <option>مشروع</option>
-            <option>مبادرة</option>
-          </select>
-        </div>
-      )}
-
       <div style={{ marginBottom: 14 }}>
-        <label style={labelStyle}>اسم {m.mTypeLabel} <span style={{ color: '#D23B45' }}>*</span></label>
+        <label style={labelStyle}>{m.mIsProjectish ? 'اسم المشروع' : 'اسم ' + m.mTypeLabel} <span style={{ color: '#D23B45' }}>*</span></label>
         <input
           value={gv('title')}
           onChange={(e) => setField('title', e.target.value)}
@@ -658,6 +644,18 @@ function F2({
       </select>
     </div>
   );
+  const durs = (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+      <div>
+        <label style={labelStyle}>المدة الزمنية للإنجاز قبل التحويل <span style={{ color: '#D23B45' }}>*</span></label>
+        <input value={gv('durationBefore')} onChange={(e) => setField('durationBefore', e.target.value)} placeholder="مثال: 3 أيام عمل" style={inputStyle} />
+      </div>
+      <div>
+        <label style={labelStyle}>المدة الزمنية للإنجاز بعد التحويل <span style={{ color: '#D23B45' }}>*</span></label>
+        <input value={gv('durationAfter')} onChange={(e) => setField('durationAfter', e.target.value)} placeholder="مثال: 10 دقائق" style={inputStyle} />
+      </div>
+    </div>
+  );
   const range = (label: string, key: string) => (
     <div style={{ marginBottom: 14 }}>
       <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
@@ -701,7 +699,7 @@ function F2({
       {m.mIsOp && (
         <>
           <div style={cardStyle}>
-            <div style={cardTitle}>تقييم التحول للمساعد الذكي</div>
+            <div style={cardTitle}>تقييم التحول للذكاء الاصطناعي المساعد</div>
             {sel('الأولوية', 'priority', ['عالية', 'متوسطة', 'منخفضة'])}
             {sel('مستوى التعقيد', 'complexity', ['عالٍ', 'متوسط', 'منخفض'])}
             {sel('وضع العملية', 'status', ['عملية جديدة', 'قيد التنفيذ', 'قائمة', 'مكتملة'])}
@@ -710,6 +708,7 @@ function F2({
             {sel('أولوية التحول', 'transformPriority', ['منخفضة', 'متوسطة', 'عالية'])}
             {range('جاهزية التحول', 'readiness')}
             {sel('مستوى الأثر المتوقع', 'impact', ['منخفض', 'متوسط', 'عالٍ'])}
+            {durs}
           </div>
           <div style={cardStyle}>
             <div style={cardTitle}>معلومات الأتمتة</div>
@@ -756,6 +755,7 @@ function F2({
               minHeight={96}
             />
           </div>
+          {durs}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={labelStyle}>مستوى الأثر المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
@@ -1042,10 +1042,6 @@ function FPhases({ vm }: { vm: VM }) {
             </option>
           ))}
         </select>
-        <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 7, lineHeight: 1.7 }}>
-          حدّد مرحلة التنفيذ والإطلاق — يتم الربط بخطة إطلاق لاحقاً من صفحة
-          «مراحل التنفيذ والإطلاق».
-        </div>
       </div>
       )}
     </div>
@@ -1072,16 +1068,16 @@ function BulkStep({ vm }: { vm: VM }) {
           marginBottom: 18,
         }}
       >
-        استخدم قالب خطة العمل المرفق فقط — تُقرأ البيانات وتُعرض للمراجعة قبل الإرسال للاعتماد.
+        يرجى استخدم النموذج المرفق فقط - ستُقرأ البيانات وتُعرض للمراجعة قبل الإرسال للاعتماد.
       </div>
 
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 10 }}>
-          الخطوة ١ · تنزيل القالب
+          الخطوة ١ · تنزيل النموذج
         </div>
         <a
           href="assets/workplan_template.xlsx"
-          download="قالب_خطة_العمل.xlsx"
+          download="النموذج.xlsx"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -1102,7 +1098,7 @@ function BulkStep({ vm }: { vm: VM }) {
           }}
         >
           <Icon d={IC.download} size={18} color="#2563EB" />
-          قالب خطة العمل (Excel)
+          النموذج (Excel)
         </a>
       </div>
 
@@ -1134,11 +1130,10 @@ function BulkStep({ vm }: { vm: VM }) {
             }}
           />
           <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49', marginBottom: 6 }}>
-            اضغط لاختيار ملف خطة العمل
+            اضغط لاختيار الملف
           </div>
           <div style={{ fontSize: 11.5, color: '#9AA6BC', lineHeight: 1.7 }}>
-            ملف Excel بصيغة .xlsx بقالب خطة العمل — تُقرأ المشاريع والعمليات والخدمات وخطة الإطلاقات،
-            وما ينقص يُستكمل يدوياً بعد الاستيراد.
+            ملف Excel بصيغة .xlsx وستقرأ جميع البيانات، وما ينقص يُستكمل يدوياً بعد الاستيراد.
           </div>
         </label>
       </div>

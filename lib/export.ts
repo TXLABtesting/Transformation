@@ -11,7 +11,7 @@ const today = () => new Date().toLocaleDateString('ar-AE', { year: 'numeric', mo
 
 function row(i: Item, entityName: string) {
   return {
-    النوع: typeLabel(i.type),
+    التصنيف: typeLabel(i.type),
     العنوان: i.title,
     المسار: pathById(i.path).name,
     الجهة: entOf(i, entityName),
@@ -144,7 +144,7 @@ function fillWorkplan(wb: import('exceljs').Workbook, items: Item[], entityName:
     wrap(nw, r, 3); wrap(nw, r, 4);
   });
 
-  // 4) العمليات والدعم المؤسسي — العمليات والخدمات معًا (نفس أعمدة القالب)
+  // 4) العمليات والدعم المؤسسي — العمليات والخدمات معًا (نفس أعمدة النموذج)
   const ops = items.filter((i) => i.type === 'operation' || i.type === 'service');
   const op = wb.getWorksheet('العمليات والدعم المؤسسي');
   ops.forEach((i, k) => {
@@ -358,7 +358,7 @@ async function exportExcelStyled(items: Item[], entityName: string) {
         sm.getRow(r).height = 20;
       });
     };
-    dist(1, 'التوزيع حسب النوع', countBy((i) => typeLabel(i.type)));
+    dist(1, 'التوزيع حسب التصنيف', countBy((i) => typeLabel(i.type)));
     dist(5, 'التوزيع حسب الحالة', countBy((i) => wfMeta(i).label));
   }
 
@@ -450,13 +450,13 @@ export async function downloadBulkTemplate(types: { key: string; label: string }
   const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
   const wb = new ExcelJS.Workbook();
   wb.creator = 'منصة التحول للذكاء الاصطناعي المساعد';
-  const ws = wb.addWorksheet('القالب', { views: [{ rightToLeft: true, showGridLines: false }] });
+  const ws = wb.addWorksheet('النموذج', { views: [{ rightToLeft: true, showGridLines: false }] });
 
-  const headers = ['النوع', 'العنوان', 'الوصف'];
+  const headers = ['التصنيف', 'العنوان', 'الوصف'];
   const widths = [22, 40, 60];
   const cols = 3;
 
-  banner(ws, cols, 'قالب رفع المدخلات', 'اختر «النوع» من القائمة المنسدلة، ثم أدخل «العنوان» و«الوصف». احذف الصف التوضيحي قبل الرفع.');
+  banner(ws, cols, 'نموذج رفع المدخلات', 'اختر «التصنيف» من القائمة المنسدلة، ثم أدخل «العنوان» و«الوصف». احذف الصف التوضيحي قبل الرفع.');
   // guidance note row
   ws.mergeCells(3, 1, 3, cols);
   const note = ws.getCell(3, 1);
@@ -471,7 +471,7 @@ export async function downloadBulkTemplate(types: { key: string; label: string }
 
   // example row (light, italic) — a filled-in sample
   const ex = headRow + 1;
-  const sample = [types[0]?.label || 'مشروع / مبادرة', 'مثال: مساعد ذكي لخدمة المتعاملين', 'وصف مختصر للمدخل وأهدافه ونطاقه.'];
+  const sample = [types[0]?.label || 'مشروع', 'مثال: مساعد ذكي لخدمة المتعاملين', 'وصف مختصر للمدخل وأهدافه ونطاقه.'];
   sample.forEach((v, c) => {
     const cell = ws.getCell(ex, c + 1);
     cell.value = v;
@@ -490,7 +490,7 @@ export async function downloadBulkTemplate(types: { key: string; label: string }
   const buf = await wb.xlsx.writeBuffer();
   downloadBlob(
     new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-    'قالب_رفع_المدخلات.xlsx'
+    'نموذج_رفع_المدخلات.xlsx'
   );
 }
 
@@ -506,7 +506,7 @@ export async function downloadUsersTemplate(roleLabels: string[], entities: stri
   const widths = [30, 34, 26, 34, 26];
   const cols = headers.length;
 
-  banner(ws, cols, 'قالب رفع المستخدمين', 'عبّئ صفًّا لكل مستخدم. «الاسم» و«البريد» إلزاميان. اختر «الدور» من القائمة؛ «الجهة»/«المسار» حسب الدور.');
+  banner(ws, cols, 'نموذج رفع المستخدمين', 'عبّئ صفًّا لكل مستخدم. «الاسم» و«البريد» إلزاميان. اختر «الدور» من القائمة؛ «الجهة»/«المسار» حسب الدور.');
   ws.mergeCells(3, 1, 3, cols);
   const note = ws.getCell(3, 1);
   note.value = 'ملاحظة: منسق المسار يحتاج الجهة والمسار · ممثل الجهة يحتاج الجهة · رئيس المسار يحتاج المسار · المشرف واللجنة لا يحتاجان أيًّا منهما. احذف الصف التوضيحي قبل الرفع.';
@@ -540,7 +540,7 @@ export async function downloadUsersTemplate(roleLabels: string[], entities: stri
   const buf = await wb.xlsx.writeBuffer();
   downloadBlob(
     new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-    'قالب_رفع_المستخدمين.xlsx'
+    'نموذج_رفع_المستخدمين.xlsx'
   );
 }
 
@@ -657,7 +657,7 @@ export async function exportPpt(items: Item[], entityName: string) {
       { x, y: 3.8, w, colW: [w - 1.1, 1.1], fontSize: 12, border: { pt: 0.5, color: LINE }, rowH: 0.38 }
     );
   };
-  distTable(6.93, 5.9, 'التوزيع حسب النوع', countBy((i) => typeLabel(i.type)));
+  distTable(6.93, 5.9, 'التوزيع حسب التصنيف', countBy((i) => typeLabel(i.type)));
   distTable(0.5, 5.9, 'التوزيع حسب الحالة', countBy((i) => wfMeta(i).label));
   footer(sum, '2');
 
