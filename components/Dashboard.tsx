@@ -364,7 +364,7 @@ function EntityOverview({ vm }: { vm: VM }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* ===== Section 1: التكلفة الإجمالية + إجمالي المدخلات ===== */}
-      <div data-r="dash-top" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: isPath ? '1fr 1fr' : '1fr', gap: 16 }}>
+      <div data-r="dash-top" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
         {/* --- إجمالي المدخلات (right) --- */}
         <div data-tour="inputs-card" style={cardStyle}>
           <EoCardHead title={isPath ? 'إجمالي المدخلات' : isCoord ? 'ملخص مدخلات المسار' : 'ملخص مدخلات الجهة'} iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
@@ -402,60 +402,6 @@ function EntityOverview({ vm }: { vm: VM }) {
           </div>
         </div>
 
-        {/* --- left card: nominations summary (path) OR cost (entity/coord) --- */}
-        {isPath ? (() => {
-          const nomItems = [
-            { key: 'nominated', label: 'المدخلات المرشحة من قبلي', v: nc.nominated, dot: '#2563EB', square: true, bold: true, numColor: '#2563EB', labelColor: '#13213C' },
-            { key: 'funded', label: 'المدخلات المعتمدة', v: nc.funded, dot: '#2563EB', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
-            { key: 'pending', label: 'المدخلات قيد مراجعة اللجنة', v: nc.pending, dot: '#93B4F5', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
-            { key: 'notNominated', label: 'المدخلات غير المرشّحة', v: nc.notNominated, dot: '#C7D9F5', square: true, bold: true, divider: true, numColor: '#9AA6BC', labelColor: '#9AA6BC' },
-          ];
-          const nomHov = nomItems.find((x) => x.key === hovNom);
-          const nomCenter = nomHov ? { center: String(nomHov.v), sub: nomHov.label } : { center: String(nc.total), sub: 'إجمالي المدخلات' };
-          const t = nc.total || 1;
-          const nomSegs = [
-            { key: 'funded', frac: nc.funded / t, color: '#2563EB', label: 'المدخلات المعتمدة', value: nc.funded },
-            { key: 'pending', frac: nc.pending / t, color: '#93B4F5', label: 'المدخلات قيد مراجعة اللجنة', value: nc.pending },
-            { key: 'notNominated', frac: nc.notNominated / t, color: '#C7D9F5', label: 'المدخلات غير المرشّحة', value: nc.notNominated },
-          ].filter((x) => x.frac > 0.0001);
-          return (
-            <div data-tour="nom-card" style={cardStyle}>
-              <EoCardHead title="ملخّص الترشيحات" iconD={EO_WALLET} onArrow={() => s.setNavSection('all')} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-                <EoDonutSeg segs={nomSegs} dim={hovNom === 'nominated' ? null : hovNom} center={nomCenter.center} sub={nomCenter.sub} />
-                <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {nomItems.map((r) => (
-                    <Fragment key={r.key}>
-                      {r.divider && <div style={{ height: 1, background: '#EEF1F6', margin: '5px 0' }} />}
-                      <div
-                        onMouseEnter={() => setHovNom(r.key)}
-                        onMouseLeave={() => setHovNom(null)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: 10,
-                          padding: '6px 10px',
-                          marginRight: r.sub ? 12 : 0,
-                          borderRadius: 9,
-                          background: hovNom === r.key ? '#EEF3FC' : 'transparent',
-                          cursor: 'default',
-                          transition: 'background .12s',
-                        }}
-                      >
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ width: 10, height: 10, borderRadius: r.square ? 3 : '50%', background: r.dot, flex: 'none' }} />
-                          <span className={r.bold ? 'hd' : undefined} style={{ fontSize: r.bold ? 13.5 : 12.5, fontWeight: r.bold ? 800 : 400, color: r.labelColor }}>{r.label}</span>
-                        </span>
-                        <span style={{ fontSize: r.bold ? 15 : 13, fontWeight: 800, color: r.numColor }}>{r.v}</span>
-                      </div>
-                    </Fragment>
-                  ))}
-                </div>
-              </div>
-            </div>
-          );
-        })() : null}
       </div>
 
       {/* ===== Section 2: overview cards (by stream for entity · by type for coord) ===== */}
@@ -2247,30 +2193,65 @@ export function Dashboard({ vm }: { vm: VM }) {
               {/* page heading */}
               <div data-tour="ai-heading" style={{ margin: '2px 0 -4px' }}>
                 <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>لوحة اللجنة الوطنية</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>متابعة حالة المدخلات المرشحة والجهات المشاركة حسب المسارات.</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>متابعة المدخلات والجهات المشاركة حسب المسارات.</div>
               </div>
 
               {/* Section 1: ملخص المدخلات والترشيحات */}
               <div>
-                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>ملخص المدخلات والترشيحات</div>
+                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>ملخص المدخلات</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>نظرة سريعة على حالة المدخلات ومشاركة الجهات.</div>
               </div>
-              <div data-r="kpi" data-tour="kpis" style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: 14, marginTop: -8, display: 'flex', alignItems: 'stretch', gap: 12, flexWrap: 'wrap' }}>
-                <CmtStat value={vm.aiStats.entCount} label="الجهات المشاركة" sub={vm.aiStats.entCount > 2 ? 'جهات مشاركة' : 'جهة مشاركة'} iconD="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01" info="عدد الجهات الاتحادية التي قدّمت مدخلات ضمن المشروع." />
-                <div style={{ width: 1, background: '#EEF1F6', alignSelf: 'stretch', margin: '2px 0' }} />
-                <CmtStat value={vm.aiStats.total} label="إجمالي المدخلات" sub={vm.aiStats.total > 2 ? 'مدخلات مسجلة' : 'مُدخل مسجّل'} iconD="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" info="كل ما قدّمته الجهات عبر مسارات المشروع ووصل إلى اللجنة الوطنية." />
-                <div data-tour="nom-status" style={{ flex: '2 1 300px', minWidth: 280, background: '#F5F7FB', borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                    <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>حالة المدخلات المرشحة</span>
-                    <span style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400 }}>من أصل {vm.aiStats.total} مدخلات</span>
+              {(() => {
+                const ic = vm.inputsCard;
+                const t = ic.total || 1;
+                const captured = Math.max(0, ic.capable - ic.underDev - ic.developed - ic.launched);
+                const inSegs = [
+                  { key: 'capable', frac: captured / t, color: '#2563EB', label: 'جاهزة للتحويل', value: ic.capable },
+                  { key: 'underDev', frac: ic.underDev / t, color: '#3B82F6', label: 'قيد التطوير', value: ic.underDev },
+                  { key: 'developed', frac: ic.developed / t, color: '#60A5FA', label: 'تم التطوير', value: ic.developed },
+                  { key: 'launched', frac: ic.launched / t, color: '#93C5FD', label: 'تم الإطلاق', value: ic.launched },
+                  { key: 'notCapable', frac: ic.notCapable / t, color: '#C7D9F5', label: 'غير قابلة للتحويل', value: ic.notCapable },
+                ].filter((x) => x.frac > 0.0001);
+                const inLegend = [
+                  { label: 'جاهزة للتحويل', v: ic.capable, dot: '#2563EB', square: true, bold: true },
+                  { label: 'قيد التطوير', v: ic.underDev, dot: '#3B82F6', bold: false, sub: true },
+                  { label: 'تم التطوير', v: ic.developed, dot: '#60A5FA', bold: false, sub: true },
+                  { label: 'تم الإطلاق', v: ic.launched, dot: '#93C5FD', bold: false, sub: true },
+                  { label: 'غير قابلة للتحويل', v: ic.notCapable, dot: '#C7D9F5', square: true, bold: true, divider: true },
+                ];
+                const card: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 16, marginTop: -8 }}>
+                    {/* inputs breakdown donut */}
+                    <div style={card}>
+                      <EoCardHead title="إجمالي المدخلات" iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                        <EoDonutSeg segs={inSegs} dim={null} center={String(ic.total)} sub="إجمالي المدخلات" />
+                        <div style={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {inLegend.map((r) => (
+                            <Fragment key={r.label}>
+                              {r.divider && <div style={{ height: 1, background: '#EEF1F6', margin: '5px 0' }} />}
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '6px 10px', marginRight: r.sub ? 12 : 0 }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ width: 10, height: 10, borderRadius: r.square ? 3 : '50%', background: r.dot, flex: 'none' }} />
+                                  <span className={r.bold ? 'hd' : undefined} style={{ fontSize: r.bold ? 13.5 : 12.5, fontWeight: r.bold ? 800 : 400, color: r.bold ? '#13213C' : '#6B7A93' }}>{r.label}</span>
+                                </span>
+                                <span style={{ fontSize: r.bold ? 15 : 13, fontWeight: 800, color: '#13213C' }}>{r.v}</span>
+                              </div>
+                            </Fragment>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {/* entities + total */}
+                    <div data-r="kpi" data-tour="kpis" style={{ ...card, flexDirection: 'row', alignItems: 'stretch', padding: 14, gap: 12 }}>
+                      <CmtStat value={vm.aiStats.entCount} label="الجهات المشاركة" sub={vm.aiStats.entCount > 2 ? 'جهات مشاركة' : 'جهة مشاركة'} iconD="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01" info="عدد الجهات الاتحادية التي قدّمت مدخلات ضمن المشروع." />
+                      <div style={{ width: 1, background: '#EEF1F6', alignSelf: 'stretch', margin: '2px 0' }} />
+                      <CmtStat value={vm.aiStats.total} label="إجمالي المدخلات" sub={vm.aiStats.total > 2 ? 'مدخلات مسجلة' : 'مُدخل مسجّل'} iconD="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" info="كل ما قدّمته الجهات عبر مسارات المشروع ووصل إلى اللجنة الوطنية." />
+                    </div>
                   </div>
-                  <div className="rgrid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                    <CmtMini value={vm.aiStats.nominatedHeads} label="مرشحة من رؤساء المسارات" info="ما رشّحه رؤساء المسارات وينتظر قرار اللجنة." />
-                    <CmtMini value={vm.aiStats.nominatedCommittee} label="مرشحة للجنة الوطنية" info="ما رشّحته اللجنة الوطنية مباشرة وينتظر الاعتماد." />
-                    <CmtMini value={vm.aiStats.funded} label="معتمدة" green info="ما اعتمدته اللجنة الوطنية." />
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Section 2: المدخلات حسب المسار */}
               <div>
@@ -3889,30 +3870,6 @@ function CardItem({ c }: { c: CardVM }) {
             طلب تفاصيل إضافية
           </button>
         </div>
-      )}
-
-      {c.cardAction === 'nominate' && (
-        <button
-          onClick={(e) => {
-            stop(e);
-            c.onNominate();
-          }}
-          style={{ ...BTN_PRIMARY, width: '100%' }}
-        >
-          ترشيح للاعتماد
-        </button>
-      )}
-
-      {c.cardAction === 'cancelNom' && (
-        <button
-          onClick={(e) => {
-            stop(e);
-            c.onWithdrawNom();
-          }}
-          style={{ ...BTN_REJECT, width: '100%' }}
-        >
-          إلغاء الترشيح
-        </button>
       )}
 
       {/* committee funding decision — approve (green) / reject (red).

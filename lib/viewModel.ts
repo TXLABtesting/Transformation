@@ -524,7 +524,10 @@ function build(s: Store) {
   const isAiRole = rawRole === 'ai';
   const showRail = rawRole === 'entity';
   const showAddBtn = rawRole === 'coord';
-  const showBasket = rawRole === 'ai' || rawRole === 'path';
+  // nomination/selection UI (basket, fund bar, card checkboxes) removed for the
+  // stream heads and the committee — per requirement, they no longer nominate
+  // or select in bulk
+  const showBasket = false;
   const showEntFilter = rawRole === 'ai' || rawRole === 'path';
 
   // ---- path rail ----
@@ -1199,7 +1202,7 @@ function build(s: Store) {
     cards,
     // basket + fund bar
     basket,
-    fundBarShow: (rawRole === 'ai' || rawRole === 'path') && ui.fundSel.length > 0,
+    fundBarShow: false,
     fundSelCount: ui.fundSel.length,
     fundBarActionLabel: 'ترشيح للاعتماد',
     // coordinator bulk-assign bar + modal — re-selecting planned items reads as
@@ -1411,8 +1414,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfChip = '#2563EB';
     wfBg = '#EAF0FE';
   }
-  const showSelectCheck =
-    ['exec', 'launch', 'done'].includes(w) && ((rawRole === 'ai' && !i.funded) || (rawRole === 'path' && !i.nom && !i.funded));
+  // nomination/selection checkbox removed for stream heads & committee
+  const showSelectCheck = false;
   // every card shows an execution batch + (optional) launch plan
   const msNames = execMilestones();
   // only show the real batch — no synthetic fallback
@@ -1516,12 +1519,12 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardAction = 'viewDetails';
     } else if (i.nom) {
       cardStatus = 'nominated';
-      cardCaption = nomByMe ? 'مُرشَّح بواسطتي' : 'مُرشَّح للاعتماد';
-      cardAction = nomByMe ? 'cancelNom' : 'viewDetails';
+      cardCaption = '';
+      cardAction = 'viewDetails';
     } else {
       cardStatus = 'apprEnt';
-      cardCaption = 'معتمد من الجهة — متاح للترشيح';
-      cardAction = 'nominate';
+      cardCaption = 'معتمد من الجهة';
+      cardAction = 'viewDetails';
     }
   } else {
     // rawRole === 'ai' (اللجنة الوطنية / committee)
