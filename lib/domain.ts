@@ -807,8 +807,8 @@ export function blankItem(type: ItemType, path: string): Item {
   };
   if (type === 'operation') {
     Object.assign(base, {
-      status: 'عملية جديدة',
-      opType: 'العمليات التخصصية',
+      status: path === 'strategy' ? 'مهمة جديدة' : 'عملية جديدة',
+      opType: path === 'strategy' ? 'المهام التخصصية' : 'العمليات التخصصية',
       subActivities: '',
       sector: '',
       dept: '',

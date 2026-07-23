@@ -2371,7 +2371,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                           <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.total}</span>
                         </div>
                         {(() => {
-                          const order = ['مشروع', 'خدمة', 'عملية'];
+                          const order = ['مشروع', 'خدمة', 'عملية', 'مهمة'];
                           return [...st.byType]
                             .sort((a, b) => order.indexOf(a.label) - order.indexOf(b.label))
                             .map((tp) => (
