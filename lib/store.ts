@@ -34,10 +34,11 @@ import {
   launchesFromPlans,
   parseBudget,
   typeLabelDef,
+  seedExpectedResults,
 } from './domain';
 import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
-import type { LaunchPlan } from './domain';
+import type { LaunchPlan, ExpectedResult } from './domain';
 import { type ReviewResult } from './ai';
 
 // Plain (non-AI) validation of imported rows — a row needs a title to be
@@ -92,6 +93,8 @@ export type UiState = {
   bulkLoaded: boolean;
   // launch plans parsed from an uploaded workplan (imported on submit)
   bulkLaunches: { batch: string; title: string; ltype: string; date: string; desc: string }[];
+  // expected-results add/edit modal
+  resultModal: { id: string | null; text: string; itemIds: string[] } | null;
   // panels / modals
   detailId: string | null;
   teamOpen: boolean;
@@ -156,6 +159,7 @@ type State = {
   setupDone: boolean;
   items: Item[];
   launchPlans: LaunchPlan[];
+  expectedResults: ExpectedResult[];
   users: UserRec[];
   readNotifs: string[];
   programStep: number;
@@ -197,6 +201,13 @@ type Actions = {
   goEditTeam: () => void;
   openBasket: () => void;
   closeBasket: () => void;
+  // expected results (النتائج المتوقعة)
+  openResultModal: (id?: string) => void;
+  closeResultModal: () => void;
+  setResultText: (t: string) => void;
+  toggleResultItem: (itemId: string) => void;
+  saveResult: () => void;
+  deleteResult: (id: string) => void;
   setBasketTab: (t: 'heads' | 'committee' | 'approved') => void;
   openDeadlines: () => void;
   closeDeadlines: () => void;
@@ -363,6 +374,7 @@ function defaultUi(): UiState {
     bulkLoading: false,
     bulkLoaded: false,
     bulkLaunches: [],
+    resultModal: null,
     detailId: null,
     teamOpen: false,
     deadlinesOpen: false,
@@ -415,6 +427,7 @@ function initialState(): State {
     setupDone: false,
     items: seedItems(),
     launchPlans: recalcPlanBudgets(seedItems(), seedLaunchPlans()),
+    expectedResults: seedExpectedResults(),
     users: seedUsers(DEFAULT_ENTITY),
     readNotifs: [],
     programStep: 1,
@@ -500,6 +513,7 @@ export const useStore = create<Store>((set, get) => {
       seedV: SEED_V,
       items: s.items,
       launchPlans: s.launchPlans,
+      expectedResults: s.expectedResults,
       users: s.users,
       phase: s.phase,
       setup: s.setup,
@@ -563,6 +577,7 @@ export const useStore = create<Store>((set, get) => {
         set((s) => ({
           ...s,
           launchPlans,
+          expectedResults: !fresh && Array.isArray(saved!.expectedResults) ? (saved!.expectedResults as ExpectedResult[]) : seedExpectedResults(),
           view: (saved!.view as State['view']) || 'login',
           lang: (saved!.lang as State['lang']) || 'ar',
           entityName: (saved!.entityName as string) || DEFAULT_ENTITY,
@@ -725,6 +740,42 @@ export const useStore = create<Store>((set, get) => {
     },
     openBasket: () => setUi({ basketOpen: true }),
     closeBasket: () => setUi({ basketOpen: false }),
+    openResultModal: (id) => {
+      const st = get();
+      const ex = id ? st.expectedResults.find((r) => r.id === id) : null;
+      setUi({ resultModal: { id: ex?.id ?? null, text: ex?.text ?? '', itemIds: ex ? [...ex.itemIds] : [] } });
+    },
+    closeResultModal: () => setUi({ resultModal: null }),
+    setResultText: (t) => {
+      const m = get().ui.resultModal;
+      if (m) setUi({ resultModal: { ...m, text: t } });
+    },
+    toggleResultItem: (itemId) => {
+      const m = get().ui.resultModal;
+      if (!m) return;
+      const has = m.itemIds.includes(itemId);
+      setUi({ resultModal: { ...m, itemIds: has ? m.itemIds.filter((x) => x !== itemId) : [...m.itemIds, itemId] } });
+    },
+    saveResult: () => {
+      const st = get();
+      const m = st.ui.resultModal;
+      if (!m) return;
+      if (!stripHtml(m.text).trim()) return toast('نرجو إدخال نص النتيجة المتوقعة');
+      const path = st.role === 'coord' || st.role === 'path' ? st.myPath : (st.items.find((i) => m.itemIds.includes(i.id))?.path ?? st.myPath);
+      if (m.id) {
+        set({ expectedResults: st.expectedResults.map((r) => (r.id === m.id ? { ...r, text: m.text, itemIds: m.itemIds } : r)) });
+      } else {
+        set({ expectedResults: [...st.expectedResults, { id: 'er' + Date.now(), text: m.text, itemIds: m.itemIds, path }] });
+      }
+      setUi({ resultModal: null });
+      persist();
+      toast('تم حفظ النتيجة المتوقعة');
+    },
+    deleteResult: (id) => {
+      set({ expectedResults: get().expectedResults.filter((r) => r.id !== id) });
+      persist();
+      toast('تم حذف النتيجة المتوقعة');
+    },
     setBasketTab: (t) => setUi({ basketTab: t }),
     openDeadlines: () => setUi({ deadlinesOpen: true }),
     closeDeadlines: () => {
@@ -935,7 +986,7 @@ export const useStore = create<Store>((set, get) => {
       const requiredByStep: Record<number, string[]> = {
         1: ['title', 'desc', ...(isOp ? ['linkedToService', 'subActivities', 'sector', 'dept', 'section'] : []), ...(isSvc ? ['serviceOwner', 'targetUsers'] : [])],
         2: [...(isOp ? ['automationSystem'] : []), ...(isSvc ? ['currentJourney', 'painPoints', 'expectedImprovement'] : []), ...(isOp || isSvc ? ['durationBefore', 'durationAfter'] : [])],
-        3: ['expectedOutputs', ...(hasAgents ? ['aiModels', 'agentNature'] : [])],
+        3: [...(hasAgents ? ['aiModels', 'agentNature'] : [])],
         4: ['scopeOfWork'],
         5: [],
       };
@@ -951,7 +1002,7 @@ export const useStore = create<Store>((set, get) => {
       const arabicByStep: Record<number, string[]> = {
         1: ['title', 'desc', 'subActivities', 'sector', 'dept', 'section', 'serviceOwner', 'targetUsers', 'linkedServiceName'],
         2: ['automationSystem', 'currentJourney', 'painPoints', 'expectedImprovement', 'durationBefore', 'durationAfter'],
-        3: ['expectedOutputs'],
+        3: [],
         4: ['scopeOfWork'],
         5: [],
       };
