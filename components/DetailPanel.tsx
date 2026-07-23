@@ -492,15 +492,15 @@ export function DetailPanel({ vm }: { vm: VM }) {
             {/* --- OPERATION --- */}
             {d.isOp && (
               <>
-                <DetailSecHead title="خصائص العملية" />
+                <DetailSecHead title={'خصائص ' + d.opWordDef} />
                 <DetailGrid cols={3}>
-                  <DetailCell label="نوع العملية">{d.opType}</DetailCell>
+                  <DetailCell label={'نوع ' + d.opWordDef}>{d.opType}</DetailCell>
                   <DetailCell label="كثافة الاستخدام"><LevelPill v={d.usageIntensity} /></DetailCell>
                   <DetailCell label="الأنشطة الفرعية"><RichTextView html={d.subActivities} style={valueStyle} /></DetailCell>
                 </DetailGrid>
                 {d.linkedToService && (
                   <DetailGrid cols={2}>
-                    <DetailCell label="هل العملية مرتبطة بخدمة؟">{d.linkedToService}</DetailCell>
+                    <DetailCell label={'هل ' + d.opWordDef + ' مرتبطة بخدمة؟'}>{d.linkedToService}</DetailCell>
                     {d.linkedServiceName ? <DetailCell label="الخدمة المرتبطة">{d.linkedServiceName}</DetailCell> : null}
                   </DetailGrid>
                 )}

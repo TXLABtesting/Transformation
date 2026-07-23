@@ -4,14 +4,14 @@ import { stripHtml } from './richtext';
 // list — replaces the prototype's CDN SheetJS / PptxGenJS with bundled deps.
 // Libraries are dynamically imported so they stay out of the initial bundle.
 // ============================================================================
-import { type Item, typeLabel, pathById, wfMeta, transformScore, stageWeight, entOf, parseBudget, formatMoney, execMilestones, isEntityApproved, isProjInit } from './domain';
+import { type Item, typeLabel, typeLabelFor, pathById, wfMeta, transformScore, stageWeight, entOf, parseBudget, formatMoney, execMilestones, isEntityApproved, isProjInit } from './domain';
 
 const argb = (hex: string) => 'FF' + hex.replace('#', '').toUpperCase();
 const today = () => new Date().toLocaleDateString('ar-AE', { year: 'numeric', month: 'long', day: 'numeric' });
 
 function row(i: Item, entityName: string) {
   return {
-    التصنيف: typeLabel(i.type),
+    التصنيف: typeLabelFor(i.type, i.path),
     العنوان: i.title,
     المسار: pathById(i.path).name,
     الجهة: entOf(i, entityName),
@@ -150,7 +150,7 @@ function fillWorkplan(wb: import('exceljs').Workbook, items: Item[], entityName:
     const r = 4 + k;
     put(op, r, 1, k + 1);
     put(op, r, 2, i.title);
-    put(op, r, 3, i.opType || typeLabel(i.type));
+    put(op, r, 3, i.opType || typeLabelFor(i.type, i.path));
     put(op, r, 4, i.subActivities || '');
     put(op, r, 6, i.sector || '');
     put(op, r, 7, i.dept || '');
@@ -356,7 +356,7 @@ async function exportExcelStyled(items: Item[], entityName: string) {
         sm.getRow(r).height = 20;
       });
     };
-    dist(1, 'التوزيع حسب التصنيف', countBy((i) => typeLabel(i.type)));
+    dist(1, 'التوزيع حسب التصنيف', countBy((i) => typeLabelFor(i.type, i.path)));
     dist(5, 'التوزيع حسب الحالة', countBy((i) => wfMeta(i).label));
   }
 
@@ -653,7 +653,7 @@ export async function exportPpt(items: Item[], entityName: string) {
       { x, y: 3.8, w, colW: [w - 1.1, 1.1], fontSize: 12, border: { pt: 0.5, color: LINE }, rowH: 0.38 }
     );
   };
-  distTable(6.93, 5.9, 'التوزيع حسب التصنيف', countBy((i) => typeLabel(i.type)));
+  distTable(6.93, 5.9, 'التوزيع حسب التصنيف', countBy((i) => typeLabelFor(i.type, i.path)));
   distTable(0.5, 5.9, 'التوزيع حسب الحالة', countBy((i) => wfMeta(i).label));
   footer(sum, '2');
 
@@ -669,7 +669,7 @@ export async function exportPpt(items: Item[], entityName: string) {
       s.addShape(RR, { x, y: 1.08, w, h: 0.42, rectRadius: 0.21, fill: { color: bg }, line: { color: bg, width: 0 } });
       s.addText(txt, { x, y: 1.08, w, h: 0.42, align: 'center', valign: 'middle', color: col, fontSize: 10.5, bold: true });
     };
-    chip(10.93, 1.9, typeLabel(i.type), 'E5EEFF', '2563EB');
+    chip(10.93, 1.9, typeLabelFor(i.type, i.path), 'E5EEFF', '2563EB');
     chip(8.13, 2.7, meta.label, meta.bg.replace('#', ''), meta.chip.replace('#', ''));
     if (i.funded) chip(6.03, 2.0, 'معتمد للتمويل ✓', 'E3F6EC', '0B8A4B');
     s.addShape(RECT, { x: 0.5, y: 1.72, w: 12.33, h: 0.01, fill: { color: LINE }, line: { color: LINE, width: 0 } });
