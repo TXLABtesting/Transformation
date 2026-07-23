@@ -424,9 +424,9 @@ function FormStep({
 
       {fStep === 1 && <F1 vm={vm} setField={setField} gv={gv} />}
       {fStep === 2 && <F2 vm={vm} setField={setField} gv={gv} />}
-      {fStep === 3 && <FOutcome setField={setField} gv={gv} />}
+      {fStep === 3 && <FOutcome vm={vm} setField={setField} gv={gv} />}
       {fStep === 4 && <FBudget vm={vm} setField={setField} gv={gv} />}
-      {fStep === 5 && <FPhases vm={vm} />}
+      {fStep === 5 && <FPhases vm={vm} setField={setField} gv={gv} />}
 
       {/* form actions (sticky bottom) */}
       <div
@@ -536,6 +536,51 @@ function F1({
         />
       </div>
 
+      {m.mIsOp && (
+        <>
+          <div style={{ marginBottom: 14 }}>
+            <label style={labelStyle}>هل العملية مرتبطة بخدمة؟ <span style={{ color: '#D23B45' }}>*</span></label>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {['نعم', 'لا'].map((opt) => {
+                const active = gv('linkedToService') === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setField('linkedToService', opt)}
+                    style={{
+                      flex: 1,
+                      border: '1px solid ' + (active ? '#2563EB' : '#DCE3EE'),
+                      background: active ? '#EAF1FE' : '#fff',
+                      color: active ? '#1D4ED8' : '#54627B',
+                      borderRadius: 11,
+                      padding: '11px 13px',
+                      fontSize: 13.5,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {gv('linkedToService') === 'نعم' && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>ما هي الخدمة؟ <span style={{ color: '#D23B45' }}>*</span></label>
+              <input
+                value={gv('linkedServiceName')}
+                onChange={(e) => setField('linkedServiceName', e.target.value)}
+                placeholder="اسم الخدمة المرتبطة"
+                style={inputStyle}
+              />
+            </div>
+          )}
+        </>
+      )}
+
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>وصف مختصر <span style={{ color: '#D23B45' }}>*</span></label>
         <RichTextEditor
@@ -567,7 +612,7 @@ function F1({
               <input value={gv('sector')} onChange={(e) => setField('sector', e.target.value)} style={inputStyle} />
             </div>
             <div>
-              <label style={labelStyle}>الوحدة التنظيمية المعنية <span style={{ color: '#D23B45' }}>*</span></label>
+              <label style={labelStyle}>الإدارة المعنية <span style={{ color: '#D23B45' }}>*</span></label>
               <input value={gv('dept')} onChange={(e) => setField('dept', e.target.value)} style={inputStyle} />
             </div>
             <div>
@@ -680,7 +725,7 @@ function F2({
     <div>
       {!m.mIsOp && (
         <div style={cardStyle}>
-          <div style={cardTitle}>التصنيف والأولوية</div>
+          <div style={cardTitle}>التقييم والأولوية</div>
           {sel('الأولوية', 'priority', ['عالية', 'متوسطة', 'منخفضة'])}
           {sel('مستوى التعقيد', 'complexity', ['عالٍ', 'متوسط', 'منخفض'])}
           {m.mIsProjectish
@@ -699,16 +744,10 @@ function F2({
       {m.mIsOp && (
         <>
           <div style={cardStyle}>
-            <div style={cardTitle}>تقييم التحول للذكاء الاصطناعي المساعد</div>
+            <div style={cardTitle}>التقييم والأولوية</div>
             {sel('الأولوية', 'priority', ['عالية', 'متوسطة', 'منخفضة'])}
             {sel('مستوى التعقيد', 'complexity', ['عالٍ', 'متوسط', 'منخفض'])}
-            {sel('وضع العملية', 'status', ['عملية جديدة', 'قيد التنفيذ', 'قائمة', 'مكتملة'])}
             {rankBtn}
-            {sel('قابلية التحول', 'transformability', ['قابل كلياً', 'قابل جزئياً', 'غير قابل للتحول', 'أخرى'])}
-            {sel('أولوية التحول', 'transformPriority', ['منخفضة', 'متوسطة', 'عالية'])}
-            {range('جاهزية التحول', 'readiness')}
-            {sel('مستوى الأثر المتوقع', 'impact', ['منخفض', 'متوسط', 'عالٍ'])}
-            {durs}
           </div>
           <div style={cardStyle}>
             <div style={cardTitle}>معلومات الأتمتة</div>
@@ -722,7 +761,14 @@ function F2({
               />
             </div>
             {sel('كثافة الاستخدام', 'usageIntensity', ['منخفضة', 'متوسطة', 'عالية'])}
-            {sel('مستوى تعقيد الأتمتة', 'complexityLevel', ['منخفض', 'متوسط', 'عالٍ'])}
+          </div>
+          <div style={cardStyle}>
+            <div style={cardTitle}>قابلية التحول للذكاء الاصطناعي المساعد</div>
+            {sel('قابلية التحول', 'transformability', ['قابل كلياً', 'قابل جزئياً', 'غير قابل للتحول', 'أخرى'])}
+            {sel('أولوية التحول', 'transformPriority', ['منخفضة', 'متوسطة', 'عالية'])}
+            {range('جاهزية التحول', 'readiness')}
+            {sel('مستوى الأثر المتوقع', 'impact', ['منخفض', 'متوسط', 'عالٍ'])}
+            {durs}
           </div>
         </>
       )}
@@ -756,24 +802,13 @@ function F2({
             />
           </div>
           {durs}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <label style={labelStyle}>مستوى الأثر المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
-              <select value={gv('impact')} onChange={(e) => setField('impact', e.target.value)} style={inputStyle}>
-                {['منخفض', 'متوسط', 'عالٍ'].map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>تاريخ الانتهاء المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
-              <input
-                type="date"
-                value={gv('endDate')}
-                onChange={(e) => setField('endDate', e.target.value)}
-                style={inputStyle}
-              />
-            </div>
+          <div>
+            <label style={labelStyle}>مستوى الأثر المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
+            <select value={gv('impact')} onChange={(e) => setField('impact', e.target.value)} style={inputStyle}>
+              {['منخفض', 'متوسط', 'عالٍ'].map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </select>
           </div>
         </div>
       )}
@@ -783,12 +818,18 @@ function F2({
 
 // F-OUTCOME (step3)
 function FOutcome({
+  vm,
   setField,
   gv,
 }: {
+  vm: VM;
   setField: (k: string, v: unknown) => void;
   gv: (k: string) => string;
 }) {
+  const m = vm.modal;
+  // "مساعدو الذكاء الاصطناعي" figures apply to operations & services only —
+  // projects/initiatives don't carry an agent count or nature
+  const showAgents = !m.mIsProjectish;
   return (
     <div style={cardStyle}>
       <div style={{ marginBottom: 14 }}>
@@ -841,25 +882,29 @@ function FOutcome({
             </span>
           </div>
         </div>
-        <div>
-          <label style={{ ...labelStyle, minHeight: 38 }}>عدد نماذج وأنظمة الذكاء الاصطناعي المتوقعة <span style={{ color: '#D23B45' }}>*</span></label>
-          <input
-            type="number"
-            min={0}
-            value={gv('aiModels')}
-            onChange={(e) => setField('aiModels', e.target.value)}
-            style={inputStyle}
-          />
-        </div>
-        <div>
-          <label style={labelStyle}>تاريخ الانتهاء المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
-          <input
-            type="date"
-            value={gv('endDate')}
-            onChange={(e) => setField('endDate', e.target.value)}
-            style={inputStyle}
-          />
-        </div>
+        {showAgents && (
+          <div>
+            <label style={{ ...labelStyle, minHeight: 38 }}>العدد المتوقع لمساعدي الذكاء الاصطناعي <span style={{ color: '#D23B45' }}>*</span></label>
+            <input
+              type="number"
+              min={0}
+              value={gv('aiModels')}
+              onChange={(e) => setField('aiModels', e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+        )}
+        {showAgents && (
+          <div>
+            <label style={{ ...labelStyle, minHeight: 38 }}>طبيعة عمل مساعدي الذكاء الاصطناعي (مشترك ومتخصص) <span style={{ color: '#D23B45' }}>*</span></label>
+            <select value={gv('agentNature')} onChange={(e) => setField('agentNature', e.target.value)} style={inputStyle}>
+              <option value="">اختر…</option>
+              <option>مشترك</option>
+              <option>متخصص</option>
+              <option>مشترك ومتخصص</option>
+            </select>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -887,17 +932,6 @@ function FBudget({
           onChange={(v) => setField('scopeOfWork', v)}
           placeholder="صف نطاق العمل: المكوّنات، المخرجات، التكاملات، والاستثناءات"
           minHeight={130}
-        />
-      </div>
-      <div style={{ marginBottom: 14 }}>
-        <label style={labelStyle}>
-          الميزانية التقديرية
-        </label>
-        <input
-          value={gv('budget')}
-          onChange={(e) => setField('budget', e.target.value)}
-          placeholder="مثال: 1,200,000 درهم"
-          style={inputStyle}
         />
       </div>
       <div>
@@ -996,7 +1030,7 @@ function FBudget({
               <Icon d={IC.attach} size={18} color="#2563EB" />
             </span>
             <span style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B' }}>
-              أرفق مستند نطاق العمل والميزانية (PDF)
+              أرفق مستند نطاق العمل (PDF)
             </span>
             <input
               type="file"
@@ -1012,7 +1046,7 @@ function FBudget({
 
 // F-PHASES (step 5): pick the execution & launch batch only — launch plans
 // are attached centrally via «إدارة خطط الإطلاق» or the dashboard bulk-assign
-function FPhases({ vm }: { vm: VM }) {
+function FPhases({ vm, setField, gv }: { vm: VM; setField: (k: string, v: unknown) => void; gv: (k: string) => string }) {
   const m = vm.modal;
   const s = vm.store;
   const draft = m.draft;
@@ -1027,21 +1061,43 @@ function FPhases({ vm }: { vm: VM }) {
         </div>
       ) : (
       <div style={cardStyle}>
-        <label style={labelStyle}>
-          اختر مرحلة التنفيذ <span style={{ color: '#D23B45' }}>*</span>
-        </label>
-        <select
-          value={draft?.execBatch || ''}
-          onChange={(e) => s.selectExecBatch(e.target.value)}
-          style={inputStyle}
-        >
-          <option value="">اختر المرحلة…</option>
-          {m.batchOptions.map((b) => (
-            <option key={b.name} value={b.name}>
-              {b.label}
-            </option>
-          ))}
-        </select>
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>
+            اختر مرحلة التنفيذ <span style={{ color: '#D23B45' }}>*</span>
+          </label>
+          <select
+            value={draft?.execBatch || ''}
+            onChange={(e) => s.selectExecBatch(e.target.value)}
+            style={inputStyle}
+          >
+            <option value="">اختر المرحلة…</option>
+            {m.batchOptions.map((b) => (
+              <option key={b.name} value={b.name}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>تاريخ البدء <span style={{ color: '#D23B45' }}>*</span></label>
+            <input
+              type="date"
+              value={gv('startDate')}
+              onChange={(e) => setField('startDate', e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>تاريخ الانتهاء المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
+            <input
+              type="date"
+              value={gv('endDate')}
+              onChange={(e) => setField('endDate', e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+        </div>
       </div>
       )}
     </div>

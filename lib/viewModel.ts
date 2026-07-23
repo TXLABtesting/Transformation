@@ -598,10 +598,11 @@ function build(s: Store) {
     { v: 'notfunded', label: 'غير معتمد للتمويل' },
   ];
 
-  // stage filter (المراحل) — the four launch stages + «للتحديد بعد الدراسة»
+  // stage filter (المراحل) — mirrors the full per-track timeline (8 phases;
+  // AI track has 5 launch دفعات, other tracks 6) + «للتحديد بعد الدراسة»
   const batchFilterOptions = [
     { v: 'all', label: 'جميع المراحل' },
-    ...streamLaunchBatches(filterStream === 'all' ? null : filterStream).map((b) => ({ v: b.name, label: b.name.replace(/^إطلاق /, '') })),
+    ...execMilestones(filterStream === 'all' ? null : filterStream).map((b) => ({ v: b.name, label: b.name.replace(/^إطلاق /, '') })),
     { v: TBD_BATCH, label: TBD_BATCH },
   ];
 

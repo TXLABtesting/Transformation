@@ -293,32 +293,6 @@ export function BasketDrawer({ vm }: { vm: VM }) {
           )}
         </div>
 
-        {/* Budget usage + total footer (committee) */}
-        {b.showBudget && (
-          <div style={{ background: '#fff', borderTop: '1px solid #E7ECF4', padding: '16px 18px 26px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>الميزانية المعتمدة</span>
-                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{b.budget.approvedLabel}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>المتبقي</span>
-                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{b.budget.remainingLabel}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>نسبة الاستخدام</span>
-                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#2563EB' }}>{b.budget.pct}%</span>
-              </div>
-              <div style={{ height: 6, borderRadius: 999, background: '#EEF1F6', overflow: 'hidden' }}>
-                <div style={{ width: `${b.budget.pct}%`, height: '100%', background: '#2563EB', borderRadius: 999, transition: 'width .4s ease' }} />
-              </div>
-            </div>
-            <div style={{ borderTop: '1px dashed #E1E8F2', marginTop: 14, paddingTop: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span className="hd" style={{ color: '#13213C', fontSize: 12.5, fontWeight: 800 }}>إجمالي تكلفة التمويل المعتمد</span>
-              <span style={{ color: '#2563EB', fontSize: 15, fontWeight: 800 }}>{b.fundedTotalLabel}</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

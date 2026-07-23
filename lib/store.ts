@@ -1008,10 +1008,12 @@ export const useStore = create<Store>((set, get) => {
       const dd = (d || {}) as unknown as Record<string, unknown>;
       const isOp = d?.type === 'operation';
       const isSvc = d?.type === 'service';
+      // agent count/nature apply to operations & services only (not projects)
+      const hasAgents = isOp || isSvc;
       const requiredByStep: Record<number, string[]> = {
-        1: ['title', 'desc', ...(isOp ? ['subActivities', 'sector', 'dept', 'section'] : []), ...(isSvc ? ['serviceOwner', 'targetUsers'] : [])],
-        2: [...(isOp ? ['automationSystem'] : []), ...(isSvc ? ['currentJourney', 'painPoints', 'expectedImprovement', 'endDate'] : []), ...(isOp || isSvc ? ['durationBefore', 'durationAfter'] : [])],
-        3: ['expectedOutputs', 'aiModels', 'endDate'],
+        1: ['title', 'desc', ...(isOp ? ['linkedToService', 'subActivities', 'sector', 'dept', 'section'] : []), ...(isSvc ? ['serviceOwner', 'targetUsers'] : [])],
+        2: [...(isOp ? ['automationSystem'] : []), ...(isSvc ? ['currentJourney', 'painPoints', 'expectedImprovement'] : []), ...(isOp || isSvc ? ['durationBefore', 'durationAfter'] : [])],
+        3: ['expectedOutputs', ...(hasAgents ? ['aiModels', 'agentNature'] : [])],
         4: ['scopeOfWork'],
         5: [],
       };
@@ -1024,12 +1026,15 @@ export const useStore = create<Store>((set, get) => {
         );
       }
       // numeric/attachment fields marked * that the text check above can't see
+      if (s.ui.fStep === 1 && isOp && dd.linkedToService === 'نعم' && !filled(dd.linkedServiceName)) {
+        return toast('نرجو تحديد الخدمة المرتبطة بالعملية قبل المتابعة');
+      }
       if (s.ui.fStep === 2 && !Number(dd.rank)) {
         return toast('نرجو تحديد ترتيب الأولوية (بالسحب والإفلات) قبل المتابعة');
       }
       if (s.ui.fStep === 3) {
         if (!Number(dd.targetPct)) return toast('نرجو تحديد نسبة التحول المستهدفة قبل المتابعة');
-        if (!Number(dd.aiModels)) return toast('نرجو إدخال عدد نماذج وأنظمة الذكاء الاصطناعي المتوقعة قبل المتابعة');
+        if (hasAgents && !Number(dd.aiModels)) return toast('نرجو إدخال العدد المتوقع لمساعدي الذكاء الاصطناعي قبل المتابعة');
       }
       if (s.ui.fStep === 4 && !filled(dd.scopeFile)) {
         return toast('نرجو إرفاق مستند نطاق العمل قبل المتابعة');
@@ -1038,8 +1043,13 @@ export const useStore = create<Store>((set, get) => {
         setUi({ fStep: s.ui.fStep + 1 });
         return;
       }
-      if (d && (d.transformability || '') !== 'غير قابل' && !(d.execBatch || '').trim()) {
-        return toast('نرجو اختيار مرحلة التنفيذ والإطلاق قبل الإرسال للاعتماد');
+      if (d && (d.transformability || '') !== 'غير قابل') {
+        if (!(d.execBatch || '').trim()) {
+          return toast('نرجو اختيار مرحلة التنفيذ والإطلاق قبل الإرسال للاعتماد');
+        }
+        if (!filled(dd.startDate) || !filled(dd.endDate)) {
+          return toast('نرجو تحديد تاريخ البدء وتاريخ الانتهاء المتوقع قبل الإرسال للاعتماد');
+        }
       }
       get().submitItem();
     },
