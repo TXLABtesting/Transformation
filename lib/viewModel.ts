@@ -103,15 +103,26 @@ function build(s: Store) {
   if (effActivePath !== 'all') visible = visible.filter((i) => i.path === effActivePath);
   // sidebar stream selection (entity rep / committee) narrows the list too
   if (ui.navStream) visible = visible.filter((i) => i.path === ui.navStream);
-  // a type filter that the selected stream doesn't offer falls back to «all»
-  const effTypeFilter =
-    ui.filter !== 'all' && ui.filter !== 'projinit' && filterStream !== 'all' && !streamHasType(filterStream, ui.filter as 'operation' | 'service')
-      ? 'all'
-      : ui.filter;
+  // a type filter that the selected stream doesn't offer falls back to «all».
+  // per-stream dropdowns use compound values: «op:<opType>» for an operation
+  // sub-type, «bundle» for a service package, and «project»/«initiative» for
+  // the two project sub-kinds. projinit/project/initiative are valid on every
+  // stream; op-based and service-based values reset when the stream lacks them.
+  const effTypeFilter = (() => {
+    const tf = ui.filter;
+    if (tf === 'all' || tf === 'projinit' || tf === 'project' || tf === 'initiative') return tf;
+    if (filterStream === 'all') return tf;
+    if (tf === 'operation' || tf.startsWith('op:')) return streamHasType(filterStream, 'operation') ? tf : 'all';
+    if (tf === 'service' || tf === 'bundle') return streamHasType(filterStream, 'service') ? tf : 'all';
+    return tf;
+  })();
   if (effTypeFilter !== 'all')
-    visible = visible.filter((i) =>
-      effTypeFilter === 'projinit' ? isProjInit(i.type) : i.type === effTypeFilter
-    );
+    visible = visible.filter((i) => {
+      if (effTypeFilter === 'projinit') return isProjInit(i.type);
+      if (effTypeFilter.startsWith('op:')) return i.type === 'operation' && (i.opType || '') === effTypeFilter.slice(3);
+      if (effTypeFilter === 'bundle') return i.type === 'service' && !!i.serviceBundle;
+      return i.type === effTypeFilter;
+    });
   // status filter
   if (ui.statusFilter !== 'all') visible = visible.filter((i) => statusMatch(i, ui.statusFilter, rawRole, s));
   // committee-funding filter
@@ -614,12 +625,35 @@ function build(s: Store) {
   const entScope = filterStream === 'all' ? s.items : s.items.filter((i) => i.path === filterStream);
   const entFilterValues = filterStream === 'all' ? entValues : Array.from(new Set(entScope.map((i) => ent(i))));
   const entOptions = [{ v: 'all', label: 'جميع الجهات' }, ...entFilterValues.map((e) => ({ v: e, label: e }))];
-  const typeOptions = [
-    { v: 'all', label: 'جميع التصنيفات' },
-    { v: 'projinit', label: 'مشروع' },
-    ...(filterStream === 'all' || streamHasType(filterStream, 'operation') ? [{ v: 'operation', label: 'عملية' }] : []),
-    ...(filterStream === 'all' || streamHasType(filterStream, 'service') ? [{ v: 'service', label: 'خدمة' }] : []),
-  ];
+  // per-stream type dropdowns (each keeps «جميع الأنواع» first). Streams that
+  // define their own taxonomy override the generic list.
+  const allTypesOpt = { v: 'all', label: 'جميع الأنواع' };
+  const typeOptions =
+    filterStream === 'ops'
+      ? [
+          allTypesOpt,
+          { v: 'op:العمليات التخصصية', label: 'العمليات التخصصية' },
+          { v: 'op:عمليات الدعم المؤسسي', label: 'عمليات الدعم المؤسسي' },
+          { v: 'projinit', label: 'المشاريع' },
+        ]
+      : filterStream === 'strategy'
+        ? [
+            allTypesOpt,
+            { v: 'initiative', label: 'المهام الاستراتيجية' },
+            { v: 'project', label: 'المشاريع' },
+          ]
+        : filterStream === 'services'
+          ? [
+              allTypesOpt,
+              { v: 'service', label: 'الخدمات' },
+              { v: 'bundle', label: 'باقات الخدمات' },
+            ]
+          : [
+              allTypesOpt,
+              { v: 'projinit', label: 'مشروع' },
+              ...(filterStream === 'all' || streamHasType(filterStream, 'operation') ? [{ v: 'operation', label: 'عملية' }] : []),
+              ...(filterStream === 'all' || streamHasType(filterStream, 'service') ? [{ v: 'service', label: 'خدمة' }] : []),
+            ];
   // is any filter currently active (drives the reset button + count)
   const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim();
 

@@ -378,6 +378,12 @@ export type Item = {
   aiModels?: number;
   targetPct?: number;
   endDate?: string;
+  startDate?: string;
+  agentNature?: string;
+  linkedToService?: string;
+  linkedServiceName?: string;
+  // services stream: distinguishes «باقات الخدمات» from a single «خدمة»
+  serviceBundle?: boolean;
   // operation-specific
   opType?: string;
   subActivities?: string;
