@@ -748,7 +748,11 @@ export const useStore = create<Store>((set, get) => {
     // coordinator stream switcher: change the ACTIVE stream among the assigned ones
     setMyPath: (p) => {
       const st = get();
-      if (!st.myPaths.includes(p) || st.myPath === p) return;
+      if (st.myPath === p) return;
+      // demo mode lets the coordinator switch to ANY stream (to exercise them
+      // all from one login); production stays restricted to assigned streams
+      const demoAllStreams = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
+      if (!demoAllStreams && !st.myPaths.includes(p)) return;
       set({ myPath: p, ui: { ...st.ui, filter: 'all', stepFilter: null } });
       persist();
     },
