@@ -475,9 +475,8 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <DetailCell label="المخرجات المتوقعة"><RichTextView html={d.expectedOutputs} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
                   <DetailCell label="النتائج المتوقعة"><RichTextView html={d.expectedOutcomes} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
                 </DetailGrid>
-                <DetailGrid cols={3}>
+                <DetailGrid cols={2}>
                   <DetailCell label="الأثر المتوقع"><RichTextView html={d.expectedImpact} style={valueStyle} /></DetailCell>
-                  <DetailCell label="نماذج الذكاء">{d.aiModels}</DetailCell>
                   <DetailCell label="نسبة التحول">{d.targetPct}%</DetailCell>
                 </DetailGrid>
 
@@ -499,6 +498,12 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <DetailCell label="كثافة الاستخدام"><LevelPill v={d.usageIntensity} /></DetailCell>
                   <DetailCell label="الأنشطة الفرعية"><RichTextView html={d.subActivities} style={valueStyle} /></DetailCell>
                 </DetailGrid>
+                {d.linkedToService && (
+                  <DetailGrid cols={2}>
+                    <DetailCell label="هل العملية مرتبطة بخدمة؟">{d.linkedToService}</DetailCell>
+                    {d.linkedServiceName ? <DetailCell label="الخدمة المرتبطة">{d.linkedServiceName}</DetailCell> : null}
+                  </DetailGrid>
+                )}
 
                 <DetailSecHead title="جاهزية التحول" />
                 <DetailGrid cols={3}>
@@ -518,7 +523,6 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   const cells = [
                     <DetailCell key="lvl" label="مستوى الأتمتة"><AutoLevel pct={d.automationPct} level={d.automationLevel} /></DetailCell>,
                     ...(d.automationSystem ? [<DetailCell key="sys" label="نظام الأتمتة">{d.automationSystem}</DetailCell>] : []),
-                    ...(d.complexityLevel ? [<DetailCell key="cx" label="مستوى تعقيد الأتمتة"><LevelPill v={d.complexityLevel} /></DetailCell>] : []),
                   ];
                   return <DetailGrid cols={Math.min(3, cells.length)}>{cells}</DetailGrid>;
                 })()}
@@ -528,7 +532,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   const cells = [
                     <DetailCell key="fed" tint label="الجهة الاتحادية المعنية" iconD={IC_BUILDING}>{d.itemEntityName}</DetailCell>,
                     ...(d.sector ? [<DetailCell key="sec" tint label="القطاع المعني" iconD={IC_TAG}>{d.sector}</DetailCell>] : []),
-                    ...(d.dept ? [<DetailCell key="dept" tint label="الوحدة التنظيمية المعنية" iconD={IC_GRID}>{d.dept}</DetailCell>] : []),
+                    ...(d.dept ? [<DetailCell key="dept" tint label="الإدارة المعنية" iconD={IC_GRID}>{d.dept}</DetailCell>] : []),
                     ...(d.section ? [<DetailCell key="sect" tint label="القسم المعني" iconD={IC_PEOPLE}>{d.section}</DetailCell>] : []),
                   ];
                   return <DetailGrid cols={2} tint>{cells}</DetailGrid>;
@@ -549,7 +553,8 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 {(() => {
                   const cells = [
                     ...(d.expectedImpact ? [<DetailCell key="imp" label="الأثر المتوقع"><RichTextView html={d.expectedImpact} style={valueStyle} /></DetailCell>] : []),
-                    ...(d.aiModels ? [<DetailCell key="ai" label="نماذج الذكاء">{d.aiModels}</DetailCell>] : []),
+                    ...(d.aiModels ? [<DetailCell key="ai" label="العدد المتوقع لمساعدي الذكاء الاصطناعي">{d.aiModels}</DetailCell>] : []),
+                    ...(d.agentNature ? [<DetailCell key="nat" label="طبيعة عمل مساعدي الذكاء الاصطناعي">{d.agentNature}</DetailCell>] : []),
                     ...(d.targetPct ? [<DetailCell key="pct" label="نسبة التحول">{d.targetPct}%</DetailCell>] : []),
                   ];
                   return cells.length ? <DetailGrid cols={Math.min(3, cells.length)}>{cells}</DetailGrid> : null;
