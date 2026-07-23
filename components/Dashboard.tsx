@@ -30,8 +30,8 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     sel: '[data-tour="nav-exec"]',
-    title: 'مراحل التنفيذ',
-    desc: 'ومنها «مراحل التنفيذ»: توزيع المدخلات على المراحل الزمنية الأربع وحالة تطويرها والتكلفة التقديرية للتنفيذ لكل مرحلة.',
+    title: 'البرنامج الزمني',
+    desc: 'ومنها «البرنامج الزمني»: الإطار الزمني ومواعيد الإنجاز المتوقعة للمراحل المختلفة وحالة تطوير المدخلات في كل مرحلة.',
   },
   {
     sel: '[data-tour="nav-launch"]',
@@ -364,7 +364,7 @@ function EntityOverview({ vm }: { vm: VM }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* ===== Section 1: التكلفة الإجمالية + إجمالي المدخلات ===== */}
-      <div data-r="dash-top" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div data-r="dash-top" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: isPath ? '1fr 1fr' : '1fr', gap: 16 }}>
         {/* --- إجمالي المدخلات (right) --- */}
         <div data-tour="inputs-card" style={cardStyle}>
           <EoCardHead title={isPath ? 'إجمالي المدخلات' : isCoord ? 'ملخص مدخلات المسار' : 'ملخص مدخلات الجهة'} iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
@@ -455,43 +455,7 @@ function EntityOverview({ vm }: { vm: VM }) {
               </div>
             </div>
           );
-        })() : (
-        <div data-tour="cost-card" style={cardStyle}>
-          <EoCardHead title="ملخص التكلفة التقديرية" iconD={EO_WALLET} onArrow={() => s.setNavSection('launchplans')} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-            <EoDonut frac={costDonut.frac} dark={costHov ? costHov.c : '#2563EB'} light={costDonut.light} top={costDonut.top} center={costDonut.center} sub={costDonut.sub} arcMeta={costArcMeta} />
-            <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {costItems.map((r) => (
-                <div
-                  key={r.key}
-                  onMouseEnter={() => setHovCost(r.key)}
-                  onMouseLeave={() => setHovCost(null)}
-                  style={{
-                    background: hovCost === r.key ? '#EEF3FC' : '#F7F9FD',
-                    border: '1px solid ' + (hovCost === r.key ? '#D8E3F5' : '#EEF1F6'),
-                    borderRadius: 12,
-                    padding: '11px 13px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 10,
-                    cursor: 'default',
-                    transition: 'background .12s',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>{r.label}</div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C', marginTop: 2 }}>{r.val}</div>
-                    </div>
-                    <span style={{ width: 11, height: 11, borderRadius: 3, background: r.c, flex: 'none' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        )}
+        })() : null}
       </div>
 
       {/* ===== Section 2: overview cards (by stream for entity · by type for coord) ===== */}
@@ -526,26 +490,6 @@ function EntityOverview({ vm }: { vm: VM }) {
               </div>
             </div>
             <div style={{ height: 1, background: '#EEF1F6', marginTop: 'auto' }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة التحويل</span>
-                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.execLabel}</span>
-              </div>
-              {/* launch budget hidden for track head — execution budget only */}
-              {!isPath && (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>تكلفة الإطلاق</span>
-                    <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.launchLabel}</span>
-                  </div>
-                  <div style={{ height: 1, background: '#EEF1F6', margin: '2px 0' }} />
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>إجمالي التكلفة</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB' }}>{st.totalLabel}</span>
-                  </div>
-                </>
-              )}
-            </div>
             <button
               onClick={st.onOpen}
               data-tour="type-details"
@@ -754,39 +698,6 @@ function StageCard({ b, showStream, onManage }: { b: VM['batchSummary'][number];
           ))}
         </div>
       </div>
-      {/* نوع المدخلات */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>نوع المدخلات</span>
-        <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-          {b.typeBreak.map((tp) => (
-            <span key={tp.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF1F5', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
-              {tp.label} <b style={{ color: '#13213C' }}>{tp.n}</b>
-            </span>
-          ))}
-        </div>
-      </div>
-      {/* المسار — committee only (spans multiple streams); single-stream roles omit it */}
-      {showStream && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, flex: 'none' }}>المسار</span>
-          <div style={{ flex: 1, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-            {b.streamBreak.map((st) => (
-              <span key={st.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF1F5', color: '#42506B', borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.color, flex: 'none' }} />
-                {st.name} <b style={{ color: '#13213C' }}>{st.n}</b>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* cost footer */}
-      <div style={{ borderTop: '1px solid #F0F3F8', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#6B7A93', fontWeight: 400 }}>
-          <Icon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h4" size={13} color="#9AA6BC" />
-          تكلفة التحويل التقديرية للمرحلة
-        </span>
-        <span className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{b.costLabel}</span>
-      </div>
       {/* view-inputs button (full width, bottom) */}
       <button
         onClick={b.onOpenAll}
@@ -803,8 +714,8 @@ function StageDistribution({ vm, onManage }: { vm: VM; onManage?: (batch: string
   return (
     <>
       <StagePageHeader
-        title="مراحل التنفيذ"
-        sub="توزيع مدخلات التحول على المراحل الزمنية الأربع مع التكلفة التقديرية للتنفيذ — ضمن نطاق عرضك."
+        title="البرنامج الزمني"
+        sub="الإطار الزمني ومواعيد الإنجاز المتوقعة للمراحل المختلفة"
         f={vm.execFilter}
       />
       <div data-tour="stages" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(440px,1fr))', gap: 16 }}>
@@ -898,12 +809,6 @@ function LpLaunchCard({ l, idx, hideMoney, showStream, showEnt }: { l: VM['batch
           {showEnt && l.entities.length > 0 && <LpScopeChip label={entitiesLabel} title={l.entities.join('، ')} />}
           {showStream && l.streams.length > 0 && <LpScopeChip label={streamsLabel} title={l.streams.map((n) => 'مسار ' + n).join('، ')} />}
         </div>
-        {!hideMoney && (
-          <div style={{ flex: 'none', textAlign: 'left' }}>
-            <div style={{ fontSize: 10.5, color: '#AEB8C7', fontWeight: 400 }}>تكلفة الإطلاق التقديرية</div>
-            <div style={{ fontSize: 15, fontWeight: 900, color: '#13213C', marginTop: 2 }}>{l.budgetLabel}</div>
-          </div>
-        )}
         <span style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: lst.c, background: lst.bg, borderRadius: 999, padding: '5px 12px' }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: lst.c, flex: 'none' }} />
           {lst.label}
@@ -980,7 +885,7 @@ function LaunchPlan({ vm, onManage }: { vm: VM; onManage?: (batch: string) => vo
     <>
       <StagePageHeader
         title="خطة الإطلاق"
-        sub="الإطلاقات المجدولة عبر المراحل الزمنية الأربع — ضمن نطاق عرضك."
+        sub="الإطلاقات والإعلانات الرئيسية ضمن المراحل المختلفة"
         f={vm.execFilter}
       />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -2570,9 +2475,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <FilterSelect value={vm.filterValue} options={vm.typeOptions} onChange={(v) => s.setFilter(v)} />
                 <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
                 <FilterSelect value={vm.batchFilterValue} options={vm.batchFilterOptions} minWidth={170} onChange={(v) => s.setBatchFilter(v === 'all' ? null : v)} />
-                {vm.showFundFilter && (
-                  <FilterSelect value={vm.fundFilterValue} options={vm.fundOptions} minWidth={200} onChange={(v) => s.setFundFilter(v)} />
-                )}
                 <button
                   data-r="mfapply"
                   onClick={() => setMobileFilters(false)}
@@ -2745,15 +2647,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                           <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>{e2.myNominated != null ? 'المدخلات المعتمدة للتمويل' : 'العناصر المعتمدة للتمويل'}</div>
                           <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.funded}</div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>التكلفة المعتمدة</div>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.approvedCostLabel}</div>
-                        </div>
-                      </div>
-                      {/* total execution budget — label right (bold), value left (blue) */}
-                      <div style={{ borderTop: '1px solid #EEF1F7', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                        <div style={{ fontSize: 13, color: '#13213C', fontWeight: 800 }}>إجمالي الميزانية التنفيذية</div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: '#2563EB', flex: 'none' }}>{e2.execBudgetLabel}</div>
                       </div>
                       {/* CTA */}
                       <button
@@ -3018,36 +2911,11 @@ export function Dashboard({ vm }: { vm: VM }) {
                                             تم الإطلاق
                                           </span>
                                         )}
-                                        <span style={{ flex: 'none', fontSize: 11.5, fontWeight: 400, color: '#9AA6BC' }}>
-                                          {x.hasBudget ? x.budget : 'لم يتم تحديد الميزانية'}
-                                        </span>
                                       </div>
                                     ))}
                                   </div>
                                 </div>
-                                {/* 3) budgets: exec = dynamic total of the checked items */}
-                                <div data-r="form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                                  <div>
-                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>الميزانية التقديرية للتنفيذ</label>
-                                    <input
-                                      value={p.budget}
-                                      readOnly
-                                      placeholder="تُحتسب تلقائياً من ميزانيات ما هو محدَّد"
-                                      title="مجموع ميزانيات ما هو محدَّد أعلاه — يتحدّث تلقائياً"
-                                      style={{ ...mgrInput, backgroundColor: '#F4F7FC', cursor: 'default' }}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>الميزانية التقديرية للإطلاق</label>
-                                    <input
-                                      value={p.launchBudget || ''}
-                                      onChange={(e) => s.updLaunchPlan(p.id, 'launchBudget', e.target.value)}
-                                      placeholder="تكلفة الإطلاق / الفعالية"
-                                      style={mgrInput}
-                                    />
-                                  </div>
-                                </div>
-                                {/* 4) launch-level scope */}
+                                {/* launch-level scope */}
                                 <div>
                                   <label style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#6B7A93', marginBottom: 4 }}>نطاق العمل (على مستوى الإطلاق)</label>
                                   <textarea

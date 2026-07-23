@@ -17,7 +17,6 @@ function row(i: Item, entityName: string) {
     الجهة: entOf(i, entityName),
     الحالة: wfMeta(i).label,
     الأولوية: i.priority || '',
-    الميزانية: i.budget || '',
     'نطاق العمل': stripHtml(i.scopeOfWork || ''),
     'نسبة الإنجاز': stageWeight(i) + '%',
     'درجة التحول': transformScore(i).v,
@@ -299,7 +298,6 @@ async function exportExcelStyled(items: Item[], entityName: string) {
     const kpis: [string, string][] = [
       ['إجمالي المدخلات', String(items.length)],
       ['معتمدة للتمويل', String(items.filter((i) => i.funded).length)],
-      ['إجمالي الميزانية', totalBudget ? formatMoney(totalBudget) : '—'],
       ['متوسط نسبة الإنجاز', avgDone + '%'],
     ];
     const kSpans: [number, number][] = [[1, 2], [3, 4], [5, 6], [7, 8]];
@@ -377,7 +375,6 @@ async function exportExcelStyled(items: Item[], entityName: string) {
   const stats: [string, string][] = [
     ['إجمالي المدخلات', String(items.length)],
     ['معتمدة للتمويل', String(items.filter((i) => i.funded).length)],
-    ['إجمالي الميزانية', totalBudget ? formatMoney(totalBudget) : '—'],
     ['متوسط نسبة الإنجاز', avgDone + '%'],
   ];
   const spans: [number, number][] = [[1, 3], [4, 5], [6, 8], [9, 11]];
@@ -629,7 +626,6 @@ export async function exportPpt(items: Item[], entityName: string) {
   const kpis: [string, string][] = [
     ['إجمالي المدخلات', String(items.length)],
     ['معتمدة للتمويل', String(items.filter((i) => i.funded).length)],
-    ['إجمالي الميزانية', totalBudget ? formatMoney(totalBudget) : '—'],
     ['متوسط نسبة الإنجاز', avgDone + '%'],
   ];
   // RTL: first KPI sits at the right edge
@@ -685,7 +681,6 @@ export async function exportPpt(items: Item[], entityName: string) {
       ['المسار', pathById(i.path).name],
       ['الجهة', entOf(i, entityName)],
       ['الأولوية', i.priority || '—'],
-      ['الميزانية', i.budget || '—'],
       ['درجة التحول', transformScore(i).v + ' / 5'],
       ['تمويل اللجنة', i.funded ? 'نعم' : 'لا'],
     ];

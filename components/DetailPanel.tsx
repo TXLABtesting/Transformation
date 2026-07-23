@@ -879,27 +879,6 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <div
                     style={{ fontSize: 12, fontWeight: 400, color: '#54627B', marginBottom: 6 }}
                   >
-                    الميزانية التقديرية
-                  </div>
-                  <input
-                    value={d.budget}
-                    onChange={(e) => d.onBudget(e.target.value)}
-                    placeholder="مثال: 1,500,000 درهم"
-                    style={{
-                      width: '100%',
-                      border: '1px solid #DCE3EE',
-                      background: '#fff',
-                      borderRadius: 11,
-                      padding: '11px 13px',
-                      fontSize: 13.5,
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-                <div>
-                  <div
-                    style={{ fontSize: 12, fontWeight: 400, color: '#54627B', marginBottom: 6 }}
-                  >
                     إرفاق مستند نطاق العمل
                   </div>
                   <label
@@ -937,7 +916,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                       boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)',
                     }}
                   >
-                    إرسال الميزانية ونطاق العمل للاعتماد
+                    إرسال نطاق العمل للاعتماد
                   </button>
                 )}
               </div>
@@ -964,7 +943,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                     بانتظار مراجعة رئيس المسار
                   </div>
                   <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginTop: 4 }}>
-                    ستظهر تفاصيل نطاق العمل والتكلفة التقديرية بعد مراجعة رئيس المسار.
+                    ستظهر تفاصيل نطاق العمل بعد مراجعة رئيس المسار.
                   </div>
                 </div>
               </div>
@@ -976,10 +955,6 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 <div>
                   <div style={labelStyle}>نطاق العمل التفصيلي</div>
                   <RichTextView html={d.scopeOfWork} style={{ fontSize: 13, color: '#54627B', lineHeight: 1.7 }} />
-                </div>
-                <div>
-                  <div style={labelStyle}>الميزانية التقديرية</div>
-                  <div style={valueStyle}>{d.budget}</div>
                 </div>
                 {d.hasScopeFile && (
                   <div>

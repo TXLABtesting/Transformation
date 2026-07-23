@@ -877,7 +877,7 @@ export function Overlays({ vm }: { vm: VM }) {
                     }}
                   />
                   <div style={{ fontSize: 13.5, fontWeight: 700, color: '#54627B' }}>
-                    جارٍ مراجعة نطاق العمل والميزانية…
+                    جارٍ مراجعة نطاق العمل…
                   </div>
                 </div>
               ) : vm.subReview.result ? (
@@ -1395,33 +1395,6 @@ export function Overlays({ vm }: { vm: VM }) {
                                       {x.title}
                                     </span>
                                   </label>
-                                  {/* execution cost — editable inline */}
-                                  <input
-                                    value={x.budget}
-                                    onChange={(e) => s.setItemBudget(x.id, e.target.value)}
-                                    placeholder="أضف الميزانية…"
-                                    style={{
-                                      width: 130,
-                                      flex: 'none',
-                                      border: x.hasBudget ? '1px solid transparent' : '1px dashed #C7D1E2',
-                                      background: x.hasBudget ? 'transparent' : '#FAFCFF',
-                                      borderRadius: 8,
-                                      padding: '4px 8px',
-                                      fontSize: 11,
-                                      fontWeight: 600,
-                                      color: '#33415C',
-                                      outline: 'none',
-                                      fontFamily: 'inherit',
-                                      textAlign: 'left',
-                                      direction: 'ltr',
-                                    }}
-                                    onFocus={(e) => (e.target.style.border = '1px solid #2563EB')}
-                                    onBlur={(e) =>
-                                      (e.target.style.border = (e.target.value || '').trim()
-                                        ? '1px solid transparent'
-                                        : '1px dashed #C7D1E2')
-                                    }
-                                  />
                                   {x.otherBatch && (
                                     <span style={{ fontSize: 10.5, color: '#B45309', fontWeight: 600, flex: 'none' }}>
                                       في مرحلة أخرى
@@ -1429,29 +1402,6 @@ export function Overlays({ vm }: { vm: VM }) {
                                   )}
                                 </div>
                               ))}
-                            </div>
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
-                            <div>
-                              <label style={assignLabel}>الميزانية التقديرية للتنفيذ</label>
-                              <input
-                                value={p.budget || ''}
-                                readOnly
-                                placeholder="تُحتسب تلقائياً مما هو محدَّد"
-                                style={{ ...assignInput, backgroundColor: '#F4F7FC', cursor: 'default' }}
-                              />
-                              <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>
-                                تُحتسب تلقائياً من ميزانيات التنفيذ المحدَّدة.
-                              </div>
-                            </div>
-                            <div>
-                              <label style={assignLabel}>الميزانية التقديرية للإطلاق</label>
-                              <input
-                                value={p.launchBudget || ''}
-                                onChange={(e) => s.updLaunchPlan(p.id, 'launchBudget', e.target.value)}
-                                placeholder="تكلفة الإطلاق / الفعالية"
-                                style={assignInput}
-                              />
                             </div>
                           </div>
                           <div style={{ marginTop: 10 }}>
