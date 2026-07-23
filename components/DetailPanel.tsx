@@ -411,7 +411,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: '#0B8A4B', fontWeight: 800, fontSize: 13 }}>
-                  معتمد للتمويل من اللجنة الوطنية
+                  معتمد من اللجنة الوطنية
                 </div>
                 <div style={{ color: '#0B7C57', fontSize: 12, fontWeight: 600, marginTop: 4 }}>
                   {d.dFundedText}

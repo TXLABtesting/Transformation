@@ -41,7 +41,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     sel: '[data-tour="notifs"]',
     title: 'الإشعارات',
-    desc: 'يصلكم عبر جرس الإشعارات كل ما يخصّكم أولاً بأول: طلبات الاعتماد، والملاحظات المُعادة، وقرارات الترشيح والتمويل، وأي تغيّر في المراحل.',
+    desc: 'يصلكم عبر جرس الإشعارات كل ما يخصّكم أولاً بأول: طلبات الاعتماد، والملاحظات المُعادة، وقرارات الترشيح والاعتماد، وأي تغيّر في المراحل.',
   },
   {
     sel: '[data-tour="add"]',
@@ -92,9 +92,9 @@ const AI_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="nav-all"]', title: 'صفحات المسارات', desc: 'تتيح لك هذه الصفحات متابعة المدخلات على مستوى جميع المسارات والجهات، لمراجعة حجم المشاركة وحالة الترشيح.' },
   { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ وخطة الإطلاق', desc: 'يمكنك من هنا متابعة جاهزية المدخلات على المستوى الوطني، ومعرفة ما هو جاهز أو قريب من الإطلاق.' },
   { sel: '[data-tour="nav-entities"]', title: 'الجهات المشاركة', desc: 'يعرض هذا القسم قائمة الجهات المشاركة وعدد المدخلات المقدمة من كل جهة، لمتابعة مستوى المشاركة والالتزام.' },
-  { sel: '[data-tour="basket"]', title: 'قائمة الاعتماد والتمويل', desc: 'تجمع هذه القائمة المدخلات المرشحة للتمويل، لمراجعتها واتخاذ القرار النهائي بشأن اعتمادها.' },
+  { sel: '[data-tour="basket"]', title: 'قائمة الاعتماد', desc: 'تجمع هذه القائمة المدخلات المرشحة للاعتماد، لمراجعتها واتخاذ القرار النهائي بشأن اعتمادها.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يعرض هذا القسم التنبيهات المرتبطة بالترشيحات، طلبات المراجعة، الاعتمادات، والتحديثات المهمة على مستوى المنصة.' },
-  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة المدخلات على المستوى الوطني، مراجعة الترشيحات، واتخاذ قرارات الاعتماد النهائي للتمويل.' },
+  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة المدخلات على المستوى الوطني، مراجعة الترشيحات، واتخاذ قرارات الاعتماد النهائي.' },
 ];
 
 // Stream head (رئيس المسار) onboarding — reviews all entities' entries within one
@@ -105,10 +105,10 @@ const PATH_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="kpis"]', title: 'لوحة رئيس المسار', desc: 'تعرض هذه اللوحة نظرة شاملة على مدخلات جميع الجهات ضمن المسار، مع حالة التقدم، الترشيحات، والتكلفة التقديرية.' },
   { sel: '[data-tour="nav-all"]', title: 'صفحات المدخلات', desc: 'تتيح لك هذه الصفحات استعراض مدخلات المسار حسب النوع، لمراجعة التفاصيل وتحديد المدخلات المناسبة للترشيح.' },
   { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ وخطة الإطلاق', desc: 'يمكنك من هنا متابعة جاهزية المدخلات وتقييم تقدمها قبل اختيار المناسب منها للترشيح.' },
-  { sel: '[data-tour="basket"]', title: 'سلة التمويل', desc: 'تجمع هذه السلة المدخلات التي اخترتها للترشيح، ليتم رفعها إلى اللجنة الوطنية للمراجعة واتخاذ القرار النهائي.' },
+  { sel: '[data-tour="basket"]', title: 'سلة الترشيحات', desc: 'تجمع هذه السلة المدخلات التي اخترتها للترشيح، ليتم رفعها إلى اللجنة الوطنية للمراجعة واتخاذ القرار النهائي.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يعرض هذا القسم التنبيهات المرتبطة بمدخلات المسار، مثل التحديثات، الملاحظات، الترشيحات، وحالة المراجعة.' },
   { sel: '', title: 'ملاحظة مهمة', desc: 'ترشيح المدخلات من رئيس المسار لا يعني الاعتماد النهائي. يتم الاعتماد النهائي من قبل اللجنة الوطنية.' },
-  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة مدخلات الجهات ضمن المسار، مراجعتها، وترشيح المناسب منها للتمويل.' },
+  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة مدخلات الجهات ضمن المسار، مراجعتها، وترشيح المناسب منها للاعتماد.' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -406,7 +406,7 @@ function EntityOverview({ vm }: { vm: VM }) {
         {isPath ? (() => {
           const nomItems = [
             { key: 'nominated', label: 'المدخلات المرشحة من قبلي', v: nc.nominated, dot: '#2563EB', square: true, bold: true, numColor: '#2563EB', labelColor: '#13213C' },
-            { key: 'funded', label: 'المدخلات المعتمدة للتمويل', v: nc.funded, dot: '#2563EB', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
+            { key: 'funded', label: 'المدخلات المعتمدة', v: nc.funded, dot: '#2563EB', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
             { key: 'pending', label: 'المدخلات قيد مراجعة اللجنة', v: nc.pending, dot: '#93B4F5', square: true, bold: false, sub: true, numColor: '#13213C', labelColor: '#6B7A93' },
             { key: 'notNominated', label: 'المدخلات غير المرشّحة', v: nc.notNominated, dot: '#C7D9F5', square: true, bold: true, divider: true, numColor: '#9AA6BC', labelColor: '#9AA6BC' },
           ];
@@ -414,7 +414,7 @@ function EntityOverview({ vm }: { vm: VM }) {
           const nomCenter = nomHov ? { center: String(nomHov.v), sub: nomHov.label } : { center: String(nc.total), sub: 'إجمالي المدخلات' };
           const t = nc.total || 1;
           const nomSegs = [
-            { key: 'funded', frac: nc.funded / t, color: '#2563EB', label: 'المدخلات المعتمدة للتمويل', value: nc.funded },
+            { key: 'funded', frac: nc.funded / t, color: '#2563EB', label: 'المدخلات المعتمدة', value: nc.funded },
             { key: 'pending', frac: nc.pending / t, color: '#93B4F5', label: 'المدخلات قيد مراجعة اللجنة', value: nc.pending },
             { key: 'notNominated', frac: nc.notNominated / t, color: '#C7D9F5', label: 'المدخلات غير المرشّحة', value: nc.notNominated },
           ].filter((x) => x.frac > 0.0001);
@@ -2071,7 +2071,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 }}
               >
                 <Icon d="M5 8h14l-1.2 10.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8z M9 8V6a3 3 0 0 1 6 0v2" size={16} color="#2563EB" />
-                {vm.role === 'ai' ? 'قائمة الاعتماد والتمويل' : 'سلة التمويل'}
+                {vm.role === 'ai' ? 'قائمة الاعتماد' : 'سلة الترشيحات'}
                 {vm.hasBasketBadge && (
                   <span
                     style={{
@@ -2117,7 +2117,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                {vm.role === 'ai' ? 'إرشادات مراجعة الترشيحات واعتماد المدخلات للتمويل.' : vm.role === 'entity' ? (vm.navSection === 'lplan' ? 'إرشادات مراجعة مدخلات الجهة ومتابعة خطة الإطلاق.' : vm.navSection === 'launchplans' ? 'إرشادات مراجعة مدخلات الجهة ومتابعة مراحل التقدم.' : vm.navStream ? 'إرشادات مراجعة مدخلات المسار وتحديث حالة الاعتماد.' : 'إرشادات مراجعة مدخلات الجهة وتحديث حالة الاعتماد.') : vm.role === 'coord' ? 'إرشادات متابعة مدخلات المسار وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
+                {vm.role === 'ai' ? 'إرشادات مراجعة الترشيحات واعتماد المدخلات.' : vm.role === 'entity' ? (vm.navSection === 'lplan' ? 'إرشادات مراجعة مدخلات الجهة ومتابعة خطة الإطلاق.' : vm.navSection === 'launchplans' ? 'إرشادات مراجعة مدخلات الجهة ومتابعة مراحل التقدم.' : vm.navStream ? 'إرشادات مراجعة مدخلات المسار وتحديث حالة الاعتماد.' : 'إرشادات مراجعة مدخلات الجهة وتحديث حالة الاعتماد.') : vm.role === 'coord' ? 'إرشادات متابعة مدخلات المسار وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
@@ -2267,7 +2267,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   <div className="rgrid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                     <CmtMini value={vm.aiStats.nominatedHeads} label="مرشحة من رؤساء المسارات" info="ما رشّحه رؤساء المسارات وينتظر قرار اللجنة." />
                     <CmtMini value={vm.aiStats.nominatedCommittee} label="مرشحة للجنة الوطنية" info="ما رشّحته اللجنة الوطنية مباشرة وينتظر الاعتماد." />
-                    <CmtMini value={vm.aiStats.funded} label="معتمدة للتمويل" green info="ما اعتمدته اللجنة الوطنية للتمويل." />
+                    <CmtMini value={vm.aiStats.funded} label="معتمدة" green info="ما اعتمدته اللجنة الوطنية." />
                   </div>
                 </div>
               </div>
@@ -2644,7 +2644,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                           </div>
                         )}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>{e2.myNominated != null ? 'المدخلات المعتمدة للتمويل' : 'العناصر المعتمدة للتمويل'}</div>
+                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>{e2.myNominated != null ? 'المدخلات المعتمدة' : 'العناصر المعتمدة'}</div>
                           <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.funded}</div>
                         </div>
                       </div>
@@ -3280,7 +3280,7 @@ function ListView({ cards }: { cards: CardVM[] }) {
                   </span>
                 ) : c.fundLocked ? (
                   <span
-                    title="معتمد للتمويل"
+                    title="معتمد"
                     style={{
                       display: 'inline-flex',
                       width: 17,
@@ -3425,9 +3425,9 @@ const CARD_PILLS: Record<string, { label: string; color: string; bg: string }> =
   pendEnt: { label: 'بانتظار اعتماد الجهة', color: '#B45309', bg: '#FFF7EB' },
   apprEnt: { label: 'معتمد من الجهة', color: '#0B8A4B', bg: '#EAF7F0' },
   rejEnt: { label: 'مرفوض من الجهة', color: '#C0392B', bg: '#FDECEA' },
-  nominated: { label: 'مُرشَّح للتمويل', color: '#6D28D9', bg: '#F3EEFD' },
-  pendFund: { label: 'بانتظار اعتماد التمويل', color: '#B45309', bg: '#FFF7EB' },
-  apprFund: { label: 'معتمد للتمويل', color: '#0B8A4B', bg: '#EAF7F0' },
+  nominated: { label: 'مُرشَّح للاعتماد', color: '#6D28D9', bg: '#F3EEFD' },
+  pendFund: { label: 'بانتظار الاعتماد', color: '#B45309', bg: '#FFF7EB' },
+  apprFund: { label: 'معتمد', color: '#0B8A4B', bg: '#EAF7F0' },
   launched: { label: 'تم الإطلاق', color: '#0B8A4B', bg: '#E9F7EF' },
 };
 
@@ -3558,7 +3558,7 @@ function CardItem({ c }: { c: CardVM }) {
         ) : c.fundLocked ? (
           // already approved for funding (funded or launched): locked, gray, checked, not clickable
           <span
-            title="معتمد للتمويل"
+            title="معتمد"
             style={{
               width: 19,
               height: 19,
@@ -3899,7 +3899,7 @@ function CardItem({ c }: { c: CardVM }) {
           }}
           style={{ ...BTN_PRIMARY, width: '100%' }}
         >
-          ترشيح للتمويل
+          ترشيح للاعتماد
         </button>
       )}
 
@@ -3917,7 +3917,7 @@ function CardItem({ c }: { c: CardVM }) {
 
       {/* committee funding decision — approve (green) / reject (red).
           NOTE: card handover §9-5 says committee never rejects; the committee
-          copy spec (later, wins) requires «رفض التمويل». */}
+          copy spec (later, wins) requires «رفض». */}
       {c.cardAction === 'fundApproveReject' && (
         <div style={{ display: 'flex', gap: 7 }}>
           <button
@@ -3928,7 +3928,7 @@ function CardItem({ c }: { c: CardVM }) {
             style={{ ...BTN_APPROVE, flex: 1 }}
           >
             <Icon d={CHECK_D} size={13} color="#fff" strokeWidth={3} />
-            اعتماد التمويل
+            اعتماد
           </button>
           <button
             onClick={(e) => {
@@ -3937,7 +3937,7 @@ function CardItem({ c }: { c: CardVM }) {
             }}
             style={{ ...BTN_REJECT, flex: 1 }}
           >
-            رفض التمويل
+            رفض
           </button>
         </div>
       )}
