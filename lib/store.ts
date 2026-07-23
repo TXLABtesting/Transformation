@@ -943,6 +943,17 @@ export const useStore = create<Store>((set, get) => {
             : 'نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة'
         );
       }
+      // Arabic-only guard: the Arabic text fields must not contain Latin letters
+      const arabicByStep: Record<number, string[]> = {
+        1: ['title', 'desc', 'subActivities', 'sector', 'dept', 'section', 'serviceOwner', 'targetUsers', 'linkedServiceName'],
+        2: ['automationSystem', 'currentJourney', 'painPoints', 'expectedImprovement', 'durationBefore', 'durationAfter'],
+        3: ['expectedOutputs'],
+        4: ['scopeOfWork'],
+        5: [],
+      };
+      if ((arabicByStep[s.ui.fStep] || []).some((k) => /[A-Za-z]/.test(stripHtml(String(dd[k] ?? ''))))) {
+        return toast('يرجى إدخال النص بالعربية فقط في الحقول العربية');
+      }
       // numeric/attachment fields marked * that the text check above can't see
       if (s.ui.fStep === 1 && isOp && dd.linkedToService === 'نعم' && !filled(dd.linkedServiceName)) {
         return toast('نرجو تحديد الخدمة المرتبطة بالعملية قبل المتابعة');
@@ -961,13 +972,8 @@ export const useStore = create<Store>((set, get) => {
         setUi({ fStep: s.ui.fStep + 1 });
         return;
       }
-      if (d && (d.transformability || '') !== 'غير قابل') {
-        if (!(d.execBatch || '').trim()) {
-          return toast('نرجو اختيار مرحلة التنفيذ والإطلاق قبل الإرسال للاعتماد');
-        }
-        if (!filled(dd.startDate) || !filled(dd.endDate)) {
-          return toast('نرجو تحديد تاريخ البدء وتاريخ الانتهاء المتوقع قبل الإرسال للاعتماد');
-        }
+      if (d && (d.transformability || '') !== 'غير قابل' && !(d.execBatch || '').trim()) {
+        return toast('نرجو اختيار مرحلة التنفيذ والإطلاق قبل الإرسال للاعتماد');
       }
       get().submitItem();
     },

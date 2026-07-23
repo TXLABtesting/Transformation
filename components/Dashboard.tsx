@@ -3513,23 +3513,25 @@ function CardItem({ c }: { c: CardVM }) {
           >
             {c.typeLabel}
           </span>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '3px 10px',
-              borderRadius: 999,
-              background: pill.bg,
-              color: pill.color,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: pill.color, flex: 'none' }} />
-            {c.pillLabel || pill.label}
-          </span>
+          {c.cardStatus !== 'apprFund' && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '3px 10px',
+                borderRadius: 999,
+                background: pill.bg,
+                color: pill.color,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: pill.color, flex: 'none' }} />
+              {c.pillLabel || pill.label}
+            </span>
+          )}
         </div>
         {showCheckbox ? (
           <span
