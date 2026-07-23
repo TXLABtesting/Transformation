@@ -435,7 +435,7 @@ function build(s: Store) {
       : ui.execStream !== 'all'
         ? ui.execStream
         : null;
-  const batchSummary = execMilestones(batchStreamScope).map((b) => {
+  const batchSummary = streamLaunchBatches(batchStreamScope).map((b) => {
     const inBatch = batchBase.filter((i) => i.execBatch === b.name);
     const cost = inBatch.reduce((a, i) => a + parseBudget(i.budget), 0);
     const launchTotal = s.launchPlans
@@ -605,15 +605,15 @@ function build(s: Store) {
   // committee-funding filter (entity rep)
   const fundOptions = [
     { v: 'all', label: 'حالة التمويل: الكل' },
-    { v: 'funded', label: 'معتمد للتمويل من اللجنة' },
-    { v: 'notfunded', label: 'غير معتمد للتمويل' },
+    { v: 'funded', label: 'معتمد من اللجنة' },
+    { v: 'notfunded', label: 'غير معتمد' },
   ];
 
   // stage filter (المراحل) — mirrors the full per-track timeline (8 phases;
   // AI track has 5 launch دفعات, other tracks 6) + «للتحديد بعد الدراسة»
   const batchFilterOptions = [
     { v: 'all', label: 'جميع المراحل' },
-    ...execMilestones(filterStream === 'all' ? null : filterStream).map((b) => ({ v: b.name, label: b.name.replace(/^إطلاق /, '') })),
+    ...streamLaunchBatches(filterStream === 'all' ? null : filterStream).map((b) => ({ v: b.name, label: b.name.replace(/^إطلاق /, '') })),
     { v: TBD_BATCH, label: TBD_BATCH },
   ];
 
@@ -935,7 +935,7 @@ function build(s: Store) {
         : rawRole === 'coord'
           ? 'متابعة مدخلات المسار حسب النوع، المرحلة، حالة التطوير والتكلفة التقديرية.'
           : rawRole === 'path'
-            ? 'مراجعة مدخلات جميع الجهات ضمن المسار وترشيح الأنسب للتمويل.'
+            ? 'مراجعة مدخلات جميع الجهات ضمن المسار وترشيح الأنسب للاعتماد.'
             : 'رحلة منظمة من الحصر والاختيار إلى التنفيذ وقياس الأثر لضمان تحول فعّال ومؤثر',
     firstMsName: firstMs.name,
     // top-bar countdown display copy (assessment/review phase closing)
@@ -1128,7 +1128,7 @@ function build(s: Store) {
             : rawRole === 'coord'
               ? 'جميع مدخلات المسار'
               : rawRole === 'ai'
-                ? 'قائمة الاعتماد والتمويل'
+                ? 'قائمة الاعتماد'
                 : (navSection in typeSections ? typeSections[navSection] : '') || ''
           : (navSection in typeSections ? typeSections[navSection] : '') || '',
     portfolioStreams,
@@ -1195,7 +1195,7 @@ function build(s: Store) {
     basket,
     fundBarShow: (rawRole === 'ai' || rawRole === 'path') && ui.fundSel.length > 0,
     fundSelCount: ui.fundSel.length,
-    fundBarActionLabel: 'ترشيح للتمويل',
+    fundBarActionLabel: 'ترشيح للاعتماد',
     // coordinator bulk-assign bar + modal — re-selecting planned items reads as
     // a CHANGE, not a fresh assignment
     assignBar: {
@@ -1208,7 +1208,7 @@ function build(s: Store) {
           batch: ui.assign.batch,
           isChange: assignIsChange,
           currentBatches: assignSelBatches,
-          batchOptions: execMilestones(myPath).map((b) => ({
+          batchOptions: streamLaunchBatches(myPath).map((b) => ({
             name: b.name,
             label: (b.period ? b.name + ' · ' + b.period : b.name).replace(/^إطلاق /, ''),
           })),
@@ -1222,7 +1222,7 @@ function build(s: Store) {
     modalOpen: ui.modalOpen,
     // launch-plan manager (إدارة خطط الإطلاق)
     launchPlansOpen: ui.launchPlansOpen,
-    launchPlanMgr: execMilestones(rawRole === 'coord' || rawRole === 'path' ? myPath : null).map((b) => ({
+    launchPlanMgr: streamLaunchBatches(rawRole === 'coord' || rawRole === 'path' ? myPath : null).map((b) => ({
       batch: b.name,
       period: b.period || '',
       plans: s.launchPlans
@@ -1428,7 +1428,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const nomByMe = !!i.nom && i.nom.by === myName;
   // committee-specific overrides (task: committee labels win for rawRole 'ai')
   let pillLabel = ''; // '' → component falls back to the generic status-pill label
-  let recoStripLabel = recoBand === 'reco' ? 'موصى به للتمويل · ' + recoPct + '%' : score.ar;
+  let recoStripLabel = recoBand === 'reco' ? 'موصى به للاعتماد · ' + recoPct + '%' : score.ar;
   let cardStatus:
     | 'draft'
     | 'pendEnt'
@@ -1510,7 +1510,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardAction = 'viewDetails';
     } else if (i.nom) {
       cardStatus = 'nominated';
-      cardCaption = nomByMe ? 'مُرشَّح بواسطتي' : 'مُرشَّح للتمويل';
+      cardCaption = nomByMe ? 'مُرشَّح بواسطتي' : 'مُرشَّح للاعتماد';
       cardAction = nomByMe ? 'cancelNom' : 'viewDetails';
     } else {
       cardStatus = 'apprEnt';
@@ -1527,12 +1527,12 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardStatus = 'apprFund';
       cardCaption = '';
       cardAction = 'funded';
-      pillLabel = 'معتمد للتمويل';
+      pillLabel = 'معتمد';
     } else {
       cardStatus = 'pendFund';
       cardCaption = '';
       cardAction = 'fundApproveReject';
-      pillLabel = 'قيد مراجعة التمويل';
+      pillLabel = 'قيد المراجعة';
     }
   }
 
@@ -1620,7 +1620,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     // (committee spec: «مرشحة للجنة الوطنية · [اسم المسار الكامل]»)
     nomLabel:
       rawRole === 'path'
-        ? 'مُرشّح للتمويل'
+        ? 'مُرشّح للاعتماد'
         : 'مرشحة للجنة الوطنية · ' + pathById(i.nom?.path || i.path).name,
     // time of the last status change (shown next to the status chip)
     statusStamp:
@@ -1721,9 +1721,9 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
       if (w === 'ent1') push('ent1-' + i.id, 'info', 'send', typeLabel(i.type) + ' بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
       if (w === 'ent2') push('ent2-' + i.id, 'info', 'wallet', 'ميزانية ونطاق عمل بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
       if (i.funded && ent(i) === s.entityName) push('f-' + i.id, 'ok', 'wallet', 'ستتكفّل اللجنة الوطنية بتكلفة تحويل ' + typeLabelDef(i.type), tl + ' · ' + i.title + ' · يبقى التنفيذ من مسؤولية الجهة', i.id);
-      if (i.fundCancel && !i.funded && ent(i) === s.entityName) push('fc-' + i.id, 'alert', 'wallet', 'أُلغي تمويل ' + typeLabelDef(i.type) + ' من اللجنة الوطنية', tl + ' · ' + i.title + ' · السبب: ' + i.fundCancel.reason, i.id);
+      if (i.fundCancel && !i.funded && ent(i) === s.entityName) push('fc-' + i.id, 'alert', 'wallet', 'أُلغي اعتماد ' + typeLabelDef(i.type) + ' من اللجنة الوطنية', tl + ' · ' + i.title + ' · السبب: ' + i.fundCancel.reason, i.id);
     } else {
-      if (i.funded && i.nom && i.nom.by === myName) push('mf-' + i.id, 'ok', 'wallet', 'اعتمدت اللجنة الوطنية تمويل ترشيحك', tl + ' · ' + i.title, i.id);
+      if (i.funded && i.nom && i.nom.by === myName) push('mf-' + i.id, 'ok', 'wallet', 'اعتمدت اللجنة الوطنية ترشيحك', tl + ' · ' + i.title, i.id);
       if (i.fyi) push('fy-' + i.id, 'info', 'inbox', 'للعلم: تعديل من ممثل الجهة — بانتظار اعتماد اللجنة الوطنية', tl + ' · ' + i.title, i.id);
       if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تمت الإعادة من ') + (i.ret.from || ''), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
       if (i.stageMove)
@@ -1800,11 +1800,11 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
     ? [
         { id: 'heads' as const, label: 'مرشح من قبل رؤساء المسارات', count: headsSrc.length },
         { id: 'committee' as const, label: 'مرشح من قبل اللجنة الوطنية', count: comSrc.length },
-        { id: 'approved' as const, label: 'معتمد للتمويل', count: appSrc.length },
+        { id: 'approved' as const, label: 'معتمد', count: appSrc.length },
       ]
     : [
         { id: 'heads' as const, label: 'ترشيحاتي', count: myNomsSrc.length },
-        { id: 'approved' as const, label: 'المعتمدة للتمويل', count: myAppSrc.length },
+        { id: 'approved' as const, label: 'المعتمدة', count: myAppSrc.length },
       ];
   const srcMap: Record<string, Item[]> = isCom
     ? { heads: headsSrc, committee: comSrc, approved: appSrc }
@@ -1820,8 +1820,8 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
     isCommittee: isCom,
     title: isCom ? 'سلة اللجنة الوطنية' : 'سلة الترشيحات',
     subtitle: isCom
-      ? 'الترشيحات الواردة من رؤساء المسارات واللجنة وما تم اعتماده للتمويل'
-      : 'ما رشّحته لتمويل اللجنة الوطنية',
+      ? 'الترشيحات الواردة من رؤساء المسارات واللجنة وما تم اعتماده'
+      : 'ما رشّحته لاعتماد اللجنة الوطنية',
     tabs,
     tab: active,
     items,
@@ -2151,7 +2151,7 @@ function buildModal(s: Store) {
     fNextLabel: ui.fStep >= 5 ? 'إرسال للاعتماد' : 'التالي',
     // execution batches (البرنامج الزمني) + centrally-managed launch plans
     batchOptions: [
-      ...execMilestones(path).map((b) => ({
+      ...streamLaunchBatches(path).map((b) => ({
         name: b.name,
         label: (b.period ? b.name + ' · ' + b.period : b.name).replace(/^إطلاق /, ''),
       })),

@@ -731,17 +731,17 @@ export function Overlays({ vm }: { vm: VM }) {
               animation: 'fadeUp .2s',
             }}
           >
-            <div style={{ fontSize: 15.5, fontWeight: 800, color: '#13213C' }}>إلغاء تمويل اللجنة الوطنية</div>
+            <div style={{ fontSize: 15.5, fontWeight: 800, color: '#13213C' }}>إلغاء اعتماد اللجنة الوطنية</div>
             <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3, marginBottom: 16 }}>
               {vm.cancelFundTitle}
             </div>
             <div style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', marginBottom: 8 }}>
-              سبب إلغاء التمويل <span style={{ color: '#D23B45' }}>*</span>
+              سبب إلغاء الاعتماد <span style={{ color: '#D23B45' }}>*</span>
             </div>
             <textarea
               value={vm.cancelFund.note}
               onChange={(e) => s.setCancelFundNote(e.target.value)}
-              placeholder="نرجو توضيح سبب إلغاء التمويل…"
+              placeholder="نرجو توضيح سبب إلغاء الاعتماد…"
               style={{
                 width: '100%',
                 minHeight: 96,

@@ -236,9 +236,6 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                       <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: '#EEF3FA', color: '#42506B' }}>
                         {it.typeLabel}
                       </span>
-                      <span style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>
-                        التكلفة <span style={{ fontWeight: 800, color: '#13213C' }}>{it.costLabel}</span>
-                      </span>
                     </div>
                     <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C', lineHeight: 1.4, marginTop: 10 }}>{it.title}</div>
                     <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>{it.entity} · {it.pathName}</div>
@@ -252,7 +249,7 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                   {it.approved ? (
                     <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#E7F7EE', color: '#0B8A4B', borderRadius: 11, padding: '11px 12px', fontSize: 12.5, fontWeight: 800 }}>
                       <Icon d={CHECK_ICON} size={16} color="#0B8A4B" />
-                      تم اعتماده للتمويل
+                      تم اعتماده
                     </div>
                   ) : b.isCommittee ? (
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
@@ -260,13 +257,13 @@ export function BasketDrawer({ vm }: { vm: VM }) {
                         onClick={it.onApprove}
                         style={{ flex: 1, background: 'linear-gradient(180deg,#12B26F,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 11, padding: '11px 12px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 22px -12px rgba(11,138,75,.6)' }}
                       >
-                        اعتماد التمويل
+                        اعتماد
                       </button>
                       <button
                         onClick={it.onDecline}
                         style={{ background: '#fff', color: '#DC2B38', border: '1px solid #F3D3D6', borderRadius: 11, padding: '11px 16px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}
                       >
-                        رفض التمويل
+                        رفض
                       </button>
                     </div>
                   ) : (
