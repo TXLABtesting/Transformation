@@ -435,7 +435,7 @@ function build(s: Store) {
       : ui.execStream !== 'all'
         ? ui.execStream
         : null;
-  const batchSummary = streamLaunchBatches(batchStreamScope).map((b) => {
+  const batchSummary = execMilestones(batchStreamScope).map((b) => {
     const inBatch = batchBase.filter((i) => i.execBatch === b.name);
     const cost = inBatch.reduce((a, i) => a + parseBudget(i.budget), 0);
     const launchTotal = s.launchPlans
@@ -1208,7 +1208,7 @@ function build(s: Store) {
           batch: ui.assign.batch,
           isChange: assignIsChange,
           currentBatches: assignSelBatches,
-          batchOptions: streamLaunchBatches(myPath).map((b) => ({
+          batchOptions: execMilestones(myPath).map((b) => ({
             name: b.name,
             label: (b.period ? b.name + ' · ' + b.period : b.name).replace(/^إطلاق /, ''),
           })),
@@ -1222,7 +1222,7 @@ function build(s: Store) {
     modalOpen: ui.modalOpen,
     // launch-plan manager (إدارة خطط الإطلاق)
     launchPlansOpen: ui.launchPlansOpen,
-    launchPlanMgr: streamLaunchBatches(rawRole === 'coord' || rawRole === 'path' ? myPath : null).map((b) => ({
+    launchPlanMgr: execMilestones(rawRole === 'coord' || rawRole === 'path' ? myPath : null).map((b) => ({
       batch: b.name,
       period: b.period || '',
       plans: s.launchPlans
@@ -2151,7 +2151,7 @@ function buildModal(s: Store) {
     fNextLabel: ui.fStep >= 5 ? 'إرسال للاعتماد' : 'التالي',
     // execution batches (البرنامج الزمني) + centrally-managed launch plans
     batchOptions: [
-      ...streamLaunchBatches(path).map((b) => ({
+      ...execMilestones(path).map((b) => ({
         name: b.name,
         label: (b.period ? b.name + ' · ' + b.period : b.name).replace(/^إطلاق /, ''),
       })),
