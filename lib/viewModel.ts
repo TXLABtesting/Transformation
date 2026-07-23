@@ -1048,12 +1048,18 @@ function build(s: Store) {
     rolePills,
     showRoleSwitcher: process.env.NEXT_PUBLIC_DEMO_MODE === '1',
     // coordinator assigned to several streams: header dropdown to switch the
-    // ACTIVE stream (everything on screen is scoped to it)
-    streamSwitcher: {
-      show: rawRole === 'coord' && (s.myPaths?.length || 0) > 1,
-      value: myPath,
-      options: (s.myPaths?.length ? s.myPaths : [myPath]).map((id) => ({ v: id, label: pathById(id).name })),
-    },
+    // ACTIVE stream (everything on screen is scoped to it). In demo mode we list
+    // ALL streams so every stream can be exercised from one coordinator login;
+    // in production the list stays scoped to the coordinator's assigned streams.
+    streamSwitcher: (() => {
+      const demoAllStreams = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
+      const ids = demoAllStreams ? PATHS.map((p) => p.id) : s.myPaths?.length ? s.myPaths : [myPath];
+      return {
+        show: rawRole === 'coord' && (demoAllStreams || ids.length > 1),
+        value: myPath,
+        options: ids.map((id) => ({ v: id, label: pathById(id).name })),
+      };
+    })(),
     repName,
     repPos,
     repInitials,

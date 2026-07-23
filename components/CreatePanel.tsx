@@ -1092,14 +1092,13 @@ function FPhases({ vm }: { vm: VM }) {
 // STEP: BULK
 function BulkStep({ vm }: { vm: VM }) {
   const s = vm.store;
-  const m = vm.modal;
   return (
     <div>
       <div
         style={{
-          background: '#FFF8EC',
-          border: '1px solid #F6E2BD',
-          color: '#8A6314',
+          background: '#EEF4FF',
+          border: '1px solid #D7E4FB',
+          color: '#28518F',
           borderRadius: 12,
           padding: '12px 14px',
           fontSize: 12.5,
@@ -1108,43 +1107,13 @@ function BulkStep({ vm }: { vm: VM }) {
           marginBottom: 18,
         }}
       >
-        يرجى استخدم النموذج المرفق فقط - ستُقرأ البيانات وتُعرض للمراجعة قبل الإرسال للاعتماد.
+        ارفع ملف Excel معبّأ مباشرةً — ستُقرأ البيانات وتُعرض للمراجعة، وأي نقص سيُبرز على مستوى البطاقة قبل الإرسال للاعتماد.
       </div>
 
-      <div style={{ marginBottom: 18 }}>
+      {/* upload — the primary action; no download step required */}
+      <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 10 }}>
-          الخطوة ١ · تنزيل النموذج
-        </div>
-        <a
-          href="assets/workplan_template.xlsx"
-          download="النموذج.xlsx"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            width: '100%',
-            justifyContent: 'center',
-            border: '1.5px dashed #CDD8EA',
-            background: '#FAFCFF',
-            borderRadius: 12,
-            padding: '14px',
-            color: '#2563EB',
-            fontWeight: 800,
-            fontSize: 13,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            textDecoration: 'none',
-            boxSizing: 'border-box',
-          }}
-        >
-          <Icon d={IC.download} size={18} color="#2563EB" />
-          النموذج (Excel)
-        </a>
-      </div>
-
-      <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 10 }}>
-          الخطوة ٢ · رفع الملف
+          رفع الملف
         </div>
         <label
           style={{
@@ -1152,7 +1121,7 @@ function BulkStep({ vm }: { vm: VM }) {
             border: '1.5px dashed #CDD8EA',
             background: '#FAFCFF',
             borderRadius: 12,
-            padding: '28px 14px',
+            padding: '30px 14px',
             textAlign: 'center',
             cursor: 'pointer',
           }}
@@ -1173,9 +1142,22 @@ function BulkStep({ vm }: { vm: VM }) {
             اضغط لاختيار الملف
           </div>
           <div style={{ fontSize: 11.5, color: '#9AA6BC', lineHeight: 1.7 }}>
-            ملف Excel بصيغة .xlsx وستقرأ جميع البيانات، وما ينقص يُستكمل يدوياً بعد الاستيراد.
+            ملف Excel بصيغة .xlsx — ستُقرأ جميع البيانات، وأي نقص يُبرز على البطاقة في المراجعة.
           </div>
         </label>
+      </div>
+
+      {/* optional: download the template only if you don't already have it */}
+      <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        ليس لديك النموذج؟
+        <a
+          href="assets/workplan_template.xlsx"
+          download="النموذج.xlsx"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#2563EB', fontWeight: 800, textDecoration: 'none' }}
+        >
+          <Icon d={IC.download} size={15} color="#2563EB" />
+          تنزيل النموذج (Excel)
+        </a>
       </div>
 
       <button
