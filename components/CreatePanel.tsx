@@ -522,7 +522,7 @@ function F1({
     <div style={cardStyle}>
       {m.mIsOp && (
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>نوع العملية <span style={{ color: '#D23B45' }}>*</span></label>
+          <label style={labelStyle}>نوع {m.opWordDef} <span style={{ color: '#D23B45' }}>*</span></label>
           <select value={gv('opType')} onChange={(e) => setField('opType', e.target.value)} style={inputStyle}>
             <option>العمليات التخصصية</option>
             <option>عمليات الدعم المؤسسي</option>
@@ -543,7 +543,7 @@ function F1({
       {m.mIsOp && (
         <>
           <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>هل العملية مرتبطة بخدمة؟ <span style={{ color: '#D23B45' }}>*</span></label>
+            <label style={labelStyle}>هل {m.opWordDef} مرتبطة بخدمة؟ <span style={{ color: '#D23B45' }}>*</span></label>
             <div style={{ display: 'flex', gap: 10 }}>
               {['نعم', 'لا'].map((opt) => {
                 const active = gv('linkedToService') === opt;

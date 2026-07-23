@@ -84,7 +84,7 @@ export type TypeOption = { key: ItemType; label: string };
 export function availTypes(path: string): TypeOption[] {
   const base: TypeOption[] = [{ key: 'project', label: 'مشروع' }];
   // operations exist in the operations stream and العمل الحكومي الاستراتيجي only
-  if (path === 'ops' || path === 'strategy') base.push({ key: 'operation', label: 'عملية' });
+  if (path === 'ops' || path === 'strategy') base.push({ key: 'operation', label: path === 'strategy' ? 'مهمة' : 'عملية' });
   // services exist in the services stream only
   if (path === 'services') base.push({ key: 'service', label: 'خدمة' });
   return base;
@@ -109,6 +109,12 @@ export const typeLabel = (t: string): string =>
     operation: 'عملية',
     service: 'خدمة',
   } as Record<string, string>)[t] || 'عنصر';
+
+// path-aware label: in العمل الحكومي الاستراتيجي an «operation» is a «مهمة»
+export const typeLabelFor = (t: string, path?: string): string =>
+  t === 'operation' && path === 'strategy' ? 'مهمة' : typeLabel(t);
+export const typeLabelDefFor = (t: string, path?: string): string =>
+  t === 'operation' && path === 'strategy' ? 'المهمة' : typeLabelDef(t);
 
 // definite form for sentences: «تم إرسال المشروع / المبادرة…»
 export const typeLabelDef = (t: string): string =>

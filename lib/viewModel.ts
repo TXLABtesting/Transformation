@@ -20,6 +20,8 @@ import {
   pathById,
   typeLabel,
   typeLabelDef,
+  typeLabelFor,
+  typeLabelDefFor,
   availTypes,
   wfOf,
   wfMeta,
@@ -295,7 +297,7 @@ function build(s: Store) {
   const typeGroups = [
     { id: 'projinit', name: 'مشروع', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7', section: 'projects', match: (i: Item) => isProjInit(i.type) },
     ...(streamHasType(myPath, 'operation')
-      ? [{ id: 'operation', name: 'عملية', icon: 'M3 6h18M3 12h18M3 18h18', section: 'operations', match: (i: Item) => i.type === 'operation' }]
+      ? [{ id: 'operation', name: myPath === 'strategy' ? 'مهمة' : 'عملية', icon: 'M3 6h18M3 12h18M3 18h18', section: 'operations', match: (i: Item) => i.type === 'operation' }]
       : []),
     ...(streamHasType(myPath, 'service')
       ? [{ id: 'service', name: 'خدمة', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z', section: 'services', match: (i: Item) => i.type === 'service' }]
@@ -338,7 +340,7 @@ function build(s: Store) {
           n: inStage.length,
           typeBreak: [
             { label: 'مشروع', n: inStage.filter((i) => isProjInit(i.type)).length },
-            { label: 'عملية', n: inStage.filter((i) => i.type === 'operation').length },
+            { label: typeLabelFor('operation', myPath), n: inStage.filter((i) => i.type === 'operation').length },
             { label: 'خدمة', n: inStage.filter((i) => i.type === 'service').length },
           ],
           statusBreak: [
@@ -378,7 +380,7 @@ function build(s: Store) {
       total: inStream.length,
       byType: [
         { label: 'مشروع', n: inStream.filter((i) => isProjInit(i.type)).length },
-        { label: 'عملية', n: inStream.filter((i) => i.type === 'operation').length },
+        { label: typeLabelFor('operation', p.id), n: inStream.filter((i) => i.type === 'operation').length },
         { label: 'خدمة', n: inStream.filter((i) => i.type === 'service').length },
       ],
       totalCostLabel: compactM0(execCost + launchCost),
@@ -505,7 +507,7 @@ function build(s: Store) {
               return {
                 id: i.id,
                 title: i.title,
-                typeLabel: typeLabel(i.type),
+                typeLabel: typeLabelFor(i.type, i.path),
                 streamName: pathById(i.path).name,
                 entityName: ent(i),
                 budgetLabel: (i.budget || '').trim() || 'لم يتم تحديد الميزانية',
@@ -712,7 +714,7 @@ function build(s: Store) {
     : [
         { key: 'projects', label: 'المشاريع والمبادرات', icon: NAV_FOLDER, sub: true, count: cntProjects },
         ...(roleStreams.some((p) => streamHasType(p.id, 'operation'))
-          ? [{ key: 'operations', label: 'العمليات', icon: NAV_SLIDERS, sub: true, count: cntOperations }]
+          ? [{ key: 'operations', label: myPath === 'strategy' ? 'المهام' : 'العمليات', icon: NAV_SLIDERS, sub: true, count: cntOperations }]
           : []),
         ...(roleStreams.some((p) => streamHasType(p.id, 'service'))
           ? [{ key: 'services', label: 'الخدمات الحكومية', icon: NAV_GRID4, sub: true, count: cntServices }]
@@ -1039,7 +1041,7 @@ function build(s: Store) {
   const resInScope = (r: { path?: string }) =>
     rawRole === 'coord' || rawRole === 'path' ? (r.path || myPath) === myPath : true;
   const itemTitleById = new Map(s.items.map((i) => [i.id, i.title] as const));
-  const resultItemOpts = roleBase.map((i) => ({ id: i.id, title: i.title, type: typeLabel(i.type) }));
+  const resultItemOpts = roleBase.map((i) => ({ id: i.id, title: i.title, type: typeLabelFor(i.type, i.path) }));
   const resultsPage = {
     cards: s.expectedResults.filter(resInScope).map((r) => ({
       id: r.id,
@@ -1172,8 +1174,8 @@ function build(s: Store) {
               ? 'جميع مدخلات المسار'
               : rawRole === 'ai'
                 ? 'قائمة الاعتماد'
-                : (navSection in typeSections ? typeSections[navSection] : '') || ''
-          : (navSection in typeSections ? typeSections[navSection] : '') || '',
+                : ''
+          : (navSection in typeSections ? (navSection === 'operations' && myPath === 'strategy' ? 'المهام' : typeSections[navSection]) : '') || '',
     portfolioStreams,
     recap,
     sectionCards,
@@ -1184,7 +1186,7 @@ function build(s: Store) {
       .map((i) => ({
         id: i.id,
         title: i.title,
-        typeLabel: typeLabel(i.type),
+        typeLabel: typeLabelFor(i.type, i.path),
         // «للتحديد بعد الدراسة» counts as unplanned in the stage-planning modal
         batch: i.execBatch === TBD_BATCH ? '' : i.execBatch || '',
       })),
@@ -1279,7 +1281,7 @@ function build(s: Store) {
             .map((i) => ({
             id: i.id,
             title: i.title,
-            typeLabel: typeLabel(i.type),
+            typeLabel: typeLabelFor(i.type, i.path),
             checked: (i.launchPlanIds || []).includes(p.id),
             otherBatch: !!i.execBatch && i.execBatch !== p.batch,
             launched: devStatusOfItem(i) === 'launched',
@@ -1595,7 +1597,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     desc: stripHtml(i.desc || ''),
     launchNames,
     stageMoved: !!i.stageMove,
-    typeLabel: t.label,
+    typeLabel: typeLabelFor(i.type, i.path),
     typeColor: t.color,
     typeBg: t.bg,
     pathName: p.name,
@@ -1757,14 +1759,14 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
   );
   base.forEach((i) => {
     const w = wfOf(i);
-    const tl = typeLabel(i.type);
+    const tl = typeLabelFor(i.type, i.path);
     if (rawRole === 'ai') {
       if (i.nom && !i.funded) push('n-' + i.id, 'info', 'inbox', 'ترشيح جديد في السلة من ' + (i.nom.by || ''), tl + ' · ' + i.title + ' · ' + ent(i), i.id);
     } else if (rawRole === 'entity') {
-      if (w === 'ent1') push('ent1-' + i.id, 'info', 'send', typeLabel(i.type) + ' بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
+      if (w === 'ent1') push('ent1-' + i.id, 'info', 'send', typeLabelFor(i.type, i.path) + ' بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
       if (w === 'ent2') push('ent2-' + i.id, 'info', 'wallet', 'ميزانية ونطاق عمل بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
-      if (i.funded && ent(i) === s.entityName) push('f-' + i.id, 'ok', 'wallet', 'ستتكفّل اللجنة الوطنية بتكلفة تحويل ' + typeLabelDef(i.type), tl + ' · ' + i.title + ' · يبقى التنفيذ من مسؤولية الجهة', i.id);
-      if (i.fundCancel && !i.funded && ent(i) === s.entityName) push('fc-' + i.id, 'alert', 'wallet', 'أُلغي اعتماد ' + typeLabelDef(i.type) + ' من اللجنة الوطنية', tl + ' · ' + i.title + ' · السبب: ' + i.fundCancel.reason, i.id);
+      if (i.funded && ent(i) === s.entityName) push('f-' + i.id, 'ok', 'wallet', 'ستتكفّل اللجنة الوطنية بتكلفة تحويل ' + typeLabelDefFor(i.type, i.path), tl + ' · ' + i.title + ' · يبقى التنفيذ من مسؤولية الجهة', i.id);
+      if (i.fundCancel && !i.funded && ent(i) === s.entityName) push('fc-' + i.id, 'alert', 'wallet', 'أُلغي اعتماد ' + typeLabelDefFor(i.type, i.path) + ' من اللجنة الوطنية', tl + ' · ' + i.title + ' · السبب: ' + i.fundCancel.reason, i.id);
     } else {
       if (i.funded && i.nom && i.nom.by === myName) push('mf-' + i.id, 'ok', 'wallet', 'اعتمدت اللجنة الوطنية ترشيحك', tl + ' · ' + i.title, i.id);
       if (i.fyi) push('fy-' + i.id, 'info', 'inbox', 'للعلم: تعديل من ممثل الجهة — بانتظار اعتماد اللجنة الوطنية', tl + ' · ' + i.title, i.id);
@@ -1779,8 +1781,8 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
           i.id
         );
       if (w === 'budget' && !i.ret) push('bud-' + i.id, 'info', 'wallet', 'اعتُمدت الأولوية — أدخل الميزانية ونطاق العمل', tl + ' · ' + i.title, i.id);
-      if (w === 'exec') push('x-' + i.id, 'ok', 'check', typeLabelDef(i.type) + ' في مرحلة التنفيذ — حدّث الحالة', tl + ' · ' + i.title, i.id);
-      if (w === 'launch') push('l-' + i.id, 'info', 'send', typeLabelDef(i.type) + ' في مرحلة الإطلاق — أكمل خطة الإطلاق', tl + ' · ' + i.title, i.id);
+      if (w === 'exec') push('x-' + i.id, 'ok', 'check', typeLabelDefFor(i.type, i.path) + ' في مرحلة التنفيذ — حدّث الحالة', tl + ' · ' + i.title, i.id);
+      if (w === 'launch') push('l-' + i.id, 'info', 'send', typeLabelDefFor(i.type, i.path) + ' في مرحلة الإطلاق — أكمل خطة الإطلاق', tl + ' · ' + i.title, i.id);
     }
   });
   const readSet = new Set(s.readNotifs);
@@ -1815,7 +1817,7 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
     return {
       id: i.id,
       title: i.title,
-      typeLabel: typeLabel(i.type),
+      typeLabel: typeLabelFor(i.type, i.path),
       entity: ent(i),
       pathName: pathById(i.path).name,
       costLabel: cost > 0 ? formatMoney(cost) : '—',
@@ -1948,7 +1950,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     item: i,
     title: i.title,
     desc: i.desc,
-    typeLabel: t.label,
+    typeLabel: typeLabelFor(i.type, i.path),
     typeColor: t.color,
     typeBg: t.bg,
     wfLabel: wm.label,
@@ -1985,6 +1987,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     readiness: i.readiness,
     // op fields
     opType: i.opType,
+    opWordDef: typeLabelDefFor('operation', i.path),
     linkedToService: i.linkedToService,
     linkedServiceName: i.linkedServiceName,
     usageIntensity: i.usageIntensity,
@@ -2149,17 +2152,17 @@ function buildModal(s: Store) {
   const mPathName = draft?.path ? pathById(draft.path).name : '';
   // per-type step 1 / step 2 titles (verbatim from design)
   const step1Title =
-    ({ project: 'بيانات المشروع', initiative: 'بيانات المبادرة', operation: 'بيانات العملية', service: 'بيانات الخدمة' } as Record<string, string>)[type] ||
+    ({ project: 'بيانات المشروع', initiative: 'بيانات المبادرة', operation: 'بيانات ' + typeLabelDefFor('operation', path), service: 'بيانات الخدمة' } as Record<string, string>)[type] ||
     'البيانات العامة';
   const step2Title =
-    ({ project: 'تقييم المشروع', initiative: 'تقييم المبادرة', operation: 'تقييم العملية', service: 'تقييم الخدمة' } as Record<string, string>)[type] ||
+    ({ project: 'تقييم المشروع', initiative: 'تقييم المبادرة', operation: 'تقييم ' + typeLabelDefFor('operation', path), service: 'تقييم الخدمة' } as Record<string, string>)[type] ||
     'التقييم والأولوية';
   // per-type stepper labels (fallback to generic when no type yet)
   const step1Label =
-    ({ project: 'بيانات المشروع', initiative: 'بيانات المبادرة', operation: 'بيانات العملية', service: 'بيانات الخدمة' } as Record<string, string>)[type] ||
+    ({ project: 'بيانات المشروع', initiative: 'بيانات المبادرة', operation: 'بيانات ' + typeLabelDefFor('operation', path), service: 'بيانات الخدمة' } as Record<string, string>)[type] ||
     'البيانات';
   const step2Label =
-    ({ project: 'تقييم المشروع', initiative: 'تقييم المبادرة', operation: 'تقييم العملية', service: 'تقييم الخدمة' } as Record<string, string>)[type] ||
+    ({ project: 'تقييم المشروع', initiative: 'تقييم المبادرة', operation: 'تقييم ' + typeLabelDefFor('operation', path), service: 'تقييم الخدمة' } as Record<string, string>)[type] ||
     'التقييم';
   const fLabels = [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
   const fTitles = [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
@@ -2172,7 +2175,9 @@ function buildModal(s: Store) {
   ];
   return {
     mStep: ui.mStep,
-    createTitle: ui.editingId ? 'تعديل ' + typeLabelDef(type) : mPathName ? addTitleFor(draft?.path || path) : 'إضافة جديدة',
+    createTitle: ui.editingId ? 'تعديل ' + typeLabelDefFor(type, path) : mPathName ? addTitleFor(draft?.path || path) : 'إضافة جديدة',
+    // «operation» reads as «مهمة» in the strategy stream (definite form for labels)
+    opWordDef: typeLabelDefFor('operation', path),
     mPathName,
     rankBtnLabel: draft?.rank ? 'الأولوية رقم ' + draft.rank : 'اضغط لترتيب الأولوية بالسحب والإفلات',
     // path step
