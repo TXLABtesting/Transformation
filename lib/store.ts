@@ -34,6 +34,7 @@ import {
   launchesFromPlans,
   parseBudget,
   typeLabelDef,
+  typeLabelDefFor,
   seedExpectedResults,
 } from './domain';
 import { stripHtml } from './richtext';
@@ -944,7 +945,7 @@ export const useStore = create<Store>((set, get) => {
         toast(
           sibIds.length
             ? 'تم إطلاق المدخل وجميع مدخلات الإطلاق نفسه'
-            : 'تم إطلاق ' + typeLabelDef(target.type) + ' رسمياً'
+            : 'تم إطلاق ' + typeLabelDefFor(target.type, target.path) + ' رسمياً'
         );
         return;
       }
@@ -952,10 +953,10 @@ export const useStore = create<Store>((set, get) => {
       persist();
       toast(
         stage === 'launched'
-          ? 'تم إطلاق ' + typeLabelDef(target.type) + ' رسمياً'
+          ? 'تم إطلاق ' + typeLabelDefFor(target.type, target.path) + ' رسمياً'
           : stage === 'developed'
-            ? 'اكتمل تطوير ' + typeLabelDef(target.type) + ' — يمكن الانتقال إلى الإطلاق'
-            : typeLabelDef(target.type) + ' قيد التطوير'
+            ? 'اكتمل تطوير ' + typeLabelDefFor(target.type, target.path) + ' — يمكن الانتقال إلى الإطلاق'
+            : typeLabelDefFor(target.type, target.path) + ' قيد التطوير'
       );
     },
     // ---- in-app confirmation dialog ----
@@ -1076,7 +1077,7 @@ export const useStore = create<Store>((set, get) => {
       if (missing.length) {
         return toast(
           s.ui.fStep === 1 && missing.includes('title')
-            ? 'نرجو إدخال اسم ' + typeLabelDef(d?.type || '') + ' قبل المتابعة'
+            ? 'نرجو إدخال اسم ' + typeLabelDefFor(d?.type || '', d?.path) + ' قبل المتابعة'
             : 'نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة'
         );
       }
@@ -1093,7 +1094,7 @@ export const useStore = create<Store>((set, get) => {
       }
       // numeric/attachment fields marked * that the text check above can't see
       if (s.ui.fStep === 1 && isOp && dd.linkedToService === 'نعم' && !filled(dd.linkedServiceName)) {
-        return toast('نرجو تحديد الخدمة المرتبطة بالعملية قبل المتابعة');
+        return toast('نرجو تحديد الخدمة المرتبطة بـ' + typeLabelDefFor('operation', d?.path) + ' قبل المتابعة');
       }
       if (s.ui.fStep === 2 && !Number(dd.rank)) {
         return toast('نرجو تحديد ترتيب الأولوية (بالسحب والإفلات) قبل المتابعة');
@@ -1221,7 +1222,7 @@ export const useStore = create<Store>((set, get) => {
       }));
       set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
-      toast(w === 'ent1' ? 'تم سحب المدخل وحذفه: ' + typeLabelDef(it.type) : 'تم حذف المسودة');
+      toast(w === 'ent1' ? 'تم سحب المدخل وحذفه: ' + typeLabelDefFor(it.type, it.path) : 'تم حذف المسودة');
     },
     // withdraw a submitted (ent1) المدخل back to the coordinator's DRAFT state
     // — this does NOT delete it (true deletion is deleteItem on a draft).
@@ -1401,7 +1402,7 @@ export const useStore = create<Store>((set, get) => {
       if (!it) return;
       if (!execAllDone(it)) return toast('نرجو إكمال جميع البنود أو تحديد سبب التأخير وتاريخ جديد قبل الانتقال للإطلاق');
       patchItem(id, { wf: 'launch' });
-      toast('تم نقل ' + typeLabelDef(it.type) + ' إلى مرحلة الإطلاق');
+      toast('تم نقل ' + typeLabelDefFor(it.type, it.path) + ' إلى مرحلة الإطلاق');
     },
     toggleLaunchDone: (id, idx) => {
       const it = findItem(id);
@@ -1431,7 +1432,7 @@ export const useStore = create<Store>((set, get) => {
       if (!it) return;
       if (!launchAllDone(it)) return toast('نرجو إكمال جميع بنود خطة الإطلاق أولاً');
       patchItem(id, { wf: 'done', progress: 100 });
-      toast('اكتمل الإطلاق — تم إنجاز ' + typeLabelDef(it.type));
+      toast('اكتمل الإطلاق — تم إنجاز ' + typeLabelDefFor(it.type, it.path));
     },
     submitScope: (id) => {
       const it = findItem(id);
@@ -1463,10 +1464,10 @@ export const useStore = create<Store>((set, get) => {
       const w = wfOf(it);
       if (w === 'ent1') {
         patchItem(id, (i) => ({ wf: 'exec', ret: null, log: withLog(s, i, 'approve') }));
-        toast('اعتمدت الجهة ' + typeLabelDef(it.type) + ' — إلى مرحلة التنفيذ');
+        toast('اعتمدت الجهة ' + typeLabelDefFor(it.type, it.path) + ' — إلى مرحلة التنفيذ');
       } else if (w === 'pm1') {
         patchItem(id, (i) => ({ wf: 'exec', ret: null, log: withLog(s, i, 'approve') }));
-        toast('تم نقل ' + typeLabelDef(it.type) + ' إلى مرحلة التنفيذ');
+        toast('تم نقل ' + typeLabelDefFor(it.type, it.path) + ' إلى مرحلة التنفيذ');
       }
       setUi({ menuOpenId: null, dActionMenuOpen: false });
     },
@@ -1489,7 +1490,7 @@ export const useStore = create<Store>((set, get) => {
         log: withLog(s, i, info ? 'info' : 'reject', rm.note),
       }));
       setUi({ reqModal: null });
-      toast(info ? 'تم طلب تفاصيل إضافية من رئيس المسار' : 'تمت إعادة ' + typeLabelDef(it.type) + ' إلى رئيس المسار');
+      toast(info ? 'تم طلب تفاصيل إضافية من رئيس المسار' : 'تمت إعادة ' + typeLabelDefFor(it.type, it.path) + ' إلى رئيس المسار');
     },
     closeReqModal: () => setUi({ reqModal: null }),
 
@@ -1705,7 +1706,7 @@ export const useStore = create<Store>((set, get) => {
             kind: 'moveBatch',
             title: 'نقل بين المراحل',
             body:
-              typeLabelDef(it.type) + ' «' + it.title + '» معيَّن في ' + (it.execBatch || '').replace(/^إطلاق /, '') +
+              typeLabelDefFor(it.type, it.path) + ' «' + it.title + '» معيَّن في ' + (it.execBatch || '').replace(/^إطلاق /, '') +
               ' — هل تودّون نقله إلى ' + batch.replace(/^إطلاق /, '') +
               '؟ سيُفصل عن إطلاقات مرحلته السابقة وسيصل إشعار بالنقل لجميع المعنيين.',
             okLabel: 'نقل وإشعار المعنيين',
@@ -1738,7 +1739,7 @@ export const useStore = create<Store>((set, get) => {
       persist();
       toast(
         !batch
-          ? 'أُزيلت ' + typeLabelDef(it.type) + ' من المرحلة'
+          ? 'أُزيلت ' + typeLabelDefFor(it.type, it.path) + ' من المرحلة'
           : moved
             ? 'تم النقل إلى ' + batch.replace(/^إطلاق /, '') + ' — سيصل إشعار لجميع المعنيين'
             : 'تمت الإضافة إلى ' + batch.replace(/^إطلاق /, '')
@@ -1761,7 +1762,7 @@ export const useStore = create<Store>((set, get) => {
               kind: 'crossMove',
               title: 'نقل بين المراحل',
               body:
-                typeLabelDef(target.type) + ' «' + target.title + '» معيَّن في ' + target.execBatch +
+                typeLabelDefFor(target.type, target.path) + ' «' + target.title + '» معيَّن في ' + target.execBatch +
                 ' — هل تودّون نقله إلى ' + plan.batch +
                 '؟ سيُفصل عن إطلاقات مرحلته السابقة وسيصل إشعار بالنقل لجميع المعنيين.',
               okLabel: 'نقل وإشعار المعنيين',
@@ -1799,8 +1800,8 @@ export const useStore = create<Store>((set, get) => {
         crossMove
           ? 'تم النقل إلى ' + plan.batch + ' — سيصل إشعار لجميع المعنيين'
           : wasAttached
-            ? 'تم فصل ' + typeLabelDef(target.type) + ' عن خطة الإطلاق'
-            : 'تم ربط ' + typeLabelDef(target.type) + ' بخطة الإطلاق'
+            ? 'تم فصل ' + typeLabelDefFor(target.type, target.path) + ' عن خطة الإطلاق'
+            : 'تم ربط ' + typeLabelDefFor(target.type, target.path) + ' بخطة الإطلاق'
       );
     },
     openCancelFund: (id) => setUi({ cancelFund: { id, note: '' } }),

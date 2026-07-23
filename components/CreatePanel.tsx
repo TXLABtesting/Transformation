@@ -524,8 +524,12 @@ function F1({
         <div style={{ marginBottom: 14 }}>
           <label style={labelStyle}>نوع {m.opWordDef} <span style={{ color: '#D23B45' }}>*</span></label>
           <select value={gv('opType')} onChange={(e) => setField('opType', e.target.value)} style={inputStyle}>
-            <option>العمليات التخصصية</option>
-            <option>عمليات الدعم المؤسسي</option>
+            {(m.opWordDef === 'المهمة'
+              ? ['المهام التخصصية', 'مهام الدعم المؤسسي']
+              : ['العمليات التخصصية', 'عمليات الدعم المؤسسي']
+            ).map((o) => (
+              <option key={o}>{o}</option>
+            ))}
           </select>
         </div>
       )}
