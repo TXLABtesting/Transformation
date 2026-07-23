@@ -10,6 +10,10 @@ import { BULK_VERDICT_STYLE } from '@/lib/ai';
 // Create wizard side-panel (§9) — faithful RTL reproduction of the prototype.
 // ============================================================================
 
+// Arabic-only guard for Arabic text fields: strips Latin letters as the user
+// types. Arabic script, digits (Arabic/Western), spaces and punctuation stay.
+const arabicOnly = (v: string) => v.replace(/[A-Za-z]/g, '');
+
 const inputStyle: React.CSSProperties = {
   width: '100%',
   border: '1px solid #DCE3EE',
@@ -426,7 +430,7 @@ function FormStep({
       {fStep === 2 && <F2 vm={vm} setField={setField} gv={gv} />}
       {fStep === 3 && <FOutcome vm={vm} setField={setField} gv={gv} />}
       {fStep === 4 && <FBudget vm={vm} setField={setField} gv={gv} />}
-      {fStep === 5 && <FPhases vm={vm} setField={setField} gv={gv} />}
+      {fStep === 5 && <FPhases vm={vm} />}
 
       {/* form actions (sticky bottom) */}
       <div
@@ -530,7 +534,7 @@ function F1({
         <label style={labelStyle}>{m.mIsProjectish ? 'اسم المشروع' : 'اسم ' + m.mTypeLabel} <span style={{ color: '#D23B45' }}>*</span></label>
         <input
           value={gv('title')}
-          onChange={(e) => setField('title', e.target.value)}
+          onChange={(e) => setField('title', arabicOnly(e.target.value))}
           placeholder="اكتب اسماً واضحاً"
           style={inputStyle}
         />
@@ -572,7 +576,7 @@ function F1({
               <label style={labelStyle}>ما هي الخدمة؟ <span style={{ color: '#D23B45' }}>*</span></label>
               <input
                 value={gv('linkedServiceName')}
-                onChange={(e) => setField('linkedServiceName', e.target.value)}
+                onChange={(e) => setField('linkedServiceName', arabicOnly(e.target.value))}
                 placeholder="اسم الخدمة المرتبطة"
                 style={inputStyle}
               />
@@ -609,15 +613,15 @@ function F1({
             </div>
             <div>
               <label style={labelStyle}>القطاع المعني <span style={{ color: '#D23B45' }}>*</span></label>
-              <input value={gv('sector')} onChange={(e) => setField('sector', e.target.value)} style={inputStyle} />
+              <input value={gv('sector')} onChange={(e) => setField('sector', arabicOnly(e.target.value))} style={inputStyle} />
             </div>
             <div>
               <label style={labelStyle}>الإدارة المعنية <span style={{ color: '#D23B45' }}>*</span></label>
-              <input value={gv('dept')} onChange={(e) => setField('dept', e.target.value)} style={inputStyle} />
+              <input value={gv('dept')} onChange={(e) => setField('dept', arabicOnly(e.target.value))} style={inputStyle} />
             </div>
             <div>
               <label style={labelStyle}>القسم المعني <span style={{ color: '#D23B45' }}>*</span></label>
-              <input value={gv('section')} onChange={(e) => setField('section', e.target.value)} style={inputStyle} />
+              <input value={gv('section')} onChange={(e) => setField('section', arabicOnly(e.target.value))} style={inputStyle} />
             </div>
           </div>
         </>
@@ -627,11 +631,11 @@ function F1({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
             <label style={labelStyle}>مالك الخدمة <span style={{ color: '#D23B45' }}>*</span></label>
-            <input value={gv('serviceOwner')} onChange={(e) => setField('serviceOwner', e.target.value)} style={inputStyle} />
+            <input value={gv('serviceOwner')} onChange={(e) => setField('serviceOwner', arabicOnly(e.target.value))} style={inputStyle} />
           </div>
           <div>
             <label style={labelStyle}>الفئة المستهدفة <span style={{ color: '#D23B45' }}>*</span></label>
-            <input value={gv('targetUsers')} onChange={(e) => setField('targetUsers', e.target.value)} style={inputStyle} />
+            <input value={gv('targetUsers')} onChange={(e) => setField('targetUsers', arabicOnly(e.target.value))} style={inputStyle} />
           </div>
         </div>
       )}
@@ -693,11 +697,11 @@ function F2({
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
       <div>
         <label style={labelStyle}>المدة الزمنية للإنجاز قبل التحويل <span style={{ color: '#D23B45' }}>*</span></label>
-        <input value={gv('durationBefore')} onChange={(e) => setField('durationBefore', e.target.value)} placeholder="مثال: 3 أيام عمل" style={inputStyle} />
+        <input value={gv('durationBefore')} onChange={(e) => setField('durationBefore', arabicOnly(e.target.value))} placeholder="مثال: 3 أيام عمل" style={inputStyle} />
       </div>
       <div>
         <label style={labelStyle}>المدة الزمنية للإنجاز بعد التحويل <span style={{ color: '#D23B45' }}>*</span></label>
-        <input value={gv('durationAfter')} onChange={(e) => setField('durationAfter', e.target.value)} placeholder="مثال: 10 دقائق" style={inputStyle} />
+        <input value={gv('durationAfter')} onChange={(e) => setField('durationAfter', arabicOnly(e.target.value))} placeholder="مثال: 10 دقائق" style={inputStyle} />
       </div>
     </div>
   );
@@ -756,7 +760,7 @@ function F2({
               <label style={labelStyle}>نظام الأتمتة المستخدم <span style={{ color: '#D23B45' }}>*</span></label>
               <input
                 value={gv('automationSystem')}
-                onChange={(e) => setField('automationSystem', e.target.value)}
+                onChange={(e) => setField('automationSystem', arabicOnly(e.target.value))}
                 style={inputStyle}
               />
             </div>
@@ -1045,8 +1049,10 @@ function FBudget({
 }
 
 // F-PHASES (step 5): pick the execution & launch batch only — launch plans
-// are attached centrally via «إدارة خطط الإطلاق» or the dashboard bulk-assign
-function FPhases({ vm, setField, gv }: { vm: VM; setField: (k: string, v: unknown) => void; gv: (k: string) => string }) {
+// are attached centrally via «إدارة خطط الإطلاق» or the dashboard bulk-assign.
+// Start/end dates live at the stage level (each stage carries its own period),
+// not on the item during creation.
+function FPhases({ vm }: { vm: VM }) {
   const m = vm.modal;
   const s = vm.store;
   const draft = m.draft;
@@ -1061,43 +1067,21 @@ function FPhases({ vm, setField, gv }: { vm: VM; setField: (k: string, v: unknow
         </div>
       ) : (
       <div style={cardStyle}>
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>
-            اختر مرحلة التنفيذ <span style={{ color: '#D23B45' }}>*</span>
-          </label>
-          <select
-            value={draft?.execBatch || ''}
-            onChange={(e) => s.selectExecBatch(e.target.value)}
-            style={inputStyle}
-          >
-            <option value="">اختر المرحلة…</option>
-            {m.batchOptions.map((b) => (
-              <option key={b.name} value={b.name}>
-                {b.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div>
-            <label style={labelStyle}>تاريخ البدء <span style={{ color: '#D23B45' }}>*</span></label>
-            <input
-              type="date"
-              value={gv('startDate')}
-              onChange={(e) => setField('startDate', e.target.value)}
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>تاريخ الانتهاء المتوقع <span style={{ color: '#D23B45' }}>*</span></label>
-            <input
-              type="date"
-              value={gv('endDate')}
-              onChange={(e) => setField('endDate', e.target.value)}
-              style={inputStyle}
-            />
-          </div>
-        </div>
+        <label style={labelStyle}>
+          اختر مرحلة التنفيذ <span style={{ color: '#D23B45' }}>*</span>
+        </label>
+        <select
+          value={draft?.execBatch || ''}
+          onChange={(e) => s.selectExecBatch(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">اختر المرحلة…</option>
+          {m.batchOptions.map((b) => (
+            <option key={b.name} value={b.name}>
+              {b.label}
+            </option>
+          ))}
+        </select>
       </div>
       )}
     </div>
