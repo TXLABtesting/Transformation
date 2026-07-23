@@ -653,6 +653,23 @@ export type LaunchPlan = {
   launchBudget?: string;
 };
 
+// Expected result (النتائج المتوقعة) — defined at the stream level. Each result
+// is an open-text statement plus the set of items (inputs) that support it.
+export type ExpectedResult = {
+  id: string;
+  text: string;
+  itemIds: string[];
+  path?: string; // owning stream
+};
+
+export function seedExpectedResults(): ExpectedResult[] {
+  if (process.env.NEXT_PUBLIC_DEMO_DATA !== '1') return [];
+  return [
+    { id: 'er-1', text: 'رفع نسبة إنجاز المعاملات الحكومية آلياً دون تدخل بشري إلى 80%.', itemIds: [], path: 'services' },
+    { id: 'er-2', text: 'تقليص زمن دورة العمليات المؤسسية بمقدار النصف عبر مساعدي الذكاء الاصطناعي.', itemIds: [], path: 'ops' },
+  ];
+}
+
 
 // item launches derived from its attached (managed) launch plans
 export function launchesFromPlans(ids: string[] | undefined, plans: LaunchPlan[]): Launch[] {

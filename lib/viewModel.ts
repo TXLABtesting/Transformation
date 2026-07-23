@@ -725,6 +725,7 @@ function build(s: Store) {
     ...subNav,
     { key: 'launchplans', label: 'مراحل التنفيذ', icon: NAV_CAL },
     { key: 'lplan', label: 'خطة الإطلاق', icon: NAV_ROCKET },
+    { key: 'results', label: 'النتائج المتوقعة', icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2z' },
     ...(rawRole === 'ai' || rawRole === 'path' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
   ].map((n) => ({
@@ -1034,7 +1035,40 @@ function build(s: Store) {
     removeUser: (id: string) => s.adminRemoveUser(id),
   };
 
+  // ---- expected results (النتائج المتوقعة) ----
+  const resInScope = (r: { path?: string }) =>
+    rawRole === 'coord' || rawRole === 'path' ? (r.path || myPath) === myPath : true;
+  const itemTitleById = new Map(s.items.map((i) => [i.id, i.title] as const));
+  const resultItemOpts = roleBase.map((i) => ({ id: i.id, title: i.title, type: typeLabel(i.type) }));
+  const resultsPage = {
+    cards: s.expectedResults.filter(resInScope).map((r) => ({
+      id: r.id,
+      text: r.text,
+      streamName: r.path ? pathById(r.path).name : '',
+      items: r.itemIds.map((id) => ({ id, title: itemTitleById.get(id) || '—' })).filter((x) => x.title !== '—'),
+      count: r.itemIds.filter((id) => itemTitleById.has(id)).length,
+      onEdit: () => s.openResultModal(r.id),
+      onDelete: () => s.deleteResult(r.id),
+    })),
+    onAdd: () => s.openResultModal(),
+  };
+  const rm = ui.resultModal;
+  const resultModal = rm
+    ? {
+        isEdit: !!rm.id,
+        text: rm.text,
+        selectedCount: rm.itemIds.length,
+        itemOptions: resultItemOpts.map((o) => ({ ...o, checked: rm.itemIds.includes(o.id) })),
+        onText: (v: string) => s.setResultText(v),
+        onToggle: (id: string) => s.toggleResultItem(id),
+        onSave: () => s.saveResult(),
+        onClose: () => s.closeResultModal(),
+      }
+    : null;
+
   return {
+    resultsPage,
+    resultModal,
     isAdmin,
     adminReturn: s.role === 'admin' && !!s.ui.adminDash,
     admin,

@@ -836,15 +836,6 @@ function FOutcome({
   const showAgents = !m.mIsProjectish;
   return (
     <div style={cardStyle}>
-      <div style={{ marginBottom: 14 }}>
-        <label style={labelStyle}>المخرجات المتوقعة <span style={{ color: '#D23B45' }}>*</span></label>
-        <RichTextEditor
-          value={gv('expectedOutputs')}
-          onChange={(v) => setField('expectedOutputs', v)}
-          placeholder="مثال: منصة موحّدة، تطبيق ذكي، لوحة تحكم"
-          minHeight={96}
-        />
-      </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <label style={{ ...labelStyle, minHeight: 38 }}>نسبة التحول المستهدفة باستخدام الذكاء الاصطناعي <span style={{ color: '#D23B45' }}>*</span></label>

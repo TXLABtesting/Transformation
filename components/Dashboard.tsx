@@ -850,6 +850,97 @@ function LaunchPlan({ vm, onManage }: { vm: VM; onManage?: (batch: string) => vo
   );
 }
 
+// ===== Expected Results (النتائج المتوقعة) =====
+function ExpectedResultsPage({ vm }: { vm: VM }) {
+  const rp = vm.resultsPage;
+  const m = vm.resultModal;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>النتائج المتوقعة</div>
+          <div style={{ fontSize: 12.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>النتائج المستهدفة على مستوى المسار والمدخلات التي تسهم في تحقيقها.</div>
+        </div>
+        <button
+          onClick={rp.onAdd}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 12, padding: '11px 18px', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)' }}
+        >
+          <Icon d="M12 5v14M5 12h14" size={17} color="#fff" />
+          إضافة نتيجة متوقعة
+        </button>
+      </div>
+
+      {rp.cards.length === 0 ? (
+        <div style={{ border: '1.5px dashed #D8DFEB', borderRadius: 16, padding: '46px 20px', textAlign: 'center', background: '#FAFCFF' }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#54627B' }}>لا توجد نتائج متوقعة بعد</div>
+          <div style={{ fontSize: 12.5, color: '#9AA6BC', marginTop: 6 }}>اضغط «إضافة نتيجة متوقعة» لتسجيل أول نتيجة وربط المدخلات الداعمة لها.</div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 16 }}>
+          {rp.cards.map((c) => (
+            <div key={c.id} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <span style={{ width: 36, height: 36, flex: 'none', borderRadius: 10, background: '#EAF1FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" size={18} color="#2563EB" />
+                </span>
+                <div className="hd" style={{ flex: 1, fontSize: 14, fontWeight: 800, color: '#13213C', lineHeight: 1.6 }}>{c.text}</div>
+              </div>
+              <div style={{ height: 1, background: '#EEF1F6' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400 }}>المدخلات الداعمة ({c.count})</div>
+                {c.items.length === 0 ? (
+                  <div style={{ fontSize: 12, color: '#B6BFCE' }}>لم يتم ربط مدخلات بعد</div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                    {c.items.map((it) => (
+                      <span key={it.id} style={{ fontSize: 11.5, fontWeight: 700, color: '#42506B', background: '#EFF1F5', borderRadius: 999, padding: '4px 11px' }}>{it.title}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
+                <button onClick={c.onEdit} style={{ flex: 1, background: '#EAF1FE', color: '#1D4ED8', border: 'none', borderRadius: 10, padding: '9px 0', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>تعديل</button>
+                <button onClick={c.onDelete} style={{ flex: 'none', background: '#FCEEEF', color: '#D23B45', border: 'none', borderRadius: 10, padding: '9px 14px', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>حذف</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {m && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={m.onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(8,18,40,.5)', animation: 'fadeIn .2s' }} />
+          <div style={{ position: 'relative', width: 540, maxWidth: '96vw', maxHeight: '88vh', overflowY: 'auto', background: '#fff', borderRadius: 18, boxShadow: '0 30px 80px -30px rgba(2,12,35,.6)', padding: 22, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{m.isEdit ? 'تعديل النتيجة المتوقعة' : 'إضافة نتيجة متوقعة'}</div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 400, color: '#54627B', marginBottom: 6 }}>النتيجة المتوقعة <span style={{ color: '#D23B45' }}>*</span></label>
+              <textarea value={m.text} onChange={(e) => m.onText(e.target.value)} placeholder="اكتب النتيجة المستهدفة بوضوح…" rows={3} style={{ width: '100%', border: '1px solid #DCE3EE', borderRadius: 11, padding: '11px 13px', fontSize: 13.5, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.7, boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 400, color: '#54627B', marginBottom: 6 }}>المدخلات التي تسهم في تحقيق النتيجة ({m.selectedCount})</label>
+              <div style={{ border: '1px solid #E7ECF4', borderRadius: 12, maxHeight: 260, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                {m.itemOptions.length === 0 ? (
+                  <div style={{ padding: 16, fontSize: 12.5, color: '#9AA6BC', textAlign: 'center' }}>لا توجد مدخلات ضمن نطاقك بعد.</div>
+                ) : m.itemOptions.map((o) => (
+                  <label key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderBottom: '1px solid #F4F6FA', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={o.checked} onChange={() => m.onToggle(o.id)} style={{ width: 16, height: 16, accentColor: '#2563EB', flex: 'none' }} />
+                    <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#33415C', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.title}</span>
+                    <span style={{ flex: 'none', fontSize: 10.5, fontWeight: 700, color: '#64748B', background: '#F1F4F9', borderRadius: 999, padding: '2px 8px' }}>{o.type}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={m.onClose} style={{ background: '#fff', border: '1px solid #DCE3EE', borderRadius: 12, padding: '11px 20px', color: '#54627B', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+              <button onClick={m.onSave} style={{ background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 12, padding: '11px 22px', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)' }}>حفظ</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // small ⓘ affordance: hover / tap reveals a plain-language explanation.
 // Per request, the ⓘ is shown ONLY on the top phase-countdown timer (keep);
 // everywhere else it is suppressed.
@@ -2651,6 +2742,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           {vm.navSection === 'lplan' && (
             <LaunchPlan vm={vm} onManage={vm.showAddBtn ? setLaunchMgrFor : undefined} />
           )}
+          {vm.navSection === 'results' && <ExpectedResultsPage vm={vm} />}
 
           {/* ===== stage items manager popup (coordinator) ===== */}
               {itemsMgrFor && (
