@@ -2034,12 +2034,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                         >
                           {n.sub}
                         </div>
-                        {n.mail && (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 10, fontWeight: 700, color: '#6B7A93', background: '#F2F5FA', borderRadius: 999, padding: '2px 9px' }}>
-                            <Icon d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM22 6l-10 7L2 6" size={11} color="#6B7A93" />
-                            أُرسل إشعار بريدي تلقائي
-                          </div>
-                        )}
                         {n.act && (
                           <div style={{ display: 'flex', gap: 7, marginTop: 9 }}>
                             <button
