@@ -812,7 +812,6 @@ function build(s: Store) {
     ...subNav,
     { key: 'launchplans', label: 'مراحل التنفيذ', icon: NAV_CAL },
     { key: 'lplan', label: 'دفعات الإطلاق', icon: NAV_ROCKET },
-    { key: 'results', label: 'النتائج المتوقعة', icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2z' },
     ...(rawRole === 'ai' || rawRole === 'path' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
   ].map((n) => ({
@@ -830,7 +829,6 @@ function build(s: Store) {
   // then «دفعات الإطلاق». (Demo mode lists all streams for testing.)
   const coordStreamIds = process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? PATHS.map((p) => p.id) : s.myPaths?.length ? s.myPaths : [myPath];
   const cntEntStream = (pid: string) => s.items.filter((i) => ent(i) === entityName && i.path === pid).length;
-  const RESULTS_ICON = 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2z';
   const plainNav = (key: string, label: string, icon: string) => ({
     key,
     label,
@@ -873,7 +871,6 @@ function build(s: Store) {
             invHead,
             streamItem(myPath, roleBase.filter((i) => i.path === myPath).length, navSection === 'all', () => s.setNavSection('all')),
             plainNav('lplan', 'دفعات الإطلاق', NAV_ROCKET),
-            plainNav('results', 'النتائج المتوقعة', RESULTS_ICON),
             plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
           ]
         : rawRole === 'ai'
@@ -889,7 +886,6 @@ function build(s: Store) {
                 })
               ),
               plainNav('lplan', 'دفعات الإطلاق', NAV_ROCKET),
-              plainNav('results', 'النتائج المتوقعة', RESULTS_ICON),
               plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
             ]
           : navItems;
@@ -1483,9 +1479,11 @@ function build(s: Store) {
             ? 'جميع مدخلات الجهة'
             : rawRole === 'coord'
               ? 'جميع مدخلات المسار'
-              : rawRole === 'ai'
-                ? 'قائمة الاعتماد'
-                : ''
+              : rawRole === 'path'
+                ? 'قائمة حصر مسار ' + pathById(myPath).name
+                : rawRole === 'ai'
+                  ? 'قائمة الاعتماد'
+                  : ''
           : (navSection in typeSections ? (navSection === 'operations' && myPath === 'strategy' ? 'المهام' : typeSections[navSection]) : '') || '',
     portfolioStreams,
     recap,
