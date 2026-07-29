@@ -59,6 +59,24 @@ const DOC_ASSETS: Record<string, { cover: string; file: string; dl: string }> = 
     dl: 'نظام-عمل-الذكاء-الاصطناعي-المساعد.pdf',
   },
 };
+// data: URLs cannot be navigated to directly — convert to a blob URL on click
+function openDocFile(file: string) {
+  if (!file.startsWith('data:')) return false;
+  try {
+    const [meta, b64] = file.split(',');
+    const mime = meta.slice(5, meta.indexOf(';'));
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], { type: mime || 'application/pdf' }));
+    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const toDoc = (d: LibraryDoc): Doc => {
   const asset = DOC_ASSETS[d.id];
   return {
@@ -458,6 +476,9 @@ export function LibraryPage() {
                       href={d.file}
                       target="_blank"
                       rel="noreferrer"
+                      onClick={(e) => {
+                        if (openDocFile(d.file)) e.preventDefault();
+                      }}
                       style={{ background: 'linear-gradient(135deg,#2563EB,#1D4ED8)', color: '#fff', borderRadius: 12, padding: '0 24px', height: 42, display: 'inline-flex', alignItems: 'center', fontSize: 13.5, fontWeight: 800, textDecoration: 'none' }}
                     >
                       إطلاع
