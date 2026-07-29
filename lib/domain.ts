@@ -82,11 +82,11 @@ export const PIC: Record<string, string> = {
 // Allowed item types per path — project & initiative are ONE merged type
 export type TypeOption = { key: ItemType; label: string };
 export function availTypes(path: string): TypeOption[] {
+  // the services stream accepts SERVICE entries only (no projects)
+  if (path === 'services') return [{ key: 'service', label: 'خدمة' }];
   const base: TypeOption[] = [{ key: 'project', label: 'مشروع' }];
   // operations exist in the operations stream and العمل الحكومي الاستراتيجي only
   if (path === 'ops' || path === 'strategy') base.push({ key: 'operation', label: path === 'strategy' ? 'مهمة' : 'عملية' });
-  // services exist in the services stream only
-  if (path === 'services') base.push({ key: 'service', label: 'خدمة' });
   return base;
 }
 

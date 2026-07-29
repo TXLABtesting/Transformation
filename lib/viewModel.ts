@@ -315,7 +315,9 @@ function build(s: Store) {
   // Scoped to the types the stream actually has: العمليات stream has no
   // services, so a coordinator there never sees «خدمة».
   const typeGroups = [
-    { id: 'projinit', name: 'مشروع', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7', section: 'projects', match: (i: Item) => isProjInit(i.type) },
+    ...(myPath !== 'services'
+      ? [{ id: 'projinit', name: 'مشروع', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7', section: 'projects', match: (i: Item) => isProjInit(i.type) }]
+      : []),
     ...(streamHasType(myPath, 'operation')
       ? [{ id: 'operation', name: myPath === 'strategy' ? 'مهمة' : 'عملية', icon: 'M3 6h18M3 12h18M3 18h18', section: 'operations', match: (i: Item) => i.type === 'operation' }]
       : []),
@@ -759,7 +761,9 @@ function build(s: Store) {
         },
       }))
     : [
-        { key: 'projects', label: 'المشاريع والمبادرات', icon: NAV_FOLDER, sub: true, count: cntProjects },
+        ...(!(roleStreams.length === 1 && roleStreams[0].id === 'services')
+          ? [{ key: 'projects', label: 'المشاريع والمبادرات', icon: NAV_FOLDER, sub: true, count: cntProjects }]
+          : []),
         ...(roleStreams.some((p) => streamHasType(p.id, 'operation'))
           ? [{ key: 'operations', label: myPath === 'strategy' ? 'المهام' : 'العمليات', icon: NAV_SLIDERS, sub: true, count: cntOperations }]
           : []),
