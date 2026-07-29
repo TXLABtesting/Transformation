@@ -122,7 +122,7 @@ export function PublicNav({ tab, onNav, onLogin }: { tab: PublicTab; onNav: (t: 
     <div style={{ background: '#fff', borderBottom: '1px solid #E7ECF4', padding: '14px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="assets/logo.png" alt="مشروع الذكاء الاصطناعي المساعد" style={{ height: 44 }} />
+        <img src="assets/logo.png" alt="مشروع الذكاء الاصطناعي المساعد" style={{ height: 62 }} />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         {NAV_LINKS.map((n) => {
