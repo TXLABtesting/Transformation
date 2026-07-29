@@ -67,9 +67,6 @@ export function TeamSetup({ vm }: { vm: VM }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="assets/uae-crest.png" alt="United Arab Emirates" style={{ height: 72 }} />
-          <div style={{ width: 1, height: 54, background: '#E7ECF4' }} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="assets/logo.png" alt="مشروع الذكاء الاصطناعي المساعد" style={{ height: 60 }} />
         </div>
       </div>
