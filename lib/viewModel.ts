@@ -23,6 +23,7 @@ import {
   typeLabelFor,
   typeLabelDefFor,
   svcPriority,
+  stgPriority,
   STRATEGY_AXES,
   availTypes,
   wfOf,
@@ -150,7 +151,7 @@ function build(s: Store) {
   if (filterStream === 'strategy') {
     if (ui.stgTaskF !== 'all') visible = visible.filter((i) => (i.title || '') === ui.stgTaskF);
     if (ui.stgSectorF !== 'all') visible = visible.filter((i) => (i.sector || '') === ui.stgSectorF);
-    if (ui.stgPrioF !== 'all') visible = visible.filter((i) => (i.selPriority || '') === ui.stgPrioF);
+    if (ui.stgPrioF !== 'all') visible = visible.filter((i) => (stgPriority(i)?.cat || '') === ui.stgPrioF);
   }
   // status filter
   if (ui.statusFilter !== 'all') visible = visible.filter((i) => statusMatch(i, ui.statusFilter, rawRole, s));
@@ -1179,7 +1180,8 @@ function build(s: Store) {
       .split(/[\n،,;؛]/)
       .filter((t) => t.trim()).length;
   const stgActs = (list: Item[]) => list.reduce((a, i) => a + actCount(i), 0);
-  const stgHiMid = (i: Item) => (i.selPriority || '').includes('عالية') || (i.selPriority || '').includes('متوسطة');
+  const stgCatOf = (i: Item) => stgPriority(i)?.cat || '';
+  const stgHiMid = (i: Item) => stgCatOf(i) === 'أولوية عالية' || stgCatOf(i) === 'أولوية متوسطة';
   const stgKpis =
     filterStream === 'strategy'
       ? {
@@ -1187,8 +1189,8 @@ function build(s: Store) {
           acts: stgActs(stgTasks),
           transformable: stgActs(stgTasks.filter(stgHiMid)),
           targeted: stgActs(stgTasks.filter((i) => (i.transformYes || '') === 'نعم')),
-          p1: stgTasks.filter((i) => (i.selPriority || '').includes('عالية')).length,
-          p2: stgTasks.filter((i) => (i.selPriority || '').includes('متوسطة')).length,
+          p1: stgTasks.filter((i) => stgCatOf(i) === 'أولوية عالية').length,
+          p2: stgTasks.filter((i) => stgCatOf(i) === 'أولوية متوسطة').length,
         }
       : null;
 
@@ -2162,7 +2164,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     transformScore: i.transformScore,
     outputClarity: i.outputClarity,
     riskLevel: i.riskLevel,
-    selPriority: i.selPriority,
+    stgCalc: i.type === 'operation' && i.path === 'strategy' ? stgPriority(i) : null,
     svcSelPriority: i.type === 'service' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) : null,
     serviceOwner: i.serviceOwner,
     targetUsers: i.targetUsers,
@@ -2358,6 +2360,7 @@ function buildModal(s: Store) {
     mIsService: type === 'service',
     mIsStgTask: isStgTaskForm,
     axesOptions: STRATEGY_AXES,
+    stgCalc: isStgTaskForm && draft ? stgPriority(draft) : null,
     mIsProjectish: type === 'project' || type === 'initiative',
     mTypeLabel,
     fLabels,

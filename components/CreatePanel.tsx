@@ -1264,7 +1264,22 @@ function FTask({
           {sel('وضوح المخرجات وقابليتها للمراجعة', 'outputClarity', scale)}
         </div>
         {sel('مستوى المخاطر', 'riskLevel', ['منخفض', 'متوسط', 'عالي'])}
-        {sel('أولوية الاختيار', 'selPriority', ['أولوية عالية', 'أولوية متوسطة', 'أولوية منخفضة'])}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>أولوية الاختيار</label>
+          {m.stgCalc ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EAF1FE', color: '#1D4ED8', borderRadius: 999, padding: '8px 16px', fontSize: 13.5, fontWeight: 800 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D4ED8', flex: 'none' }} />
+                {m.stgCalc.cat} · {m.stgCalc.total}/30
+              </span>
+              <span style={{ fontSize: 12, color: '#8A97AD', fontWeight: 700 }}>{m.stgCalc.hint}</span>
+            </div>
+          ) : (
+            <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px' }}>
+              تُحسب تلقائياً بعد استكمال التقييمات الستة ومستوى المخاطر
+            </div>
+          )}
+        </div>
         <div style={{ marginBottom: 0 }}>
           <label style={labelStyle}>أولوية التحول <span style={{ color: '#D23B45' }}>*</span></label>
           <div style={{ display: 'flex', gap: 10 }}>

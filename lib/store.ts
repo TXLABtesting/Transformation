@@ -1042,7 +1042,7 @@ export const useStore = create<Store>((set, get) => {
       if (d?.type === 'operation' && d?.path === 'strategy') {
         const filledT = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
         const dt = d as unknown as Record<string, unknown>;
-        const reqT = ['title', 'axis', 'subActivities', 'sector', 'dept', 'section', 'automationLevel', 'automationSystem', 'usageIntensity', 'importance', 'readinessLevel', 'impactScore', 'transformScore', 'outputClarity', 'riskLevel', 'selPriority', 'transformYes'];
+        const reqT = ['title', 'axis', 'subActivities', 'sector', 'dept', 'section', 'automationLevel', 'automationSystem', 'usageIntensity', 'importance', 'readinessLevel', 'impactScore', 'transformScore', 'outputClarity', 'riskLevel', 'transformYes'];
         if (reqT.some((k) => !filledT(dt[k]))) {
           return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
         }
