@@ -535,8 +535,46 @@ export function DetailPanel({ vm }: { vm: VM }) {
               </>
             )}
 
+            {/* --- OPERATIONS PROCESS (حصر قائمة العمليات) --- */}
+            {d.isOpsTask && (
+              <>
+                <DetailSecHead title="بيانات العملية" />
+                <DetailGrid cols={2}>
+                  <DetailCell label="التصنيف">{d.opType}</DetailCell>
+                  <DetailCell label="الأنشطة الفرعية"><RichTextView html={(d.subActivities || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>
+                </DetailGrid>
+                <DetailGrid cols={3}>
+                  <DetailCell label="القطاع المعني">{d.sector}</DetailCell>
+                  <DetailCell label="الإدارة المعنية">{d.dept}</DetailCell>
+                  <DetailCell label="القسم المعني">{d.section}</DetailCell>
+                </DetailGrid>
+                <DetailSecHead title="الأتمتة" />
+                <DetailGrid cols={3}>
+                  <DetailCell label="هل النشاط/العملية مؤتمت؟">{d.isAutomated}</DetailCell>
+                  <DetailCell label="نظام الأتمتة">{d.automationSystem}</DetailCell>
+                  <DetailCell label="نسبة الأتمتة">{d.automationPct != null ? d.automationPct + '%' : '—'}</DetailCell>
+                </DetailGrid>
+                <DetailSecHead title="التقييم (من 1 إلى 5)" />
+                <DetailGrid cols={3}>
+                  <DetailCell label="كثافة النشاط/العملية">{d.usageIntensity}</DetailCell>
+                  <DetailCell label="الجاهزية للتحول">{d.readinessLevel}</DetailCell>
+                  <DetailCell label="مستوى الأثر المتوقع من التحول">{d.impactScore}</DetailCell>
+                </DetailGrid>
+                <DetailGrid cols={3}>
+                  <DetailCell label="مستوى التعقيد">{d.complexity}</DetailCell>
+                  <DetailCell label="القابلية للتحول">{d.transformScore}</DetailCell>
+                  <DetailCell label="أولوية التحول">{d.transformYes}</DetailCell>
+                </DetailGrid>
+                {d.notesText ? (
+                  <DetailGrid cols={1}>
+                    <DetailCell label="الملاحظات"><RichTextView html={(d.notesText || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>
+                  </DetailGrid>
+                ) : null}
+              </>
+            )}
+
             {/* --- OPERATION --- */}
-            {d.isOp && !d.isStgTask && (
+            {d.isOp && !d.isStgTask && !d.isOpsTask && (
               <>
                 <DetailSecHead title={'خصائص ' + d.opWordDef} />
                 <DetailGrid cols={3}>

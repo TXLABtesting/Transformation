@@ -501,7 +501,9 @@ function FormStep({
         <div style={{ fontSize: 12, color: '#8A97AD', marginTop: 2 }}>{m.fStepHint}</div>
       </div>
 
-      {m.mIsStgTask ? (
+      {m.mIsOpsForm ? (
+        <FOps vm={vm} setField={setField} gv={gv} />
+      ) : m.mIsStgTask ? (
         <FTask vm={vm} setField={setField} gv={gv} />
       ) : m.mIsService ? (
         <FService vm={vm} setField={setField} gv={gv} />
@@ -1162,6 +1164,168 @@ function FPhases({ vm }: { vm: VM }) {
         </select>
       </div>
       )}
+    </div>
+  );
+}
+
+// F-OPS — العمليات والدعم المؤسسي: حصر قائمة العمليات (single-step form).
+// أولوية الاختيار تُحسب وفق مصفوفة العمليات بعد اعتمادها.
+function FOps({
+  vm,
+  setField,
+  gv,
+}: {
+  vm: VM;
+  setField: (k: string, v: unknown) => void;
+  gv: (k: string) => string;
+}) {
+  const m = vm.modal;
+  const sel = (label: string, key: string, opts: string[]) => (
+    <div style={{ marginBottom: 14 }}>
+      <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
+      <select value={gv(key)} onChange={(e) => setField(key, e.target.value)} style={inputStyle}>
+        <option value="">اختر…</option>
+        {opts.map((o) => (
+          <option key={o}>{o}</option>
+        ))}
+      </select>
+    </div>
+  );
+  const scale = ['1', '2', '3', '4', '5'];
+  const yesNo = (label: string, key: string) => (
+    <div style={{ marginBottom: 14 }}>
+      <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
+      <div style={{ display: 'flex', gap: 10 }}>
+        {['نعم', 'لا'].map((opt) => {
+          const active = gv(key) === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => setField(key, opt)}
+              style={{
+                flex: 1,
+                border: '1px solid ' + (active ? '#2563EB' : '#DCE3EE'),
+                background: active ? '#EAF1FE' : '#fff',
+                color: active ? '#1D4ED8' : '#54627B',
+                borderRadius: 11,
+                padding: '11px 13px',
+                fontSize: 13.5,
+                fontWeight: 800,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+  return (
+    <div>
+      <div style={cardStyle}>
+        {sel('التصنيف', 'opType', ['العمليات التخصصية', 'عمليات الدعم المؤسسي'])}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>العملية الرئيسية <span style={{ color: '#D23B45' }}>*</span></label>
+          <input value={gv('title')} onChange={(e) => setField('title', arabicOnly(e.target.value))} placeholder="اسم العملية الرئيسية" style={inputStyle} />
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>الأنشطة الفرعية للعملية الرئيسية <span style={{ color: '#D23B45' }}>*</span></label>
+          <textarea
+            value={gv('subActivities')}
+            onChange={(e) => setField('subActivities', arabicOnly(e.target.value))}
+            placeholder="اكتب كل نشاط فرعي في سطر مستقل"
+            rows={4}
+            style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.8 }}
+          />
+          <div style={{ fontSize: 11, color: '#9AA6BC', marginTop: 5 }}>كل سطر يمثل نشاطاً فرعياً — تُحتسب الأنشطة في ملخص الحصر.</div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>القطاع المعني <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={gv('sector')} onChange={(e) => setField('sector', arabicOnly(e.target.value))} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>الإدارة المعنية <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={gv('dept')} onChange={(e) => setField('dept', arabicOnly(e.target.value))} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>القسم المعني <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={gv('section')} onChange={(e) => setField('section', arabicOnly(e.target.value))} style={inputStyle} />
+          </div>
+        </div>
+      </div>
+
+      <div style={cardStyle}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>الأتمتة</div>
+        {yesNo('هل النشاط/العملية مؤتمت؟', 'isAutomated')}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 0 }}>
+          <div>
+            <label style={labelStyle}>ما هو نظام الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={gv('automationSystem')} onChange={(e) => setField('automationSystem', e.target.value)} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>ما هي نسبة الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={Number(gv('automationPct')) || 0}
+                onChange={(e) => setField('automationPct', Number(e.target.value))}
+                style={{ flex: 1, accentColor: '#2563EB' }}
+              />
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', minWidth: 42, textAlign: 'left' }}>{Number(gv('automationPct')) || 0}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={cardStyle}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>التقييم (من 1 إلى 5)</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+          {sel('كثافة النشاط/العملية', 'usageIntensity', scale)}
+          {sel('الجاهزية للتحول', 'readinessLevel', scale)}
+          {sel('مستوى الأثر المتوقع من التحول', 'impactScore', scale)}
+          {sel('مستوى التعقيد', 'complexity', scale)}
+        </div>
+        {sel('القابلية للتحول', 'transformScore', scale)}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>أولوية الاختيار</label>
+          <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px' }}>
+            تُحسب تلقائياً وفق مصفوفة أولوية العمليات بعد اعتمادها
+          </div>
+        </div>
+        {yesNo('أولوية التحول', 'transformYes')}
+        <div style={{ marginBottom: 0 }}>
+          <label style={labelStyle}>الملاحظات</label>
+          <textarea
+            value={gv('notes')}
+            onChange={(e) => setField('notes', arabicOnly(e.target.value))}
+            rows={3}
+            style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.8 }}
+          />
+        </div>
+      </div>
+
+      <div style={cardStyle}>
+        <label style={labelStyle}>دفعة الإطلاق <span style={{ color: '#D23B45' }}>*</span></label>
+        <select
+          value={vm.modal.draft?.execBatch || ''}
+          onChange={(e) => vm.store.selectExecBatch(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">اختر الدفعة…</option>
+          {m.batchOptions.map((b) => (
+            <option key={b.name} value={b.name}>
+              {b.label}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }

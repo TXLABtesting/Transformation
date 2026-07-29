@@ -1194,6 +1194,69 @@ function build(s: Store) {
         }
       : null;
 
+  // ---- operations coordinator KPI strip (ملخص الحصر) ----
+  const opsTasks = roleBase.filter((i) => i.path === 'ops' && i.type === 'operation');
+  const opsKpis =
+    filterStream === 'ops'
+      ? {
+          acts: stgActs(opsTasks),
+          // provisional until the operations matrix is approved: القابلية
+          // للتحول scored 3+ counts as transformable
+          transformable: stgActs(opsTasks.filter((i) => parseInt(i.transformScore || '', 10) >= 3)),
+          targeted: stgActs(opsTasks.filter((i) => (i.transformYes || '') === 'نعم')),
+        }
+      : null;
+
+  // ---- دفعات الإطلاق: per-stream tables (coordinator + head/deputy) ----
+  const actsCompact = (i: Item) =>
+    stripHtml(i.subActivities || '')
+      .split(/\n/)
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .join('، ');
+  const prioCellOf = (i: Item) => {
+    if (i.type === 'service') {
+      const p = svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
+      return p ? 'الأولوية ' + p : '—';
+    }
+    if (i.path === 'strategy' && i.type === 'operation') return stgPriority(i)?.cat || '—';
+    return '—'; // operations: pending the matrix
+  };
+  const batchTables =
+    rawRole === 'coord' || rawRole === 'path'
+      ? {
+          streamName: pathById(myPath).name,
+          canEditDates: rawRole === 'coord',
+          cols:
+            myPath === 'services'
+              ? ['الخدمة', 'الخدمة الفرعية']
+              : myPath === 'strategy'
+                ? ['المحور', 'المهمة', 'النشاط']
+                : ['تصنيف العملية', 'العملية الرئيسية', 'الأنشطة الفرعية'],
+          batches: streamLaunchBatches(myPath).map((b) => ({
+            name: batchDafaaLabel(b.name),
+            period: b.period || '',
+            rows: roleBase
+              .filter((i) => i.path === myPath && i.execBatch === b.name)
+              .map((i) => ({
+                id: i.id,
+                lead:
+                  myPath === 'services'
+                    ? [i.title || '—', i.subService || '—']
+                    : myPath === 'strategy'
+                      ? [i.axis || '—', i.title || '—', actsCompact(i) || '—']
+                      : [i.opType || '—', i.title || '—', actsCompact(i) || '—'],
+                start: i.startDate || '',
+                end: i.endDate || '',
+                prio: prioCellOf(i),
+                status: wfMeta(i).label,
+                notes: stripHtml(i.notes || '') || '—',
+                onOpen: () => s.openDetail(i.id),
+              })),
+          })),
+        }
+      : null;
+
   // ---- expected results (النتائج المتوقعة) ----
   const resInScope = (r: { path?: string }) =>
     rawRole === 'coord' || rawRole === 'path' ? (r.path || myPath) === myPath : true;
@@ -1226,6 +1289,8 @@ function build(s: Store) {
     : null;
 
   return {
+    batchTables,
+    opsKpis,
     stgKpis,
     stgFilterBar,
     inlineCreate: ui.inlineCreate && !!ui.draft && (ui.mStep === 'form' || ui.mStep === 'type'),
@@ -2158,6 +2223,9 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     readinessLevel: i.readinessLevel,
     transformYes: i.transformYes,
     isStgTask: i.type === 'operation' && i.path === 'strategy',
+    isOpsTask: i.type === 'operation' && i.path === 'ops',
+    isAutomated: i.isAutomated,
+    notesText: i.notes,
     axis: i.axis,
     importance: i.importance,
     impactScore: i.impactScore,
@@ -2329,8 +2397,9 @@ function buildModal(s: Store) {
     'التقييم';
   // services stream: a single-step form (exactly the approved field set)
   const isStgTaskForm = type === 'operation' && path === 'strategy';
-  const fLabels = type === 'service' ? ['بيانات الخدمة'] : isStgTaskForm ? ['بيانات المهمة'] : [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
-  const fTitles = type === 'service' ? ['بيانات الخدمة'] : isStgTaskForm ? ['بيانات المهمة'] : [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
+  const isOpsForm = type === 'operation' && path === 'ops';
+  const fLabels = type === 'service' ? ['بيانات الخدمة'] : isStgTaskForm ? ['بيانات المهمة'] : isOpsForm ? ['بيانات العملية'] : [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
+  const fTitles = type === 'service' ? ['بيانات الخدمة'] : isStgTaskForm ? ['بيانات المهمة'] : isOpsForm ? ['بيانات العملية'] : [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
   const fHints = [
     'ابدأ بالمعلومات الأساسية',
     'حدّد الأولوية وقابلية التحول',
@@ -2359,6 +2428,7 @@ function buildModal(s: Store) {
     mIsOp: type === 'operation',
     mIsService: type === 'service',
     mIsStgTask: isStgTaskForm,
+    mIsOpsForm: isOpsForm,
     axesOptions: STRATEGY_AXES,
     stgCalc: isStgTaskForm && draft ? stgPriority(draft) : null,
     mIsProjectish: type === 'project' || type === 'initiative',
