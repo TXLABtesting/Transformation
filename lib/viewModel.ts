@@ -134,6 +134,17 @@ function build(s: Store) {
       if (effTypeFilter === 'bundle') return i.type === 'service' && !!i.serviceBundle;
       return i.type === effTypeFilter;
     });
+  // services-stream filters: الخدمة / القطاع / الأولوية
+  if (filterStream === 'services') {
+    if (ui.svcServiceF !== 'all') visible = visible.filter((i) => (i.title || '') === ui.svcServiceF);
+    if (ui.svcSectorF !== 'all') visible = visible.filter((i) => (i.sector || '') === ui.svcSectorF);
+    if (ui.svcPrioF !== 'all')
+      visible = visible.filter(
+        (i) =>
+          i.type === 'service' &&
+          String(i.transformYes === 'نعم' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) ?? '' : '') === ui.svcPrioF
+      );
+  }
   // status filter
   if (ui.statusFilter !== 'all') visible = visible.filter((i) => statusMatch(i, ui.statusFilter, rawRole, s));
   // committee-funding filter
@@ -668,8 +679,34 @@ function build(s: Store) {
               ...(filterStream === 'all' || streamHasType(filterStream, 'operation') ? [{ v: 'operation', label: 'عملية' }] : []),
               ...(filterStream === 'all' || streamHasType(filterStream, 'service') ? [{ v: 'service', label: 'خدمة' }] : []),
             ];
+  // services-stream filter bar (اسم الجهة يُعرض عبر فلتر الجهات الحالي)
+  const svcScope = roleBase.filter((i) => i.path === 'services');
+  const svcFilterBar =
+    filterStream === 'services'
+      ? {
+          serviceOptions: [
+            { v: 'all', label: 'الخدمة: الكل' },
+            ...Array.from(new Set(svcScope.filter((i) => i.type === 'service').map((i) => i.title || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
+          ],
+          sectorOptions: [
+            { v: 'all', label: 'القطاع: الكل' },
+            ...Array.from(new Set(svcScope.map((i) => i.sector || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
+          ],
+          prioOptions: [
+            { v: 'all', label: 'الأولوية: الكل' },
+            { v: '1', label: 'الأولوية 1' },
+            { v: '2', label: 'الأولوية 2' },
+            { v: '3', label: 'الأولوية 3' },
+            { v: '4', label: 'الأولوية 4' },
+          ],
+          serviceValue: ui.svcServiceF,
+          sectorValue: ui.svcSectorF,
+          prioValue: ui.svcPrioF,
+        }
+      : null;
+
   // is any filter currently active (drives the reset button + count)
-  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim();
+  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim() || ui.svcServiceF !== 'all' || ui.svcSectorF !== 'all' || ui.svcPrioF !== 'all';
 
   // ---- cards ----
   // ---- sidebar navigation (§redesign v2) ----
@@ -1054,7 +1091,9 @@ function build(s: Store) {
 
   // ---- services coordinator KPI strip (أعداد الخدمات الفرعية) ----
   const svcItems = roleBase.filter((i) => i.type === 'service');
-  const svcPr = (i: Item) => svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
+  // أولوية الاختيار applies only to entries with أولوية التحول = نعم — a «لا»
+  // entry is excluded from the priorities and the automation-target counts
+  const svcPr = (i: Item) => (i.transformYes === 'نعم' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) : null);
   const svcKpis =
     rawRole === 'coord' && myPath === 'services'
       ? {
@@ -1099,6 +1138,7 @@ function build(s: Store) {
     : null;
 
   return {
+    svcFilterBar,
     svcKpis,
     resultsPage,
     resultModal,
@@ -2029,7 +2069,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     subService: i.subService,
     readinessLevel: i.readinessLevel,
     transformYes: i.transformYes,
-    svcSelPriority: i.type === 'service' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) : null,
+    svcSelPriority: i.type === 'service' && i.transformYes === 'نعم' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) : null,
     serviceOwner: i.serviceOwner,
     targetUsers: i.targetUsers,
     currentJourney: i.currentJourney,
@@ -2229,7 +2269,8 @@ function buildModal(s: Store) {
     fStepHint: fHints[ui.fStep - 1] || '',
     fNextLabel: ui.fStep >= fLabels.length ? 'إرسال للاعتماد' : 'التالي',
     // أولوية الاختيار — live matrix result while filling the services form
-    svcSelPriority: type === 'service' ? svcPriority(draft?.usageIntensity, draft?.complexity, draft?.readinessLevel) : null,
+    svcSelPriority: type === 'service' && draft?.transformYes === 'نعم' ? svcPriority(draft?.usageIntensity, draft?.complexity, draft?.readinessLevel) : null,
+    svcExcluded: type === 'service' && draft?.transformYes === 'لا',
     // execution batches (البرنامج الزمني) + centrally-managed launch plans
     batchOptions: [
       ...streamLaunchBatches(path).map((b) => ({

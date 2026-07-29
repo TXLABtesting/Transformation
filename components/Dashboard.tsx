@@ -1504,7 +1504,7 @@ export function Dashboard({ vm }: { vm: VM }) {
   // مرحلة manage popups: assign items / manage launches for a given batch
   const [itemsMgrFor, setItemsMgrFor] = useState<string | null>(null);
   const [launchMgrFor, setLaunchMgrFor] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('list');
   // mobile: the filter bar collapses into one button that opens a full-screen sheet
   const [mobileFilters, setMobileFilters] = useState(false);
   // mobile navigation: the rail collapses into a hamburger drawer, and the
@@ -2578,9 +2578,19 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {vm.showEntFilter && (
                   <EntityFilter value={vm.entFilterValue} options={vm.entOptions} onChange={(v) => s.setEntFilter(v)} />
                 )}
-                <FilterSelect value={vm.filterValue} options={vm.typeOptions} onChange={(v) => s.setFilter(v)} />
-                <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
-                <FilterSelect value={vm.batchFilterValue} options={vm.batchFilterOptions} minWidth={170} onChange={(v) => s.setBatchFilter(v === 'all' ? null : v)} />
+                {vm.svcFilterBar ? (
+                  <>
+                    <FilterSelect value={vm.svcFilterBar.serviceValue} options={vm.svcFilterBar.serviceOptions} minWidth={170} onChange={(v) => s.setSvcFilter('svcServiceF', v)} />
+                    <FilterSelect value={vm.svcFilterBar.sectorValue} options={vm.svcFilterBar.sectorOptions} minWidth={150} onChange={(v) => s.setSvcFilter('svcSectorF', v)} />
+                    <FilterSelect value={vm.svcFilterBar.prioValue} options={vm.svcFilterBar.prioOptions} minWidth={150} onChange={(v) => s.setSvcFilter('svcPrioF', v)} />
+                  </>
+                ) : (
+                  <>
+                    <FilterSelect value={vm.filterValue} options={vm.typeOptions} onChange={(v) => s.setFilter(v)} />
+                    <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
+                    <FilterSelect value={vm.batchFilterValue} options={vm.batchFilterOptions} minWidth={170} onChange={(v) => s.setBatchFilter(v === 'all' ? null : v)} />
+                  </>
+                )}
                 <button
                   data-r="mfapply"
                   onClick={() => setMobileFilters(false)}
