@@ -248,6 +248,7 @@ type Actions = {
   resetFilters: () => void;
   setSvcFilter: (k: 'svcServiceF' | 'svcSectorF' | 'svcPrioF', v: string) => void;
   setStgFilter: (k: 'stgTaskF' | 'stgSectorF' | 'stgPrioF', v: string) => void;
+  setItemDate: (id: string, k: 'startDate' | 'endDate', v: string) => void;
   toggleStepFilter: (n: number) => void;
   // create wizard
   openCreate: () => void;
@@ -1026,6 +1027,7 @@ export const useStore = create<Store>((set, get) => {
     resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null, batchFilter: null, svcServiceF: 'all', svcSectorF: 'all', svcPrioF: 'all', stgTaskF: 'all', stgSectorF: 'all', stgPrioF: 'all' }),
     setSvcFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     setStgFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
+    setItemDate: (id, k, v) => patchItem(id, { [k]: v } as Partial<Item>),
     toggleStepFilter: (n) => set((s) => ({ ui: { ...s.ui, stepFilter: s.ui.stepFilter === n ? null : n } })),
 
     // ---- create wizard ----
@@ -1120,6 +1122,27 @@ export const useStore = create<Store>((set, get) => {
     fNext: () => {
       const s = get();
       const d = s.ui.draft;
+      // operations stream: a single-step process form (حصر قائمة العمليات)
+      if (d?.type === 'operation' && d?.path === 'ops') {
+        const filledO = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
+        const dO = d as unknown as Record<string, unknown>;
+        const reqO = ['opType', 'title', 'subActivities', 'sector', 'dept', 'section', 'isAutomated', 'automationSystem', 'usageIntensity', 'readinessLevel', 'impactScore', 'complexity', 'transformScore', 'transformYes'];
+        if (reqO.some((k) => !filledO(dO[k]))) {
+          return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
+        }
+        if (['title', 'subActivities', 'sector', 'dept', 'section'].some((k) => /[A-Za-z]/.test(stripHtml(String(dO[k] ?? ''))))) {
+          return toast('يرجى إدخال النص بالعربية فقط في الحقول العربية');
+        }
+        if (!(d.execBatch || '').trim()) {
+          return toast('نرجو اختيار دفعة الإطلاق قبل الإرسال للاعتماد');
+        }
+        if (s.ui.inlineCreate) {
+          setUi({ confirmAdd: true });
+          return;
+        }
+        get().submitItem();
+        return;
+      }
       // strategy stream: a single-step task form (حصر قائمة المهام)
       if (d?.type === 'operation' && d?.path === 'strategy') {
         const filledT = (v: unknown) => !!stripHtml(String(v ?? '')).trim();

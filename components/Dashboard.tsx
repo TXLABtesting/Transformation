@@ -369,6 +369,8 @@ function EntityOverview({ vm }: { vm: VM }) {
         <SvcKpiStrip k={vm.svcKpis} />
       ) : vm.stgKpis ? (
         <StgKpiStrip k={vm.stgKpis} />
+      ) : vm.opsKpis ? (
+        <OpsKpiStrip k={vm.opsKpis} />
       ) : (
       <div data-r="dash-top" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
         {/* --- إجمالي المدخلات (right) --- */}
@@ -689,6 +691,113 @@ function SvcKpiStrip({ k }: { k: NonNullable<VM['svcKpis']> }) {
       <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>* إجمالي الخدمات القابلة للتحول = حسب أولوية الاختيار 1، 2، 3</span>
         <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول</span>
+      </div>
+    </div>
+  );
+}
+
+// دفعات الإطلاق — per-stream tables: each دفعة header + its entries with the
+// stream's approved columns. Dates are set here (stage level), per entry.
+function BatchesTablesPage({ vm }: { vm: VM }) {
+  const s = vm.store;
+  const bt = vm.batchTables!;
+  const th: CSSProperties = { textAlign: 'right', padding: '9px 12px', fontSize: 11.5, fontWeight: 700, color: '#8A97AD', borderBottom: '1px solid #EEF1F7', whiteSpace: 'nowrap' };
+  const td: CSSProperties = { padding: '10px 12px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', verticalAlign: 'middle' };
+  const dateIn: CSSProperties = { border: '1px solid #DCE3EE', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit', color: '#33415C', background: '#fff' };
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div>
+        <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>دفعات الإطلاق لمسار {bt.streamName}</div>
+        <div style={{ fontSize: 12.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>مدخلات كل دفعة مع تواريخ البدء والانتهاء والحالة.</div>
+      </div>
+      {bt.batches.map((b) => (
+        <div key={b.name} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, overflow: 'hidden' }}>
+          <div style={{ background: 'linear-gradient(180deg,#2E86EE,#1F6FE0)', color: '#fff', textAlign: 'center', padding: '10px 14px' }}>
+            <div className="hd" style={{ fontSize: 14.5, fontWeight: 800 }}>{b.name}</div>
+            {b.period && <div style={{ fontSize: 12, fontWeight: 600, opacity: 0.9, marginTop: 2 }}>{b.period}</div>}
+          </div>
+          {b.rows.length === 0 ? (
+            <div style={{ padding: '22px 16px', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد مدخلات ضمن هذه الدفعة بعد</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 940 }}>
+                <thead>
+                  <tr>
+                    {bt.cols.map((c) => (
+                      <th key={c} style={th}>{c}</th>
+                    ))}
+                    <th style={th}>تاريخ البدء</th>
+                    <th style={th}>تاريخ الانتهاء</th>
+                    <th style={th}>أولوية الاختيار</th>
+                    <th style={th}>الحالة</th>
+                    <th style={th}>ملاحظات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {b.rows.map((r) => (
+                    <tr key={r.id}>
+                      {r.lead.map((v, ci) => (
+                        <td key={ci} style={{ ...td, cursor: 'pointer', fontWeight: ci === 0 ? 800 : 400, color: ci === 0 ? '#13213C' : '#33415C', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={r.onOpen} title={v}>
+                        {v}
+                        </td>
+                      ))}
+                      <td style={td}>
+                        {bt.canEditDates ? (
+                          <input type="date" value={r.start} onChange={(e) => s.setItemDate(r.id, 'startDate', e.target.value)} style={dateIn} />
+                        ) : (
+                          r.start || '—'
+                        )}
+                      </td>
+                      <td style={td}>
+                        {bt.canEditDates ? (
+                          <input type="date" value={r.end} onChange={(e) => s.setItemDate(r.id, 'endDate', e.target.value)} style={dateIn} />
+                        ) : (
+                          r.end || '—'
+                        )}
+                      </td>
+                      <td style={td}>{r.prio}</td>
+                      <td style={td}>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.status}</span>
+                      </td>
+                      <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.notes}>{r.notes}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function OpsKpiStrip({ k }: { k: NonNullable<VM['opsKpis']> }) {
+  const C = { c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' };
+  const cards: { label: string; v: number | string }[] = [
+    { label: 'إجمالي عدد الأنشطة الفرعية', v: k.acts },
+    { label: 'إجمالي عدد الأنشطة الفرعية القابلة للتحول *', v: k.transformable },
+    { label: 'إجمالي عدد الأنشطة الفرعية المستهدف تحويلها **', v: k.targeted },
+    { label: 'أولوية أولى', v: '—' },
+    { label: 'أولوية ثانية', v: '—' },
+    { label: 'أولوية ثالثة', v: '—' },
+  ];
+  return (
+    <div data-tour="kpis">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
+        {cards.map((c) => (
+          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: '4px 4px 0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ background: C.bg, border: '1px solid ' + C.border, borderRadius: 13, padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: C.c, textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
+            </div>
+            <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>* مؤقتاً وفق «القابلية للتحول» (3 فأعلى) — تُستبدل بمصفوفة أولوية العمليات بعد اعتمادها</span>
+        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول</span>
+        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>بطاقات الأولوية تُفعّل بعد اعتماد المصفوفة</span>
       </div>
     </div>
   );
@@ -2527,6 +2636,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <SvcKpiStrip k={vm.svcKpis} />
               ) : vm.stgKpis ? (
                 <StgKpiStrip k={vm.stgKpis} />
+              ) : vm.opsKpis ? (
+                <OpsKpiStrip k={vm.opsKpis} />
               ) : !(vm.activePathAll && vm.filterValue === 'all') && (
                 <>
                   <SectionLabel>ملخص حالة المدخلات</SectionLabel>
@@ -2856,9 +2967,11 @@ export function Dashboard({ vm }: { vm: VM }) {
           {vm.navSection === 'launchplans' && (
             <StageDistribution vm={vm} onManage={vm.showAddBtn ? setItemsMgrFor : undefined} />
           )}
-          {vm.navSection === 'lplan' && (
+          {vm.navSection === 'lplan' && (vm.batchTables ? (
+            <BatchesTablesPage vm={vm} />
+          ) : (
             <LaunchPlan vm={vm} onManage={vm.showAddBtn ? setLaunchMgrFor : undefined} />
-          )}
+          ))}
           {vm.navSection === 'results' && <ExpectedResultsPage vm={vm} />}
 
           {/* ===== stage items manager popup (coordinator) ===== */}

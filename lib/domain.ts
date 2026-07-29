@@ -462,6 +462,9 @@ export type Item = {
   outputClarity?: string; // وضوح المخرجات وقابليتها للمراجعة 1-5
   riskLevel?: string; // مستوى المخاطر: منخفض / متوسط / عالي
   selPriority?: string; // أولوية الاختيار: عالية / متوسطة / منخفضة
+  // operations stream entry fields (حصر قائمة العمليات)
+  isAutomated?: string; // هل النشاط/العملية مؤتمت؟ نعم / لا
+  notes?: string; // الملاحظات
   // operation-specific
   opType?: string;
   subActivities?: string;
@@ -949,7 +952,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = process.env.NEXT_PUBLIC_DEMO_DATA === '1' ? 'demo2' : 'v2';
+export const SEED_V = process.env.NEXT_PUBLIC_DEMO_DATA === '1' ? 'demo3' : 'v3';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 
