@@ -1153,19 +1153,6 @@ function FService({
         {sel('مستوى التعقيد', 'complexity', ['منخفض', 'متوسط', 'مرتفع'])}
         {sel('مستوى الجاهزية', 'readinessLevel', ['منخفض', 'متوسط', 'مرتفع'])}
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>أولوية الاختيار</label>
-          {pr ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: PR_COLORS[pr].bg, color: PR_COLORS[pr].c, borderRadius: 999, padding: '8px 16px', fontSize: 13.5, fontWeight: 800 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: PR_COLORS[pr].c, flex: 'none' }} />
-              الأولوية {pr}
-            </span>
-          ) : (
-            <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px' }}>
-              تُحسب تلقائياً بعد اختيار كثافة الاستخدام ومستوى التعقيد ومستوى الجاهزية
-            </div>
-          )}
-        </div>
-        <div style={{ marginBottom: 0 }}>
           <label style={labelStyle}>أولوية التحول <span style={{ color: '#D23B45' }}>*</span></label>
           <div style={{ display: 'flex', gap: 10 }}>
             {['نعم', 'لا'].map((opt) => {
@@ -1194,6 +1181,38 @@ function FService({
             })}
           </div>
         </div>
+        <div style={{ marginBottom: 0 }}>
+          <label style={labelStyle}>أولوية الاختيار</label>
+          {m.svcExcluded ? (
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#8A6314', background: '#FFF8EC', border: '1px solid #F6E2BD', borderRadius: 11, padding: '11px 13px' }}>
+              مستثناة من الأولويات ومن احتساب الخدمات المستهدفة للأتمتة (أولوية التحول: لا)
+            </div>
+          ) : pr ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: PR_COLORS[pr].bg, color: PR_COLORS[pr].c, borderRadius: 999, padding: '8px 16px', fontSize: 13.5, fontWeight: 800 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: PR_COLORS[pr].c, flex: 'none' }} />
+              الأولوية {pr}
+            </span>
+          ) : (
+            <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px' }}>
+              تُحسب تلقائياً بعد اختيار المستويات الثلاثة وتحديد أولوية التحول بـ«نعم»
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={cardStyle}>
+        <label style={labelStyle}>دفعة الإطلاق <span style={{ color: '#D23B45' }}>*</span></label>
+        <select
+          value={vm.modal.draft?.execBatch || ''}
+          onChange={(e) => vm.store.selectExecBatch(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">اختر الدفعة…</option>
+          {m.batchOptions.map((b) => (
+            <option key={b.name} value={b.name}>
+              {b.label}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );

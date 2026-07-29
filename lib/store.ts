@@ -136,6 +136,10 @@ export type UiState = {
   navSection: string; // 'overview' | 'projects' | 'operations' | 'services' | 'launchplans'
   navStream: string | null; // drill-down stream inside a type section
   batchFilter: string | null; // drill-down from a مرحلة card into its items
+  // services-stream list filters: الخدمة / القطاع / الأولوية
+  svcServiceF: string;
+  svcSectorF: string;
+  svcPrioF: string;
   filter: string; // type filter
   statusFilter: string;
   fundFilter: string; // 'all' | 'funded' | 'notfunded'
@@ -235,6 +239,7 @@ type Actions = {
   setExecEnt: (v: string) => void;
   setExecStream: (v: string) => void;
   resetFilters: () => void;
+  setSvcFilter: (k: 'svcServiceF' | 'svcSectorF' | 'svcPrioF', v: string) => void;
   toggleStepFilter: (n: number) => void;
   // create wizard
   openCreate: () => void;
@@ -400,6 +405,9 @@ function defaultUi(): UiState {
     navSection: 'overview',
     navStream: null,
     batchFilter: null,
+    svcServiceF: 'all',
+    svcSectorF: 'all',
+    svcPrioF: 'all',
     filter: 'all',
     statusFilter: 'all',
     fundFilter: 'all',
@@ -915,7 +923,8 @@ export const useStore = create<Store>((set, get) => {
     // viewer isn't stranded on a now-empty detail view
     setExecEnt: (v) => setUi({ execEnt: v, detailId: null }),
     setExecStream: (v) => setUi({ execStream: v, detailId: null }),
-    resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null, batchFilter: null }),
+    resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null, batchFilter: null, svcServiceF: 'all', svcSectorF: 'all', svcPrioF: 'all' }),
+    setSvcFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     toggleStepFilter: (n) => set((s) => ({ ui: { ...s.ui, stepFilter: s.ui.stepFilter === n ? null : n } })),
 
     // ---- create wizard ----
@@ -996,7 +1005,7 @@ export const useStore = create<Store>((set, get) => {
           return toast('يرجى إدخال النص بالعربية فقط في الحقول العربية');
         }
         if (!(d.execBatch || '').trim()) {
-          set((st) => (st.ui.draft ? { ui: { ...st.ui, draft: { ...st.ui.draft, execBatch: TBD_BATCH } } } : {}));
+          return toast('نرجو اختيار دفعة الإطلاق قبل الإرسال للاعتماد');
         }
         get().submitItem();
         return;
