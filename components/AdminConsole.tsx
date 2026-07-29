@@ -244,6 +244,24 @@ function ContactTab({ a }: { a: VM['admin'] }) {
 const siteCard: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 };
 const siteTa: CSSProperties = { width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 12, padding: '13px 15px', fontSize: 13, fontFamily: 'inherit', color: '#16233F', lineHeight: 2, outline: 'none', resize: 'vertical', background: '#FAFBFE' };
 
+// read a picked cover image, downscale to ≤640px wide and store as data URL
+function readCoverFile(file: File, done: (dataUrl: string) => void) {
+  const fr = new FileReader();
+  fr.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 640 / img.width);
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * scale);
+      cv.height = Math.round(img.height * scale);
+      cv.getContext('2d')!.drawImage(img, 0, 0, cv.width, cv.height);
+      done(cv.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = String(fr.result);
+  };
+  fr.readAsDataURL(file);
+}
+
 function SiteSection({ title, sub, onAdd, children }: { title: string; sub: string; onAdd?: () => void; children: React.ReactNode }) {
   return (
     <div style={siteCard}>
@@ -375,7 +393,7 @@ function SiteTab() {
           </button>
         </div>
         <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginBottom: 14 }}>
-          الوثائق المعروضة في صفحة «المكتبة» العامة. رابط الملف يشير إلى ملف PDF (يُرفع عبر فريق التقنية أو يُستبدل بالرابط الرسمي).
+          الوثائق المعروضة في صفحة «المكتبة» العامة — أرفق ملف PDF وصورة الغلاف مباشرة من هنا.
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {s.libraryDocs.map((d) => (
@@ -396,12 +414,76 @@ function SiteTab() {
                 <input value={d.date} onChange={(e) => s.updLibDoc(d.id, { date: e.target.value })} placeholder="يوليو 2026" style={inputSt} />
               </div>
               <div>
-                <label style={labelSt}>رابط الملف (اختياري)</label>
-                <input value={d.fileUrl || ''} onChange={(e) => s.updLibDoc(d.id, { fileUrl: e.target.value })} placeholder="https://…" style={{ ...inputSt, direction: 'ltr', textAlign: 'left' }} />
+                <label style={labelSt}>ملف الوثيقة (PDF)</label>
+                {d.fileUrl ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 38, padding: '0 13px', background: '#EAF7F0', border: '1px solid #CBE8D8', borderRadius: 10, fontSize: 12, fontWeight: 800, color: '#0B8A4B' }}>
+                      <Icon d="M20 6 9 17l-5-5" size={13} color="#0B8A4B" />
+                      ملف مرفق
+                    </span>
+                    <button
+                      onClick={() => s.updLibDoc(d.id, { fileUrl: '' })}
+                      title="إزالة الملف"
+                      style={{ width: 32, height: 32, borderRadius: 9, background: '#fff', border: '1px solid #F0D5D5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    >
+                      <Icon d={IC_TRASH} size={13} color="#C0303B" />
+                    </button>
+                  </div>
+                ) : (
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 38, padding: '0 14px', background: '#F4F7FC', border: '1px dashed #C7D1E2', borderRadius: 10, fontSize: 12, fontWeight: 700, color: '#2563EB', cursor: 'pointer' }}>
+                    <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={14} color="#2563EB" />
+                    إرفاق ملف PDF
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          if (f.size > 4 * 1024 * 1024) {
+                            s.toast('الملف أكبر من 4MB — يُرجى ضغطه أو رفعه عبر فريق التقنية');
+                          } else {
+                            const fr = new FileReader();
+                            fr.onload = () => s.updLibDoc(d.id, { fileUrl: String(fr.result) });
+                            fr.readAsDataURL(f);
+                          }
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                )}
               </div>
               <div>
-                <label style={labelSt}>رابط صورة الغلاف (اختياري)</label>
-                <input value={d.coverUrl || ''} onChange={(e) => s.updLibDoc(d.id, { coverUrl: e.target.value })} placeholder="https://…" style={{ ...inputSt, direction: 'ltr', textAlign: 'left' }} />
+                <label style={labelSt}>صورة الغلاف (اختياري)</label>
+                {d.coverUrl ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={d.coverUrl} alt="" style={{ height: 38, width: 54, objectFit: 'cover', borderRadius: 8, border: '1px solid #E1E7F1' }} />
+                    <button
+                      onClick={() => s.updLibDoc(d.id, { coverUrl: '' })}
+                      title="إزالة الصورة"
+                      style={{ width: 32, height: 32, borderRadius: 9, background: '#fff', border: '1px solid #F0D5D5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    >
+                      <Icon d={IC_TRASH} size={13} color="#C0303B" />
+                    </button>
+                  </div>
+                ) : (
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 38, padding: '0 14px', background: '#F4F7FC', border: '1px dashed #C7D1E2', borderRadius: 10, fontSize: 12, fontWeight: 700, color: '#2563EB', cursor: 'pointer' }}>
+                    <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={14} color="#2563EB" />
+                    إرفاق صورة
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) readCoverFile(f, (url) => s.updLibDoc(d.id, { coverUrl: url }));
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                )}
               </div>
               <button
                 onClick={() => s.removeLibDoc(d.id)}
