@@ -3495,9 +3495,9 @@ function ListView({ cards }: { cards: CardVM[] }) {
 
 const CARD_PILLS: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: 'مسودة', color: '#5A6B86', bg: '#EEF2F8' },
-  pendEnt: { label: 'بانتظار اعتماد الجهة', color: '#B45309', bg: '#FFF7EB' },
-  apprEnt: { label: 'معتمد من الجهة', color: '#0B8A4B', bg: '#EAF7F0' },
-  rejEnt: { label: 'مرفوض من الجهة', color: '#C0392B', bg: '#FDECEA' },
+  pendEnt: { label: 'بانتظار اعتماد رئيس المسار', color: '#B45309', bg: '#FFF7EB' },
+  apprEnt: { label: 'معتمد', color: '#0B8A4B', bg: '#EAF7F0' },
+  rejEnt: { label: 'مُعاد للتعديل', color: '#C0392B', bg: '#FDECEA' },
   nominated: { label: 'مُرشَّح للاعتماد', color: '#6D28D9', bg: '#F3EEFD' },
   pendFund: { label: 'بانتظار الاعتماد', color: '#B45309', bg: '#FFF7EB' },
   apprFund: { label: 'معتمد', color: '#0B8A4B', bg: '#EAF7F0' },
@@ -3946,47 +3946,11 @@ function CardItem({ c }: { c: CardVM }) {
           <button
             onClick={(e) => {
               stop(e);
-              c.onReject();
-            }}
-            style={{ ...BTN_REJECT, flex: 1 }}
-          >
-            رفض
-          </button>
-          <button
-            onClick={(e) => {
-              stop(e);
               c.onReqInfo();
             }}
             style={{ ...BTN_NEUTRAL, flex: 1, whiteSpace: 'nowrap' }}
           >
-            طلب تفاصيل إضافية
-          </button>
-        </div>
-      )}
-
-      {/* committee funding decision — approve (green) / reject (red).
-          NOTE: card handover §9-5 says committee never rejects; the committee
-          copy spec (later, wins) requires «رفض». */}
-      {c.cardAction === 'fundApproveReject' && (
-        <div style={{ display: 'flex', gap: 7 }}>
-          <button
-            onClick={(e) => {
-              stop(e);
-              c.onFundNom();
-            }}
-            style={{ ...BTN_APPROVE, flex: 1 }}
-          >
-            <Icon d={CHECK_D} size={13} color="#fff" strokeWidth={3} />
-            اعتماد
-          </button>
-          <button
-            onClick={(e) => {
-              stop(e);
-              c.onDeclineNom();
-            }}
-            style={{ ...BTN_REJECT, flex: 1 }}
-          >
-            رفض
+            طلب معلومات إضافية
           </button>
         </div>
       )}
