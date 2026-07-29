@@ -2296,11 +2296,11 @@ function buildLogRows(i: Item) {
 
 // add-panel title lists the types the chosen stream actually offers
 function addTitleFor(p: string): string {
-  const keys = availTypes(p).map((t) => t.key);
-  let title = 'إضافة مشاريع / مبادرات';
-  if (keys.includes('operation')) title += ' أو عمليات';
-  if (keys.includes('service')) title += ' أو خدمات';
-  return title;
+  // title mirrors the stream's actual types: خدمات / مهام / مشاريع أو عمليات
+  const parts = availTypes(p).map((t) =>
+    t.key === 'project' ? 'مشاريع' : t.key === 'service' ? 'خدمات' : p === 'strategy' ? 'مهام' : 'عمليات'
+  );
+  return 'إضافة ' + parts.join(' أو ');
 }
 
 function buildModal(s: Store) {
