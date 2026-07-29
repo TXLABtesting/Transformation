@@ -271,8 +271,7 @@ function EntityOverview({ vm }: { vm: VM }) {
   // inputs legend items (hoverable)
   const inItems = [
     { key: 'capable', label: 'جاهزة للتحويل', v: ic.capable, dot: '#2563EB', square: true, bold: true },
-    { key: 'underDev', label: 'قيد التطوير', v: ic.underDev, dot: '#3B82F6', square: false, bold: false, sub: true },
-    { key: 'developed', label: 'تم التطوير', v: ic.developed, dot: '#60A5FA', square: false, bold: false, sub: true },
+    { key: 'approved', label: 'معتمدة ضمن دفعات الإطلاق', v: ic.approved, dot: '#3B82F6', square: false, bold: false, sub: true },
     { key: 'launched', label: 'تم الإطلاق', v: ic.launched, dot: '#93C5FD', square: false, bold: false, sub: true },
     { key: 'notCapable', label: 'غير قابلة للتحويل', v: ic.notCapable, dot: '#C7D9F5', square: true, bold: true, divider: true },
   ];
@@ -283,11 +282,10 @@ function EntityOverview({ vm }: { vm: VM }) {
   // multi-colour segments — each status coloured to match its legend marker
   const inSegs = (() => {
     const t = ic.total || 1;
-    const captured = Math.max(0, ic.capable - ic.underDev - ic.developed - ic.launched);
+    const captured = Math.max(0, ic.capable - ic.approved - ic.launched);
     return [
       { key: 'capable', frac: captured / t, color: '#2563EB', label: 'جاهزة للتحويل', value: ic.capable },
-      { key: 'underDev', frac: ic.underDev / t, color: '#3B82F6', label: 'قيد التطوير', value: ic.underDev },
-      { key: 'developed', frac: ic.developed / t, color: '#60A5FA', label: 'تم التطوير', value: ic.developed },
+      { key: 'approved', frac: ic.approved / t, color: '#3B82F6', label: 'معتمدة ضمن دفعات الإطلاق', value: ic.approved },
       { key: 'launched', frac: ic.launched / t, color: '#93C5FD', label: 'تم الإطلاق', value: ic.launched },
       { key: 'notCapable', frac: ic.notCapable / t, color: '#C7D9F5', label: 'غير قابلة للتحويل', value: ic.notCapable },
     ].filter((x) => x.frac > 0.0001);
@@ -2614,18 +2612,16 @@ export function Dashboard({ vm }: { vm: VM }) {
               {(() => {
                 const ic = vm.inputsCard;
                 const t = ic.total || 1;
-                const captured = Math.max(0, ic.capable - ic.underDev - ic.developed - ic.launched);
+                const captured = Math.max(0, ic.capable - ic.approved - ic.launched);
                 const inSegs = [
                   { key: 'capable', frac: captured / t, color: '#2563EB', label: 'جاهزة للتحويل', value: ic.capable },
-                  { key: 'underDev', frac: ic.underDev / t, color: '#3B82F6', label: 'قيد التطوير', value: ic.underDev },
-                  { key: 'developed', frac: ic.developed / t, color: '#60A5FA', label: 'تم التطوير', value: ic.developed },
+                  { key: 'approved', frac: ic.approved / t, color: '#3B82F6', label: 'معتمدة ضمن دفعات الإطلاق', value: ic.approved },
                   { key: 'launched', frac: ic.launched / t, color: '#93C5FD', label: 'تم الإطلاق', value: ic.launched },
                   { key: 'notCapable', frac: ic.notCapable / t, color: '#C7D9F5', label: 'غير قابلة للتحويل', value: ic.notCapable },
                 ].filter((x) => x.frac > 0.0001);
                 const inLegend = [
                   { label: 'جاهزة للتحويل', v: ic.capable, dot: '#2563EB', square: true, bold: true },
-                  { label: 'قيد التطوير', v: ic.underDev, dot: '#3B82F6', bold: false, sub: true },
-                  { label: 'تم التطوير', v: ic.developed, dot: '#60A5FA', bold: false, sub: true },
+                  { label: 'معتمدة ضمن دفعات الإطلاق', v: ic.approved, dot: '#3B82F6', bold: false, sub: true },
                   { label: 'تم الإطلاق', v: ic.launched, dot: '#93C5FD', bold: false, sub: true },
                   { label: 'غير قابلة للتحويل', v: ic.notCapable, dot: '#C7D9F5', square: true, bold: true, divider: true },
                 ];
