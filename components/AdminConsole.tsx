@@ -320,6 +320,34 @@ function SiteTab() {
                 <option value="1">رئيسية</option>
                 <option value="0">فرعية</option>
               </select>
+              {t.img ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={t.img} alt="" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', border: '1px solid #E1E7F1', flex: 'none' }} />
+                  <button
+                    onClick={() => updList('timeline', i, { img: '' })}
+                    title="إزالة الصورة"
+                    style={{ width: 30, height: 30, borderRadius: 8, background: '#fff', border: '1px solid #F0D5D5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  >
+                    <Icon d={IC_TRASH} size={12} color="#C0303B" />
+                  </button>
+                </span>
+              ) : (
+                <label title="إرفاق صورة المحطة" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 12px', background: '#F4F7FC', border: '1px dashed #C7D1E2', borderRadius: 9, fontSize: 11.5, fontWeight: 700, color: '#2563EB', cursor: 'pointer', flex: 'none' }}>
+                  <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={13} color="#2563EB" />
+                  صورة
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) readCoverFile(f, (url) => updList('timeline', i, { img: url }));
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              )}
               {delBtn(() => delFrom('timeline', i))}
             </div>
           ))}
