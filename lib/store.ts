@@ -1471,8 +1471,10 @@ export const useStore = create<Store>((set, get) => {
             let hits = 0;
             ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
               const h = norm(cell.value && typeof cell.value === 'object' && 'richText' in (cell.value as object) ? (cell.value as { richText: { text: string }[] }).richText.map((t) => t.text).join('') : cell.text ?? cell.value);
-              const f = spec.find((sf) => sf.label === h || h.includes(sf.label) || sf.label.includes(h && h.length > 3 ? h : '\u0000'));
-              if (f) {
+              if (!h) return;
+              // exact label first; fuzzy only as fallback, one column per field
+              const f = spec.find((sf) => sf.label === h) || (h.length > 3 ? spec.find((sf) => h.includes(sf.label) || sf.label.includes(h)) : undefined);
+              if (f && !Object.values(map).includes(f.key)) {
                 map[col] = f.key;
                 hits++;
               }
@@ -1493,6 +1495,9 @@ export const useStore = create<Store>((set, get) => {
             if (key) fields[key] = norm(cell.text ?? cell.value);
           });
           if (!Object.values(fields).some((v) => v)) continue;
+          // normalize دفعة values coming from the dropdown to the stored form
+          if (fields.execBatch && fields.execBatch !== TBD_BATCH && !fields.execBatch.startsWith('إطلاق '))
+            fields.execBatch = 'إطلاق ' + fields.execBatch;
           const missing = spec.filter((sf) => !norm(fields[sf.key])).map((sf) => sf.label);
           rows.push({
             type: path === 'services' ? 'service' : 'operation',
@@ -1598,6 +1603,10 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const it = findItem(id);
       if (!it) return;
+      // approved entries are locked — content can no longer be modified
+      if (['exec', 'budget', 'launch', 'done'].includes(wfOf(it))) {
+        return toast('المدخل معتمد — لا يمكن تعديل بياناته بعد الاعتماد');
+      }
       setUi({
         draft: { ...it },
         editingId: id,

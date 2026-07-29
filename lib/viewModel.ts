@@ -422,9 +422,11 @@ function build(s: Store) {
       entCount: new Set(inStream.map((i) => ent(i))).size,
       total: inStream.length,
       byType: [
-        { label: 'مشروع', n: inStream.filter((i) => isProjInit(i.type)).length },
-        { label: typeLabelFor('operation', p.id), n: inStream.filter((i) => i.type === 'operation').length },
-        { label: 'خدمة', n: inStream.filter((i) => i.type === 'service').length },
+        ...streamLaunchBatches(p.id).map((b) => ({
+          label: b.name.replace(/^إطلاق /, ''),
+          n: inStream.filter((i) => i.execBatch === b.name).length,
+        })),
+        { label: 'للتحديد بعد الدراسة', n: inStream.filter((i) => i.execBatch === TBD_BATCH).length },
       ],
       totalCostLabel: compactM0(execCost + launchCost),
       fundedLabel: compactM0(fundedCost),
@@ -1002,12 +1004,9 @@ function build(s: Store) {
             total: inEnt.length,
             byStreamTitle: rawRole === 'path' ? 'المدخلات حسب التصنيف' : 'المدخلات حسب المسار',
             byStream,
-            // stream head: nominations he made in this entity (pending funding)
-            myNominated:
-              rawRole === 'path'
-                ? inEnt.filter((i) => !!i.nom && !i.funded && i.nom.by === myName).length
-                : null,
-            funded: fundedItems.length,
+            // approved = accepted by رئيس المسار into a دفعة (no nomination stage)
+            pendingApproval: inEnt.filter((i) => wfOf(i) === 'ent1').length,
+            funded: inEnt.filter((i) => ['exec', 'budget', 'launch', 'done'].includes(wfOf(i))).length,
             approvedCostLabel: approvedCost > 0 ? formatMoney(approvedCost) : '—',
             execBudgetLabel: execBudget > 0 ? formatMoney(execBudget) : '—',
             onOpen: () => {
@@ -1781,8 +1780,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfBg = '#FFF3DE';
   } else if (w === 'exec' || w === 'launch') {
     wfLabel = batchShort ? 'معتمد · ' + batchShort : 'معتمد';
-    wfChip = '#2563EB';
-    wfBg = '#EAF0FE';
+    wfChip = '#0B8A4B';
+    wfBg = '#EAF7F0';
   }
   // nomination/selection checkbox removed for stream heads & committee
   const showSelectCheck = false;
@@ -2039,11 +2038,15 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
     title: string;
     sub: string;
     act?: boolean;
+    mail?: boolean;
     onOpen: () => void;
   }[] = [];
   const push = (id: string, kind: string, icon: string, title: string, sub: string, itemId?: string, act?: boolean) => {
     const k = NK[kind] || NK.info;
-    rows.push({ id, kind, iconBg: k.bg, iconColor: k.c, icon: NIC[icon], title, sub, act, onOpen: () => (itemId ? s.openNotifItem(itemId) : s.toggleNotifs()) });
+    // main workflow notifications (approval, return, pending, batch moves) are
+    // also emailed automatically — flagged so the UI shows the mail badge
+    const mail = /^(ent1|x|r|sm)-/.test(id);
+    rows.push({ id, kind, iconBg: k.bg, iconColor: k.c, icon: NIC[icon], title, sub, act, mail, onOpen: () => (itemId ? s.openNotifItem(itemId) : s.toggleNotifs()) });
   };
   const dleft = daysLeft(s.phase.deadline);
   push(

@@ -507,25 +507,65 @@ export async function downloadBulkTemplate(types: { key: string; label: string }
 }
 
 // ---- Admin: users bulk template + reader -----------------------------------
-// نموذج رفع مدخلات المسار — الأعمدة هي حقول نموذج الإدخال نفسها
-export async function downloadItemsTemplate(streamName: string, headers: string[]) {
+// نموذج رفع مدخلات المسار — الأعمدة هي حقول نموذج الإدخال نفسها، مع قوائم
+// منسدلة للحقول الاختيارية وصف مثال إرشادي
+export async function downloadItemsTemplate(
+  streamName: string,
+  fields: { key: string; label: string }[],
+  options: Record<string, string[]>,
+  sample: Record<string, string>
+) {
   const mod = await import('exceljs');
   const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
   const wb = new ExcelJS.Workbook();
   wb.creator = 'منصة التحول للذكاء الاصطناعي المساعد';
   const ws = wb.addWorksheet('المدخلات', { views: [{ rightToLeft: true, showGridLines: false }] });
-  const cols = headers.length;
-  banner(ws, cols, 'نموذج رفع مدخلات ' + streamName, 'عبّئ صفًّا لكل مدخل بالأعمدة نفسها الظاهرة في نموذج الإدخال. الحقول الناقصة ستُبرز في المراجعة قبل التأكيد.');
-  const headRow = 3;
-  headers.forEach((h, ci) => {
+  const cols = fields.length;
+
+  banner(ws, cols, 'نموذج رفع مدخلات ' + streamName, 'عبّئ صفًّا لكل مدخل بالأعمدة نفسها الظاهرة في نموذج الإدخال — الحقول الناقصة ستُبرز في المراجعة قبل التأكيد.');
+  ws.mergeCells(3, 1, 3, cols);
+  const note = ws.getCell(3, 1);
+  note.value = 'ملاحظة: الصف الرمادي أدناه مثال إرشادي فقط — احذفه قبل الرفع. استخدم القوائم المنسدلة حيث تتوفر.';
+  note.font = { size: 10, color: { argb: 'FF1D4ED8' }, italic: true };
+  note.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+  note.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NOTE_BG } as XLColor };
+  ws.getRow(3).height = 24;
+
+  const headRow = 4;
+  fields.forEach((f, ci) => {
     const c = ws.getCell(headRow, ci + 1);
-    c.value = h;
-    c.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    c.value = f.label;
+    c.font = { bold: true, size: 11, color: { argb: HEAD_TXT } };
     c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } as XLColor };
-    ws.getColumn(ci + 1).width = Math.max(18, h.length + 6);
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } as XLColor };
+    ws.getColumn(ci + 1).width =
+      f.key === 'title' ? 32 : f.key === 'subActivities' || f.key === 'subService' ? 34 : Math.max(16, f.label.length + 6);
   });
-  ws.getRow(headRow).height = 26;
+  ws.getRow(headRow).height = 30;
+
+  // sample row (gray italics)
+  const ex = headRow + 1;
+  fields.forEach((f, ci) => {
+    const cell = ws.getCell(ex, ci + 1);
+    cell.value = sample[f.key] || '';
+    cell.font = { italic: true, color: { argb: 'FF9AA6BC' }, size: 10.5 };
+    cell.alignment = { horizontal: 'right', vertical: 'middle' };
+  });
+  ws.getRow(ex).height = 20;
+
+  // dropdowns for option fields, rows 5..80
+  const listOf = (arr: string[]) => '"' + arr.join(',').slice(0, 250) + '"';
+  fields.forEach((f, ci) => {
+    const opts = options[f.key];
+    if (!opts || !opts.length) return;
+    for (let r = ex; r <= 80; r++) {
+      ws.getCell(r, ci + 1).dataValidation = { type: 'list', allowBlank: true, formulae: [listOf(opts)] };
+    }
+  });
+  for (let r = ex + 1; r <= 80; r++) ws.getRow(r).height = 20;
+  boxAll(ws, headRow, 80, cols);
+  ws.views = [{ rightToLeft: true, showGridLines: false, state: 'frozen', ySplit: headRow }];
+
   const buf = await wb.xlsx.writeBuffer();
   downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'نموذج-مدخلات-' + streamName + '.xlsx');
 }
