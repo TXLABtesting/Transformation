@@ -136,6 +136,7 @@ export async function runBulkReview(
 }
 
 export const BULK_VERDICT_STYLE: Record<string, { bg: string; c: string }> = {
+  'بيانات ناقصة': { bg: '#FFF3DE', c: '#B45309' },
   جاهز: { bg: '#E3F6EC', c: '#0B8A4B' },
   'بحاجة إلى مراجعة': { bg: '#FFF3DE', c: '#B45309' },
   'يوجد خطأ': { bg: '#FCEEEF', c: '#D23B45' },

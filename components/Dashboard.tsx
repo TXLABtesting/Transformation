@@ -270,9 +270,8 @@ function EntityOverview({ vm }: { vm: VM }) {
 
   // inputs legend items (hoverable)
   const inItems = [
-    { key: 'capable', label: 'جاهزة للتحويل', v: ic.capable, dot: '#2563EB', square: true, bold: true },
-    { key: 'approved', label: 'معتمدة ضمن دفعات الإطلاق', v: ic.approved, dot: '#3B82F6', square: false, bold: false, sub: true },
-    { key: 'launched', label: 'تم الإطلاق', v: ic.launched, dot: '#93C5FD', square: false, bold: false, sub: true },
+    { key: 'transformable', label: 'القابلة للتحول', v: ic.transformable, dot: '#2563EB', square: true, bold: true },
+    { key: 'targeted', label: 'المستهدف تحويلها', v: ic.targeted, dot: '#3B82F6', square: false, bold: false, sub: true },
     { key: 'notCapable', label: 'غير قابلة للتحويل', v: ic.notCapable, dot: '#C7D9F5', square: true, bold: true, divider: true },
   ];
   const inHov = inItems.find((x) => x.key === hovIn);
@@ -282,11 +281,10 @@ function EntityOverview({ vm }: { vm: VM }) {
   // multi-colour segments — each status coloured to match its legend marker
   const inSegs = (() => {
     const t = ic.total || 1;
-    const captured = Math.max(0, ic.capable - ic.approved - ic.launched);
+    const rest = Math.max(0, ic.transformable - ic.targeted);
     return [
-      { key: 'capable', frac: captured / t, color: '#2563EB', label: 'جاهزة للتحويل', value: ic.capable },
-      { key: 'approved', frac: ic.approved / t, color: '#3B82F6', label: 'معتمدة ضمن دفعات الإطلاق', value: ic.approved },
-      { key: 'launched', frac: ic.launched / t, color: '#93C5FD', label: 'تم الإطلاق', value: ic.launched },
+      { key: 'targeted', frac: ic.targeted / t, color: '#2563EB', label: 'المستهدف تحويلها', value: ic.targeted },
+      { key: 'transformable', frac: rest / t, color: '#3B82F6', label: 'القابلة للتحول', value: ic.transformable },
       { key: 'notCapable', frac: ic.notCapable / t, color: '#C7D9F5', label: 'غير قابلة للتحويل', value: ic.notCapable },
     ].filter((x) => x.frac > 0.0001);
   })();
@@ -2612,17 +2610,15 @@ export function Dashboard({ vm }: { vm: VM }) {
               {(() => {
                 const ic = vm.inputsCard;
                 const t = ic.total || 1;
-                const captured = Math.max(0, ic.capable - ic.approved - ic.launched);
+                const rest = Math.max(0, ic.transformable - ic.targeted);
                 const inSegs = [
-                  { key: 'capable', frac: captured / t, color: '#2563EB', label: 'جاهزة للتحويل', value: ic.capable },
-                  { key: 'approved', frac: ic.approved / t, color: '#3B82F6', label: 'معتمدة ضمن دفعات الإطلاق', value: ic.approved },
-                  { key: 'launched', frac: ic.launched / t, color: '#93C5FD', label: 'تم الإطلاق', value: ic.launched },
+                  { key: 'targeted', frac: ic.targeted / t, color: '#2563EB', label: 'المستهدف تحويلها', value: ic.targeted },
+                  { key: 'transformable', frac: rest / t, color: '#3B82F6', label: 'القابلة للتحول', value: ic.transformable },
                   { key: 'notCapable', frac: ic.notCapable / t, color: '#C7D9F5', label: 'غير قابلة للتحويل', value: ic.notCapable },
                 ].filter((x) => x.frac > 0.0001);
                 const inLegend = [
-                  { label: 'جاهزة للتحويل', v: ic.capable, dot: '#2563EB', square: true, bold: true },
-                  { label: 'معتمدة ضمن دفعات الإطلاق', v: ic.approved, dot: '#3B82F6', bold: false, sub: true },
-                  { label: 'تم الإطلاق', v: ic.launched, dot: '#93C5FD', bold: false, sub: true },
+                  { label: 'القابلة للتحول', v: ic.transformable, dot: '#3B82F6', square: true, bold: true },
+                  { label: 'المستهدف تحويلها', v: ic.targeted, dot: '#2563EB', bold: false, sub: true },
                   { label: 'غير قابلة للتحويل', v: ic.notCapable, dot: '#C7D9F5', square: true, bold: true, divider: true },
                 ];
                 const card: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
@@ -2764,7 +2760,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               </div>
 
               {vm.role === 'coord' && (
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: -8 }}>متابعة مدخلات المسار حسب حالة التطوير والاعتماد.</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: -8 }}>متابعة مدخلات المسار حسب حالة الاعتماد ودفعات الإطلاق.</div>
               )}
 
               {/* services scope: the six approved numbers replace the status recap */}
@@ -2780,10 +2776,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                   <StatBand
                     items={[
                       { label: 'إجمالي المدخلات', value: String(vm.recap.total), info: 'إجمالي المدخلات المسجّلة ضمن هذا الاختيار.' },
-                      { label: 'غير قابلة للتحويل', value: String(vm.recap.notCapable), info: 'بنود لا تنطبق عليها خطة إطلاق أو حالة تطوير.' },
-                      { label: 'قيد التطوير', value: String(vm.recap.underDev), info: 'معتمدة ويجري تطويرها حالياً.' },
-                      { label: 'تم التطوير', value: String(vm.recap.developed), info: 'اكتمل تطويرها وهي جاهزة للإطلاق.' },
-                      { label: 'تم الإطلاق', value: String(vm.recap.launched), info: 'أُطلقت رسمياً.' },
+                      { label: 'القابلة للتحول', value: String(vm.recap.transformable), info: 'وفق مصفوفة أولوية كل مسار.' },
+                      { label: 'المستهدف تحويلها', value: String(vm.recap.targeted), info: 'بناءً على الإجابة «نعم» في أولوية التحول.' },
+                      { label: 'غير قابلة للتحويل', value: String(vm.recap.notCapable), info: 'خارج نطاق التحويل وفق المصفوفة.' },
                     ]}
                   />
                 </>
@@ -3684,7 +3679,6 @@ function ListView({ cards }: { cards: CardVM[] }) {
             <th style={th}>النوع</th>
             <th style={th}>المسار</th>
             <th style={th}>الحالة</th>
-            <th style={th}>خطة الإطلاق</th>
             <th style={th}>آخر تحديث</th>
             <th style={{ ...th, textAlign: 'center' }}>الإجراء</th>
           </tr>
@@ -3699,11 +3693,12 @@ function ListView({ cards }: { cards: CardVM[] }) {
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '')}
             >
               <td style={td}>
-                {(c.showSelectCheck || c.showAssignCheck) ? (
+                {(c.showSelectCheck || c.showAssignCheck || c.showDraftCheck) ? (
                   <span
                     onClick={(e) => {
                       stop(e);
-                      if (c.showSelectCheck) c.onToggleFundSel();
+                      if (c.showDraftCheck) c.onToggleDraftSel();
+                      else if (c.showSelectCheck) c.onToggleFundSel();
                       else c.onToggleAssignSel();
                     }}
                     style={{
@@ -3711,14 +3706,14 @@ function ListView({ cards }: { cards: CardVM[] }) {
                       width: 17,
                       height: 17,
                       borderRadius: 5,
-                      border: `2px solid ${c.showSelectCheck ? (c.fundChecked ? '#2563EB' : '#C7D1E2') : c.assignChecked ? '#2563EB' : '#C7D1E2'}`,
-                      background: (c.showSelectCheck ? c.fundChecked : c.assignChecked) ? '#2563EB' : '#fff',
+                      border: `2px solid ${(c.showDraftCheck ? c.draftChecked : c.showSelectCheck ? c.fundChecked : c.assignChecked) ? '#2563EB' : '#C7D1E2'}`,
+                      background: (c.showDraftCheck ? c.draftChecked : c.showSelectCheck ? c.fundChecked : c.assignChecked) ? '#2563EB' : '#fff',
                       alignItems: 'center',
                       justifyContent: 'center',
                       cursor: 'pointer',
                     }}
                   >
-                    {(c.showSelectCheck ? c.fundChecked : c.assignChecked) && (
+                    {(c.showDraftCheck ? c.draftChecked : c.showSelectCheck ? c.fundChecked : c.assignChecked) && (
                       <Icon d="M20 6 9 17l-5-5" size={11} color="#fff" strokeWidth={3} />
                     )}
                   </span>
@@ -3761,9 +3756,15 @@ function ListView({ cards }: { cards: CardVM[] }) {
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: c.wfChip }} />
                   {c.wfLabel}
                 </span>
-              </td>
-              <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {c.launchLabel || '—'}
+                {c.missingCount > 0 && (
+                  <span
+                    title={'حقول ناقصة: ' + c.missingCount}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginRight: 6, fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}
+                  >
+                    <Icon d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" size={11} color="#B45309" />
+                    بيانات ناقصة
+                  </span>
+                )}
               </td>
               <td style={{ ...td, whiteSpace: 'nowrap', color: '#8A97AD', fontSize: 11.5 }}>
                 {c.statusStamp || '—'}
@@ -3853,7 +3854,25 @@ function ListView({ cards }: { cards: CardVM[] }) {
                     {c.pathCtaLabel}
                   </button>
                 ) : (
-                  <span style={{ color: '#C3CDDE', fontSize: 12 }}>عرض ←</span>
+                  <button
+                    onClick={(e) => {
+                      stop(e);
+                      c.onOpen();
+                    }}
+                    style={{
+                      background: '#EAF0FE',
+                      color: '#2563EB',
+                      border: 'none',
+                      borderRadius: 9,
+                      padding: '7px 14px',
+                      fontWeight: 800,
+                      fontSize: 11.5,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    عرض التفاصيل
+                  </button>
                 )}
               </td>
             </tr>

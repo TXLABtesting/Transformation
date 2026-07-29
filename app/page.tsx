@@ -8,7 +8,7 @@ import { Dashboard } from '@/components/Dashboard';
 import { AdminConsole } from '@/components/AdminConsole';
 import { CreatePanel } from '@/components/CreatePanel';
 import { DetailPanel } from '@/components/DetailPanel';
-import { BasketDrawer, FundBar, AssignBar } from '@/components/Basket';
+import { BasketDrawer, DraftBar, FundBar, AssignBar } from '@/components/Basket';
 import { Overlays } from '@/components/Overlays';
 import { Toast } from '@/components/Toast';
 import { ResponsiveZoom } from '@/components/ResponsiveZoom';
@@ -36,6 +36,7 @@ export default function Page() {
           <Dashboard vm={vm} />
           {vm.showBasket && <FundBar vm={vm} />}
           <AssignBar vm={vm} />
+          <DraftBar vm={vm} />
           {vm.basketOpen && <BasketDrawer vm={vm} />}
         </>
       )}
