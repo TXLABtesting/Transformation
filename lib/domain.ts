@@ -128,6 +128,28 @@ export const typeLabelDef = (t: string): string =>
 // project & initiative count as one merged bucket
 export const isProjInit = (t: string): boolean => t === 'project' || t === 'initiative';
 
+// ---- services stream: أولوية الاختيار matrix -------------------------------
+// Inputs: كثافة الاستخدام × مستوى التعقيد × الجاهزية. Rules (in order):
+//   1) كثافة منخفضة → 4        2) تعقيد مرتفع → 4
+//   3) جاهزية منخفضة → 3       4) كثافة مرتفعة + تعقيد منخفض + جاهزية مرتفعة → 1
+//   5) otherwise → 2
+const svcLvl = (v?: string): 'low' | 'mid' | 'high' | '' => {
+  const x = (v || '').trim();
+  if (x.startsWith('منخفض')) return 'low';
+  if (x.startsWith('متوسط')) return 'mid';
+  if (x.startsWith('مرتفع') || x.startsWith('عال')) return 'high';
+  return '';
+};
+export function svcPriority(usage?: string, complexity?: string, readiness?: string): 1 | 2 | 3 | 4 | null {
+  const u = svcLvl(usage), c = svcLvl(complexity), r = svcLvl(readiness);
+  if (!u || !c || !r) return null;
+  if (u === 'low') return 4;
+  if (c === 'high') return 4;
+  if (r === 'low') return 3;
+  if (u === 'high' && c === 'low' && r === 'high') return 1;
+  return 2;
+}
+
 // ---- 1.3 Roles -------------------------------------------------------------
 export const ROLE: Record<
   RoleKey,
@@ -404,6 +426,10 @@ export type Item = {
   linkedServiceName?: string;
   // services stream: distinguishes «باقات الخدمات» from a single «خدمة»
   serviceBundle?: boolean;
+  // services stream entry fields (الخدمة الفرعية + مدخلات مصفوفة الأولوية)
+  subService?: string;
+  readinessLevel?: string; // مستوى الجاهزية: منخفض / متوسط / مرتفع
+  transformYes?: string; // أولوية التحول: نعم / لا
   // operation-specific
   opType?: string;
   subActivities?: string;

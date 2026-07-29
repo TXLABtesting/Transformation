@@ -567,21 +567,29 @@ export function DetailPanel({ vm }: { vm: VM }) {
               <>
                 <DetailSecHead title="بيانات الخدمة" />
                 <DetailGrid cols={2}>
-                  <DetailCell label="مالك الخدمة">{d.serviceOwner}</DetailCell>
-                  <DetailCell label="الفئة المستهدفة">{d.targetUsers}</DetailCell>
+                  <DetailCell label="الخدمة الفرعية">{d.subService || '—'}</DetailCell>
+                  <DetailCell label="القطاع المعني">{d.sector || '—'}</DetailCell>
+                  <DetailCell label="الإدارة المعنية">{d.dept || '—'}</DetailCell>
+                  <DetailCell label="القسم المعني">{d.section || '—'}</DetailCell>
                 </DetailGrid>
-                {(d.durationBefore || d.durationAfter) && (
-                  <DetailGrid cols={2}>
-                    <DetailCell label="المدة الزمنية للإنجاز قبل التحويل">{d.durationBefore || '—'}</DetailCell>
-                    <DetailCell label="المدة الزمنية للإنجاز بعد التحويل">{d.durationAfter || '—'}</DetailCell>
-                  </DetailGrid>
-                )}
 
-                <DetailSecHead title="رحلة المتعامل" />
-                <DetailGrid cols={1}>
-                  <DetailCell label="رحلة المتعامل الحالية"><RichTextView html={d.currentJourney} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
-                  <DetailCell label="نقاط الألم"><RichTextView html={d.painPoints} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
-                  <DetailCell label="التحسين المتوقع"><RichTextView html={d.expectedImprovement} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
+                <DetailSecHead title="مصفوفة أولوية الاختيار" />
+                <DetailGrid cols={3}>
+                  <DetailCell label="كثافة الاستخدام"><LevelPill v={d.usageIntensity} /></DetailCell>
+                  <DetailCell label="مستوى التعقيد"><LevelPill v={d.complexity} /></DetailCell>
+                  <DetailCell label="مستوى الجاهزية"><LevelPill v={d.readinessLevel} /></DetailCell>
+                </DetailGrid>
+                <DetailGrid cols={2}>
+                  <DetailCell label="أولوية الاختيار">
+                    {d.svcSelPriority ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E5EEFF', color: '#1D4ED8', borderRadius: 999, padding: '4px 12px', fontSize: 12.5, fontWeight: 800 }}>
+                        الأولوية {d.svcSelPriority}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </DetailCell>
+                  <DetailCell label="أولوية التحول">{d.transformYes || '—'}</DetailCell>
                 </DetailGrid>
               </>
             )}

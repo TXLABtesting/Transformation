@@ -22,6 +22,7 @@ import {
   typeLabelDef,
   typeLabelFor,
   typeLabelDefFor,
+  svcPriority,
   availTypes,
   wfOf,
   wfMeta,
@@ -1051,6 +1052,21 @@ function build(s: Store) {
     removeUser: (id: string) => s.adminRemoveUser(id),
   };
 
+  // ---- services coordinator KPI strip (أعداد الخدمات الفرعية) ----
+  const svcItems = roleBase.filter((i) => i.type === 'service');
+  const svcPr = (i: Item) => svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
+  const svcKpis =
+    rawRole === 'coord' && myPath === 'services'
+      ? {
+          total: svcItems.length,
+          transformable: svcItems.filter((i) => { const p = svcPr(i); return p != null && p <= 3; }).length,
+          targeted: svcItems.filter((i) => (i.transformYes || '') === 'نعم').length,
+          p1: svcItems.filter((i) => svcPr(i) === 1).length,
+          p2: svcItems.filter((i) => svcPr(i) === 2).length,
+          p3: svcItems.filter((i) => svcPr(i) === 3).length,
+        }
+      : null;
+
   // ---- expected results (النتائج المتوقعة) ----
   const resInScope = (r: { path?: string }) =>
     rawRole === 'coord' || rawRole === 'path' ? (r.path || myPath) === myPath : true;
@@ -1083,6 +1099,7 @@ function build(s: Store) {
     : null;
 
   return {
+    svcKpis,
     resultsPage,
     resultModal,
     isAdmin,
@@ -2009,6 +2026,10 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     section: i.section,
     itemEntityName: entOf(i, s.entityName),
     // svc fields
+    subService: i.subService,
+    readinessLevel: i.readinessLevel,
+    transformYes: i.transformYes,
+    svcSelPriority: i.type === 'service' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) : null,
     serviceOwner: i.serviceOwner,
     targetUsers: i.targetUsers,
     currentJourney: i.currentJourney,
@@ -2170,8 +2191,9 @@ function buildModal(s: Store) {
   const step2Label =
     ({ project: 'تقييم المشروع', initiative: 'تقييم المبادرة', operation: 'تقييم ' + typeLabelDefFor('operation', path), service: 'تقييم الخدمة' } as Record<string, string>)[type] ||
     'التقييم';
-  const fLabels = [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
-  const fTitles = [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
+  // services stream: a single-step form (exactly the approved field set)
+  const fLabels = type === 'service' ? ['بيانات الخدمة'] : [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
+  const fTitles = type === 'service' ? ['بيانات الخدمة'] : [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
   const fHints = [
     'ابدأ بالمعلومات الأساسية',
     'حدّد الأولوية وقابلية التحول',
@@ -2205,7 +2227,9 @@ function buildModal(s: Store) {
     fHints,
     fStepTitle: fTitles[ui.fStep - 1] || '',
     fStepHint: fHints[ui.fStep - 1] || '',
-    fNextLabel: ui.fStep >= 5 ? 'إرسال للاعتماد' : 'التالي',
+    fNextLabel: ui.fStep >= fLabels.length ? 'إرسال للاعتماد' : 'التالي',
+    // أولوية الاختيار — live matrix result while filling the services form
+    svcSelPriority: type === 'service' ? svcPriority(draft?.usageIntensity, draft?.complexity, draft?.readinessLevel) : null,
     // execution batches (البرنامج الزمني) + centrally-managed launch plans
     batchOptions: [
       ...streamLaunchBatches(path).map((b) => ({
