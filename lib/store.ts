@@ -434,7 +434,7 @@ function initialState(): State {
     lang: 'ar',
     // Default role for the delivered build (the switcher is removed): the
     // entity rep. Production will map roles from the IdP / users table.
-    role: (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'entity',
+    role: (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'coord',
     myPath: 'ops',
     // streams this coordinator is assigned to (entity rep can assign several);
     // the header shows a switcher when there is more than one
@@ -485,21 +485,27 @@ function recalcPlanBudgets(items: Item[], plans: LaunchPlan[]): LaunchPlan[] {
   });
 }
 
-export const logicRole = (r: RoleKey): RoleKey => (r === 'coord' ? 'path' : r);
+// deputy shares the stream-head logic; the secretariat shares the committee's
+export const logicRole = (r: RoleKey): RoleKey =>
+  r === 'coord' || r === 'deputy' ? 'path' : r === 'secretariat' ? 'ai' : r;
 
 export const actorName = (s: State): string => {
   if (s.role === 'entity') return s.setup.rep.name || 'ممثل الجهة';
-  if (s.role === 'ai') return 'اللجنة الوطنية';
+  if (s.role === 'ai') return 'رئيس اللجنة الوطنية';
+  if (s.role === 'secretariat') return 'الأمانة العامة للجنة الوطنية';
   // رئيس المسار: the real stream head, per stream
   if (s.role === 'path') return PATH_REPS[s.myPath] || 'رئيس المسار';
+  if (s.role === 'deputy') return 'نائب رئيس مسار ' + (PATHS.find((p) => p.id === s.myPath)?.name || '');
   const owner = s.setup.owners[s.myPath];
   if (owner?.name) return owner.name;
-  return 'منسق المسار في الجهة';
+  return 'منسق المسار';
 };
 export const actorRole = (s: State): string => {
   if (s.role === 'entity') return 'ممثل الجهة';
-  if (s.role === 'ai') return 'اللجنة الوطنية';
-  if (s.role === 'coord') return 'منسق المسار في الجهة';
+  if (s.role === 'ai') return 'رئيس اللجنة الوطنية';
+  if (s.role === 'secretariat') return 'الأمانة العامة للجنة الوطنية';
+  if (s.role === 'coord') return 'منسق المسار';
+  if (s.role === 'deputy') return 'نائب رئيس المسار';
   return 'رئيس المسار';
 };
 
@@ -598,8 +604,8 @@ export const useStore = create<Store>((set, get) => {
           lang: (saved!.lang as State['lang']) || 'ar',
           entityName: (saved!.entityName as string) || DEFAULT_ENTITY,
           role: fresh
-            ? ((process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'entity')
-            : ((saved!.role as RoleKey) || (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'entity'),
+            ? ((process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'coord')
+            : ((saved!.role as RoleKey) || (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'coord'),
           myPath: (saved!.myPath as string) || 'ops',
           myPaths: Array.isArray(saved!.myPaths) && (saved!.myPaths as string[]).length ? (saved!.myPaths as string[]) : s.myPaths,
           setupDone: !!saved!.setupDone,
@@ -1464,7 +1470,7 @@ export const useStore = create<Store>((set, get) => {
       const w = wfOf(it);
       if (w === 'ent1') {
         patchItem(id, (i) => ({ wf: 'exec', ret: null, log: withLog(s, i, 'approve') }));
-        toast('اعتمدت الجهة ' + typeLabelDefFor(it.type, it.path) + ' — إلى مرحلة التنفيذ');
+        toast('تم اعتماد ' + typeLabelDefFor(it.type, it.path) + ' — إلى مرحلة التنفيذ');
       } else if (w === 'pm1') {
         patchItem(id, (i) => ({ wf: 'exec', ret: null, log: withLog(s, i, 'approve') }));
         toast('تم نقل ' + typeLabelDefFor(it.type, it.path) + ' إلى مرحلة التنفيذ');
@@ -1482,7 +1488,7 @@ export const useStore = create<Store>((set, get) => {
       const it = findItem(rm.id);
       if (!it) return;
       const w = wfOf(it);
-      const from = w === 'ent1' ? 'ممثل الجهة' : 'اللجنة الوطنية';
+      const from = w === 'ent1' ? 'رئيس المسار' : 'اللجنة الوطنية';
       const info = rm.mode === 'info';
       patchItem(rm.id, (i) => ({
         wf: 'draft',
@@ -1490,7 +1496,7 @@ export const useStore = create<Store>((set, get) => {
         log: withLog(s, i, info ? 'info' : 'reject', rm.note),
       }));
       setUi({ reqModal: null });
-      toast(info ? 'تم طلب تفاصيل إضافية من رئيس المسار' : 'تمت إعادة ' + typeLabelDefFor(it.type, it.path) + ' إلى رئيس المسار');
+      toast(info ? 'تم طلب معلومات إضافية من منسق المسار' : 'تمت إعادة ' + typeLabelDefFor(it.type, it.path) + ' إلى منسق المسار');
     },
     closeReqModal: () => setUi({ reqModal: null }),
 

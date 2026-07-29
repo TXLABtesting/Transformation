@@ -70,7 +70,10 @@ type Store = ReturnType<typeof useStore.getState>;
 function build(s: Store) {
   // the admin can flip into the monitoring dashboards: rendered with the
   // committee's all-seeing scope while a header button returns to the console
-  const rawRole = s.role === 'admin' && s.ui.adminDash ? 'ai' : s.role;
+  const actualRole = s.role === 'admin' && s.ui.adminDash ? 'ai' : s.role;
+  // deputy behaves exactly like the stream head; the secretariat exactly like
+  // the committee chair — identical permissions, different identity
+  const rawRole: RoleKey = actualRole === 'deputy' ? 'path' : actualRole === 'secretariat' ? 'ai' : actualRole;
   const role = logicRole(rawRole);
   const myPath = s.myPath;
   const entityName = s.entityName;
@@ -93,11 +96,16 @@ function build(s: Store) {
   // visibility of drafts / ent1 — this is the role's whole universe: KPIs and
   // stats must count from it too, or numbers won't match the visible cards
   let roleBase = base;
-  if (rawRole === 'ai' || rawRole === 'path') {
+  if (rawRole === 'ai') {
+    // the committee (chair + secretariat) sees ONLY entries already approved
+    // by the stream head / deputy
     roleBase = base.filter((i) => {
       const w = wfOf(i);
       return w !== 'draft' && w !== 'ent1';
     });
+  } else if (rawRole === 'path') {
+    // stream head / deputy review coordinator submissions: everything but drafts
+    roleBase = base.filter((i) => wfOf(i) !== 'draft');
   } else if (rawRole === 'entity') {
     roleBase = base.filter((i) => wfOf(i) !== 'draft');
   }
@@ -964,7 +972,7 @@ function build(s: Store) {
   const rolePills = ROLE_PILLS.map((p) => ({
     key: p.key,
     label: p.label,
-    active: rawRole === p.key,
+    active: actualRole === p.key,
     onClick: () => s.setRole(p.key),
   }));
 
@@ -984,25 +992,31 @@ function build(s: Store) {
 
   // header profile identity follows the previewed role
   const profileName =
-    rawRole === 'path'
+    actualRole === 'path'
       ? PATH_REPS[myPath] || 'رئيس المسار'
-      : rawRole === 'ai'
-        ? 'اللجنة الوطنية'
-        : rawRole === 'admin'
-          ? 'مشرف النظام'
-          : rawRole === 'coord'
-            ? s.setup.owners[myPath]?.name || 'منسق المسار في الجهة'
-            : repName;
+      : actualRole === 'deputy'
+        ? 'نائب رئيس المسار'
+        : actualRole === 'ai'
+          ? 'رئيس اللجنة الوطنية للذكاء الاصطناعي المساعد'
+          : actualRole === 'secretariat'
+            ? 'الأمانة العامة للجنة الوطنية للذكاء الاصطناعي المساعد'
+            : actualRole === 'admin'
+              ? 'مشرف النظام'
+              : actualRole === 'coord'
+                ? s.setup.owners[myPath]?.name || 'منسق المسار'
+                : repName;
   const profilePos =
-    rawRole === 'path'
+    actualRole === 'path'
       ? 'رئيس مسار ' + pathById(myPath).name
-      : rawRole === 'ai'
-        ? ROLE.ai.sub
-        : rawRole === 'admin'
-          ? ROLE.admin.sub
-          : rawRole === 'coord'
-            ? 'منسق مسار ' + pathById(myPath).name
-            : repPos;
+      : actualRole === 'deputy'
+        ? 'نائب رئيس مسار ' + pathById(myPath).name
+        : actualRole === 'ai' || actualRole === 'secretariat'
+          ? ROLE.ai.sub
+          : actualRole === 'admin'
+            ? ROLE.admin.sub
+            : actualRole === 'coord'
+              ? 'منسق مسار ' + pathById(myPath).name
+              : repPos;
   const profileInitials =
     profileName.split(/\s+/).slice(0, 2).map((w) => w[0]).join('') || 'م';
 
@@ -1094,7 +1108,7 @@ function build(s: Store) {
       const demoAllStreams = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
       const ids = demoAllStreams ? PATHS.map((p) => p.id) : s.myPaths?.length ? s.myPaths : [myPath];
       return {
-        show: rawRole === 'coord' && (demoAllStreams || ids.length > 1),
+        show: (rawRole === 'coord' || rawRole === 'path') && (demoAllStreams || ids.length > 1),
         value: myPath,
         options: ids.map((id) => ({ v: id, label: pathById(id).name })),
       };
@@ -1545,39 +1559,31 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardAction = 'viewDetails';
     }
   } else if (rawRole === 'path') {
-    if (w === 'done') {
+    if (w === 'ent1') {
+      // pending review: the head/deputy approves or requests more information
+      cardStatus = 'pendFund';
+      cardCaption = '';
+      cardAction = 'approveInfoReject';
+    } else if (w === 'done') {
       cardStatus = 'launched';
       cardCaption = 'تم الإطلاق';
       cardAction = 'viewDetails';
-    } else if (isFunded) {
+    } else {
       cardStatus = 'apprFund';
       cardCaption = '';
-      cardAction = 'viewDetails';
-    } else if (i.nom) {
-      cardStatus = 'nominated';
-      cardCaption = '';
-      cardAction = 'viewDetails';
-    } else {
-      cardStatus = 'apprEnt';
-      cardCaption = 'معتمد من الجهة';
       cardAction = 'viewDetails';
     }
   } else {
-    // rawRole === 'ai' (اللجنة الوطنية / committee)
+    // rawRole === 'ai' — رئيس اللجنة الوطنية / الأمانة العامة: view-only over
+    // entries approved by the stream heads
     if (w === 'done') {
       cardStatus = 'launched';
       cardCaption = 'تم الإطلاق';
       cardAction = 'viewDetails';
-    } else if (isFunded) {
+    } else {
       cardStatus = 'apprFund';
       cardCaption = '';
-      cardAction = 'funded';
-      pillLabel = 'معتمد';
-    } else {
-      cardStatus = 'pendFund';
-      cardCaption = '';
-      cardAction = 'fundApproveReject';
-      pillLabel = 'قيد المراجعة';
+      cardAction = 'viewDetails';
     }
   }
 
@@ -1763,7 +1769,7 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
     if (rawRole === 'ai') {
       if (i.nom && !i.funded) push('n-' + i.id, 'info', 'inbox', 'ترشيح جديد في السلة من ' + (i.nom.by || ''), tl + ' · ' + i.title + ' · ' + ent(i), i.id);
     } else if (rawRole === 'entity') {
-      if (w === 'ent1') push('ent1-' + i.id, 'info', 'send', typeLabelFor(i.type, i.path) + ' بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
+      if (w === 'ent1') push('ent1-' + i.id, 'info', 'send', typeLabelFor(i.type, i.path) + ' بانتظار اعتماد رئيس المسار', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
       if (w === 'ent2') push('ent2-' + i.id, 'info', 'wallet', 'ميزانية ونطاق عمل بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
       if (i.funded && ent(i) === s.entityName) push('f-' + i.id, 'ok', 'wallet', 'ستتكفّل اللجنة الوطنية بتكلفة تحويل ' + typeLabelDefFor(i.type, i.path), tl + ' · ' + i.title + ' · يبقى التنفيذ من مسؤولية الجهة', i.id);
       if (i.fundCancel && !i.funded && ent(i) === s.entityName) push('fc-' + i.id, 'alert', 'wallet', 'أُلغي اعتماد ' + typeLabelDefFor(i.type, i.path) + ' من اللجنة الوطنية', tl + ' · ' + i.title + ' · السبب: ' + i.fundCancel.reason, i.id);

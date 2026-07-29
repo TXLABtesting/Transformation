@@ -1384,7 +1384,7 @@ function DoneStep({ vm }: { vm: VM }) {
       </div>
       <div style={{ fontSize: 18, fontWeight: 800, color: '#13213C', marginBottom: 8 }}>تم بنجاح</div>
       <p style={{ fontSize: 13, color: '#8A97AD', lineHeight: 1.8, maxWidth: 340, margin: '0 auto 24px' }}>
-        تمت الإضافة والإرسال لاعتماد ممثل الجهة.
+        تمت الإضافة والإرسال لاعتماد رئيس المسار.
       </p>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
         <button

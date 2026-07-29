@@ -4,7 +4,7 @@
 // numbers, colors and formulas are verbatim from the Claude Design prototype.
 // ============================================================================
 
-export type RoleKey = 'entity' | 'path' | 'coord' | 'ai' | 'admin';
+export type RoleKey = 'entity' | 'path' | 'deputy' | 'coord' | 'ai' | 'secretariat' | 'admin';
 export type ItemType = 'project' | 'initiative' | 'operation' | 'service';
 export type WfState =
   | 'draft'
@@ -142,7 +142,13 @@ export const ROLE: Record<
   },
   path: {
     label: 'رئيس المسار',
-    sub: 'تعبئة ومتابعة بيانات المسار',
+    sub: 'مراجعة واعتماد مدخلات المسار من جميع الجهات',
+    badge: '#1D4ED8',
+    bg: '#EAF1FE',
+  },
+  deputy: {
+    label: 'نائب رئيس المسار',
+    sub: 'مراجعة واعتماد مدخلات المسار من جميع الجهات',
     badge: '#1D4ED8',
     bg: '#EAF1FE',
   },
@@ -153,8 +159,14 @@ export const ROLE: Record<
     bg: '#EAF1FE',
   },
   ai: {
-    label: 'اللجنة الوطنية',
-    sub: 'مراجعة واعتماد المشاريع والعمليات والخدمات عبر الجهات',
+    label: 'رئيس اللجنة الوطنية للذكاء الاصطناعي المساعد',
+    sub: 'اطلاع وطني على المدخلات المعتمدة عبر كل المسارات والجهات',
+    badge: '#1D4ED8',
+    bg: '#EAF1FE',
+  },
+  secretariat: {
+    label: 'الأمانة العامة للجنة الوطنية للذكاء الاصطناعي المساعد',
+    sub: 'اطلاع وطني على المدخلات المعتمدة عبر كل المسارات والجهات',
     badge: '#1D4ED8',
     bg: '#EAF1FE',
   },
@@ -175,10 +187,11 @@ export const ROLE_INFO: {
   permissions: string[];
 }[] = [
   { key: 'admin', nameAr: 'مشرف النظام', descAr: 'يدير المستخدمين والأدوار، ويعيّن رؤساء المسارات وأعضاء اللجنة الوطنية.', scope: 'النظام بالكامل', permissions: ['users.manage', 'roles.view', 'streamhead.assign', 'committee.assign'] },
-  { key: 'ai', nameAr: 'اللجنة الوطنية', descAr: 'إشراف وطني على كل الجهات والمسارات واعتماد التمويل النهائي.', scope: 'وطني', permissions: ['item.view.all', 'nomination.review', 'funding.approve', 'funding.cancel', 'phase.edit', 'budget.set'] },
-  { key: 'path', nameAr: 'رئيس المسار', descAr: 'يراجع مدخلات كل الجهات ضمن مساره ويرشّح للتمويل.', scope: 'مسار واحد', permissions: ['item.view.stream', 'item.nominate', 'plan.view'] },
-  { key: 'entity', nameAr: 'ممثل الجهة', descAr: 'يتابع كل مسارات جهته ويعتمد المدخلات الجاهزة، ويعيّن منسقي المسارات.', scope: 'جهة واحدة', permissions: ['item.view.entity', 'item.approve', 'item.return', 'team.manage'] },
-  { key: 'coord', nameAr: 'منسق المسار في الجهة', descAr: 'يضيف ويحدّث مدخلات مسار واحد داخل جهته.', scope: 'مسار داخل جهة', permissions: ['item.create', 'item.update', 'item.submit', 'plan.edit'] },
+  { key: 'ai', nameAr: 'رئيس اللجنة الوطنية للذكاء الاصطناعي المساعد', descAr: 'اطلاع وطني على جميع المدخلات المعتمدة من رؤساء المسارات عبر كل المسارات والجهات.', scope: 'وطني', permissions: ['item.view.approved.all'] },
+  { key: 'secretariat', nameAr: 'الأمانة العامة للجنة الوطنية للذكاء الاصطناعي المساعد', descAr: 'اطلاع وطني على جميع المدخلات المعتمدة من رؤساء المسارات عبر كل المسارات والجهات.', scope: 'وطني', permissions: ['item.view.approved.all'] },
+  { key: 'path', nameAr: 'رئيس المسار', descAr: 'يراجع مدخلات كل الجهات ضمن مساره ويعتمدها أو يطلب معلومات إضافية.', scope: 'مسار واحد أو أكثر', permissions: ['item.view.stream', 'item.approve', 'item.info.request', 'plan.view'] },
+  { key: 'deputy', nameAr: 'نائب رئيس المسار', descAr: 'يراجع مدخلات كل الجهات ضمن مساره ويعتمدها أو يطلب معلومات إضافية.', scope: 'مسار واحد أو أكثر', permissions: ['item.view.stream', 'item.approve', 'item.info.request', 'plan.view'] },
+  { key: 'coord', nameAr: 'منسق المسار في الجهة', descAr: 'يعبّئ جميع بيانات مسارات جهته ويرسلها للاعتماد.', scope: 'مسار واحد أو أكثر داخل جهته', permissions: ['item.create', 'item.update', 'item.submit', 'plan.edit'] },
 ];
 
 // Real stream representatives (رئيس المسار) — one per transformation stream
@@ -192,10 +205,11 @@ export const PATH_REPS: Record<string, string> = {
 
 // Role-switcher pill labels (display order in the header)
 export const ROLE_PILLS: { key: RoleKey; label: string }[] = [
-  { key: 'coord', label: 'منسق المسار في الجهة' },
-  { key: 'entity', label: 'ممثل الجهة' },
-  { key: 'ai', label: 'اللجنة الوطنية' },
+  { key: 'coord', label: 'منسق المسار' },
   { key: 'path', label: 'رئيس المسار' },
+  { key: 'deputy', label: 'نائب رئيس المسار' },
+  { key: 'ai', label: 'رئيس اللجنة الوطنية' },
+  { key: 'secretariat', label: 'الأمانة العامة للجنة الوطنية' },
   { key: 'admin', label: 'مشرف النظام' },
 ];
 
@@ -444,7 +458,7 @@ export function wfOf(i: Item): WfState {
 export type WfMeta = { step: number; label: string; who: string; chip: string; bg: string };
 export const WFMETA: Record<string, WfMeta> = {
   draft: { step: 1, label: 'مسودة', who: 'path', chip: '#64748B', bg: '#EFF2F7' },
-  ent1: { step: 1, label: 'بانتظار اعتماد ممثل الجهة', who: 'entity', chip: '#B45309', bg: '#FFF3DE' },
+  ent1: { step: 1, label: 'بانتظار اعتماد رئيس المسار', who: 'path', chip: '#B45309', bg: '#FFF3DE' },
   pm1: { step: 2, label: 'بانتظار اعتماد اللجنة الوطنية', who: 'ai', chip: '#B45309', bg: '#FFF3DE' },
   exec: { step: 3, label: 'قيد التنفيذ', who: 'path', chip: '#2563EB', bg: '#EAF0FE' },
   launch: { step: 3, label: 'قيد الإطلاق', who: 'path', chip: '#2563EB', bg: '#EAF0FE' },
