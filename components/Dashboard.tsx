@@ -610,34 +610,54 @@ function StageCard({ b, showStream, onManage }: { b: VM['batchSummary'][number];
   );
 }
 
-// ===== services-coordinator KPI strip (أعداد الخدمات الفرعية) =====
-function SvcKpiStrip({ k }: { k: NonNullable<VM['svcKpis']> }) {
-  // one brand colour across the strip — no extra colours
-  const cards = [
-    { label: 'إجمالي عدد الخدمات الفرعية', v: k.total, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
-    { label: 'إجمالي عدد الخدمات الفرعية القابلة للتحول *', v: k.transformable, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
-    { label: 'إجمالي عدد الخدمات الفرعية المستهدف تحويلها **', v: k.targeted, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
-    { label: 'أولوية أولى', v: k.p1, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
-    { label: 'أولوية ثانية', v: k.p2, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
-    { label: 'أولوية ثالثة', v: k.p3, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
-  ];
+// ===== one segmented KPI strip card: activity group + recessed priority group =====
+function SegKpiStrip({ acts, prios, notes }: { acts: { label: string; v: number | string }[]; prios: { label: string; v: number | string }[]; notes: string[] }) {
   return (
     <div data-tour="kpis">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
-        {cards.map((c) => (
-          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ background: '#F4F6FA', borderBottom: '1px solid #E7ECF4', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
-            </div>
-            <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
+      <div className="segkpi">
+        {acts.map((c) => (
+          <div key={c.label} className="seg">
+            <span className="hd seglbl">{c.label}</span>
+            <span className="segval">{c.v}</span>
+          </div>
+        ))}
+        {prios.map((c) => (
+          <div key={c.label} className="seg prio">
+            <span className="hd seglbl">{c.label}</span>
+            <span className="segval">{c.v}</span>
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>* إجمالي الخدمات القابلة للتحول = حسب أولوية الاختيار 1، 2، 3</span>
-        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول</span>
-      </div>
+      {notes.length > 0 && (
+        <div className="segfoot">
+          {notes.map((n) => (
+            <span key={n}>{n}</span>
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+// ===== services-coordinator KPI strip (أعداد الخدمات الفرعية) =====
+function SvcKpiStrip({ k }: { k: NonNullable<VM['svcKpis']> }) {
+  return (
+    <SegKpiStrip
+      acts={[
+        { label: 'إجمالي عدد الخدمات الفرعية', v: k.total },
+        { label: 'إجمالي عدد الخدمات الفرعية القابلة للتحول *', v: k.transformable },
+        { label: 'إجمالي عدد الخدمات الفرعية المستهدف تحويلها **', v: k.targeted },
+      ]}
+      prios={[
+        { label: 'أولوية أولى', v: k.p1 },
+        { label: 'أولوية ثانية', v: k.p2 },
+        { label: 'أولوية ثالثة', v: k.p3 },
+      ]}
+      notes={[
+        '* إجمالي الخدمات القابلة للتحول = حسب أولوية الاختيار 1، 2، 3',
+        '** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول',
+      ]}
+    />
   );
 }
 
@@ -902,63 +922,45 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
 }
 
 function OpsKpiStrip({ k }: { k: NonNullable<VM['opsKpis']> }) {
-  const C = { c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' };
-  const cards: { label: string; v: number | string }[] = [
-    { label: 'إجمالي عدد الأنشطة الفرعية', v: k.acts },
-    { label: 'إجمالي عدد الأنشطة الفرعية القابلة للتحول *', v: k.transformable },
-    { label: 'إجمالي عدد الأنشطة الفرعية المستهدف تحويلها **', v: k.targeted },
-    { label: 'أولوية أولى', v: '—' },
-    { label: 'أولوية ثانية', v: '—' },
-    { label: 'أولوية ثالثة', v: '—' },
-  ];
   return (
-    <div data-tour="kpis">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
-        {cards.map((c) => (
-          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ background: '#F4F6FA', borderBottom: '1px solid #E7ECF4', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
-            </div>
-            <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>* مؤقتاً وفق «القابلية للتحول» (3 فأعلى) — تُستبدل بمصفوفة أولوية العمليات بعد اعتمادها</span>
-        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول</span>
-        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>بطاقات الأولوية تُفعّل بعد اعتماد المصفوفة</span>
-      </div>
-    </div>
+    <SegKpiStrip
+      acts={[
+        { label: 'إجمالي عدد الأنشطة الفرعية', v: k.acts },
+        { label: 'إجمالي عدد الأنشطة الفرعية القابلة للتحول *', v: k.transformable },
+        { label: 'إجمالي عدد الأنشطة الفرعية المستهدف تحويلها **', v: k.targeted },
+      ]}
+      prios={[
+        { label: 'أولوية أولى', v: '—' },
+        { label: 'أولوية ثانية', v: '—' },
+        { label: 'أولوية ثالثة', v: '—' },
+      ]}
+      notes={[
+        '* مؤقتاً وفق «القابلية للتحول» (3 فأعلى) — تُستبدل بمصفوفة أولوية العمليات بعد اعتمادها',
+        '** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول',
+        'بطاقات الأولوية تُفعّل بعد اعتماد المصفوفة',
+      ]}
+    />
   );
 }
 
 function StgKpiStrip({ k }: { k: NonNullable<VM['stgKpis']> }) {
-  const C = { c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' };
-  const cards = [
-    { label: 'إجمالي عدد المهام', v: k.tasks },
-    { label: 'إجمالي عدد الأنشطة', v: k.acts },
-    { label: 'إجمالي عدد الأنشطة القابلة للتحول *', v: k.transformable },
-    { label: 'إجمالي عدد الأنشطة المستهدف تحويلها **', v: k.targeted },
-    { label: 'أولوية أولى', v: k.p1 },
-    { label: 'أولوية ثانية', v: k.p2 },
-  ];
   return (
-    <div data-tour="kpis">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
-        {cards.map((c) => (
-          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ background: '#F4F6FA', borderBottom: '1px solid #E7ECF4', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
-            </div>
-            <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>* إجمالي عدد الأنشطة القابلة للتحول = حسب أولوية الاختيار أولوية عالية وأولوية متوسطة</span>
-        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول</span>
-      </div>
-    </div>
+    <SegKpiStrip
+      acts={[
+        { label: 'إجمالي عدد المهام', v: k.tasks },
+        { label: 'إجمالي عدد الأنشطة', v: k.acts },
+        { label: 'إجمالي عدد الأنشطة القابلة للتحول *', v: k.transformable },
+        { label: 'إجمالي عدد الأنشطة المستهدف تحويلها **', v: k.targeted },
+      ]}
+      prios={[
+        { label: 'أولوية أولى', v: k.p1 },
+        { label: 'أولوية ثانية', v: k.p2 },
+      ]}
+      notes={[
+        '* إجمالي عدد الأنشطة القابلة للتحول = حسب أولوية الاختيار أولوية عالية وأولوية متوسطة',
+        '** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول',
+      ]}
+    />
   );
 }
 
@@ -2751,6 +2753,23 @@ export function Dashboard({ vm }: { vm: VM }) {
                     </span>
                   )}
                 </div>
+                {vm.showAddBtn && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      onClick={s.openCreateManual}
+                      data-tour="add"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(37,99,235,.35)', fontFamily: 'inherit' }}
+                    >
+                      <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة يدوية
+                    </button>
+                    <button
+                      onClick={s.openCreateBulk}
+                      style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(11,138,75,.4)', fontFamily: 'inherit' }}
+                    >
+                      <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={16} strokeWidth={2.2} /> رفع ملف Excel
+                    </button>
+                  </div>
+                )}
               </div>
 
               {vm.role === 'coord' && (
@@ -2937,54 +2956,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                   ))}
                 </div>
                 <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} label={vm.role === 'ai' ? (vm.navStream ? 'تحميل تقرير اعتماد المسار' : 'تحميل تقرير الاعتماد') : vm.navStream ? 'تحميل تقرير المسار' : 'تحميل التقرير'} />
-                {vm.showAddBtn && (
-                  <button
-                    onClick={s.openCreateManual}
-                    data-tour="add"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      height: 40,
-                      padding: '0 18px',
-                      background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 11,
-                      fontWeight: 800,
-                      fontSize: 13.5,
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 6px -2px rgba(37,99,235,.35)',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة يدوية
-                  </button>
-                )}
-                {vm.showAddBtn && (
-                  <button
-                    onClick={s.openCreateBulk}
-                    style={{
-                      flex: 'none',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      height: 40,
-                      padding: '0 18px',
-                      background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 11,
-                      fontWeight: 800,
-                      fontSize: 13.5,
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 6px -2px rgba(11,138,75,.4)',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={16} strokeWidth={2.2} /> رفع ملف Excel
-                  </button>
-                )}
                 </div>
               </div>
 

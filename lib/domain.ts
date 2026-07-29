@@ -83,7 +83,7 @@ export const DEFAULT_CONTACT_EMAILS: Record<string, string> = {
 };
 
 // ---- public-site content managed from the admin backoffice ----
-export type LibraryDoc = { id: string; title: string; cat: 'guide' | 'system'; date: string; fileUrl?: string };
+export type LibraryDoc = { id: string; title: string; cat: 'guide' | 'system'; date: string; fileUrl?: string; coverUrl?: string };
 export const DEFAULT_LIBRARY_DOCS: LibraryDoc[] = [
   { id: 'guide', title: 'الدليل التعريفي للذكاء الاصطناعي المساعد', cat: 'guide', date: 'يوليو 2026' },
   { id: 'system', title: 'نظام عمل مشروع الذكاء الاصطناعي المساعد', cat: 'system', date: 'يوليو 2026' },
