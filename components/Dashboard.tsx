@@ -629,9 +629,9 @@ function SvcKpiStrip({ k }: { k: NonNullable<VM['svcKpis']> }) {
     <div data-tour="kpis">
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
         {cards.map((c) => (
-          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ borderBottom: '1px solid #EEF1F6', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
+          <div key={c.label} style={{ background: '#fff', border: '1px solid #E3EBF7', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ background: '#F3F7FE', borderBottom: '1px solid #E3EBF7', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
             </div>
             <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
           </div>
@@ -877,9 +877,9 @@ function OpsKpiStrip({ k }: { k: NonNullable<VM['opsKpis']> }) {
     <div data-tour="kpis">
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
         {cards.map((c) => (
-          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ borderBottom: '1px solid #EEF1F6', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
+          <div key={c.label} style={{ background: '#fff', border: '1px solid #E3EBF7', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ background: '#F3F7FE', borderBottom: '1px solid #E3EBF7', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
             </div>
             <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
           </div>
@@ -908,9 +908,9 @@ function StgKpiStrip({ k }: { k: NonNullable<VM['stgKpis']> }) {
     <div data-tour="kpis">
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
         {cards.map((c) => (
-          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ borderBottom: '1px solid #EEF1F6', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
+          <div key={c.label} style={{ background: '#fff', border: '1px solid #E3EBF7', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ background: '#F3F7FE', borderBottom: '1px solid #E3EBF7', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
             </div>
             <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
           </div>
