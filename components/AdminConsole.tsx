@@ -30,7 +30,7 @@ const inputSt: CSSProperties = {
   fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#16233F', outline: 'none',
 };
 
-type Tab = 'users' | 'assign' | 'roles' | 'contact';
+type Tab = 'users' | 'assign' | 'roles' | 'site' | 'contact';
 
 const blankUser = (): UserRec => ({
   id: '', role: 'coord', name: '', title: '', email: '', phone: '', active: true,
@@ -60,7 +60,8 @@ export function AdminConsole({ vm }: { vm: VM }) {
     { key: 'users', label: 'المستخدمون' },
     { key: 'assign', label: 'رؤساء المسارات واللجنة' },
     { key: 'roles', label: 'الأدوار والصلاحيات' },
-    { key: 'contact', label: 'بريد التواصل' },
+    { key: 'site', label: 'الموقع العام' },
+    { key: 'contact', label: 'التواصل والاستفسارات' },
   ];
 
   return (
@@ -130,6 +131,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
         )}
         {tab === 'assign' && <AssignTab a={a} onEdit={setEditing} onAdd={(u) => setEditing(u)} />}
         {tab === 'roles' && <RolesTab a={a} />}
+        {tab === 'site' && <SiteTab />}
         {tab === 'contact' && <ContactTab a={a} />}
       </div>
 
@@ -152,26 +154,156 @@ export function AdminConsole({ vm }: { vm: VM }) {
 
 // ---- Contact inboxes (بريد التواصل للمسارات) ------------------------------
 function ContactTab({ a }: { a: VM['admin'] }) {
+  const s = useStore();
   // the PUBLIC contact page lists the project's five streams + the secretariat
   const rows = CONTACT_STREAMS.map((st) => ({ key: st.key, label: st.key === 'general' ? st.label : 'مسار ' + st.label }));
+  const streamLabel = (k: string) => CONTACT_STREAMS.find((c) => c.key === k)?.label || k;
+  const fmtTs = (ts: number) => new Date(ts).toLocaleDateString('ar-AE', { day: 'numeric', month: 'long', year: 'numeric' }) + ' · ' + new Date(ts).toLocaleTimeString('ar-AE', { hour: '2-digit', minute: '2-digit' });
+  const forwardHref = (q: (typeof s.inquiries)[number]) => {
+    const to = s.contactEmails[q.stream] || '';
+    const subject = 'استفسار عبر منصة الذكاء الاصطناعي المساعد — ' + streamLabel(q.stream);
+    const body = ['الاسم: ' + q.name, q.phone ? 'رقم الهاتف: ' + q.phone : '', 'البريد الإلكتروني: ' + q.email, 'المسار المعني: ' + streamLabel(q.stream), '', q.message].filter(Boolean).join('\n');
+    return 'mailto:' + to + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  };
   return (
-    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
-      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>بريد التواصل</div>
-      <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginBottom: 16 }}>
-        تُوجَّه استفسارات صفحة «تواصل معنا» إلى البريد المعتمد لكل مسار.
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
+        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>بريد التواصل</div>
+        <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginBottom: 16 }}>
+          تُوجَّه استفسارات صفحة «تواصل معنا» إلى البريد المعتمد لكل مسار. هذا الربط داخلي ولا يظهر للزائر.
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {rows.map((r) => (
+            <div key={r.key} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 260px', fontSize: 13, fontWeight: 700, color: '#33415C' }}>{r.label}</div>
+              <input
+                value={a.contactEmails[r.key] || ''}
+                onChange={(e) => a.setContactEmail(r.key, e.target.value)}
+                placeholder="name@example.gov.ae"
+                style={{ flex: '1 1 260px', direction: 'ltr', textAlign: 'left', border: '1px solid #DCE3EE', borderRadius: 10, padding: '10px 12px', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {rows.map((r) => (
-          <div key={r.key} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 260px', fontSize: 13, fontWeight: 700, color: '#33415C' }}>{r.label}</div>
-            <input
-              value={a.contactEmails[r.key] || ''}
-              onChange={(e) => a.setContactEmail(r.key, e.target.value)}
-              placeholder="name@example.gov.ae"
-              style={{ flex: '1 1 260px', direction: 'ltr', textAlign: 'left', border: '1px solid #DCE3EE', borderRadius: 10, padding: '10px 12px', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
-            />
+
+      <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>الاستفسارات الواردة</div>
+          <span style={{ fontSize: 11.5, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '4px 12px' }}>
+            {s.inquiries.filter((q) => !q.done).length} بانتظار المعالجة
+          </span>
+        </div>
+        <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginBottom: 14 }}>
+          كل استفسار يُرسل من صفحة «تواصل معنا» يظهر هنا، ويمكن تحويله عبر البريد إلى الفريق المعني بالمسار.
+        </div>
+        {s.inquiries.length === 0 ? (
+          <div style={{ border: '1.5px dashed #D5DEEC', background: '#FAFCFF', borderRadius: 12, padding: '26px 16px', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>
+            لا توجد استفسارات واردة بعد
           </div>
-        ))}
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {s.inquiries.map((q) => (
+              <div key={q.id} style={{ border: '1px solid #E7ECF4', borderRadius: 12, padding: '13px 15px', background: q.done ? '#FAFBFD' : '#fff', opacity: q.done ? 0.75 : 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>{q.name}</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#1D4ED8', background: '#EAF0FE', border: '1px solid #D9E4FD', borderRadius: 999, padding: '3px 10px' }}>{streamLabel(q.stream)}</span>
+                  {q.done && <span style={{ fontSize: 11, fontWeight: 800, color: '#0B8A4B', background: '#E7F6EE', borderRadius: 999, padding: '3px 10px' }}>تمت المعالجة</span>}
+                  <span style={{ flex: 1 }} />
+                  <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>{fmtTs(q.ts)}</span>
+                </div>
+                <div style={{ fontSize: 11.5, color: '#54627B', fontWeight: 600, marginTop: 6, direction: 'ltr', textAlign: 'right' }}>
+                  {q.email}{q.phone ? ' · ' + q.phone : ''}
+                </div>
+                <div style={{ fontSize: 12.5, color: '#33415C', lineHeight: 1.9, marginTop: 8, whiteSpace: 'pre-wrap' }}>{q.message}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                  <a
+                    href={forwardHref(q)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', borderRadius: 9, padding: '7px 15px', fontSize: 11.5, fontWeight: 800, textDecoration: 'none' }}
+                  >
+                    <Icon d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" size={12} color="#fff" />
+                    تحويل عبر البريد ({s.contactEmails[q.stream] || '—'})
+                  </a>
+                  <button
+                    onClick={() => s.toggleInquiryDone(q.id)}
+                    style={{ background: '#fff', border: '1px solid #DCE3EE', borderRadius: 9, padding: '7px 14px', fontSize: 11.5, fontWeight: 800, color: q.done ? '#8A97AD' : '#0B8A4B', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    {q.done ? 'إعادة فتح' : 'تمت المعالجة'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---- الموقع العام: About-page content + library documents -----------------
+function SiteTab() {
+  const s = useStore();
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
+        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>محتوى صفحة «عن المشروع»</div>
+        <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginBottom: 12 }}>
+          النص التعريفي أعلى الصفحة العامة — يُحفظ تلقائياً ويظهر للزوار مباشرة.
+        </div>
+        <textarea
+          value={s.aboutHero}
+          onChange={(e) => s.setAboutHero(e.target.value)}
+          rows={7}
+          style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 12, padding: '13px 15px', fontSize: 13, fontFamily: 'inherit', color: '#16233F', lineHeight: 2, outline: 'none', resize: 'vertical', background: '#FAFBFE' }}
+        />
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>وثائق المكتبة</div>
+          <button
+            onClick={s.addLibDoc}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            <Icon d={IC_PLUS} size={13} color="#fff" />
+            إضافة وثيقة
+          </button>
+        </div>
+        <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginBottom: 14 }}>
+          الوثائق المعروضة في صفحة «المكتبة» العامة. رابط الملف يشير إلى ملف PDF (يُرفع عبر فريق التقنية أو يُستبدل بالرابط الرسمي).
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {s.libraryDocs.map((d) => (
+            <div key={d.id} style={{ border: '1px solid #E7ECF4', borderRadius: 12, padding: '13px 15px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 2fr auto', gap: 10, alignItems: 'end' }}>
+              <div>
+                <label style={labelSt}>عنوان الوثيقة</label>
+                <input value={d.title} onChange={(e) => s.updLibDoc(d.id, { title: e.target.value })} style={inputSt} />
+              </div>
+              <div>
+                <label style={labelSt}>التصنيف</label>
+                <select value={d.cat} onChange={(e) => s.updLibDoc(d.id, { cat: e.target.value as 'guide' | 'system' })} style={{ ...inputSt, paddingLeft: 26, cursor: 'pointer' }}>
+                  <option value="guide">دليل</option>
+                  <option value="system">نظام عمل</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelSt}>التاريخ</label>
+                <input value={d.date} onChange={(e) => s.updLibDoc(d.id, { date: e.target.value })} placeholder="يوليو 2026" style={inputSt} />
+              </div>
+              <div>
+                <label style={labelSt}>رابط الملف (اختياري)</label>
+                <input value={d.fileUrl || ''} onChange={(e) => s.updLibDoc(d.id, { fileUrl: e.target.value })} placeholder="https://…" style={{ ...inputSt, direction: 'ltr', textAlign: 'left' }} />
+              </div>
+              <button
+                onClick={() => s.removeLibDoc(d.id)}
+                title="حذف"
+                style={{ width: 38, height: 38, borderRadius: 10, background: '#fff', border: '1px solid #F0D5D5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              >
+                <Icon d={IC_TRASH} size={15} color="#C0303B" />
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

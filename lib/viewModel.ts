@@ -746,7 +746,8 @@ function build(s: Store) {
   // ---- cards ----
   // ---- sidebar navigation (§redesign v2) ----
   // the coordinator has no dashboard: entering lands directly on قوائم الحصر
-  const navSection = rawRole === 'coord' && (ui.navSection || 'overview') === 'overview' ? 'all' : ui.navSection || 'overview';
+  const navSection =
+    (rawRole === 'coord' || rawRole === 'path') && (ui.navSection || 'overview') === 'overview' ? 'all' : ui.navSection || 'overview';
   const navStream = ui.navStream; // selected stream summary card ('all' = null)
   const batchFilter = ui.batchFilter; // drill-down from a مرحلة card
   const devStatusOf = devStatusOfItem;
@@ -829,27 +830,69 @@ function build(s: Store) {
   // then «دفعات الإطلاق». (Demo mode lists all streams for testing.)
   const coordStreamIds = process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? PATHS.map((p) => p.id) : s.myPaths?.length ? s.myPaths : [myPath];
   const cntEntStream = (pid: string) => s.items.filter((i) => ent(i) === entityName && i.path === pid).length;
+  const RESULTS_ICON = 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2z';
+  const plainNav = (key: string, label: string, icon: string) => ({
+    key,
+    label,
+    icon,
+    sub: false,
+    pin: false,
+    heading: false,
+    count: undefined as number | undefined,
+    active: navSection === key,
+    onClick: () => s.setNavSection(key),
+  });
+  const invHead = { key: 'invhead', label: 'قوائم الحصر', icon: '', sub: false, pin: false, heading: true, count: undefined as number | undefined, active: false, onClick: () => {} };
+  const streamItem = (pid: string, count: number, active: boolean, onClick: () => void) => ({
+    key: 'inv-' + pid,
+    label: 'مسار ' + pathById(pid).name,
+    icon: PIC[pid],
+    sub: true,
+    pin: true,
+    heading: false,
+    count: count as number | undefined,
+    active,
+    onClick,
+  });
   const navItemsOut =
     rawRole === 'coord'
       ? [
-          { key: 'invhead', label: 'قوائم الحصر', icon: '', sub: false, pin: false, heading: true, count: undefined as number | undefined, active: false, onClick: () => {} },
-          ...coordStreamIds.map((pid) => ({
-            key: 'inv-' + pid,
-            label: 'مسار ' + pathById(pid).name,
-            icon: PIC[pid],
-            sub: true,
-            pin: true,
-            heading: false,
-            count: cntEntStream(pid) as number | undefined,
-            active: navSection === 'all' && myPath === pid,
-            onClick: () => {
+          invHead,
+          ...coordStreamIds.map((pid) =>
+            streamItem(pid, cntEntStream(pid), navSection === 'all' && myPath === pid, () => {
               s.setMyPath(pid);
               s.setNavSection('all');
-            },
-          })),
-          { key: 'lplan', label: 'دفعات الإطلاق', icon: NAV_ROCKET, sub: false, pin: false, heading: false, count: undefined as number | undefined, active: navSection === 'lplan', onClick: () => s.setNavSection('lplan') },
+            })
+          ),
+          plainNav('lplan', 'دفعات الإطلاق', NAV_ROCKET),
         ]
-      : navItems;
+      : rawRole === 'path'
+        ? [
+            // stream head / deputy: the stream's inventory (all entities —
+            // review + approval happen from the list), then the batches
+            invHead,
+            streamItem(myPath, roleBase.filter((i) => i.path === myPath).length, navSection === 'all', () => s.setNavSection('all')),
+            plainNav('lplan', 'دفعات الإطلاق', NAV_ROCKET),
+            plainNav('results', 'النتائج المتوقعة', RESULTS_ICON),
+            plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
+          ]
+        : rawRole === 'ai'
+          ? [
+              // committee chair + secretariat: national dashboard, then the
+              // three streams' inventories (view-only) and the batches
+              plainNav('overview', 'الرئيسية', NAV_HOME),
+              invHead,
+              ...PATHS.map((p) =>
+                streamItem(p.id, roleBase.filter((i) => i.path === p.id).length, navSection === 'all' && navStream === p.id, () => {
+                  s.setNavSection('all');
+                  s.setNavStream(p.id);
+                })
+              ),
+              plainNav('lplan', 'دفعات الإطلاق', NAV_ROCKET),
+              plainNav('results', 'النتائج المتوقعة', RESULTS_ICON),
+              plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
+            ]
+          : navItems;
 
   const typeSections: Record<string, string> = {
     all: 'جميع المدخلات',
@@ -1285,6 +1328,7 @@ function build(s: Store) {
                 id: i.id,
                 title: i.title || '—',
                 sub: bPath === 'services' ? i.subService || '' : bPath === 'strategy' ? i.axis || '' : i.opType || '',
+                sector: i.sector || '',
                 prio: prioCellOf(i),
                 currentBatch: i.execBatch ? batchDafaaLabel(i.execBatch) : 'بدون دفعة',
                 onAssign: () => s.assignItemBatch(i.id, b.name),

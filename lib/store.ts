@@ -38,7 +38,10 @@ import {
   TBD_BATCH,
   seedExpectedResults,
   DEFAULT_CONTACT_EMAILS,
+  DEFAULT_LIBRARY_DOCS,
+  DEFAULT_ABOUT_HERO,
 } from './domain';
+import type { LibraryDoc, ContactInquiry } from './domain';
 import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
 import type { LaunchPlan, ExpectedResult } from './domain';
@@ -176,6 +179,9 @@ type State = {
   expectedResults: ExpectedResult[];
   // contact-page inquiry inboxes (editable from the admin backoffice)
   contactEmails: Record<string, string>;
+  aboutHero: string;
+  libraryDocs: LibraryDoc[];
+  inquiries: ContactInquiry[];
   users: UserRec[];
   readNotifs: string[];
   programStep: number;
@@ -255,6 +261,12 @@ type Actions = {
   setItemDate: (id: string, k: 'startDate' | 'endDate', v: string) => void;
   assignItemBatch: (id: string, batch: string) => void;
   setContactEmail: (k: string, v: string) => void;
+  setAboutHero: (v: string) => void;
+  updLibDoc: (id: string, patch: Partial<LibraryDoc>) => void;
+  addLibDoc: () => void;
+  removeLibDoc: (id: string) => void;
+  addInquiry: (q: { name: string; phone: string; email: string; stream: string; message: string }) => void;
+  toggleInquiryDone: (id: string) => void;
   toggleStepFilter: (n: number) => void;
   // create wizard
   openCreate: () => void;
@@ -464,6 +476,9 @@ function initialState(): State {
     launchPlans: recalcPlanBudgets(seedItems(), seedLaunchPlans()),
     expectedResults: seedExpectedResults(),
     contactEmails: { ...DEFAULT_CONTACT_EMAILS },
+    aboutHero: DEFAULT_ABOUT_HERO,
+    libraryDocs: DEFAULT_LIBRARY_DOCS.map((d) => ({ ...d })),
+    inquiries: [],
     users: seedUsers(DEFAULT_ENTITY),
     readNotifs: [],
     programStep: 1,
@@ -557,6 +572,9 @@ export const useStore = create<Store>((set, get) => {
       launchPlans: s.launchPlans,
       expectedResults: s.expectedResults,
       contactEmails: s.contactEmails,
+      aboutHero: s.aboutHero,
+      libraryDocs: s.libraryDocs,
+      inquiries: s.inquiries,
       users: s.users,
       phase: s.phase,
       setup: s.setup,
@@ -622,6 +640,9 @@ export const useStore = create<Store>((set, get) => {
           launchPlans,
           expectedResults: !fresh && Array.isArray(saved!.expectedResults) ? (saved!.expectedResults as ExpectedResult[]) : seedExpectedResults(),
           contactEmails: saved!.contactEmails && typeof saved!.contactEmails === 'object' ? { ...DEFAULT_CONTACT_EMAILS, ...(saved!.contactEmails as Record<string, string>) } : { ...DEFAULT_CONTACT_EMAILS },
+          aboutHero: typeof saved!.aboutHero === 'string' && (saved!.aboutHero as string).trim() ? (saved!.aboutHero as string) : DEFAULT_ABOUT_HERO,
+          libraryDocs: Array.isArray(saved!.libraryDocs) && (saved!.libraryDocs as LibraryDoc[]).length ? (saved!.libraryDocs as LibraryDoc[]) : DEFAULT_LIBRARY_DOCS.map((d) => ({ ...d })),
+          inquiries: Array.isArray(saved!.inquiries) ? (saved!.inquiries as ContactInquiry[]) : [],
           view: (saved!.view as State['view']) || 'login',
           lang: (saved!.lang as State['lang']) || 'ar',
           entityName: (saved!.entityName as string) || DEFAULT_ENTITY,
@@ -962,6 +983,40 @@ export const useStore = create<Store>((set, get) => {
     assignItemBatch: (id, batch) => patchItem(id, { execBatch: batch }),
     setContactEmail: (k, v) => {
       set((st) => ({ contactEmails: { ...st.contactEmails, [k]: v } }));
+      persist();
+    },
+    setAboutHero: (v) => {
+      set({ aboutHero: v });
+      persist();
+    },
+    updLibDoc: (id, patch) => {
+      set((st) => ({ libraryDocs: st.libraryDocs.map((d) => (d.id === id ? { ...d, ...patch } : d)) }));
+      persist();
+    },
+    addLibDoc: () => {
+      set((st) => ({
+        libraryDocs: [
+          ...st.libraryDocs,
+          { id: 'doc-' + Date.now().toString(36), title: 'وثيقة جديدة', cat: 'guide' as const, date: '', fileUrl: '' },
+        ],
+      }));
+      persist();
+    },
+    removeLibDoc: (id) => {
+      set((st) => ({ libraryDocs: st.libraryDocs.filter((d) => d.id !== id) }));
+      persist();
+    },
+    addInquiry: (q) => {
+      set((st) => ({
+        inquiries: [
+          { id: 'inq-' + Date.now().toString(36), ...q, ts: Date.now(), done: false },
+          ...st.inquiries,
+        ],
+      }));
+      persist();
+    },
+    toggleInquiryDone: (id) => {
+      set((st) => ({ inquiries: st.inquiries.map((i) => (i.id === id ? { ...i, done: !i.done } : i)) }));
       persist();
     },
     toggleStepFilter: (n) => set((s) => ({ ui: { ...s.ui, stepFilter: s.ui.stepFilter === n ? null : n } })),

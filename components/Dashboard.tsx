@@ -43,7 +43,7 @@ const COORD_TOUR_STEPS: TourStep[] = [
 const AI_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة صلاحياتك في المتابعة على المستوى الوطني.' },
   { sel: '[data-tour="ai-heading"]', title: 'لوحة اللجنة الوطنية', desc: 'تعرض هذه اللوحة نظرة وطنية شاملة على المدخلات المعتمدة من رؤساء المسارات، وتوزيعها على المسارات الثلاثة والجهات المشاركة.' },
-  { sel: '[data-tour="nav-all"]', title: 'صفحات المسارات', desc: 'تتيح لك هذه الصفحات استعراض المدخلات المعتمدة عبر جميع المسارات والجهات (اطلاع فقط)، مع مؤشرات وفلاتر كل مسار عند اختياره.' },
+  { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'قوائم حصر المسارات الثلاثة — اختر المسار لاستعراض مدخلاته المعتمدة (اطلاع فقط) مع مؤشراته وفلاتره.' },
   { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'جداول دفعات الإطلاق لكل مسار مع أولوية الاختيار والتواريخ والحالة — تنقّل بين المسارات من أعلى الصفحة.' },
   { sel: '[data-tour="nav-entities"]', title: 'الجهات المشاركة', desc: 'يعرض هذا القسم قائمة الجهات المشاركة وعدد المدخلات المقدمة من كل جهة، لمتابعة مستوى المشاركة والالتزام.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يصلك هنا إشعار بكل مدخل جديد يعتمده رئيس المسار.' },
@@ -55,7 +55,7 @@ const AI_TOUR_STEPS: TourStep[] = [
 const PATH_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك كرئيس للمسار أو نائبٍ له.' },
   { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات أعداد مدخلات المسار من جميع الجهات، القابلة للتحول والمستهدف تحويلها، وتوزيع الأولويات المحسوبة وفق مصفوفة المسار.' },
-  { sel: '[data-tour="nav-all"]', title: 'قائمة مدخلات المسار', desc: 'قائمة موحّدة لمدخلات جميع الجهات ضمن المسار، مع فلاتر الجهة والقطاع والأولوية والحالة. افتح أي مدخل لاستعراض تفاصيله واعتماده أو إعادته أو طلب معلومات إضافية.' },
+  { sel: '[data-tour="nav-inv"]', title: 'قائمة حصر المسار', desc: 'قائمة موحّدة لمدخلات جميع الجهات ضمن المسار، مع فلاتر الجهة والقطاع والأولوية والحالة. افتح أي مدخل لاستعراض تفاصيله واعتماده أو إعادته أو طلب معلومات إضافية.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات وطلبات الاعتماد', desc: 'المدخلات الجديدة بانتظار اعتمادك تصلك هنا، ويمكنك اعتمادها أو رفضها أو طلب معلومات إضافية مباشرة من الإشعار.' },
   { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'جداول دفعات الإطلاق للمسار مع أولوية الاختيار والتواريخ والحالة (اطلاع فقط — التوزيع والتواريخ من مسؤولية منسق المسار).' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن مراجعة مدخلات الجهات ضمن المسار واعتماد الجاهز منها؛ المدخلات المعتمدة تظهر مباشرة للجنة الوطنية.' },
@@ -675,6 +675,8 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
   const bt = vm.batchTables!;
   const [addOpen, setAddOpen] = useState<string | null>(null); // rawName of the batch whose picker is open
   const [addQ, setAddQ] = useState('');
+  const [addSector, setAddSector] = useState('all');
+  const [addPrio, setAddPrio] = useState('all');
   const th: CSSProperties = { textAlign: 'right', padding: '9px 12px', fontSize: 11.5, fontWeight: 700, color: '#8A97AD', borderBottom: '1px solid #EEF1F7', whiteSpace: 'nowrap' };
   const td: CSSProperties = { padding: '10px 12px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', verticalAlign: 'middle' };
   const dateIn: CSSProperties = { border: '1px solid #DCE3EE', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit', color: '#33415C', background: '#fff' };
@@ -728,6 +730,8 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                 <button
                   onClick={() => {
                     setAddQ('');
+                    setAddSector('all');
+                    setAddPrio('all');
                     setAddOpen(b.rawName);
                   }}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#EAF0FE', border: '1px solid #D9E4FD', borderRadius: 999, padding: '6px 14px', fontSize: 11.5, color: '#2563EB', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}
@@ -825,7 +829,15 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
         const b = bt.batches.find((x) => x.rawName === addOpen);
         if (!b) return null;
         const q = addQ.trim();
-        const addList = b.addable.filter((a) => !q || a.title.includes(q) || a.sub.includes(q));
+        const sectors = Array.from(new Set(b.addable.map((a) => a.sector).filter(Boolean)));
+        const prios = Array.from(new Set(b.addable.map((a) => a.prio).filter((v) => v && v !== '—')));
+        const addList = b.addable.filter(
+          (a) =>
+            (!q || a.title.includes(q) || a.sub.includes(q)) &&
+            (addSector === 'all' || a.sector === addSector) &&
+            (addPrio === 'all' || a.prio === addPrio)
+        );
+        const popSel: CSSProperties = { border: '1px solid #DCE3EE', borderRadius: 10, padding: '9px 10px', paddingLeft: 26, fontSize: 12, fontFamily: 'inherit', color: '#33415C', backgroundColor: '#FAFBFE', cursor: 'pointer', flex: 'none', maxWidth: 170 };
         return (
           <div
             onClick={() => setAddOpen(null)}
@@ -842,12 +854,26 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                 </button>
               </div>
               <div style={{ padding: '14px 20px 18px' }}>
-                <input
-                  value={addQ}
-                  onChange={(e) => setAddQ(e.target.value)}
-                  placeholder="بحث…"
-                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, fontFamily: 'inherit', color: '#33415C', background: '#FAFBFE', marginBottom: 12, outline: 'none' }}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                  <input
+                    value={addQ}
+                    onChange={(e) => setAddQ(e.target.value)}
+                    placeholder="بحث…"
+                    style={{ flex: '1 1 160px', minWidth: 0, boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, fontFamily: 'inherit', color: '#33415C', background: '#FAFBFE', outline: 'none' }}
+                  />
+                  <select value={addSector} onChange={(e) => setAddSector(e.target.value)} style={popSel}>
+                    <option value="all">القطاع: الكل</option>
+                    {sectors.map((v) => (
+                      <option key={v} value={v}>{v}</option>
+                    ))}
+                  </select>
+                  <select value={addPrio} onChange={(e) => setAddPrio(e.target.value)} style={popSel}>
+                    <option value="all">الأولوية: الكل</option>
+                    {prios.map((v) => (
+                      <option key={v} value={v}>{v}</option>
+                    ))}
+                  </select>
+                </div>
                 {addList.length === 0 ? (
                   <div style={{ padding: '22px 0', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد مدخلات متاحة للإضافة</div>
                 ) : (
@@ -2815,7 +2841,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     placeholder="البحث باسم المدخل…"
                     style={{
                       height: 40,
-                      width: 220,
+                      width: 170,
                       border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
                       backgroundColor: '#fff',
                       borderRadius: 11,
@@ -2845,15 +2871,15 @@ export function Dashboard({ vm }: { vm: VM }) {
                 )}
                 {vm.svcFilterBar ? (
                   <>
-                    <FilterSelect value={vm.svcFilterBar.serviceValue} options={vm.svcFilterBar.serviceOptions} minWidth={170} onChange={(v) => s.setSvcFilter('svcServiceF', v)} />
-                    <FilterSelect value={vm.svcFilterBar.sectorValue} options={vm.svcFilterBar.sectorOptions} minWidth={150} onChange={(v) => s.setSvcFilter('svcSectorF', v)} />
-                    <FilterSelect value={vm.svcFilterBar.prioValue} options={vm.svcFilterBar.prioOptions} minWidth={150} onChange={(v) => s.setSvcFilter('svcPrioF', v)} />
+                    <FilterSelect value={vm.svcFilterBar.serviceValue} options={vm.svcFilterBar.serviceOptions} minWidth={130} onChange={(v) => s.setSvcFilter('svcServiceF', v)} />
+                    <FilterSelect value={vm.svcFilterBar.sectorValue} options={vm.svcFilterBar.sectorOptions} minWidth={120} onChange={(v) => s.setSvcFilter('svcSectorF', v)} />
+                    <FilterSelect value={vm.svcFilterBar.prioValue} options={vm.svcFilterBar.prioOptions} minWidth={120} onChange={(v) => s.setSvcFilter('svcPrioF', v)} />
                   </>
                 ) : vm.stgFilterBar ? (
                   <>
-                    <FilterSelect value={vm.stgFilterBar.taskValue} options={vm.stgFilterBar.taskOptions} minWidth={170} onChange={(v) => s.setStgFilter('stgTaskF', v)} />
-                    <FilterSelect value={vm.stgFilterBar.sectorValue} options={vm.stgFilterBar.sectorOptions} minWidth={150} onChange={(v) => s.setStgFilter('stgSectorF', v)} />
-                    <FilterSelect value={vm.stgFilterBar.prioValue} options={vm.stgFilterBar.prioOptions} minWidth={160} onChange={(v) => s.setStgFilter('stgPrioF', v)} />
+                    <FilterSelect value={vm.stgFilterBar.taskValue} options={vm.stgFilterBar.taskOptions} minWidth={130} onChange={(v) => s.setStgFilter('stgTaskF', v)} />
+                    <FilterSelect value={vm.stgFilterBar.sectorValue} options={vm.stgFilterBar.sectorOptions} minWidth={120} onChange={(v) => s.setStgFilter('stgSectorF', v)} />
+                    <FilterSelect value={vm.stgFilterBar.prioValue} options={vm.stgFilterBar.prioOptions} minWidth={120} onChange={(v) => s.setStgFilter('stgPrioF', v)} />
                   </>
                 ) : (
                   <>
@@ -2884,6 +2910,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </button>
                 </div>
                 <div style={{ flex: 1 }} />
+                {/* action cluster — flex:none keeps the toggle, report and both
+                    CTAs together on the same line when the row wraps */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 'none' }}>
                 {/* cards / table view switcher */}
                 <div
                   style={{
@@ -2955,7 +2984,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 8,
-                      height: 42,
+                      height: 40,
                       padding: '0 18px',
                       background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
                       color: '#fff',
@@ -2971,6 +3000,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={16} strokeWidth={2.2} /> رفع ملف Excel
                   </button>
                 )}
+                </div>
               </div>
 
               {/* cards / table */}
