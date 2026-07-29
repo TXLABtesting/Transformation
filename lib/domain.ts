@@ -92,7 +92,7 @@ export const DEFAULT_ABOUT_HERO =
   'بتوجيهات من صاحب السمو الشيخ محمد بن زايد آل نهيان، رئيس الدولة "حفظه الله"، أعلن صاحب السمو الشيخ محمد بن راشد آل مكتوم، نائب رئيس الدولة رئيس مجلس الوزراء حاكم دبي "رعاه الله"، في أبريل 2026 عن إطلاق مشروع وطني استراتيجي، بإشراف سمو الشيخ منصور بن زايد آل نهيان، نائب رئيس الدولة نائب رئيس مجلس الوزراء رئيس ديوان الرئاسة، يهدف إلى تحويل 50% من العمليات والمهام والإجراءات والخدمات الحكومية إلى نماذج وأنظمة مدعومة بالذكاء الاصطناعي المساعد خلال عامين، بما يسهم في خفض التكاليف التشغيلية، ورفع الكفاءة الحكومية، وتعزيز جودة المخرجات والخدمات، وتسريع الإنجاز، ودعم اتخاذ القرار، وذلك لبناء أفضل حكومة في العالم ولتعزيز جاهزية الدولة لمتغيرات المستقبل.';
 // full About-page content — every section editable from the admin backoffice
 export type AboutContent = {
-  timeline: { year: string; title: string; sub: string; major: boolean }[];
+  timeline: { year: string; title: string; sub: string; major: boolean; img?: string }[];
   targets: { label1: string; value1: string; text1: string; label2: string; value2: string; text2: string; note: string };
   tracks: { title: string; desc: string }[];
   scope: { title: string; desc: string }[];
