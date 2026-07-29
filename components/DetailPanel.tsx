@@ -349,7 +349,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
             >
               <div style={labelStyle}>الأولوية</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <LevelPill v={d.priority} />
+                {d.priority ? <LevelPill v={d.priority} /> : null}
                 {d.rankLabel && (
                   <span
                     style={{

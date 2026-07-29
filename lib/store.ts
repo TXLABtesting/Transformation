@@ -140,6 +140,9 @@ export type UiState = {
   svcServiceF: string;
   svcSectorF: string;
   svcPrioF: string;
+  // inline add-manually form (rendered under the table, not a popup)
+  inlineCreate: boolean;
+  confirmAdd: boolean;
   filter: string; // type filter
   statusFilter: string;
   fundFilter: string; // 'all' | 'funded' | 'notfunded'
@@ -249,6 +252,9 @@ type Actions = {
   chooseManual: () => void;
   openCreateManual: () => void;
   openCreateBulk: () => void;
+  closeInline: () => void;
+  confirmInlineAdd: () => void;
+  cancelConfirmAdd: () => void;
   chooseBulk: () => void;
   mBack: () => void;
   setDraftField: (k: keyof Item, v: unknown) => void;
@@ -425,6 +431,8 @@ function defaultUi(): UiState {
     svcServiceF: 'all',
     svcSectorF: 'all',
     svcPrioF: 'all',
+    inlineCreate: false,
+    confirmAdd: false,
     filter: 'all',
     statusFilter: 'all',
     fundFilter: 'all',
@@ -1069,7 +1077,16 @@ export const useStore = create<Store>((set, get) => {
     openCreateManual: () => {
       get().openCreate();
       get().chooseManual();
+      // the manual form renders inline under the table, not as a popup
+      setUi({ modalOpen: false, inlineCreate: true, confirmAdd: false });
     },
+    closeInline: () => setUi({ inlineCreate: false, confirmAdd: false, draft: null, editingId: null }),
+    confirmInlineAdd: () => {
+      setUi({ confirmAdd: false });
+      get().submitItem();
+      setUi({ inlineCreate: false, modalOpen: false, mStep: 'path', draft: null, editingId: null });
+    },
+    cancelConfirmAdd: () => setUi({ confirmAdd: false }),
     openCreateBulk: () => {
       get().openCreate();
       get().chooseBulk();
@@ -1108,6 +1125,10 @@ export const useStore = create<Store>((set, get) => {
         }
         if (!(d.execBatch || '').trim()) {
           return toast('نرجو اختيار دفعة الإطلاق قبل الإرسال للاعتماد');
+        }
+        if (s.ui.inlineCreate) {
+          setUi({ confirmAdd: true });
+          return;
         }
         get().submitItem();
         return;
@@ -1168,6 +1189,10 @@ export const useStore = create<Store>((set, get) => {
       if (d && (d.transformability || '') !== 'غير قابل' && !(d.execBatch || '').trim()) {
         return toast('نرجو اختيار مرحلة التنفيذ والإطلاق قبل الإرسال للاعتماد');
       }
+      if (s.ui.inlineCreate) {
+        setUi({ confirmAdd: true });
+        return;
+      }
       get().submitItem();
     },
     fPrev: () => {
@@ -1183,7 +1208,7 @@ export const useStore = create<Store>((set, get) => {
     saveDraftOnly: () => {
       if (!get().ui.draft) return;
       commitDraft(get, set, persist, toast, 'مسودة', true);
-      setUi({ modalOpen: false, draft: null, editingId: null });
+      setUi({ modalOpen: false, draft: null, editingId: null, inlineCreate: false, confirmAdd: false });
     },
     addSub: (pi) =>
       set((s) => {
