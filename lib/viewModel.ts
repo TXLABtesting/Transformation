@@ -269,12 +269,19 @@ function build(s: Store) {
     execFrac: grandBudget ? Math.min(0.92, Math.max(0.08, execBudgetTotal / grandBudget)) : 0.67,
   };
   const notCap = roleBase.filter((i) => (i.transformability || '') === 'غير قابل').length;
+  // the new model has no development pipeline: entries are approved into
+  // دفعات الإطلاق and later launched
   const inputsCard = {
     total: roleBase.length,
     capable: roleBase.length - notCap,
-    underDev: roleBase.filter((i) => devStatusOfItem(i) === 'underDev').length,
-    developed: roleBase.filter((i) => devStatusOfItem(i) === 'developed').length,
-    launched: roleBase.filter((i) => devStatusOfItem(i) === 'launched').length,
+    approved: roleBase.filter((i) => {
+      const w = wfOf(i);
+      return w === 'exec' || w === 'budget';
+    }).length,
+    launched: roleBase.filter((i) => {
+      const w = wfOf(i);
+      return w === 'launch' || w === 'done';
+    }).length,
     notCapable: notCap,
     capFrac: roleBase.length ? Math.min(0.94, Math.max(0.06, (roleBase.length - notCap) / roleBase.length)) : 0.75,
   };
