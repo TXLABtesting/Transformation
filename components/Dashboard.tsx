@@ -2034,6 +2034,12 @@ export function Dashboard({ vm }: { vm: VM }) {
                         >
                           {n.sub}
                         </div>
+                        {n.mail && (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 10, fontWeight: 700, color: '#6B7A93', background: '#F2F5FA', borderRadius: 999, padding: '2px 9px' }}>
+                            <Icon d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM22 6l-10 7L2 6" size={11} color="#6B7A93" />
+                            أُرسل إشعار بريدي تلقائي
+                          </div>
+                        )}
                         {n.act && (
                           <div style={{ display: 'flex', gap: 7, marginTop: 9 }}>
                             <button
@@ -2645,12 +2651,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                         </div>
                       </div>
                     </div>
-                    {/* entities + total */}
-                    <div data-r="kpi" data-tour="kpis" style={{ ...card, flexDirection: 'row', alignItems: 'stretch', padding: 14, gap: 12 }}>
-                      <CmtStat value={vm.aiStats.entCount} label="الجهات المشاركة" sub={vm.aiStats.entCount > 2 ? 'جهات مشاركة' : 'جهة مشاركة'} iconD="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01" info="عدد الجهات الاتحادية التي قدّمت مدخلات ضمن المشروع." />
-                      <div style={{ width: 1, background: '#EEF1F6', alignSelf: 'stretch', margin: '2px 0' }} />
-                      <CmtStat value={vm.aiStats.total} label="إجمالي المدخلات" sub={vm.aiStats.total > 2 ? 'مدخلات مسجلة' : 'مُدخل مسجّل'} iconD="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" info="كل ما قدّمته الجهات عبر مسارات المشروع ووصل إلى اللجنة الوطنية." />
-                    </div>
                   </div>
                 );
               })()}
@@ -2658,7 +2658,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               {/* Section 2: المدخلات حسب المسار */}
               <div>
                 <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب المسار</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع المدخلات حسب المسار ونوع المدخل.</div>
+                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع المدخلات حسب المسار ودفعات الإطلاق.</div>
               </div>
               <div data-r="seccards" data-tour="ai-streams" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
                 {vm.committeeStreamCards.map((st) => (
@@ -2675,7 +2675,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       <span style={{ fontSize: 30, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{st.entCount}</span>
                     </div>
                     <div style={{ background: '#F7F9FD', border: '1px solid #EEF1F6', borderRadius: 12, padding: '12px 13px' }}>
-                      <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 9, textAlign: 'right' }}>توزيع المدخلات حسب التصنيف</div>
+                      <div style={{ fontSize: 10.5, color: '#9AA6BC', fontWeight: 400, marginBottom: 9, textAlign: 'right' }}>توزيع المدخلات حسب دفعات الإطلاق</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                           <span style={{ fontSize: 12, color: '#13213C', fontWeight: 800 }}>الإجمالي</span>
@@ -3073,14 +3073,12 @@ export function Dashboard({ vm }: { vm: VM }) {
                       </div>
                       {/* approved for funding + approved cost — label right, value left */}
                       <div style={{ borderTop: '1px solid #EEF1F7', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {e2.myNominated != null && (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                            <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>المدخلات المرشحة من قبلي</div>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.myNominated}</div>
-                          </div>
-                        )}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>{e2.myNominated != null ? 'المدخلات المعتمدة' : 'العناصر المعتمدة'}</div>
+                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>بانتظار اعتماد رئيس المسار</div>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.pendingApproval}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>المدخلات المعتمدة</div>
                           <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.funded}</div>
                         </div>
                       </div>

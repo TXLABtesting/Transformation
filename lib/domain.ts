@@ -214,6 +214,90 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'execBatch', label: 'دفعة الإطلاق' },
   ],
 };
+// select-field options per stream — mirrors the entry forms exactly (used for
+// the Excel template dropdowns)
+const SCALE_1_5 = ['1', '2', '3', '4', '5'];
+export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
+  services: {
+    usageIntensity: ['منخفضة', 'متوسطة', 'مرتفعة'],
+    complexity: ['منخفض', 'متوسط', 'مرتفع'],
+    readinessLevel: ['منخفض', 'متوسط', 'مرتفع'],
+    transformYes: ['نعم', 'لا'],
+  },
+  strategy: {
+    automationLevel: ['مؤتمتة كلياً', 'مؤتمتة جزئياً', 'غير مؤتمتة'],
+    importance: SCALE_1_5,
+    usageIntensity: SCALE_1_5,
+    readinessLevel: SCALE_1_5,
+    impactScore: SCALE_1_5,
+    transformScore: SCALE_1_5,
+    outputClarity: SCALE_1_5,
+    riskLevel: ['منخفض', 'متوسط', 'عالي'],
+    transformYes: ['نعم', 'لا'],
+  },
+  ops: {
+    opType: ['العمليات التخصصية', 'عمليات الدعم المؤسسي'],
+    isAutomated: ['نعم', 'لا'],
+    usageIntensity: SCALE_1_5,
+    readinessLevel: SCALE_1_5,
+    impactScore: SCALE_1_5,
+    complexity: SCALE_1_5,
+    transformScore: SCALE_1_5,
+    transformYes: ['نعم', 'لا'],
+  },
+};
+// sample row shown (in gray italics) under the header to guide filling
+export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
+  services: {
+    title: 'خدمة تجديد الرخصة التجارية',
+    subService: 'تجديد فوري للرخصة',
+    sector: 'قطاع الاقتصاد',
+    dept: 'إدارة التسجيل التجاري',
+    section: 'قسم الرخص',
+    usageIntensity: 'مرتفعة',
+    complexity: 'منخفض',
+    readinessLevel: 'مرتفع',
+    transformYes: 'نعم',
+    execBatch: 'الدفعة الأولى',
+  },
+  strategy: {
+    axis: 'محور السياسات العامة',
+    title: 'تحليل اتجاهات السياسات',
+    subActivities: 'جمع البيانات، التحليل، إعداد التقرير',
+    sector: 'قطاع الاستراتيجية',
+    dept: 'إدارة السياسات',
+    section: 'قسم التحليل',
+    automationLevel: 'مؤتمتة جزئياً',
+    automationSystem: 'نظام إدارة الوثائق',
+    usageIntensity: '4',
+    importance: '5',
+    readinessLevel: '3',
+    impactScore: '4',
+    transformScore: '4',
+    outputClarity: '5',
+    riskLevel: 'منخفض',
+    transformYes: 'نعم',
+    execBatch: 'الدفعة الأولى',
+  },
+  ops: {
+    opType: 'عمليات الدعم المؤسسي',
+    title: 'تدقيق طلبات الموارد البشرية',
+    subActivities: 'استلام الطلبات، التحقق، إصدار القرار',
+    sector: 'قطاع الخدمات المساندة',
+    dept: 'إدارة الموارد البشرية',
+    section: 'قسم شؤون الموظفين',
+    isAutomated: 'لا',
+    automationSystem: 'لا يوجد',
+    usageIntensity: '4',
+    readinessLevel: '3',
+    impactScore: '4',
+    complexity: '2',
+    transformScore: '4',
+    transformYes: 'نعم',
+    execBatch: 'الدفعة الثانية',
+  },
+};
+
 const plainOf = (v: unknown): string => String(v ?? '').replace(/<[^>]*>/g, '').trim();
 // labels of the required entry fields this item has not filled yet
 export function missingFieldsOf(i: Record<string, unknown> & { path?: string }): string[] {

@@ -3,7 +3,7 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById } from '@/lib/domain';
+import { STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, streamLaunchBatches, TBD_BATCH, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate } from '@/lib/export';
 
@@ -1684,7 +1684,13 @@ function BulkStep({ vm }: { vm: VM }) {
         <button
           onClick={() => {
             const path = vm.store.ui.draft?.path || vm.store.myPath;
-            downloadItemsTemplate(pathById(path).name, (STREAM_FIELDS[path] || []).map((f) => f.label));
+            const batchOpts = streamLaunchBatches(path).map((b) => b.name.replace(/^إطلاق /, '')).concat([TBD_BATCH]);
+            downloadItemsTemplate(
+              pathById(path).name,
+              STREAM_FIELDS[path] || [],
+              { ...(STREAM_FIELD_OPTIONS[path] || {}), execBatch: batchOpts },
+              STREAM_FIELD_SAMPLE[path] || {}
+            );
           }}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#2563EB', fontWeight: 800, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
         >
