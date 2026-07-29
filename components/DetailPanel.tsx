@@ -585,8 +585,6 @@ export function DetailPanel({ vm }: { vm: VM }) {
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E5EEFF', color: '#1D4ED8', borderRadius: 999, padding: '4px 12px', fontSize: 12.5, fontWeight: 800 }}>
                         الأولوية {d.svcSelPriority}
                       </span>
-                    ) : d.transformYes === 'لا' ? (
-                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#8A6314' }}>مستثناة من الأولويات</span>
                     ) : (
                       '—'
                     )}

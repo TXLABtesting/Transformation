@@ -1125,9 +1125,9 @@ function build(s: Store) {
 
   // ---- services coordinator KPI strip (أعداد الخدمات الفرعية) ----
   const svcItems = roleBase.filter((i) => i.path === 'services' && i.type === 'service');
-  // أولوية الاختيار applies only to entries with أولوية التحول = نعم — a «لا»
-  // entry is excluded from the priorities and the automation-target counts
-  const svcPr = (i: Item) => (i.transformYes === 'نعم' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) : null);
+  // أولوية الاختيار is always derived from the matrix. أولوية التحول (نعم/لا)
+  // affects ONLY «المستهدف تحويلها» — القابلة للتحول = priority 1-3 regardless
+  const svcPr = (i: Item) => svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
   const svcKpis =
     filterStream === 'services'
       ? {
@@ -2103,7 +2103,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     subService: i.subService,
     readinessLevel: i.readinessLevel,
     transformYes: i.transformYes,
-    svcSelPriority: i.type === 'service' && i.transformYes === 'نعم' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) : null,
+    svcSelPriority: i.type === 'service' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) : null,
     serviceOwner: i.serviceOwner,
     targetUsers: i.targetUsers,
     currentJourney: i.currentJourney,
@@ -2303,8 +2303,8 @@ function buildModal(s: Store) {
     fStepHint: fHints[ui.fStep - 1] || '',
     fNextLabel: ui.fStep >= fLabels.length ? 'إرسال للاعتماد' : 'التالي',
     // أولوية الاختيار — live matrix result while filling the services form
-    svcSelPriority: type === 'service' && draft?.transformYes === 'نعم' ? svcPriority(draft?.usageIntensity, draft?.complexity, draft?.readinessLevel) : null,
-    svcExcluded: type === 'service' && draft?.transformYes === 'لا',
+    svcSelPriority: type === 'service' ? svcPriority(draft?.usageIntensity, draft?.complexity, draft?.readinessLevel) : null,
+    svcExcluded: false,
     // execution batches (البرنامج الزمني) + centrally-managed launch plans
     batchOptions: [
       ...streamLaunchBatches(path).map((b) => ({
