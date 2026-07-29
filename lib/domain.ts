@@ -61,12 +61,24 @@ export const STRATEGY_AXES = [
   'التنافسية العالمية',
 ];
 
-// Contact-page inquiry routing — one inbox per stream + the secretariat for
-// general inquiries. Editable from the admin backoffice.
+// Contact-page inquiry routing — the PUBLIC site lists the project's five
+// streams + the secretariat (per the approved handoff), independent of the
+// three streams managed inside the platform. One inbox per entry, editable
+// from the admin backoffice; the mapping is never surfaced to the visitor.
+export const CONTACT_STREAMS: { key: string; label: string }[] = [
+  { key: 'services', label: 'الخدمات الحكومية' },
+  { key: 'strategy', label: 'العمل الحكومي الاستراتيجي' },
+  { key: 'ops', label: 'العمليات والدعم المؤسسي' },
+  { key: 'capacity', label: 'بناء القدرات والتدريب' },
+  { key: 'tech', label: 'تقنيات الذكاء الاصطناعي والبيانات' },
+  { key: 'general', label: 'الأمانة العامة للجنة الوطنية للذكاء الاصطناعي المساعد (استفسارات عامة)' },
+];
 export const DEFAULT_CONTACT_EMAILS: Record<string, string> = {
   services: 'services@aigp.gov.ae',
   strategy: 'strategy@aigp.gov.ae',
   ops: 'operations@aigp.gov.ae',
+  capacity: 'capacity@aigp.gov.ae',
+  tech: 'technology@aigp.gov.ae',
   general: 'secretariat@aigp.gov.ae',
 };
 
