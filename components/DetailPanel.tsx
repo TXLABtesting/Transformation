@@ -489,8 +489,54 @@ export function DetailPanel({ vm }: { vm: VM }) {
               </>
             )}
 
+            {/* --- STRATEGY TASK (حصر قائمة المهام) --- */}
+            {d.isStgTask && (
+              <>
+                <DetailSecHead title="بيانات المهمة" />
+                <DetailGrid cols={2}>
+                  <DetailCell label="المحور">{d.axis}</DetailCell>
+                  <DetailCell label="الأنشطة"><RichTextView html={(d.subActivities || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>
+                </DetailGrid>
+                <DetailGrid cols={3}>
+                  <DetailCell label="القطاع المعني">{d.sector}</DetailCell>
+                  <DetailCell label="الإدارة المعنية">{d.dept}</DetailCell>
+                  <DetailCell label="القسم المعني">{d.section}</DetailCell>
+                </DetailGrid>
+                <DetailSecHead title="الأتمتة" />
+                <DetailGrid cols={3}>
+                  <DetailCell label="مستوى الأتمتة">{d.automationLevel}</DetailCell>
+                  <DetailCell label="نسبة الأتمتة">{d.automationPct != null ? d.automationPct + '%' : '—'}</DetailCell>
+                  <DetailCell label="نظام الأتمتة">{d.automationSystem}</DetailCell>
+                </DetailGrid>
+                <DetailSecHead title="التقييم (من 1 إلى 5)" />
+                <DetailGrid cols={3}>
+                  <DetailCell label="مستوى الأهمية">{d.importance}</DetailCell>
+                  <DetailCell label="كثافة الاستخدام">{d.usageIntensity}</DetailCell>
+                  <DetailCell label="مستوى الجاهزية">{d.readinessLevel}</DetailCell>
+                </DetailGrid>
+                <DetailGrid cols={3}>
+                  <DetailCell label="مستوى الأثر المتوقع من التحول">{d.impactScore}</DetailCell>
+                  <DetailCell label="قابلية التحول">{d.transformScore}</DetailCell>
+                  <DetailCell label="وضوح المخرجات وقابليتها للمراجعة">{d.outputClarity}</DetailCell>
+                </DetailGrid>
+                <DetailGrid cols={3}>
+                  <DetailCell label="مستوى المخاطر"><LevelPill v={d.riskLevel} /></DetailCell>
+                  <DetailCell label="أولوية الاختيار">
+                    {d.selPriority ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E5EEFF', color: '#1D4ED8', borderRadius: 999, padding: '4px 12px', fontSize: 12.5, fontWeight: 800 }}>
+                        {d.selPriority}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </DetailCell>
+                  <DetailCell label="أولوية التحول">{d.transformYes}</DetailCell>
+                </DetailGrid>
+              </>
+            )}
+
             {/* --- OPERATION --- */}
-            {d.isOp && (
+            {d.isOp && !d.isStgTask && (
               <>
                 <DetailSecHead title={'خصائص ' + d.opWordDef} />
                 <DetailGrid cols={3}>

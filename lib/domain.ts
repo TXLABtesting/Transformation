@@ -48,20 +48,17 @@ export const PATHS: Path[] = [
     color: '#2563EB',
     extra: 'service',
   },
-  {
-    id: 'capacity',
-    name: 'بناء القدرات والتدريب',
-    desc: 'تطوير وتأهيل الموظفين الحكوميين في مجال الذكاء الاصطناعي المساعد',
-    color: '#2563EB',
-    extra: null,
-  },
-  {
-    id: 'tech',
-    name: 'تقنيات الذكاء الاصطناعي والبيانات',
-    desc: 'تطوير المنظومة التقنية والبنية التحتية للذكاء الاصطناعي المساعد',
-    color: '#2563EB',
-    extra: null,
-  },
+];
+
+// المحاور السبعة لمسار العمل الحكومي الاستراتيجي (حقل «المحور» في المهام)
+export const STRATEGY_AXES = [
+  'الاستراتيجية والمشاريع',
+  'الذكاء الاستراتيجي والاستشراف',
+  'السياسات',
+  'الأداء الحكومي',
+  'الهياكل الحكومية',
+  'الابتكار في العمل الحكومي',
+  'التنافسية العالمية',
 ];
 
 // «للتحديد بعد الدراسة»: execution stage deferred until the study concludes
@@ -84,6 +81,8 @@ export type TypeOption = { key: ItemType; label: string };
 export function availTypes(path: string): TypeOption[] {
   // the services stream accepts SERVICE entries only (no projects)
   if (path === 'services') return [{ key: 'service', label: 'خدمة' }];
+  // the strategy stream accepts TASK (مهمة) entries only (no projects)
+  if (path === 'strategy') return [{ key: 'operation', label: 'مهمة' }];
   const base: TypeOption[] = [{ key: 'project', label: 'مشروع' }];
   // operations exist in the operations stream and العمل الحكومي الاستراتيجي only
   if (path === 'ops' || path === 'strategy') base.push({ key: 'operation', label: path === 'strategy' ? 'مهمة' : 'عملية' });
@@ -428,8 +427,16 @@ export type Item = {
   serviceBundle?: boolean;
   // services stream entry fields (الخدمة الفرعية + مدخلات مصفوفة الأولوية)
   subService?: string;
-  readinessLevel?: string; // مستوى الجاهزية: منخفض / متوسط / مرتفع
+  readinessLevel?: string; // مستوى الجاهزية (خدمات: منخفض/متوسط/مرتفع · مهام: 1-5)
   transformYes?: string; // أولوية التحول: نعم / لا
+  // strategy stream task fields (حصر قائمة المهام)
+  axis?: string; // المحور (قائمة من 7 محاور)
+  importance?: string; // مستوى الأهمية 1-5
+  impactScore?: string; // مستوى الأثر المتوقع من التحول 1-5
+  transformScore?: string; // قابلية التحول 1-5
+  outputClarity?: string; // وضوح المخرجات وقابليتها للمراجعة 1-5
+  riskLevel?: string; // مستوى المخاطر: منخفض / متوسط / عالي
+  selPriority?: string; // أولوية الاختيار: عالية / متوسطة / منخفضة
   // operation-specific
   opType?: string;
   subActivities?: string;
@@ -917,7 +924,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = process.env.NEXT_PUBLIC_DEMO_DATA === '1' ? 'demo1' : 'v1';
+export const SEED_V = process.env.NEXT_PUBLIC_DEMO_DATA === '1' ? 'demo2' : 'v2';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 
