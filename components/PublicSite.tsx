@@ -135,7 +135,9 @@ export function PublicNav({ tab, onNav, onLogin }: { tab: PublicTab; onNav: (t: 
           border: 'none',
           borderRadius: libStyle ? 0 : 12,
           borderBottom: libStyle ? '3px solid #2563EB' : 'none',
-          ...(active && !libStyle ? { border: '1.5px solid #2563EB' } : {}),
+          // inset ring instead of a border: crisp corners at any zoom level,
+          // and no 1.5px layout jump between active/inactive
+          boxShadow: active && !libStyle ? 'inset 0 0 0 1.5px #2563EB' : 'none',
         }}
       >
         {n.label}
