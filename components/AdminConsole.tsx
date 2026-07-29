@@ -241,22 +241,127 @@ function ContactTab({ a }: { a: VM['admin'] }) {
 }
 
 // ---- الموقع العام: About-page content + library documents -----------------
+const siteCard: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 };
+const siteTa: CSSProperties = { width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 12, padding: '13px 15px', fontSize: 13, fontFamily: 'inherit', color: '#16233F', lineHeight: 2, outline: 'none', resize: 'vertical', background: '#FAFBFE' };
+
+function SiteSection({ title, sub, onAdd, children }: { title: string; sub: string; onAdd?: () => void; children: React.ReactNode }) {
+  return (
+    <div style={siteCard}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+        <div style={{ fontSize: 14, fontWeight: 800 }}>{title}</div>
+        {onAdd && (
+          <button onClick={onAdd} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <Icon d={IC_PLUS} size={12} color="#fff" />
+            إضافة
+          </button>
+        )}
+      </div>
+      <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginBottom: 14 }}>{sub}</div>
+      {children}
+    </div>
+  );
+}
+
 function SiteTab() {
   const s = useStore();
+  const ab = s.about;
+  const inp = (v: string, on: (x: string) => void, ph = '', flex = '1 1 180px'): React.ReactNode => (
+    <input value={v} onChange={(e) => on(e.target.value)} placeholder={ph} style={{ ...inputSt, flex }} />
+  );
+  const rowShell: CSSProperties = { border: '1px solid #E7ECF4', borderRadius: 12, padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' };
+  const delBtn = (onDel: () => void) => (
+    <button onClick={onDel} title="حذف" style={{ width: 34, height: 34, flex: 'none', borderRadius: 9, background: '#fff', border: '1px solid #F0D5D5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+      <Icon d={IC_TRASH} size={14} color="#C0303B" />
+    </button>
+  );
+  const updList = <K extends 'timeline' | 'tracks' | 'scope' | 'principles'>(key: K, idx: number, patch: Partial<(typeof ab)[K][number]>) => {
+    const list = ab[key].map((x, i) => (i === idx ? { ...x, ...patch } : x));
+    s.setAbout({ [key]: list } as Partial<typeof ab>);
+  };
+  const delFrom = (key: 'timeline' | 'tracks' | 'scope' | 'principles', idx: number) =>
+    s.setAbout({ [key]: ab[key].filter((_, i) => i !== idx) } as Partial<typeof ab>);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>محتوى صفحة «عن المشروع»</div>
-        <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginBottom: 12 }}>
-          النص التعريفي أعلى الصفحة العامة — يُحفظ تلقائياً ويظهر للزوار مباشرة.
+      <SiteSection title="محتوى صفحة «عن المشروع» — النص التعريفي" sub="النص أعلى الصفحة العامة — يُحفظ تلقائياً ويظهر للزوار مباشرة.">
+        <textarea value={s.aboutHero} onChange={(e) => s.setAboutHero(e.target.value)} rows={7} style={siteTa} />
+      </SiteSection>
+
+      <SiteSection
+        title="مسيرة التحول الحكومي (الخط الزمني)"
+        sub="محطات المسيرة — «رئيسية» تظهر بدائرة صورة على الخط، و«فرعية» أسفل الخط."
+        onAdd={() => s.setAbout({ timeline: [...ab.timeline, { year: '', title: '', sub: '', major: true }] })}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {ab.timeline.map((t, i) => (
+            <div key={i} style={rowShell}>
+              {inp(t.year, (v) => updList('timeline', i, { year: v }), 'السنة', '0 0 80px')}
+              {inp(t.title, (v) => updList('timeline', i, { title: v }), 'العنوان')}
+              {inp(t.sub, (v) => updList('timeline', i, { sub: v }), 'الوصف')}
+              <select value={t.major ? '1' : '0'} onChange={(e) => updList('timeline', i, { major: e.target.value === '1' })} style={{ ...inputSt, flex: '0 0 110px', paddingLeft: 26, cursor: 'pointer' }}>
+                <option value="1">رئيسية</option>
+                <option value="0">فرعية</option>
+              </select>
+              {delBtn(() => delFrom('timeline', i))}
+            </div>
+          ))}
         </div>
-        <textarea
-          value={s.aboutHero}
-          onChange={(e) => s.setAboutHero(e.target.value)}
-          rows={7}
-          style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 12, padding: '13px 15px', fontSize: 13, fontFamily: 'inherit', color: '#16233F', lineHeight: 2, outline: 'none', resize: 'vertical', background: '#FAFBFE' }}
-        />
-      </div>
+      </SiteSection>
+
+      <SiteSection title="المستهدفات الرئيسية" sub="بطاقتا المستهدفات والملاحظة أسفلهما.">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={rowShell}>
+            {inp(ab.targets.label1, (v) => s.setAbout({ targets: { ...ab.targets, label1: v } }), 'عنوان البطاقة الأولى', '0 0 140px')}
+            {inp(ab.targets.value1, (v) => s.setAbout({ targets: { ...ab.targets, value1: v } }), 'الرقم', '0 0 90px')}
+            {inp(ab.targets.text1, (v) => s.setAbout({ targets: { ...ab.targets, text1: v } }), 'النص')}
+          </div>
+          <div style={rowShell}>
+            {inp(ab.targets.label2, (v) => s.setAbout({ targets: { ...ab.targets, label2: v } }), 'عنوان البطاقة الثانية', '0 0 140px')}
+            {inp(ab.targets.value2, (v) => s.setAbout({ targets: { ...ab.targets, value2: v } }), 'الرقم', '0 0 90px')}
+            {inp(ab.targets.text2, (v) => s.setAbout({ targets: { ...ab.targets, text2: v } }), 'النص')}
+          </div>
+          <textarea value={ab.targets.note} onChange={(e) => s.setAbout({ targets: { ...ab.targets, note: e.target.value } })} rows={3} placeholder="ملاحظة النتائج والأثر المتوقع" style={siteTa} />
+        </div>
+      </SiteSection>
+
+      <SiteSection title="المسارات" sub="قائمة المسارات المعروضة للزوار (الترقيم تلقائي)." onAdd={() => s.setAbout({ tracks: [...ab.tracks, { title: '', desc: '' }] })}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {ab.tracks.map((t, i) => (
+            <div key={i} style={rowShell}>
+              <span style={{ fontSize: 13, fontWeight: 900, color: '#8FA3C4', flex: 'none', width: 26, textAlign: 'center' }}>{String(i + 1).padStart(2, '0')}</span>
+              {inp(t.title, (v) => updList('tracks', i, { title: v }), 'اسم المسار', '0 0 220px')}
+              {inp(t.desc, (v) => updList('tracks', i, { desc: v }), 'الوصف')}
+              {delBtn(() => delFrom('tracks', i))}
+            </div>
+          ))}
+        </div>
+      </SiteSection>
+
+      <SiteSection title="نطاق التحويل" sub="بطاقات النطاق ونص «خارج نطاق التحويل»." onAdd={() => s.setAbout({ scope: [...ab.scope, { title: '', desc: '' }] })}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {ab.scope.map((t, i) => (
+            <div key={i} style={rowShell}>
+              {inp(t.title, (v) => updList('scope', i, { title: v }), 'العنوان', '0 0 200px')}
+              {inp(t.desc, (v) => updList('scope', i, { desc: v }), 'الوصف')}
+              {delBtn(() => delFrom('scope', i))}
+            </div>
+          ))}
+          <textarea value={ab.outOfScope} onChange={(e) => s.setAbout({ outOfScope: e.target.value })} rows={3} placeholder="نص خارج نطاق التحويل" style={siteTa} />
+        </div>
+      </SiteSection>
+
+      <SiteSection title="المبادئ العامة" sub="القائمة الكاملة للمبادئ (العدد تلقائي)." onAdd={() => s.setAbout({ principles: [...ab.principles, { title: '', desc: '' }] })}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {ab.principles.map((t, i) => (
+            <div key={i} style={rowShell}>
+              <span style={{ fontSize: 12, fontWeight: 900, color: '#8FA3C4', flex: 'none', width: 22, textAlign: 'center' }}>{i + 1}</span>
+              {inp(t.title, (v) => updList('principles', i, { title: v }), 'المبدأ', '0 0 220px')}
+              {inp(t.desc, (v) => updList('principles', i, { desc: v }), 'الوصف')}
+              {delBtn(() => delFrom('principles', i))}
+            </div>
+          ))}
+        </div>
+      </SiteSection>
 
       <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
