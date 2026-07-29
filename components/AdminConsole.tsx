@@ -29,7 +29,7 @@ const inputSt: CSSProperties = {
   fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#16233F', outline: 'none',
 };
 
-type Tab = 'users' | 'assign' | 'roles';
+type Tab = 'users' | 'assign' | 'roles' | 'contact';
 
 const blankUser = (): UserRec => ({
   id: '', role: 'coord', name: '', title: '', email: '', phone: '', active: true,
@@ -59,6 +59,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
     { key: 'users', label: 'المستخدمون' },
     { key: 'assign', label: 'رؤساء المسارات واللجنة' },
     { key: 'roles', label: 'الأدوار والصلاحيات' },
+    { key: 'contact', label: 'بريد التواصل' },
   ];
 
   return (
@@ -128,6 +129,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
         )}
         {tab === 'assign' && <AssignTab a={a} onEdit={setEditing} onAdd={(u) => setEditing(u)} />}
         {tab === 'roles' && <RolesTab a={a} />}
+        {tab === 'contact' && <ContactTab a={a} />}
       </div>
 
       {editing && (
@@ -143,6 +145,35 @@ export function AdminConsole({ vm }: { vm: VM }) {
       )}
 
       {bulkOpen && <BulkUsers a={a} onClose={() => setBulkOpen(false)} />}
+    </div>
+  );
+}
+
+// ---- Contact inboxes (بريد التواصل للمسارات) ------------------------------
+function ContactTab({ a }: { a: VM['admin'] }) {
+  const rows = [
+    ...a.streams.map((st) => ({ key: st.id, label: 'مسار ' + st.name })),
+    { key: 'general', label: 'الأمانة العامة للجنة الوطنية (استفسارات عامة)' },
+  ];
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
+      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>بريد التواصل</div>
+      <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginBottom: 16 }}>
+        تُوجَّه استفسارات صفحة «تواصل معنا» إلى البريد المعتمد لكل مسار.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {rows.map((r) => (
+          <div key={r.key} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 260px', fontSize: 13, fontWeight: 700, color: '#33415C' }}>{r.label}</div>
+            <input
+              value={a.contactEmails[r.key] || ''}
+              onChange={(e) => a.setContactEmail(r.key, e.target.value)}
+              placeholder="name@example.gov.ae"
+              style={{ flex: '1 1 260px', direction: 'ltr', textAlign: 'left', border: '1px solid #DCE3EE', borderRadius: 10, padding: '10px 12px', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

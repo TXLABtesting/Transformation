@@ -1151,6 +1151,8 @@ function build(s: Store) {
       heads: s.users.filter((u) => u.role === 'path').length,
       committee: s.users.filter((u) => u.role === 'ai').length,
     },
+    contactEmails: s.contactEmails,
+    setContactEmail: (k: string, v: string) => s.setContactEmail(k, v),
     saveUser: (u: (typeof s.users)[number]) => s.adminSaveUser(u),
     toggleUser: (id: string) => s.adminToggleUser(id),
     removeUser: (id: string) => s.adminRemoveUser(id),
@@ -1322,7 +1324,9 @@ function build(s: Store) {
       const demoAllStreams = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
       const ids = demoAllStreams ? PATHS.map((p) => p.id) : s.myPaths?.length ? s.myPaths : [myPath];
       return {
-        show: (rawRole === 'coord' || rawRole === 'path') && (demoAllStreams || ids.length > 1),
+        // the coordinator switches streams from قوائم الحصر in the side nav —
+        // only the stream head/deputy keeps the header switcher
+        show: rawRole === 'path' && actualRole !== 'coord' && (demoAllStreams || ids.length > 1),
         value: myPath,
         options: ids.map((id) => ({ v: id, label: pathById(id).name })),
       };

@@ -32,7 +32,7 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 6,
 };
 const cardStyle: React.CSSProperties = {
-  background: '#fff',
+  background: '#FAFBFE',
   border: '1px solid #E7ECF4',
   borderRadius: 16,
   padding: 18,
@@ -161,7 +161,7 @@ export function InlineCreateForm({ vm }: { vm: VM }) {
   const setField = (k: string, v: unknown) => s.setDraftField(k as never, v);
   const gv = (k: string): string => (draft ? ((draft as unknown as Record<string, unknown>)[k] as string) ?? '' : '');
   return (
-    <div style={{ marginTop: 18, background: '#F7F9FD', border: '1px solid #E7ECF4', borderRadius: 18, padding: 20, position: 'relative' }}>
+    <div style={{ marginTop: 18, background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: 20, position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <div
           style={{
