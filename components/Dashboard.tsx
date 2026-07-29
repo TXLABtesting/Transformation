@@ -2032,10 +2032,12 @@ export function Dashboard({ vm }: { vm: VM }) {
           </div>
           {/* navigation */}
           <div data-r="navlist" style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {vm.navItems.map((n) => (
+          {vm.navItems.map((n) => n.heading ? (
+            <div key={n.key} style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD' }}>{n.label}</div>
+          ) : (
             <button
               key={n.key}
-              className={n.sub ? 'mnav-sub' + (allOpen ? '' : ' mnav-collapsed') : ''}
+              className={n.sub ? 'mnav-sub' + (allOpen || n.pin ? '' : ' mnav-collapsed') : ''}
               onClick={() => {
                 if (n.key === 'all') {
                   // «الكل»: navigate and toggle the stream/type dropdown; keep the
@@ -2486,8 +2488,10 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: -8 }}>متابعة مدخلات المسار حسب حالة التطوير والاعتماد.</div>
               )}
 
-              {/* recap strip for the current selection — hidden on the "الكل" view */}
-              {!(vm.activePathAll && vm.filterValue === 'all') && (
+              {/* services scope: the six approved numbers replace the status recap */}
+              {vm.svcKpis ? (
+                <SvcKpiStrip k={vm.svcKpis} />
+              ) : !(vm.activePathAll && vm.filterValue === 'all') && (
                 <>
                   <SectionLabel>ملخص حالة المدخلات</SectionLabel>
                   <StatBand

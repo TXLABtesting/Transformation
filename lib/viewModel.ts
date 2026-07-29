@@ -710,7 +710,8 @@ function build(s: Store) {
 
   // ---- cards ----
   // ---- sidebar navigation (§redesign v2) ----
-  const navSection = ui.navSection || 'overview';
+  // the coordinator has no dashboard: entering lands directly on قوائم الحصر
+  const navSection = rawRole === 'coord' && (ui.navSection || 'overview') === 'overview' ? 'all' : ui.navSection || 'overview';
   const navStream = ui.navStream; // selected stream summary card ('all' = null)
   const batchFilter = ui.batchFilter; // drill-down from a مرحلة card
   const devStatusOf = devStatusOfItem;
@@ -778,11 +779,40 @@ function build(s: Store) {
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
   ].map((n) => ({
     sub: false,
+    pin: false,
+    heading: false,
     count: undefined as number | undefined,
     active: navSection === n.key,
     onClick: n.key === 'team' ? () => s.openTeam() : () => s.setNavSection(n.key),
     ...n,
   }));
+
+  // coordinator side menu (لوحة الجهة): «قوائم الحصر» lists the assigned
+  // stream(s) — one entry when a single stream, several when multi-assigned —
+  // then «دفعات الإطلاق». (Demo mode lists all streams for testing.)
+  const coordStreamIds = process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? PATHS.map((p) => p.id) : s.myPaths?.length ? s.myPaths : [myPath];
+  const cntEntStream = (pid: string) => s.items.filter((i) => ent(i) === entityName && i.path === pid).length;
+  const navItemsOut =
+    rawRole === 'coord'
+      ? [
+          { key: 'invhead', label: 'قوائم الحصر', icon: '', sub: false, pin: false, heading: true, count: undefined as number | undefined, active: false, onClick: () => {} },
+          ...coordStreamIds.map((pid) => ({
+            key: 'inv-' + pid,
+            label: 'مسار ' + pathById(pid).name,
+            icon: PIC[pid],
+            sub: true,
+            pin: true,
+            heading: false,
+            count: cntEntStream(pid) as number | undefined,
+            active: navSection === 'all' && myPath === pid,
+            onClick: () => {
+              s.setMyPath(pid);
+              s.setNavSection('all');
+            },
+          })),
+          { key: 'lplan', label: 'دفعات الإطلاق', icon: NAV_ROCKET, sub: false, pin: false, heading: false, count: undefined as number | undefined, active: navSection === 'lplan', onClick: () => s.setNavSection('lplan') },
+        ]
+      : navItems;
 
   const typeSections: Record<string, string> = {
     all: 'جميع المدخلات',
@@ -1090,12 +1120,12 @@ function build(s: Store) {
   };
 
   // ---- services coordinator KPI strip (أعداد الخدمات الفرعية) ----
-  const svcItems = roleBase.filter((i) => i.type === 'service');
+  const svcItems = roleBase.filter((i) => i.path === 'services' && i.type === 'service');
   // أولوية الاختيار applies only to entries with أولوية التحول = نعم — a «لا»
   // entry is excluded from the priorities and the automation-target counts
   const svcPr = (i: Item) => (i.transformYes === 'نعم' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) : null);
   const svcKpis =
-    rawRole === 'coord' && myPath === 'services'
+    filterStream === 'services'
       ? {
           total: svcItems.length,
           transformable: svcItems.filter((i) => { const p = svcPr(i); return p != null && p <= 3; }).length,
@@ -1231,7 +1261,7 @@ function build(s: Store) {
     statusOptions,
     statusFilterValue: ui.statusFilter,
     emptyDesc,
-    navItems,
+    navItems: navItemsOut,
     navSection,
     navStream,
     kpiBreak,
