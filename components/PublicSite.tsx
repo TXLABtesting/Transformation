@@ -67,7 +67,7 @@ const toDoc = (d: LibraryDoc): Doc => {
     cat: d.cat,
     catLabel: d.cat === 'system' ? 'نظام عمل' : 'دليل',
     date: d.date,
-    cover: asset?.cover || '',
+    cover: d.coverUrl || asset?.cover || '',
     file: d.fileUrl || asset?.file || '#',
     dl: asset?.dl || d.title + '.pdf',
   };

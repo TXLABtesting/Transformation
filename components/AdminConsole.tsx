@@ -399,6 +399,10 @@ function SiteTab() {
                 <label style={labelSt}>رابط الملف (اختياري)</label>
                 <input value={d.fileUrl || ''} onChange={(e) => s.updLibDoc(d.id, { fileUrl: e.target.value })} placeholder="https://…" style={{ ...inputSt, direction: 'ltr', textAlign: 'left' }} />
               </div>
+              <div>
+                <label style={labelSt}>رابط صورة الغلاف (اختياري)</label>
+                <input value={d.coverUrl || ''} onChange={(e) => s.updLibDoc(d.id, { coverUrl: e.target.value })} placeholder="https://…" style={{ ...inputSt, direction: 'ltr', textAlign: 'left' }} />
+              </div>
               <button
                 onClick={() => s.removeLibDoc(d.id)}
                 title="حذف"
