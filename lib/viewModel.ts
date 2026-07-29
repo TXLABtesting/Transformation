@@ -810,7 +810,7 @@ function build(s: Store) {
     { key: 'all', label: streamSub ? 'جميع المسارات' : 'جميع التصنيفات', icon: NAV_DOTS, count: roleBase.length, active: navSection === 'all' && !navStream, onClick: () => s.setNavSection('all') },
     ...subNav,
     { key: 'launchplans', label: 'مراحل التنفيذ', icon: NAV_CAL },
-    { key: 'lplan', label: 'خطة الإطلاق', icon: NAV_ROCKET },
+    { key: 'lplan', label: 'دفعات الإطلاق', icon: NAV_ROCKET },
     { key: 'results', label: 'النتائج المتوقعة', icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2z' },
     ...(rawRole === 'ai' || rawRole === 'path' ? [{ key: 'entities', label: 'الجهات المشاركة', icon: NAV_BUILDING }] : []),
     ...(rawRole === 'entity' ? [{ key: 'team', label: 'فريق العمل', icon: NAV_PEOPLE }] : []),
@@ -1224,28 +1224,49 @@ function build(s: Store) {
     if (i.path === 'strategy' && i.type === 'operation') return stgPriority(i)?.cat || '—';
     return '—'; // operations: pending the matrix
   };
-  const batchTables =
+  // coordinator + head/deputy work on their own stream; the committee (chair +
+  // secretariat) gets the same tables for whichever stream is selected
+  const btStream =
     rawRole === 'coord' || rawRole === 'path'
-      ? {
-          streamName: pathById(myPath).name,
+      ? myPath
+      : rawRole === 'ai'
+        ? filterStream !== 'all'
+          ? filterStream
+          : PATHS[0].id
+        : null;
+  const batchTables = btStream
+    ? (() => {
+        const bPath = btStream;
+        return {
+          streamName: pathById(bPath).name,
           canEditDates: rawRole === 'coord',
+          // the committee oversees every stream — tabs switch the tables
+          streamTabs:
+            rawRole === 'ai'
+              ? PATHS.map((p) => ({ id: p.id, label: 'مسار ' + p.name, active: p.id === bPath, onSelect: () => s.setNavStream(p.id) }))
+              : null,
+          // move-to-batch options (raw names carried; labels shown)
+          batchOptions: streamLaunchBatches(bPath).map((b) => ({ v: b.name, label: batchDafaaLabel(b.name) })),
+          onMove: (id: string, batch: string) => s.assignItemBatch(id, batch),
           cols:
-            myPath === 'services'
+            bPath === 'services'
               ? ['الخدمة', 'الخدمة الفرعية']
-              : myPath === 'strategy'
+              : bPath === 'strategy'
                 ? ['المحور', 'المهمة', 'النشاط']
                 : ['تصنيف العملية', 'العملية الرئيسية', 'الأنشطة الفرعية'],
-          batches: streamLaunchBatches(myPath).map((b) => ({
+          batches: streamLaunchBatches(bPath).map((b) => ({
             name: batchDafaaLabel(b.name),
+            rawName: b.name,
             period: b.period || '',
+            count: roleBase.filter((i) => i.path === bPath && i.execBatch === b.name).length,
             rows: roleBase
-              .filter((i) => i.path === myPath && i.execBatch === b.name)
+              .filter((i) => i.path === bPath && i.execBatch === b.name)
               .map((i) => ({
                 id: i.id,
                 lead:
-                  myPath === 'services'
+                  bPath === 'services'
                     ? [i.title || '—', i.subService || '—']
-                    : myPath === 'strategy'
+                    : bPath === 'strategy'
                       ? [i.axis || '—', i.title || '—', actsCompact(i) || '—']
                       : [i.opType || '—', i.title || '—', actsCompact(i) || '—'],
                 start: i.startDate || '',
@@ -1253,11 +1274,25 @@ function build(s: Store) {
                 prio: prioCellOf(i),
                 status: wfMeta(i).label,
                 notes: stripHtml(i.notes || '') || '—',
+                batch: i.execBatch || '',
                 onOpen: () => s.openDetail(i.id),
               })),
+            // entries of this stream NOT in this batch — the per-batch add picker
+            // shows the priority so placement can be judged before assigning
+            addable: roleBase
+              .filter((i) => i.path === bPath && i.execBatch !== b.name)
+              .map((i) => ({
+                id: i.id,
+                title: i.title || '—',
+                sub: bPath === 'services' ? i.subService || '' : bPath === 'strategy' ? i.axis || '' : i.opType || '',
+                prio: prioCellOf(i),
+                currentBatch: i.execBatch ? batchDafaaLabel(i.execBatch) : 'بدون دفعة',
+                onAssign: () => s.assignItemBatch(i.id, b.name),
+              })),
           })),
-        }
-      : null;
+        };
+      })()
+    : null;
 
   // ---- expected results (النتائج المتوقعة) ----
   const resInScope = (r: { path?: string }) =>
@@ -1478,7 +1513,7 @@ function build(s: Store) {
     assignBar: {
       show: rawRole === 'coord' && ui.assignSel.length > 0,
       count: ui.assignSel.length,
-      actionLabel: assignIsChange ? 'تغيير البرنامج الزمني' : 'تعيين البرنامج الزمني',
+      actionLabel: assignIsChange ? 'تغيير دفعة الإطلاق' : 'تعيين دفعة الإطلاق',
     },
     assignModal: ui.assign
       ? {
@@ -1984,29 +2019,20 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
   base.forEach((i) => {
     const w = wfOf(i);
     const tl = typeLabelFor(i.type, i.path);
-    if (rawRole === 'ai') {
-      if (i.nom && !i.funded) push('n-' + i.id, 'info', 'inbox', 'ترشيح جديد في السلة من ' + (i.nom.by || ''), tl + ' · ' + i.title + ' · ' + ent(i), i.id);
-    } else if (rawRole === 'entity') {
-      if (w === 'ent1') push('ent1-' + i.id, 'info', 'send', typeLabelFor(i.type, i.path) + ' بانتظار اعتماد رئيس المسار', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
-      if (w === 'ent2') push('ent2-' + i.id, 'info', 'wallet', 'ميزانية ونطاق عمل بانتظار اعتماد ممثل الجهة', tl + ' · ' + i.title + ' · ' + pathById(i.path).name, i.id, true);
-      if (i.funded && ent(i) === s.entityName) push('f-' + i.id, 'ok', 'wallet', 'ستتكفّل اللجنة الوطنية بتكلفة تحويل ' + typeLabelDefFor(i.type, i.path), tl + ' · ' + i.title + ' · يبقى التنفيذ من مسؤولية الجهة', i.id);
-      if (i.fundCancel && !i.funded && ent(i) === s.entityName) push('fc-' + i.id, 'alert', 'wallet', 'أُلغي اعتماد ' + typeLabelDefFor(i.type, i.path) + ' من اللجنة الوطنية', tl + ' · ' + i.title + ' · السبب: ' + i.fundCancel.reason, i.id);
-    } else {
-      if (i.funded && i.nom && i.nom.by === myName) push('mf-' + i.id, 'ok', 'wallet', 'اعتمدت اللجنة الوطنية ترشيحك', tl + ' · ' + i.title, i.id);
-      if (i.fyi) push('fy-' + i.id, 'info', 'inbox', 'للعلم: تعديل من ممثل الجهة — بانتظار اعتماد اللجنة الوطنية', tl + ' · ' + i.title, i.id);
-      if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تمت الإعادة من ') + (i.ret.from || ''), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
+    if (rawRole === 'path') {
+      // stream head / deputy: entries submitted by coordinators awaiting approval
+      if (w === 'ent1') push('ent1-' + i.id, 'info', 'inbox', typeLabelDefFor(i.type, i.path) + ' بانتظار اعتمادك', tl + ' · ' + i.title + ' · ' + ent(i), i.id, true);
       if (i.stageMove)
-        push(
-          'sm-' + i.id,
-          'info',
-          'rotate',
-          'نُقل بين المراحل: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to,
-          tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by,
-          i.id
-        );
-      if (w === 'budget' && !i.ret) push('bud-' + i.id, 'info', 'wallet', 'اعتُمدت الأولوية — أدخل الميزانية ونطاق العمل', tl + ' · ' + i.title, i.id);
-      if (w === 'exec') push('x-' + i.id, 'ok', 'check', typeLabelDefFor(i.type, i.path) + ' في مرحلة التنفيذ — حدّث الحالة', tl + ' · ' + i.title, i.id);
-      if (w === 'launch') push('l-' + i.id, 'info', 'send', typeLabelDefFor(i.type, i.path) + ' في مرحلة الإطلاق — أكمل خطة الإطلاق', tl + ' · ' + i.title, i.id);
+        push('sm-' + i.id, 'info', 'rotate', 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to, tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by, i.id);
+    } else if (rawRole === 'coord') {
+      // coordinator: returns / info requests from the stream head, and approvals
+      if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تمت الإعادة من ') + (i.ret.from || 'رئيس المسار'), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
+      if (w === 'exec' || w === 'launch') push('x-' + i.id, 'ok', 'check', 'اعتمد رئيس المسار ' + typeLabelDefFor(i.type, i.path), tl + ' · ' + i.title, i.id);
+      if (i.stageMove)
+        push('sm-' + i.id, 'info', 'rotate', 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to, tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by, i.id);
+    } else if (rawRole === 'ai') {
+      // committee chair + secretariat (view-only): newly approved entries
+      if (w === 'exec' || w === 'launch') push('x-' + i.id, 'info', 'send', typeLabelDefFor(i.type, i.path) + ' معتمد من رئيس المسار', tl + ' · ' + i.title + ' · ' + ent(i), i.id);
     }
   });
   const readSet = new Set(s.readNotifs);

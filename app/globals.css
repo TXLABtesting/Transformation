@@ -12,8 +12,10 @@ body {
   padding: 0;
 }
 body {
-  /* IBM Plex Sans Arabic is the base for all content */
-  font-family: var(--font-base), 'Cairo', system-ui, sans-serif;
+  /* GE Alma is the brand type across the platform; it activates once the
+     licensed font file exists at public/assets/fonts/GE-Alma-Black.otf
+     (declared in layout.tsx). IBM Plex Sans Arabic is the fallback. */
+  font-family: 'GE Alma', var(--font-base), 'Cairo', system-ui, sans-serif;
   direction: rtl;
   font-weight: 400;
   color: #0f1f3d;
@@ -35,7 +37,7 @@ h1,
 h2,
 h3,
 .hd {
-  font-family: var(--font-base), system-ui, sans-serif;
+  font-family: 'GE Alma', var(--font-base), system-ui, sans-serif;
   font-weight: 700;
 }
 button {

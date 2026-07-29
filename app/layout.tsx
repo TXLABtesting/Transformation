@@ -24,8 +24,20 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
   return (
     <html lang="ar" dir="rtl" className={ibm.variable}>
+      <head>
+        {/* GE Alma (licensed) — drop the font files into public/assets/fonts/
+            and the whole platform switches over; until then the fallback
+            (IBM Plex Sans Arabic) renders. Black carries every weight so the
+            brand cut is used for titles and body alike. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `@font-face{font-family:'GE Alma';src:url('${base}/assets/fonts/GE-Alma-Black.otf') format('opentype'),url('${base}/assets/fonts/GE-Alma-Black.ttf') format('truetype');font-weight:100 900;font-style:normal;font-display:swap;}`,
+          }}
+        />
+      </head>
       <body>
         {/* Set the responsive density zoom before first paint (no flash);
             ResponsiveZoom then keeps it in sync on resize. */}

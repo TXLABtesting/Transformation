@@ -216,18 +216,15 @@ export function Login({ vm }: { vm: VM }) {
         }}
       >
         <div style={{ width: '100%', maxWidth: tab === 'home' ? 480 : 640, textAlign: 'center', animation: 'fadeUp .5s ease both' }}>
-          {/* crest + logo appear on the blue home page only */}
+          {/* the project logo appears on the blue home page only */}
           {!light && (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 30 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="assets/uae-crest.png" alt="United Arab Emirates" style={{ height: 140 }} />
-                <div style={{ width: 1, height: 96, background: 'rgba(159,196,242,.35)' }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="assets/logo-dark.png"
                   alt="مشروع الذكاء الاصطناعي المساعد"
-                  style={{ height: 96 }}
+                  style={{ height: 110 }}
                 />
               </div>
               <div style={{ height: 40 }} />

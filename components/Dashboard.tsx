@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { InlineCreateForm } from './CreatePanel';
 import { Icon } from './Icon';
@@ -11,105 +11,54 @@ import { LAUNCH_TYPES, TBD_BATCH } from '@/lib/domain';
 const TOUR_STEPS: TourStep[] = [
   {
     sel: '[data-tour="profile"]',
-    title: 'الملف الشخصي وفريق العمل',
-    desc: 'من الصورة الرمزية تُفتح قائمة الملف الشخصي، ومنها الوصول إلى «فريق العمل» لتشكيل فريق جهتكم ودعوة منسّقي المسارات لكل مسار من مسارات التحول.',
-  },
-  {
-    sel: '[data-tour="banner"]',
-    title: 'المرحلة الحالية والعدّ التنازلي',
-    desc: 'يوضّح هذا الشريط المرحلة الحالية من المشروع وموعدها النهائي مع عدّ تنازلي — تابعوه لاستكمال إدخال جميع المدخلات قبل انتهاء المرحلة.',
-  },
-  {
-    sel: '[data-tour="kpis"]',
-    title: 'لوحة المتابعة',
-    desc: 'نقطة انطلاقكم: لوحة تلخّص أعداد المدخلات وحالاتها، والتكاليف التقديرية، وتوزيعها على المسارات — نظرة عامة سريعة على الوضع الحالي.',
-  },
-  {
-    sel: '[data-tour="nav-all"]',
-    title: 'استعراض جميع المدخلات',
-    desc: 'من القائمة الجانبية تفتح «جميع المسارات / جميع التصنيفات» قائمة بكل المدخلات (المشاريع والمبادرات والعمليات والخدمات) في مكان واحد، مع تصفية حسب التصنيف والحالة والمسار والبحث بالاسم للوصول السريع إلى أي مدخل.',
-  },
-  {
-    sel: '[data-tour="nav-exec"]',
-    title: 'البرنامج الزمني',
-    desc: 'ومنها «البرنامج الزمني»: الإطار الزمني ومواعيد الإنجاز المتوقعة للمراحل المختلفة وحالة تطوير المدخلات في كل مرحلة.',
-  },
-  {
-    sel: '[data-tour="nav-launch"]',
-    title: 'خطة الإطلاق',
-    desc: 'وتعرض «خطة الإطلاق» الإطلاقات المجدولة عبر المراحل، وما يندرج تحت كل إطلاق من مدخلات تُطلق معاً.',
+    title: 'الملف الشخصي',
+    desc: 'من الصورة الرمزية تُفتح قائمة الملف الشخصي لمراجعة دورك وصلاحياتك داخل المنصة.',
   },
   {
     sel: '[data-tour="notifs"]',
     title: 'الإشعارات',
-    desc: 'يصلكم عبر جرس الإشعارات كل ما يخصّكم أولاً بأول: طلبات الاعتماد، والملاحظات المُعادة، وقرارات الترشيح والاعتماد، وأي تغيّر في المراحل.',
+    desc: 'يصلكم عبر جرس الإشعارات كل ما يخصّكم أولاً بأول: طلبات الاعتماد، والملاحظات المُعادة، وأي تغيّر في دفعات الإطلاق.',
   },
   {
-    sel: '[data-tour="add"]',
-    title: 'إضافة مدخل جديد',
-    desc: 'من هنا تتم إضافة مشروع أو مبادرة أو عملية أو خدمة جديدة إلى محفظة جهتكم.',
-  },
-  {
-    sel: '[data-tour="basket"]',
-    title: 'السلة',
-    desc: 'تجمع المدخلات الجاهزة للاعتماد أو الترشيح في مكان واحد قبل إرسالها، وتظهر عليها إشارة عند وجود ما ينتظركم.',
-  },
-  {
-    sel: '[data-tour="cards"]',
-    title: 'بطاقات المدخلات',
-    desc: 'كل بطاقة تمثّل مدخلاً مع حالته ونسبة إنجازه. اضغطوا على أي بطاقة لاستعراض التفاصيل واستكمال البيانات.',
+    sel: '[data-tour="nav-all"]',
+    title: 'استعراض المدخلات',
+    desc: 'من القائمة الجانبية تُفتح قوائم المدخلات مع التصفية حسب الحالة والقطاع والأولوية والبحث بالاسم للوصول السريع إلى أي مدخل.',
   },
 ];
 
-// Coordinator (منسق المسار في الجهة) onboarding — one specific stream inside the
-// entity. Short, grouped tour: no per-page or per-card steps, no role switching.
+// Coordinator (منسق المسار في الجهة) onboarding — the coordinator lands on
+// قوائم الحصر directly: fills the stream inventory and manages دفعات الإطلاق.
 const COORD_TOUR_STEPS: TourStep[] = [
-  { sel: '[data-tour="profile"]', title: 'الملف الشخصي وفريق العمل', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك، والاطلاع على فريق العمل المرتبط بالمسار عند توفره.' },
-  { sel: '[data-tour="kpis"]', title: 'لوحة متابعة المسار', desc: 'تعرض هذه اللوحة ملخصًا شاملًا لمدخلات المسار، حالتها الحالية، مراحل التقدم، والتكلفة التقديرية.' },
-  { sel: '[data-tour="add"]', title: 'إضافة مدخل جديد', desc: 'من هنا يمكنك إضافة مشروع، مبادرة، عملية، أو خدمة ضمن المسار، مع استكمال البيانات المطلوبة قبل الإرسال.' },
-  { sel: '[data-tour="nav-all"]', title: 'صفحات المدخلات', desc: 'تتيح لك هذه الصفحات استعراض مدخلات المسار حسب النوع، مثل المشاريع والمبادرات، العمليات، والخدمات، لمتابعتها وتحديث بياناتها.' },
-  { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ وخطة الإطلاق', desc: 'يمكنك من هنا متابعة تقدم المدخلات، ومعرفة ما تم إنجازه وما يحتاج إلى تحديث قبل الوصول إلى مرحلة الإطلاق.' },
-  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يعرض هذا القسم التنبيهات المرتبطة بمهامك، مثل طلبات التحديث، الملاحظات، الاعتمادات، ومراحل التقدم.' },
-  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن البدء بإضافة ومتابعة مدخلات المسار، والتأكد من تحديث البيانات بشكل دوري.' },
+  { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك كمنسق للمسار داخل جهتك.' },
+  { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'المسارات المسندة إليك تظهر هنا. اختر المسار لاستعراض قائمة الحصر الخاصة به — القائمة تعرض المدخلات بعرض الجدول مع فلاتر الخدمة/المهمة والقطاع والأولوية.' },
+  { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات أعداد المدخلات والأنشطة، القابلة للتحول والمستهدف تحويلها، وتوزيع الأولويات المحسوبة تلقائياً وفق مصفوفة المسار المعتمدة.' },
+  { sel: '[data-tour="add"]', title: 'إضافة المدخلات', desc: '«إضافة يدوية» تفتح نموذج الإدخال أسفل الجدول لتعبئة بيانات المدخل في خطوة واحدة، و«رفع ملف Excel» تضيف عدة مدخلات دفعة واحدة. بعد التأكيد يظهر المدخل في القائمة ويُرسل لاعتماد رئيس المسار.' },
+  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'جداول الدفعات لكل مسار: أضف المدخلات إلى الدفعة المناسبة بالاستناد إلى أولوية الاختيار، وانقل بينها، وحدّد تاريخ البدء والانتهاء لكل مدخل.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'تصلك هنا ملاحظات رئيس المسار: طلبات التفاصيل الإضافية، والمدخلات المُعادة، وقرارات الاعتماد.' },
+  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن تعبئة قوائم الحصر لمساراتك وتوزيع المدخلات على دفعات الإطلاق، والتأكد من تحديث البيانات بشكل دوري.' },
 ];
 
-// Entity representative (ممثل الجهة) onboarding — follows ALL streams under the
-// entity, reviews submissions, and approves the ready ones for the next stage.
-const ENTITY_TOUR_STEPS: TourStep[] = [
-  { sel: '[data-tour="profile"]', title: 'الملف الشخصي وفريق العمل', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك، والاطلاع على منسقي المسارات المرتبطين بجهتك عند توفرهم.' },
-  { sel: '[data-tour="kpis"]', title: 'لوحة متابعة الإدخال', desc: 'تعرض هذه اللوحة نظرة شاملة على مدخلات الجهة حسب المسارات، مع حالة التقدم، التكلفة التقديرية، وحالة الاعتماد.' },
-  { sel: '[data-tour="nav-all"]', title: 'صفحات المسارات', desc: 'تتيح لك هذه الصفحات متابعة مدخلات الجهة حسب المسارات المختلفة، ومراجعة مستوى التقدم والجاهزية قبل الاعتماد.' },
-  { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ وخطة الإطلاق', desc: 'يمكنك من هنا متابعة تقدم مدخلات الجهة عبر مراحل التنفيذ، ومعرفة المدخلات الجاهزة أو القريبة من الإطلاق.' },
-  { sel: '[data-tour="nav-team"]', title: 'فريق العمل', desc: 'يعرض هذا القسم منسقي المسارات التابعين لجهتك، لمتابعة الأدوار والتأكد من استكمال المدخلات المطلوبة.' },
-  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يعرض هذا القسم التنبيهات المرتبطة بمدخلات الجهة، مثل طلبات التحديث، الملاحظات، الاعتمادات، ومراحل التقدم.' },
-  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة جميع مسارات الجهة، مراجعة المدخلات، واعتماد الجاهز منها للرفع إلى المراحل التالية.' },
-];
-
-// National committee (اللجنة الوطنية) onboarding — national oversight across all
-// entities/streams, reviews nominations, holds final approval authority.
+// National committee (رئيس اللجنة الوطنية + الأمانة العامة) onboarding —
+// view-only national oversight over the approved entries of the three streams.
 const AI_TOUR_STEPS: TourStep[] = [
-  { sel: '[data-tour="profile"]', title: 'الملف الشخصي وفريق العمل', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة صلاحياتك، والاطلاع على أعضاء فريق العمل المرتبطين بمتابعة الترشيحات والاعتماد.' },
-  { sel: '[data-tour="ai-heading"]', title: 'لوحة اللجنة الوطنية', desc: 'تعرض هذه اللوحة نظرة وطنية شاملة على مدخلات الجهات، توزيعها حسب المسارات، وحالة الترشيحات والاعتماد.' },
-  { sel: '[data-tour="nav-all"]', title: 'صفحات المسارات', desc: 'تتيح لك هذه الصفحات متابعة المدخلات على مستوى جميع المسارات والجهات، لمراجعة حجم المشاركة وحالة الترشيح.' },
-  { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ وخطة الإطلاق', desc: 'يمكنك من هنا متابعة جاهزية المدخلات على المستوى الوطني، ومعرفة ما هو جاهز أو قريب من الإطلاق.' },
+  { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة صلاحياتك في المتابعة على المستوى الوطني.' },
+  { sel: '[data-tour="ai-heading"]', title: 'لوحة اللجنة الوطنية', desc: 'تعرض هذه اللوحة نظرة وطنية شاملة على المدخلات المعتمدة من رؤساء المسارات، وتوزيعها على المسارات الثلاثة والجهات المشاركة.' },
+  { sel: '[data-tour="nav-all"]', title: 'صفحات المسارات', desc: 'تتيح لك هذه الصفحات استعراض المدخلات المعتمدة عبر جميع المسارات والجهات (اطلاع فقط)، مع مؤشرات وفلاتر كل مسار عند اختياره.' },
+  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'جداول دفعات الإطلاق لكل مسار مع أولوية الاختيار والتواريخ والحالة — تنقّل بين المسارات من أعلى الصفحة.' },
   { sel: '[data-tour="nav-entities"]', title: 'الجهات المشاركة', desc: 'يعرض هذا القسم قائمة الجهات المشاركة وعدد المدخلات المقدمة من كل جهة، لمتابعة مستوى المشاركة والالتزام.' },
-  { sel: '[data-tour="basket"]', title: 'قائمة الاعتماد', desc: 'تجمع هذه القائمة المدخلات المرشحة للاعتماد، لمراجعتها واتخاذ القرار النهائي بشأن اعتمادها.' },
-  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يعرض هذا القسم التنبيهات المرتبطة بالترشيحات، طلبات المراجعة، الاعتمادات، والتحديثات المهمة على مستوى المنصة.' },
-  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة المدخلات على المستوى الوطني، مراجعة الترشيحات، واتخاذ قرارات الاعتماد النهائي.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يصلك هنا إشعار بكل مدخل جديد يعتمده رئيس المسار.' },
+  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة المدخلات المعتمدة على المستوى الوطني عبر المسارات الثلاثة، والاطلاع على دفعات الإطلاق وجاهزية الجهات.' },
 ];
 
-// Stream head (رئيس المسار) onboarding — reviews all entities' entries within one
-// stream, tracks readiness/cost, and nominates entries for funding (NOT final
-// approval — that belongs to the national committee).
+// Stream head + deputy (رئيس المسار ونائبه) onboarding — review coordinators'
+// submissions within the stream and approve / return them.
 const PATH_TOUR_STEPS: TourStep[] = [
-  { sel: '[data-tour="profile"]', title: 'الملف الشخصي وفريق العمل', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة صلاحياتك، والاطلاع على فريق العمل المرتبط بالمسار عند توفره.' },
-  { sel: '[data-tour="kpis"]', title: 'لوحة رئيس المسار', desc: 'تعرض هذه اللوحة نظرة شاملة على مدخلات جميع الجهات ضمن المسار، مع حالة التقدم، الترشيحات، والتكلفة التقديرية.' },
-  { sel: '[data-tour="nav-all"]', title: 'صفحات المدخلات', desc: 'تتيح لك هذه الصفحات استعراض مدخلات المسار حسب النوع، لمراجعة التفاصيل وتحديد المدخلات المناسبة للترشيح.' },
-  { sel: '[data-tour="nav-exec"]', title: 'مراحل التنفيذ وخطة الإطلاق', desc: 'يمكنك من هنا متابعة جاهزية المدخلات وتقييم تقدمها قبل اختيار المناسب منها للترشيح.' },
-  { sel: '[data-tour="basket"]', title: 'سلة الترشيحات', desc: 'تجمع هذه السلة المدخلات التي اخترتها للترشيح، ليتم رفعها إلى اللجنة الوطنية للمراجعة واتخاذ القرار النهائي.' },
-  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يعرض هذا القسم التنبيهات المرتبطة بمدخلات المسار، مثل التحديثات، الملاحظات، الترشيحات، وحالة المراجعة.' },
-  { sel: '', title: 'ملاحظة مهمة', desc: 'ترشيح المدخلات من رئيس المسار لا يعني الاعتماد النهائي. يتم الاعتماد النهائي من قبل اللجنة الوطنية.' },
-  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة مدخلات الجهات ضمن المسار، مراجعتها، وترشيح المناسب منها للاعتماد.' },
+  { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك كرئيس للمسار أو نائبٍ له.' },
+  { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات أعداد مدخلات المسار من جميع الجهات، القابلة للتحول والمستهدف تحويلها، وتوزيع الأولويات المحسوبة وفق مصفوفة المسار.' },
+  { sel: '[data-tour="nav-all"]', title: 'قائمة مدخلات المسار', desc: 'قائمة موحّدة لمدخلات جميع الجهات ضمن المسار، مع فلاتر الجهة والقطاع والأولوية والحالة. افتح أي مدخل لاستعراض تفاصيله واعتماده أو إعادته أو طلب معلومات إضافية.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات وطلبات الاعتماد', desc: 'المدخلات الجديدة بانتظار اعتمادك تصلك هنا، ويمكنك اعتمادها أو رفضها أو طلب معلومات إضافية مباشرة من الإشعار.' },
+  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'جداول دفعات الإطلاق للمسار مع أولوية الاختيار والتواريخ والحالة (اطلاع فقط — التوزيع والتواريخ من مسؤولية منسق المسار).' },
+  { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن مراجعة مدخلات الجهات ضمن المسار واعتماد الجاهز منها؛ المدخلات المعتمدة تظهر مباشرة للجنة الوطنية.' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -698,9 +647,34 @@ function SvcKpiStrip({ k }: { k: NonNullable<VM['svcKpis']> }) {
 
 // دفعات الإطلاق — per-stream tables: each دفعة header + its entries with the
 // stream's approved columns. Dates are set here (stage level), per entry.
+// priority chip — brand blue only (rule 1: no extra colours); dimmed when unset
+function BatchPrioPill({ v }: { v: string }) {
+  const empty = !v || v === '—';
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        fontSize: 11,
+        fontWeight: 800,
+        color: empty ? '#8A97AD' : '#1D4ED8',
+        background: empty ? '#F1F4F9' : '#EAF0FE',
+        border: empty ? '1px solid #E7ECF4' : '1px solid #D9E4FD',
+        borderRadius: 999,
+        padding: '3px 10px',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {empty ? '—' : v}
+    </span>
+  );
+}
+
 function BatchesTablesPage({ vm }: { vm: VM }) {
   const s = vm.store;
   const bt = vm.batchTables!;
+  const [addOpen, setAddOpen] = useState<string | null>(null); // rawName of the batch whose picker is open
+  const [addQ, setAddQ] = useState('');
   const th: CSSProperties = { textAlign: 'right', padding: '9px 12px', fontSize: 11.5, fontWeight: 700, color: '#8A97AD', borderBottom: '1px solid #EEF1F7', whiteSpace: 'nowrap' };
   const td: CSSProperties = { padding: '10px 12px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', verticalAlign: 'middle' };
   const dateIn: CSSProperties = { border: '1px solid #DCE3EE', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit', color: '#33415C', background: '#fff' };
@@ -708,66 +682,183 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
         <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>دفعات الإطلاق لمسار {bt.streamName}</div>
-        <div style={{ fontSize: 12.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>مدخلات كل دفعة مع تواريخ البدء والانتهاء والحالة.</div>
+        <div style={{ fontSize: 12.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>مدخلات كل دفعة مع تواريخ البدء والانتهاء وأولوية الاختيار والحالة.</div>
       </div>
-      {bt.batches.map((b) => (
-        <div key={b.name} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, overflow: 'hidden' }}>
-          <div style={{ background: 'linear-gradient(180deg,#2E86EE,#1F6FE0)', color: '#fff', textAlign: 'center', padding: '10px 14px' }}>
-            <div className="hd" style={{ fontSize: 14.5, fontWeight: 800 }}>{b.name}</div>
-            {b.period && <div style={{ fontSize: 12, fontWeight: 600, opacity: 0.9, marginTop: 2 }}>{b.period}</div>}
-          </div>
-          {b.rows.length === 0 ? (
-            <div style={{ padding: '22px 16px', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد مدخلات ضمن هذه الدفعة بعد</div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 940 }}>
-                <thead>
-                  <tr>
-                    {bt.cols.map((c) => (
-                      <th key={c} style={th}>{c}</th>
-                    ))}
-                    <th style={th}>تاريخ البدء</th>
-                    <th style={th}>تاريخ الانتهاء</th>
-                    <th style={th}>أولوية الاختيار</th>
-                    <th style={th}>الحالة</th>
-                    <th style={th}>ملاحظات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {b.rows.map((r) => (
-                    <tr key={r.id}>
-                      {r.lead.map((v, ci) => (
-                        <td key={ci} style={{ ...td, cursor: 'pointer', fontWeight: ci === 0 ? 800 : 400, color: ci === 0 ? '#13213C' : '#33415C', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={r.onOpen} title={v}>
-                        {v}
-                        </td>
-                      ))}
-                      <td style={td}>
-                        {bt.canEditDates ? (
-                          <input type="date" value={r.start} onChange={(e) => s.setItemDate(r.id, 'startDate', e.target.value)} style={dateIn} />
-                        ) : (
-                          r.start || '—'
-                        )}
-                      </td>
-                      <td style={td}>
-                        {bt.canEditDates ? (
-                          <input type="date" value={r.end} onChange={(e) => s.setItemDate(r.id, 'endDate', e.target.value)} style={dateIn} />
-                        ) : (
-                          r.end || '—'
-                        )}
-                      </td>
-                      <td style={td}>{r.prio}</td>
-                      <td style={td}>
-                        <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.status}</span>
-                      </td>
-                      <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.notes}>{r.notes}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      {bt.streamTabs && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {bt.streamTabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={t.onSelect}
+              style={{
+                background: t.active ? '#EAF0FE' : '#fff',
+                border: t.active ? '1px solid #D9E4FD' : '1px solid #E7ECF4',
+                borderRadius: 999,
+                padding: '8px 16px',
+                fontSize: 12,
+                fontWeight: 800,
+                color: t.active ? '#2563EB' : '#54627B',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
-      ))}
+      )}
+      {bt.batches.map((b) => {
+        const pickerOpen = addOpen === b.rawName;
+        const q = addQ.trim();
+        const addList = pickerOpen
+          ? b.addable.filter((a) => !q || a.title.includes(q) || a.sub.includes(q))
+          : [];
+        return (
+          <div key={b.name} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, overflow: 'hidden' }}>
+            {/* card header — same language as the stage cards: title + period, actions on the left */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, padding: '18px 22px 14px', borderBottom: '1px solid #EEF1F7' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{b.name}</div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>{b.count} مدخلات</span>
+                </div>
+                {b.period && (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 5 }}>
+                    <Icon d={STAGE_CAL} size={13} color="#9AA6BC" />
+                    {b.period}
+                  </div>
+                )}
+              </div>
+              {bt.canEditDates && (
+                <button
+                  onClick={() => {
+                    setAddQ('');
+                    setAddOpen(pickerOpen ? null : b.rawName);
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#EAF0FE', border: '1px solid #D9E4FD', borderRadius: 999, padding: '6px 14px', fontSize: 11.5, color: '#2563EB', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}
+                >
+                  <Icon d={pickerOpen ? 'M18 6L6 18M6 6l12 12' : 'M12 5v14M5 12h14'} size={11} color="#2563EB" />
+                  {pickerOpen ? 'إغلاق' : 'إضافة مدخل'}
+                </button>
+              )}
+            </div>
+
+            {/* add picker — existing stream entries with their priority, so the
+                placement decision is made with the priority in view */}
+            {pickerOpen && (
+              <div style={{ margin: '14px 22px 4px', border: '1px solid #D9E4FD', background: '#F8FAFF', borderRadius: 14, padding: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>إضافة مدخل إلى {b.name}</div>
+                  <input
+                    value={addQ}
+                    onChange={(e) => setAddQ(e.target.value)}
+                    placeholder="بحث…"
+                    style={{ border: '1px solid #DCE3EE', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontFamily: 'inherit', color: '#33415C', background: '#fff', minWidth: 180 }}
+                  />
+                </div>
+                {addList.length === 0 ? (
+                  <div style={{ padding: '14px 0', textAlign: 'center', fontSize: 12, color: '#9AA6BC' }}>لا توجد مدخلات متاحة للإضافة</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 260, overflowY: 'auto' }}>
+                    {addList.map((a) => (
+                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, padding: '8px 12px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title}</div>
+                          {a.sub && <div style={{ fontSize: 11, color: '#8A97AD', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.sub}</div>}
+                        </div>
+                        <BatchPrioPill v={a.prio} />
+                        <span style={{ flex: 'none', fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>{a.currentBatch}</span>
+                        <button
+                          onClick={a.onAssign}
+                          style={{ flex: 'none', background: 'linear-gradient(180deg,#2E86EE,#1F6FE0)', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 11.5, color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >
+                          إضافة
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {b.rows.length === 0 ? (
+              <div style={{ padding: '22px 16px', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد مدخلات ضمن هذه الدفعة بعد</div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: bt.canEditDates ? 1080 : 940 }}>
+                  <thead>
+                    <tr>
+                      {bt.cols.map((c) => (
+                        <th key={c} style={th}>{c}</th>
+                      ))}
+                      <th style={th}>تاريخ البدء</th>
+                      <th style={th}>تاريخ الانتهاء</th>
+                      <th style={th}>أولوية الاختيار</th>
+                      <th style={th}>الحالة</th>
+                      <th style={th}>ملاحظات</th>
+                      {bt.canEditDates && <th style={th}>الإجراءات</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {b.rows.map((r) => (
+                      <tr key={r.id}>
+                        {r.lead.map((v, ci) => (
+                          <td key={ci} style={{ ...td, cursor: 'pointer', fontWeight: ci === 0 ? 800 : 400, color: ci === 0 ? '#13213C' : '#33415C', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={r.onOpen} title={v}>
+                          {v}
+                          </td>
+                        ))}
+                        <td style={td}>
+                          {bt.canEditDates ? (
+                            <input type="date" value={r.start} onChange={(e) => s.setItemDate(r.id, 'startDate', e.target.value)} style={dateIn} />
+                          ) : (
+                            r.start || '—'
+                          )}
+                        </td>
+                        <td style={td}>
+                          {bt.canEditDates ? (
+                            <input type="date" value={r.end} onChange={(e) => s.setItemDate(r.id, 'endDate', e.target.value)} style={dateIn} />
+                          ) : (
+                            r.end || '—'
+                          )}
+                        </td>
+                        <td style={td}>
+                          <BatchPrioPill v={r.prio} />
+                        </td>
+                        <td style={td}>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.status}</span>
+                        </td>
+                        <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.notes}>{r.notes}</td>
+                        {bt.canEditDates && (
+                          <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <select
+                                value={r.batch}
+                                onChange={(e) => bt.onMove(r.id, e.target.value)}
+                                title="نقل إلى دفعة أخرى"
+                                style={{ border: '1px solid #DCE3EE', borderRadius: 8, padding: '6px 8px', fontSize: 11.5, fontFamily: 'inherit', color: '#33415C', background: '#fff', maxWidth: 140 }}
+                              >
+                                {bt.batchOptions.map((o) => (
+                                  <option key={o.v} value={o.v}>{o.label}</option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={r.onOpen}
+                                style={{ background: '#fff', border: '1px solid #E4ECF7', borderRadius: 8, padding: '6px 12px', fontSize: 11.5, color: '#1D4ED8', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                              >
+                                عرض
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1654,6 +1745,15 @@ export function Dashboard({ vm }: { vm: VM }) {
   // stream/type sub-items sit in a dropdown under «الكل».
   const [mobileNav, setMobileNav] = useState(false);
   const [allOpen, setAllOpen] = useState(false);
+  // notifications: once the panel has been opened and closed again, everything
+  // that was visible counts as read (clears the badge)
+  const notifIds = vm.notifs.map((n) => n.id).join('|');
+  useEffect(() => {
+    if (!vm.notifOpen) return;
+    const ids = notifIds.split('|').filter(Boolean);
+    return () => s.markNotifsRead(ids);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vm.notifOpen, notifIds]);
 
   return (
     <div
@@ -2169,8 +2269,6 @@ export function Dashboard({ vm }: { vm: VM }) {
               <Icon d="M18 6 6 18M6 6l12 12" size={18} color="#33405A" strokeWidth={2.2} />
             </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="assets/uae-crest.png" alt="UAE" style={{ height: 46, flex: 'none' }} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="assets/logo.png" alt="logo" style={{ height: 46, minWidth: 0, objectFit: 'contain' }} />
           </div>
           {/* navigation */}
@@ -2192,7 +2290,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   setMobileNav(false);
                 }
               }}
-              data-tour={n.key === 'all' ? 'nav-all' : n.key === 'projects' ? 'nav-projects' : n.key === 'operations' ? 'nav-operations' : n.key === 'services' ? 'nav-services' : n.key === 'launchplans' ? 'nav-exec' : n.key === 'lplan' ? 'nav-launch' : n.key === 'team' ? 'nav-team' : n.key === 'entities' ? 'nav-entities' : undefined}
+              data-tour={n.key.startsWith('inv-') ? 'nav-inv' : n.key === 'all' ? 'nav-all' : n.key === 'projects' ? 'nav-projects' : n.key === 'operations' ? 'nav-operations' : n.key === 'services' ? 'nav-services' : n.key === 'launchplans' ? 'nav-exec' : n.key === 'lplan' ? 'nav-launch' : n.key === 'team' ? 'nav-team' : n.key === 'entities' ? 'nav-entities' : undefined}
               style={{
                 position: 'relative',
                 display: 'flex',
@@ -2315,7 +2413,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           <div data-r="railhelp" data-tour="guide" style={{ padding: 12 }}>
             <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة الوطنية' : vm.role === 'entity' ? 'دليل ممثل الجهة' : vm.role === 'coord' ? 'دليل منسق المسار في الجهة' : 'دليل الاستخدام'}</div>
+                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة الوطنية' : vm.role === 'coord' ? 'دليل منسق المسار في الجهة' : vm.role === 'path' ? 'دليل رئيس المسار' : 'دليل الاستخدام'}</div>
                 <span
                   style={{
                     flex: 'none',
@@ -2333,7 +2431,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                {vm.role === 'ai' ? 'إرشادات مراجعة الترشيحات واعتماد المدخلات.' : vm.role === 'entity' ? (vm.navSection === 'lplan' ? 'إرشادات مراجعة مدخلات الجهة ومتابعة خطة الإطلاق.' : vm.navSection === 'launchplans' ? 'إرشادات مراجعة مدخلات الجهة ومتابعة مراحل التقدم.' : vm.navStream ? 'إرشادات مراجعة مدخلات المسار وتحديث حالة الاعتماد.' : 'إرشادات مراجعة مدخلات الجهة وتحديث حالة الاعتماد.') : vm.role === 'coord' ? 'إرشادات متابعة مدخلات المسار وتحديث مراحل التقدم داخل الجهة.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر مراحل المشروع.'}
+                {vm.role === 'ai' ? 'إرشادات متابعة المدخلات المعتمدة ودفعات الإطلاق عبر المسارات.' : vm.role === 'coord' ? 'إرشادات تعبئة قوائم الحصر وتوزيع المدخلات على دفعات الإطلاق.' : vm.role === 'path' ? 'إرشادات مراجعة مدخلات المسار واعتمادها.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر دفعات الإطلاق.'}
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
@@ -2812,6 +2910,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {vm.showAddBtn && (
                   <button
                     onClick={s.openCreateManual}
+                    data-tour="add"
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -3243,7 +3342,7 @@ export function Dashboard({ vm }: { vm: VM }) {
       </div>
 
       {/* First-login onboarding walkthrough */}
-      <Tour steps={vm.role === 'coord' ? COORD_TOUR_STEPS : vm.role === 'entity' ? ENTITY_TOUR_STEPS : vm.role === 'ai' ? AI_TOUR_STEPS : vm.role === 'path' ? PATH_TOUR_STEPS : TOUR_STEPS} />
+      <Tour steps={vm.role === 'coord' ? COORD_TOUR_STEPS : vm.role === 'ai' ? AI_TOUR_STEPS : vm.role === 'path' ? PATH_TOUR_STEPS : TOUR_STEPS} />
     </div>
   );
 }

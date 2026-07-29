@@ -210,6 +210,7 @@ type Actions = {
   adminRemoveUser: (id: string) => void;
   // dropdowns / panels
   toggleNotifs: () => void;
+  markNotifsRead: (ids: string[]) => void;
   openNotifItem: (id: string) => void;
   toggleProfile: () => void;
   openTeam: () => void;
@@ -252,6 +253,7 @@ type Actions = {
   setSvcFilter: (k: 'svcServiceF' | 'svcSectorF' | 'svcPrioF', v: string) => void;
   setStgFilter: (k: 'stgTaskF' | 'stgSectorF' | 'stgPrioF', v: string) => void;
   setItemDate: (id: string, k: 'startDate' | 'endDate', v: string) => void;
+  assignItemBatch: (id: string, batch: string) => void;
   setContactEmail: (k: string, v: string) => void;
   toggleStepFilter: (n: number) => void;
   // create wizard
@@ -855,6 +857,10 @@ export const useStore = create<Store>((set, get) => {
         return { ui: { ...s.ui, notifOpen: opening, profileOpen: false } };
       }),
     openNotifItem: (id) => setUi({ notifOpen: false, detailId: id }),
+    markNotifsRead: (ids) => {
+      set((s) => ({ readNotifs: Array.from(new Set([...s.readNotifs, ...ids])) }));
+      persist();
+    },
     toggleProfile: () => set((s) => ({ ui: { ...s.ui, profileOpen: !s.ui.profileOpen, notifOpen: false } })),
     openTeam: () => setUi({ teamOpen: true, profileOpen: false }),
     closeTeam: () => setUi({ teamOpen: false }),
@@ -1035,6 +1041,7 @@ export const useStore = create<Store>((set, get) => {
     setSvcFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     setStgFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     setItemDate: (id, k, v) => patchItem(id, { [k]: v } as Partial<Item>),
+    assignItemBatch: (id, batch) => patchItem(id, { execBatch: batch }),
     setContactEmail: (k, v) => {
       set((st) => ({ contactEmails: { ...st.contactEmails, [k]: v } }));
       persist();
