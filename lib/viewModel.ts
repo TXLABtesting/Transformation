@@ -635,19 +635,16 @@ function build(s: Store) {
           { v: 'pending', label: 'قيد الاعتماد' },
           { v: 'review', label: 'للمراجعة' },
           { v: 'inprog', label: 'قيد التنفيذ' },
-          { v: 'done', label: 'تم الإطلاق' },
         ]
       : rawRole === 'entity'
         ? [
             { v: 'all', label: 'جميع الحالات' },
             { v: 'approve', label: 'للاعتماد' },
             { v: 'inprog', label: 'قيد التنفيذ' },
-            { v: 'done', label: 'تم الإطلاق' },
           ]
         : [
             { v: 'all', label: 'جميع الحالات' },
             { v: 'inprog', label: 'قيد التنفيذ' },
-            { v: 'done', label: 'تم الإطلاق' },
           ];
 
   // committee-funding filter (entity rep)
@@ -992,7 +989,6 @@ function build(s: Store) {
           const byStream =
             rawRole === 'path'
               ? [
-                  { name: 'المشاريع والمبادرات', count: inEnt.filter((i) => isProjInit(i.type)).length },
                   ...(streamHasType(myPath, 'operation')
                     ? [{ name: 'العمليات', count: inEnt.filter((i) => i.type === 'operation').length }]
                     : []),
@@ -1919,7 +1915,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     cardAction,
     // committee: item already past funding approval (funded or launched) →
     // its selection box is a locked, gray, checked, non-clickable mark
-    fundLocked: rawRole === 'ai' && (!!i.funded || w === 'done'),
+    fundLocked: false,
     recoBand,
     pillLabel,
     recoStripLabel,

@@ -310,7 +310,7 @@ async function exportExcelStyled(items: Item[], entityName: string) {
     // KPI cards: big value + label, styled like the dashboard cards
     const kpis: [string, string][] = [
       ['إجمالي المدخلات', String(items.length)],
-      ['معتمدة للتمويل', String(items.filter((i) => i.funded).length)],
+      ['المعتمدة ضمن الدفعات', String(items.filter((i) => i.wf === 'exec' || i.wf === 'budget').length)],
       ['متوسط نسبة الإنجاز', avgDone + '%'],
     ];
     const kSpans: [number, number][] = [[1, 2], [3, 4], [5, 6], [7, 8]];
@@ -430,9 +430,6 @@ async function exportExcelStyled(items: Item[], entityName: string) {
       if (h === 'نسبة الإنجاز') {
         const w = stageWeight(it);
         cell.font = { size: 10.5, bold: true, color: { argb: w >= 100 ? 'FF0B8A4B' : w >= 60 ? 'FF2563EB' : w > 0 ? 'FFB45309' : 'FF64748B' } };
-      }
-      if (h === 'تمويل اللجنة') {
-        cell.font = { size: 10.5, bold: true, color: { argb: it.funded ? 'FF0B8A4B' : 'FF9AA6BC' } };
       }
     });
     ws.getRow(r).height = 22;
@@ -666,7 +663,7 @@ export async function exportPpt(items: Item[], entityName: string) {
 
   const kpis: [string, string][] = [
     ['إجمالي المدخلات', String(items.length)],
-    ['معتمدة للتمويل', String(items.filter((i) => i.funded).length)],
+    ['المعتمدة ضمن الدفعات', String(items.filter((i) => i.wf === 'exec' || i.wf === 'budget').length)],
     ['متوسط نسبة الإنجاز', avgDone + '%'],
   ];
   // RTL: first KPI sits at the right edge
@@ -712,7 +709,6 @@ export async function exportPpt(items: Item[], entityName: string) {
     };
     chip(10.93, 1.9, typeLabelFor(i.type, i.path), 'E5EEFF', '2563EB');
     chip(8.13, 2.7, meta.label, meta.bg.replace('#', ''), meta.chip.replace('#', ''));
-    if (i.funded) chip(6.03, 2.0, 'معتمد للتمويل ✓', 'E3F6EC', '0B8A4B');
     s.addShape(RECT, { x: 0.5, y: 1.72, w: 12.33, h: 0.01, fill: { color: LINE }, line: { color: LINE, width: 0 } });
 
     // right card: details
@@ -723,7 +719,7 @@ export async function exportPpt(items: Item[], entityName: string) {
       ['الجهة', entOf(i, entityName)],
       ['الأولوية', i.priority || '—'],
       ['درجة التحول', transformScore(i).v + ' / 5'],
-      ['تمويل اللجنة', i.funded ? 'نعم' : 'لا'],
+      ['أولوية الاختيار', selPriorityOf(i) || '—'],
     ];
     s.addTable(
       rows.map(([k, v]) => [
@@ -742,8 +738,8 @@ export async function exportPpt(items: Item[], entityName: string) {
 
     // left card: scope of work
     s.addShape(RR, { x: 0.5, y: 1.95, w: 6.23, h: 4.85, rectRadius: 0.09, fill: { color: 'FFFFFF' }, line: { color: LINE, width: 1 } });
-    s.addText('نطاق العمل', { x: 0.7, y: 2.1, w: 5.83, h: 0.4, align: 'right', color: MUTE, fontSize: 12.5, bold: true });
-    const scope = stripHtml(i.scopeOfWork || '') || stripHtml(i.desc || '') || '—';
+    s.addText('الأنشطة', { x: 0.7, y: 2.1, w: 5.83, h: 0.4, align: 'right', color: MUTE, fontSize: 12.5, bold: true });
+    const scope = stripHtml(i.subActivities || i.subService || '') || '—';
     s.addText(scope.length > 900 ? scope.slice(0, 900) + '…' : scope, {
       x: 0.7, y: 2.55, w: 5.83, h: 4.05, align: 'right', valign: 'top', color: '33405A', fontSize: 11.5, lineSpacingMultiple: 1.25,
     });

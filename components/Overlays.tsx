@@ -100,7 +100,7 @@ export function Overlays({ vm }: { vm: VM }) {
               {/* official rep card */}
               <div style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 16 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: '#54627B', marginBottom: 12 }}>
-                  الممثل الرسمي للجهة
+                  مسؤول الجهة
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div
@@ -1058,7 +1058,7 @@ export function Overlays({ vm }: { vm: VM }) {
 
             <div style={{ padding: '0 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={assignLabel}>البرنامج الزمني (المرحلة)</label>
+                <label style={assignLabel}>دفعة الإطلاق</label>
                 <select
                   value={vm.assignModal.batch}
                   onChange={(e) => s.setAssign({ batch: e.target.value })}
