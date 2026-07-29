@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { CONTACT_STREAMS } from '@/lib/domain';
+import { CONTACT_STREAMS, type LibraryDoc } from '@/lib/domain';
+import { useStore } from '@/lib/store';
 
 // ===========================================================================
 // Public site (design_handoff_public_site) — عن المشروع / المكتبة / تواصل معنا
@@ -90,28 +91,31 @@ const PRINCIPLES: { title: string; desc: string }[] = [
 ];
 
 type Doc = { id: string; title: string; cat: 'guide' | 'system'; catLabel: string; date: string; cover: string; file: string; dl: string };
-const DOCS: Doc[] = [
-  {
-    id: 'guide',
-    title: 'الدليل التعريفي للذكاء الاصطناعي المساعد',
-    cat: 'guide',
-    catLabel: 'دليل',
-    date: 'يوليو 2026',
+const DOC_ASSETS: Record<string, { cover: string; file: string; dl: string }> = {
+  guide: {
     cover: 'assets/docs/cover-definition-guide.png',
     file: 'assets/docs/ai-definition-guide.pdf',
     dl: 'الدليل-التعريفي-للذكاء-الاصطناعي-المساعد.pdf',
   },
-  {
-    id: 'system',
-    title: 'نظام عمل مشروع الذكاء الاصطناعي المساعد',
-    cat: 'system',
-    catLabel: 'نظام عمل',
-    date: 'يوليو 2026',
+  system: {
     cover: 'assets/docs/cover-work-system.png',
     file: 'assets/docs/ai-work-system.pdf',
     dl: 'نظام-عمل-الذكاء-الاصطناعي-المساعد.pdf',
   },
-];
+};
+const toDoc = (d: LibraryDoc): Doc => {
+  const asset = DOC_ASSETS[d.id];
+  return {
+    id: d.id,
+    title: d.title,
+    cat: d.cat,
+    catLabel: d.cat === 'system' ? 'نظام عمل' : 'دليل',
+    date: d.date,
+    cover: asset?.cover || '',
+    file: d.fileUrl || asset?.file || '#',
+    dl: asset?.dl || d.title + '.pdf',
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Shared chrome
@@ -227,12 +231,14 @@ const sectionTitle: React.CSSProperties = { fontSize: 24, fontWeight: 900, textA
 // عن المشروع
 // ---------------------------------------------------------------------------
 export function AboutPage() {
+  const heroFromAdmin = useStore((s) => s.aboutHero);
+  const hero = (heroFromAdmin || '').trim() || HERO_TEXT;
   return (
     <div style={{ background: '#F7F9FD' }}>
       {/* hero */}
       <div style={{ maxWidth: 1060, margin: '0 auto', padding: '64px 32px 24px', textAlign: 'center' }}>
         <h1 style={{ fontSize: 40, fontWeight: 900, margin: '0 0 18px', color: '#0F1F3D' }}>عن المشروع</h1>
-        <p style={{ fontSize: 16, fontWeight: 600, color: '#3B4A66', lineHeight: 2.15, maxWidth: 920, margin: '0 auto', textAlign: 'justify', textAlignLast: 'center' }}>{HERO_TEXT}</p>
+        <p style={{ fontSize: 16, fontWeight: 600, color: '#3B4A66', lineHeight: 2.15, maxWidth: 920, margin: '0 auto', textAlign: 'justify', textAlignLast: 'center' }}>{hero}</p>
       </div>
 
       {/* timeline */}
@@ -381,10 +387,11 @@ const normAr = (s: string) => s.replace(/[أإآ]/g, 'ا').replace(/[ً-ْ]/g, '
 export function LibraryPage() {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState<'all' | 'guide' | 'system'>('all');
+  const storeDocs = useStore((s) => s.libraryDocs);
   const docs = useMemo(() => {
     const nq = normAr(q.trim());
-    return DOCS.filter((d) => (cat === 'all' || d.cat === cat) && (!nq || normAr(d.title).includes(nq)));
-  }, [q, cat]);
+    return storeDocs.map(toDoc).filter((d) => (cat === 'all' || d.cat === cat) && (!nq || normAr(d.title).includes(nq)));
+  }, [q, cat, storeDocs]);
   const chips: { k: 'all' | 'guide' | 'system'; label: string }[] = [
     { k: 'all', label: 'الكل' },
     { k: 'guide', label: 'الأدلة' },
@@ -496,8 +503,17 @@ function DocCover({ d }: { d: Doc }) {
         boxShadow: h ? '0 26px 56px -26px rgba(15,31,61,.5)' : 'none',
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={d.cover} alt={d.title} style={{ width: 280, maxWidth: '100%', borderRadius: 8, boxShadow: '0 18px 38px -18px rgba(15,31,61,.5)' }} />
+      {d.cover ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={d.cover} alt={d.title} style={{ width: 280, maxWidth: '100%', borderRadius: 8, boxShadow: '0 18px 38px -18px rgba(15,31,61,.5)' }} />
+      ) : (
+        <div style={{ width: 280, maxWidth: '100%', aspectRatio: '280/390', background: 'linear-gradient(160deg,#16375F,#0B2244)', borderRadius: 8, boxShadow: '0 18px 38px -18px rgba(15,31,61,.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 22 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="assets/logo-dark.png" alt="" style={{ height: 40 }} />
+          <div style={{ color: '#fff', fontSize: 17, fontWeight: 900, textAlign: 'center', lineHeight: 1.8 }}>{d.title}</div>
+          {d.date && <div style={{ color: '#B9CDEC', fontSize: 12, fontWeight: 700 }}>{d.date}</div>}
+        </div>
+      )}
     </a>
   );
 }
@@ -509,6 +525,7 @@ type CForm = { name: string; phone: string; email: string; stream: string; messa
 const EMPTY_FORM: CForm = { name: '', phone: '', email: '', stream: '', message: '' };
 
 export function ContactPage() {
+  const addInquiry = useStore((s) => s.addInquiry);
   const [f, setF] = useState<CForm>(EMPTY_FORM);
   const [errs, setErrs] = useState<Partial<Record<keyof CForm, string>>>({});
   const [state, setState] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
@@ -530,9 +547,11 @@ export function ContactPage() {
     if (state === 'sending') return;
     if (!validate()) return;
     setState('sending');
-    // Demo: the static deployment has no mail server. In production this POSTs
-    // to /api/contact and the server resolves stream → representative email
-    // from the backoffice config (the mapping never reaches the client).
+    // The inquiry lands as a ticket in the admin backoffice (التواصل
+    // والاستفسارات), which forwards it to the stream's configured inbox. In
+    // production a server endpoint additionally emails it directly; the
+    // stream → email mapping never reaches this page.
+    addInquiry({ name: f.name.trim(), phone: f.phone.trim(), email: f.email.trim(), stream: f.stream, message: f.message.trim() });
     window.setTimeout(() => setState('success'), 900);
   };
   const reset = () => {
