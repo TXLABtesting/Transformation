@@ -629,9 +629,9 @@ function SvcKpiStrip({ k }: { k: NonNullable<VM['svcKpis']> }) {
     <div data-tour="kpis">
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
         {cards.map((c) => (
-          <div key={c.label} style={{ background: '#fff', border: '1px solid #E3EBF7', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ background: '#F3F7FE', borderBottom: '1px solid #E3EBF7', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
+          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ background: '#F4F6FA', borderBottom: '1px solid #E7ECF4', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
             </div>
             <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
           </div>
@@ -708,11 +708,6 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
         </div>
       )}
       {bt.batches.map((b) => {
-        const pickerOpen = addOpen === b.rawName;
-        const q = addQ.trim();
-        const addList = pickerOpen
-          ? b.addable.filter((a) => !q || a.title.includes(q) || a.sub.includes(q))
-          : [];
         return (
           <div key={b.name} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, overflow: 'hidden' }}>
             {/* card header — same language as the stage cards: title + period, actions on the left */}
@@ -733,53 +728,15 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                 <button
                   onClick={() => {
                     setAddQ('');
-                    setAddOpen(pickerOpen ? null : b.rawName);
+                    setAddOpen(b.rawName);
                   }}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#EAF0FE', border: '1px solid #D9E4FD', borderRadius: 999, padding: '6px 14px', fontSize: 11.5, color: '#2563EB', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}
                 >
-                  <Icon d={pickerOpen ? 'M18 6L6 18M6 6l12 12' : 'M12 5v14M5 12h14'} size={11} color="#2563EB" />
-                  {pickerOpen ? 'إغلاق' : 'إضافة مدخل'}
+                  <Icon d="M12 5v14M5 12h14" size={11} color="#2563EB" />
+                  إضافة مدخل
                 </button>
               )}
             </div>
-
-            {/* add picker — existing stream entries with their priority, so the
-                placement decision is made with the priority in view */}
-            {pickerOpen && (
-              <div style={{ margin: '14px 22px 4px', border: '1px solid #D9E4FD', background: '#F8FAFF', borderRadius: 14, padding: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>إضافة مدخل إلى {b.name}</div>
-                  <input
-                    value={addQ}
-                    onChange={(e) => setAddQ(e.target.value)}
-                    placeholder="بحث…"
-                    style={{ border: '1px solid #DCE3EE', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontFamily: 'inherit', color: '#33415C', background: '#fff', minWidth: 180 }}
-                  />
-                </div>
-                {addList.length === 0 ? (
-                  <div style={{ padding: '14px 0', textAlign: 'center', fontSize: 12, color: '#9AA6BC' }}>لا توجد مدخلات متاحة للإضافة</div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 260, overflowY: 'auto' }}>
-                    {addList.map((a) => (
-                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, padding: '8px 12px' }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title}</div>
-                          {a.sub && <div style={{ fontSize: 11, color: '#8A97AD', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.sub}</div>}
-                        </div>
-                        <BatchPrioPill v={a.prio} />
-                        <span style={{ flex: 'none', fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>{a.currentBatch}</span>
-                        <button
-                          onClick={a.onAssign}
-                          style={{ flex: 'none', background: 'linear-gradient(180deg,#2E86EE,#1F6FE0)', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 11.5, color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
-                        >
-                          إضافة
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
 
             {b.rows.length === 0 ? (
               <div style={{ padding: '22px 16px', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد مدخلات ضمن هذه الدفعة بعد</div>
@@ -831,11 +788,12 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                         {bt.canEditDates && (
                           <td style={{ ...td, whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              {/* backgroundColor (not background) keeps the global RTL chevron visible */}
                               <select
                                 value={r.batch}
                                 onChange={(e) => bt.onMove(r.id, e.target.value)}
                                 title="نقل إلى دفعة أخرى"
-                                style={{ border: '1px solid #DCE3EE', borderRadius: 8, padding: '6px 8px', fontSize: 11.5, fontFamily: 'inherit', color: '#33415C', background: '#fff', maxWidth: 140 }}
+                                style={{ border: '1px solid #DCE3EE', borderRadius: 8, padding: '7px 10px', paddingLeft: 26, fontSize: 11.5, fontFamily: 'inherit', color: '#33415C', backgroundColor: '#fff', maxWidth: 150, cursor: 'pointer' }}
                               >
                                 {bt.batchOptions.map((o) => (
                                   <option key={o.v} value={o.v}>{o.label}</option>
@@ -843,8 +801,9 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                               </select>
                               <button
                                 onClick={r.onOpen}
-                                style={{ background: '#fff', border: '1px solid #E4ECF7', borderRadius: 8, padding: '6px 12px', fontSize: 11.5, color: '#1D4ED8', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 11.5, color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 6px -2px rgba(37,99,235,.4)' }}
                               >
+                                <Icon d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" size={13} color="#fff" />
                                 عرض
                               </button>
                             </div>
@@ -859,6 +818,63 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
           </div>
         );
       })}
+
+      {/* add-entry popup — existing stream entries with their priority, so the
+          placement decision is made with the priority in view */}
+      {(() => {
+        const b = bt.batches.find((x) => x.rawName === addOpen);
+        if (!b) return null;
+        const q = addQ.trim();
+        const addList = b.addable.filter((a) => !q || a.title.includes(q) || a.sub.includes(q));
+        return (
+          <div
+            onClick={() => setAddOpen(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(9,20,45,.45)', backdropFilter: 'blur(3px)', zIndex: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{ width: '100%', maxWidth: 620, background: '#fff', borderRadius: 18, boxShadow: '0 30px 80px -20px rgba(2,12,35,.5)', overflow: 'hidden', animation: 'fadeUp .2s ease both' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '16px 20px', borderBottom: '1px solid #EEF1F7' }}>
+                <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>إضافة مدخل إلى {b.name}</div>
+                <button onClick={() => setAddOpen(null)} style={{ background: '#F1F4F9', border: 'none', borderRadius: 9, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <Icon d="M18 6L6 18M6 6l12 12" size={14} color="#33405A" />
+                </button>
+              </div>
+              <div style={{ padding: '14px 20px 18px' }}>
+                <input
+                  value={addQ}
+                  onChange={(e) => setAddQ(e.target.value)}
+                  placeholder="بحث…"
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, fontFamily: 'inherit', color: '#33415C', background: '#FAFBFE', marginBottom: 12, outline: 'none' }}
+                />
+                {addList.length === 0 ? (
+                  <div style={{ padding: '22px 0', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد مدخلات متاحة للإضافة</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: '52vh', overflowY: 'auto' }}>
+                    {addList.map((a) => (
+                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, padding: '9px 12px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title}</div>
+                          {a.sub && <div style={{ fontSize: 11, color: '#8A97AD', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.sub}</div>}
+                        </div>
+                        <BatchPrioPill v={a.prio} />
+                        <span style={{ flex: 'none', fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>{a.currentBatch}</span>
+                        <button
+                          onClick={a.onAssign}
+                          style={{ flex: 'none', background: 'linear-gradient(180deg,#2E86EE,#1F6FE0)', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 11.5, color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >
+                          إضافة
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -877,9 +893,9 @@ function OpsKpiStrip({ k }: { k: NonNullable<VM['opsKpis']> }) {
     <div data-tour="kpis">
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
         {cards.map((c) => (
-          <div key={c.label} style={{ background: '#fff', border: '1px solid #E3EBF7', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ background: '#F3F7FE', borderBottom: '1px solid #E3EBF7', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
+          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ background: '#F4F6FA', borderBottom: '1px solid #E7ECF4', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
             </div>
             <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
           </div>
@@ -908,9 +924,9 @@ function StgKpiStrip({ k }: { k: NonNullable<VM['stgKpis']> }) {
     <div data-tour="kpis">
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
         {cards.map((c) => (
-          <div key={c.label} style={{ background: '#fff', border: '1px solid #E3EBF7', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ background: '#F3F7FE', borderBottom: '1px solid #E3EBF7', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
+          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ background: '#F4F6FA', borderBottom: '1px solid #E7ECF4', padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="hd" style={{ fontSize: 12.5, fontWeight: 700, color: '#54627B', textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
             </div>
             <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
           </div>

@@ -6,6 +6,7 @@
 // in team setup, so they appear here read-only for oversight.
 // ---------------------------------------------------------------------------
 import { useMemo, useState, type CSSProperties } from 'react';
+import { CONTACT_STREAMS } from '@/lib/domain';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
 import type { RoleKey, UserRec } from '@/lib/domain';
@@ -151,10 +152,8 @@ export function AdminConsole({ vm }: { vm: VM }) {
 
 // ---- Contact inboxes (بريد التواصل للمسارات) ------------------------------
 function ContactTab({ a }: { a: VM['admin'] }) {
-  const rows = [
-    ...a.streams.map((st) => ({ key: st.id, label: 'مسار ' + st.name })),
-    { key: 'general', label: 'الأمانة العامة للجنة الوطنية (استفسارات عامة)' },
-  ];
+  // the PUBLIC contact page lists the project's five streams + the secretariat
+  const rows = CONTACT_STREAMS.map((st) => ({ key: st.key, label: st.key === 'general' ? st.label : 'مسار ' + st.label }));
   return (
     <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
       <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>بريد التواصل</div>

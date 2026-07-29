@@ -129,7 +129,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
                 marginTop: 8,
               }}
             >
-              ممثل الجهة
+              مسؤول الجهة
             </div>
           </div>
           <div
@@ -231,7 +231,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
               </div>
 
               <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>
-                بيانات ممثل الجهة
+                بيانات مسؤول الجهة
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div>
