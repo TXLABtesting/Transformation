@@ -501,7 +501,9 @@ function FormStep({
         <div style={{ fontSize: 12, color: '#8A97AD', marginTop: 2 }}>{m.fStepHint}</div>
       </div>
 
-      {m.mIsService ? (
+      {m.mIsStgTask ? (
+        <FTask vm={vm} setField={setField} gv={gv} />
+      ) : m.mIsService ? (
         <FService vm={vm} setField={setField} gv={gv} />
       ) : (
         <>
@@ -1160,6 +1162,155 @@ function FPhases({ vm }: { vm: VM }) {
         </select>
       </div>
       )}
+    </div>
+  );
+}
+
+// F-TASK — العمل الحكومي الاستراتيجي: حصر قائمة المهام (single-step form).
+function FTask({
+  vm,
+  setField,
+  gv,
+}: {
+  vm: VM;
+  setField: (k: string, v: unknown) => void;
+  gv: (k: string) => string;
+}) {
+  const m = vm.modal;
+  const sel = (label: string, key: string, opts: string[]) => (
+    <div style={{ marginBottom: 14 }}>
+      <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
+      <select value={gv(key)} onChange={(e) => setField(key, e.target.value)} style={inputStyle}>
+        <option value="">اختر…</option>
+        {opts.map((o) => (
+          <option key={o}>{o}</option>
+        ))}
+      </select>
+    </div>
+  );
+  const scale = ['1', '2', '3', '4', '5'];
+  const txt = (label: string, key: string, ph?: string, ar = true) => (
+    <div style={{ marginBottom: 14 }}>
+      <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
+      <input value={gv(key)} onChange={(e) => setField(key, ar ? arabicOnly(e.target.value) : e.target.value)} placeholder={ph} style={inputStyle} />
+    </div>
+  );
+  return (
+    <div>
+      <div style={cardStyle}>
+        {sel('المحور', 'axis', m.axesOptions)}
+        {txt('المهمة', 'title', 'اسم المهمة')}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>الأنشطة <span style={{ color: '#D23B45' }}>*</span></label>
+          <textarea
+            value={gv('subActivities')}
+            onChange={(e) => setField('subActivities', arabicOnly(e.target.value))}
+            placeholder="اكتب كل نشاط في سطر مستقل"
+            rows={4}
+            style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.8 }}
+          />
+          <div style={{ fontSize: 11, color: '#9AA6BC', marginTop: 5 }}>كل سطر يمثل نشاطاً — تُحتسب الأنشطة في مؤشرات المسار.</div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>القطاع المعني <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={gv('sector')} onChange={(e) => setField('sector', arabicOnly(e.target.value))} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>الإدارة المعنية <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={gv('dept')} onChange={(e) => setField('dept', arabicOnly(e.target.value))} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>القسم المعني <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={gv('section')} onChange={(e) => setField('section', arabicOnly(e.target.value))} style={inputStyle} />
+          </div>
+        </div>
+      </div>
+
+      <div style={cardStyle}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>الأتمتة</div>
+        {sel('مستوى الأتمتة', 'automationLevel', ['مؤتمتة كلياً', 'مؤتمتة جزئياً', 'غير مؤتمتة'])}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 0 }}>
+          <div>
+            <label style={labelStyle}>ما هي نسبة الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={Number(gv('automationPct')) || 0}
+                onChange={(e) => setField('automationPct', Number(e.target.value))}
+                style={{ flex: 1, accentColor: '#2563EB' }}
+              />
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', minWidth: 42, textAlign: 'left' }}>{Number(gv('automationPct')) || 0}%</span>
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>ما هو نظام الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={gv('automationSystem')} onChange={(e) => setField('automationSystem', e.target.value)} style={inputStyle} />
+          </div>
+        </div>
+      </div>
+
+      <div style={cardStyle}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>التقييم (من 1 إلى 5)</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+          {sel('مستوى الأهمية', 'importance', scale)}
+          {sel('كثافة الاستخدام', 'usageIntensity', scale)}
+          {sel('مستوى الجاهزية', 'readinessLevel', scale)}
+          {sel('مستوى الأثر المتوقع من التحول', 'impactScore', scale)}
+          {sel('قابلية التحول', 'transformScore', scale)}
+          {sel('وضوح المخرجات وقابليتها للمراجعة', 'outputClarity', scale)}
+        </div>
+        {sel('مستوى المخاطر', 'riskLevel', ['منخفض', 'متوسط', 'عالي'])}
+        {sel('أولوية الاختيار', 'selPriority', ['أولوية عالية', 'أولوية متوسطة', 'أولوية منخفضة'])}
+        <div style={{ marginBottom: 0 }}>
+          <label style={labelStyle}>أولوية التحول <span style={{ color: '#D23B45' }}>*</span></label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {['نعم', 'لا'].map((opt) => {
+              const active = gv('transformYes') === opt;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setField('transformYes', opt)}
+                  style={{
+                    flex: 1,
+                    border: '1px solid ' + (active ? '#2563EB' : '#DCE3EE'),
+                    background: active ? '#EAF1FE' : '#fff',
+                    color: active ? '#1D4ED8' : '#54627B',
+                    borderRadius: 11,
+                    padding: '11px 13px',
+                    fontSize: 13.5,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div style={cardStyle}>
+        <label style={labelStyle}>دفعة الإطلاق <span style={{ color: '#D23B45' }}>*</span></label>
+        <select
+          value={vm.modal.draft?.execBatch || ''}
+          onChange={(e) => vm.store.selectExecBatch(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">اختر الدفعة…</option>
+          {m.batchOptions.map((b) => (
+            <option key={b.name} value={b.name}>
+              {b.label}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }

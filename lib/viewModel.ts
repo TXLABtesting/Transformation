@@ -23,6 +23,7 @@ import {
   typeLabelFor,
   typeLabelDefFor,
   svcPriority,
+  STRATEGY_AXES,
   availTypes,
   wfOf,
   wfMeta,
@@ -144,6 +145,12 @@ function build(s: Store) {
           i.type === 'service' &&
           String(i.transformYes === 'نعم' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) ?? '' : '') === ui.svcPrioF
       );
+  }
+  // strategy-stream filters: المهمة / القطاع / الأولوية
+  if (filterStream === 'strategy') {
+    if (ui.stgTaskF !== 'all') visible = visible.filter((i) => (i.title || '') === ui.stgTaskF);
+    if (ui.stgSectorF !== 'all') visible = visible.filter((i) => (i.sector || '') === ui.stgSectorF);
+    if (ui.stgPrioF !== 'all') visible = visible.filter((i) => (i.selPriority || '') === ui.stgPrioF);
   }
   // status filter
   if (ui.statusFilter !== 'all') visible = visible.filter((i) => statusMatch(i, ui.statusFilter, rawRole, s));
@@ -315,7 +322,7 @@ function build(s: Store) {
   // Scoped to the types the stream actually has: العمليات stream has no
   // services, so a coordinator there never sees «خدمة».
   const typeGroups = [
-    ...(myPath !== 'services'
+    ...(myPath !== 'services' && myPath !== 'strategy'
       ? [{ id: 'projinit', name: 'مشروع', icon: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7', section: 'projects', match: (i: Item) => isProjInit(i.type) }]
       : []),
     ...(streamHasType(myPath, 'operation')
@@ -707,8 +714,33 @@ function build(s: Store) {
         }
       : null;
 
+  // strategy-stream filter bar (اسم الجهة عبر فلتر الجهات الحالي)
+  const stgScope = roleBase.filter((i) => i.path === 'strategy' && i.type === 'operation');
+  const stgFilterBar =
+    filterStream === 'strategy'
+      ? {
+          taskOptions: [
+            { v: 'all', label: 'المهمة: الكل' },
+            ...Array.from(new Set(stgScope.map((i) => i.title || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
+          ],
+          sectorOptions: [
+            { v: 'all', label: 'القطاع: الكل' },
+            ...Array.from(new Set(stgScope.map((i) => i.sector || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
+          ],
+          prioOptions: [
+            { v: 'all', label: 'الأولوية: الكل' },
+            { v: 'أولوية عالية', label: 'أولوية عالية' },
+            { v: 'أولوية متوسطة', label: 'أولوية متوسطة' },
+            { v: 'أولوية منخفضة', label: 'أولوية منخفضة' },
+          ],
+          taskValue: ui.stgTaskF,
+          sectorValue: ui.stgSectorF,
+          prioValue: ui.stgPrioF,
+        }
+      : null;
+
   // is any filter currently active (drives the reset button + count)
-  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim() || ui.svcServiceF !== 'all' || ui.svcSectorF !== 'all' || ui.svcPrioF !== 'all';
+  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim() || ui.svcServiceF !== 'all' || ui.svcSectorF !== 'all' || ui.svcPrioF !== 'all' || ui.stgTaskF !== 'all' || ui.stgSectorF !== 'all' || ui.stgPrioF !== 'all';
 
   // ---- cards ----
   // ---- sidebar navigation (§redesign v2) ----
@@ -761,7 +793,7 @@ function build(s: Store) {
         },
       }))
     : [
-        ...(!(roleStreams.length === 1 && roleStreams[0].id === 'services')
+        ...(!(roleStreams.length === 1 && (roleStreams[0].id === 'services' || roleStreams[0].id === 'strategy'))
           ? [{ key: 'projects', label: 'المشاريع والمبادرات', icon: NAV_FOLDER, sub: true, count: cntProjects }]
           : []),
         ...(roleStreams.some((p) => streamHasType(p.id, 'operation'))
@@ -1140,6 +1172,26 @@ function build(s: Store) {
         }
       : null;
 
+  // ---- strategy coordinator KPI strip (أعداد المهام والأنشطة) ----
+  const stgTasks = roleBase.filter((i) => i.path === 'strategy' && i.type === 'operation');
+  const actCount = (i: Item) =>
+    stripHtml(i.subActivities || '')
+      .split(/[\n،,;؛]/)
+      .filter((t) => t.trim()).length;
+  const stgActs = (list: Item[]) => list.reduce((a, i) => a + actCount(i), 0);
+  const stgHiMid = (i: Item) => (i.selPriority || '').includes('عالية') || (i.selPriority || '').includes('متوسطة');
+  const stgKpis =
+    filterStream === 'strategy'
+      ? {
+          tasks: stgTasks.length,
+          acts: stgActs(stgTasks),
+          transformable: stgActs(stgTasks.filter(stgHiMid)),
+          targeted: stgActs(stgTasks.filter((i) => (i.transformYes || '') === 'نعم')),
+          p1: stgTasks.filter((i) => (i.selPriority || '').includes('عالية')).length,
+          p2: stgTasks.filter((i) => (i.selPriority || '').includes('متوسطة')).length,
+        }
+      : null;
+
   // ---- expected results (النتائج المتوقعة) ----
   const resInScope = (r: { path?: string }) =>
     rawRole === 'coord' || rawRole === 'path' ? (r.path || myPath) === myPath : true;
@@ -1172,6 +1224,8 @@ function build(s: Store) {
     : null;
 
   return {
+    stgKpis,
+    stgFilterBar,
     inlineCreate: ui.inlineCreate && !!ui.draft && (ui.mStep === 'form' || ui.mStep === 'type'),
     confirmAdd: ui.confirmAdd,
     svcFilterBar,
@@ -2101,6 +2155,14 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     subService: i.subService,
     readinessLevel: i.readinessLevel,
     transformYes: i.transformYes,
+    isStgTask: i.type === 'operation' && i.path === 'strategy',
+    axis: i.axis,
+    importance: i.importance,
+    impactScore: i.impactScore,
+    transformScore: i.transformScore,
+    outputClarity: i.outputClarity,
+    riskLevel: i.riskLevel,
+    selPriority: i.selPriority,
     svcSelPriority: i.type === 'service' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) : null,
     serviceOwner: i.serviceOwner,
     targetUsers: i.targetUsers,
@@ -2264,8 +2326,9 @@ function buildModal(s: Store) {
     ({ project: 'تقييم المشروع', initiative: 'تقييم المبادرة', operation: 'تقييم ' + typeLabelDefFor('operation', path), service: 'تقييم الخدمة' } as Record<string, string>)[type] ||
     'التقييم';
   // services stream: a single-step form (exactly the approved field set)
-  const fLabels = type === 'service' ? ['بيانات الخدمة'] : [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
-  const fTitles = type === 'service' ? ['بيانات الخدمة'] : [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
+  const isStgTaskForm = type === 'operation' && path === 'strategy';
+  const fLabels = type === 'service' ? ['بيانات الخدمة'] : isStgTaskForm ? ['بيانات المهمة'] : [step1Label, step2Label, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
+  const fTitles = type === 'service' ? ['بيانات الخدمة'] : isStgTaskForm ? ['بيانات المهمة'] : [step1Title, step2Title, 'النتائج المتوقعة', 'نطاق العمل والتكلفة المتوقعة', 'البرنامج الزمني'];
   const fHints = [
     'ابدأ بالمعلومات الأساسية',
     'حدّد الأولوية وقابلية التحول',
@@ -2293,6 +2356,8 @@ function buildModal(s: Store) {
     fStep: ui.fStep,
     mIsOp: type === 'operation',
     mIsService: type === 'service',
+    mIsStgTask: isStgTaskForm,
+    axesOptions: STRATEGY_AXES,
     mIsProjectish: type === 'project' || type === 'initiative',
     mTypeLabel,
     fLabels,

@@ -367,6 +367,8 @@ function EntityOverview({ vm }: { vm: VM }) {
       {/* ===== Section 1: services-coordinator KPI strip OR inputs summary ===== */}
       {vm.svcKpis ? (
         <SvcKpiStrip k={vm.svcKpis} />
+      ) : vm.stgKpis ? (
+        <StgKpiStrip k={vm.stgKpis} />
       ) : (
       <div data-r="dash-top" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
         {/* --- إجمالي المدخلات (right) --- */}
@@ -686,6 +688,36 @@ function SvcKpiStrip({ k }: { k: NonNullable<VM['svcKpis']> }) {
       </div>
       <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>* إجمالي الخدمات القابلة للتحول = حسب أولوية الاختيار 1، 2، 3</span>
+        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول</span>
+      </div>
+    </div>
+  );
+}
+
+function StgKpiStrip({ k }: { k: NonNullable<VM['stgKpis']> }) {
+  const C = { c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' };
+  const cards = [
+    { label: 'إجمالي عدد المهام', v: k.tasks },
+    { label: 'إجمالي عدد الأنشطة', v: k.acts },
+    { label: 'إجمالي عدد الأنشطة القابلة للتحول *', v: k.transformable },
+    { label: 'إجمالي عدد الأنشطة المستهدف تحويلها **', v: k.targeted },
+    { label: 'أولوية أولى', v: k.p1 },
+    { label: 'أولوية ثانية', v: k.p2 },
+  ];
+  return (
+    <div data-tour="kpis">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
+        {cards.map((c) => (
+          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: '4px 4px 0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ background: C.bg, border: '1px solid ' + C.border, borderRadius: 13, padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: C.c, textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
+            </div>
+            <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>* إجمالي عدد الأنشطة القابلة للتحول = حسب أولوية الاختيار أولوية عالية وأولوية متوسطة</span>
         <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول</span>
       </div>
     </div>
@@ -2493,6 +2525,8 @@ export function Dashboard({ vm }: { vm: VM }) {
               {/* services scope: the six approved numbers replace the status recap */}
               {vm.svcKpis ? (
                 <SvcKpiStrip k={vm.svcKpis} />
+              ) : vm.stgKpis ? (
+                <StgKpiStrip k={vm.stgKpis} />
               ) : !(vm.activePathAll && vm.filterValue === 'all') && (
                 <>
                   <SectionLabel>ملخص حالة المدخلات</SectionLabel>
@@ -2589,6 +2623,12 @@ export function Dashboard({ vm }: { vm: VM }) {
                     <FilterSelect value={vm.svcFilterBar.serviceValue} options={vm.svcFilterBar.serviceOptions} minWidth={170} onChange={(v) => s.setSvcFilter('svcServiceF', v)} />
                     <FilterSelect value={vm.svcFilterBar.sectorValue} options={vm.svcFilterBar.sectorOptions} minWidth={150} onChange={(v) => s.setSvcFilter('svcSectorF', v)} />
                     <FilterSelect value={vm.svcFilterBar.prioValue} options={vm.svcFilterBar.prioOptions} minWidth={150} onChange={(v) => s.setSvcFilter('svcPrioF', v)} />
+                  </>
+                ) : vm.stgFilterBar ? (
+                  <>
+                    <FilterSelect value={vm.stgFilterBar.taskValue} options={vm.stgFilterBar.taskOptions} minWidth={170} onChange={(v) => s.setStgFilter('stgTaskF', v)} />
+                    <FilterSelect value={vm.stgFilterBar.sectorValue} options={vm.stgFilterBar.sectorOptions} minWidth={150} onChange={(v) => s.setStgFilter('stgSectorF', v)} />
+                    <FilterSelect value={vm.stgFilterBar.prioValue} options={vm.stgFilterBar.prioOptions} minWidth={160} onChange={(v) => s.setStgFilter('stgPrioF', v)} />
                   </>
                 ) : (
                   <>

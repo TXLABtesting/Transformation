@@ -140,6 +140,10 @@ export type UiState = {
   svcServiceF: string;
   svcSectorF: string;
   svcPrioF: string;
+  // strategy-stream list filters: المهمة / القطاع / الأولوية
+  stgTaskF: string;
+  stgSectorF: string;
+  stgPrioF: string;
   // inline add-manually form (rendered under the table, not a popup)
   inlineCreate: boolean;
   confirmAdd: boolean;
@@ -243,6 +247,7 @@ type Actions = {
   setExecStream: (v: string) => void;
   resetFilters: () => void;
   setSvcFilter: (k: 'svcServiceF' | 'svcSectorF' | 'svcPrioF', v: string) => void;
+  setStgFilter: (k: 'stgTaskF' | 'stgSectorF' | 'stgPrioF', v: string) => void;
   toggleStepFilter: (n: number) => void;
   // create wizard
   openCreate: () => void;
@@ -431,6 +436,9 @@ function defaultUi(): UiState {
     svcServiceF: 'all',
     svcSectorF: 'all',
     svcPrioF: 'all',
+    stgTaskF: 'all',
+    stgSectorF: 'all',
+    stgPrioF: 'all',
     inlineCreate: false,
     confirmAdd: false,
     filter: 'all',
@@ -1015,8 +1023,9 @@ export const useStore = create<Store>((set, get) => {
     // viewer isn't stranded on a now-empty detail view
     setExecEnt: (v) => setUi({ execEnt: v, detailId: null }),
     setExecStream: (v) => setUi({ execStream: v, detailId: null }),
-    resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null, batchFilter: null, svcServiceF: 'all', svcSectorF: 'all', svcPrioF: 'all' }),
+    resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null, batchFilter: null, svcServiceF: 'all', svcSectorF: 'all', svcPrioF: 'all', stgTaskF: 'all', stgSectorF: 'all', stgPrioF: 'all' }),
     setSvcFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
+    setStgFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     toggleStepFilter: (n) => set((s) => ({ ui: { ...s.ui, stepFilter: s.ui.stepFilter === n ? null : n } })),
 
     // ---- create wizard ----
@@ -1111,6 +1120,27 @@ export const useStore = create<Store>((set, get) => {
     fNext: () => {
       const s = get();
       const d = s.ui.draft;
+      // strategy stream: a single-step task form (حصر قائمة المهام)
+      if (d?.type === 'operation' && d?.path === 'strategy') {
+        const filledT = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
+        const dt = d as unknown as Record<string, unknown>;
+        const reqT = ['title', 'axis', 'subActivities', 'sector', 'dept', 'section', 'automationLevel', 'automationSystem', 'usageIntensity', 'importance', 'readinessLevel', 'impactScore', 'transformScore', 'outputClarity', 'riskLevel', 'selPriority', 'transformYes'];
+        if (reqT.some((k) => !filledT(dt[k]))) {
+          return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
+        }
+        if (['title', 'subActivities', 'sector', 'dept', 'section'].some((k) => /[A-Za-z]/.test(stripHtml(String(dt[k] ?? ''))))) {
+          return toast('يرجى إدخال النص بالعربية فقط في الحقول العربية');
+        }
+        if (!(d.execBatch || '').trim()) {
+          return toast('نرجو اختيار دفعة الإطلاق قبل الإرسال للاعتماد');
+        }
+        if (s.ui.inlineCreate) {
+          setUi({ confirmAdd: true });
+          return;
+        }
+        get().submitItem();
+        return;
+      }
       // services stream: a single-step form with its own required set; the
       // execution stage defaults to «سيتم التحديد بعد الدراسة»
       if (d?.type === 'service') {
