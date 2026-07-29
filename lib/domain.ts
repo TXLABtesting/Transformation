@@ -61,6 +61,15 @@ export const STRATEGY_AXES = [
   'التنافسية العالمية',
 ];
 
+// Contact-page inquiry routing — one inbox per stream + the secretariat for
+// general inquiries. Editable from the admin backoffice.
+export const DEFAULT_CONTACT_EMAILS: Record<string, string> = {
+  services: 'services@aigp.gov.ae',
+  strategy: 'strategy@aigp.gov.ae',
+  ops: 'operations@aigp.gov.ae',
+  general: 'secretariat@aigp.gov.ae',
+};
+
 // «للتحديد بعد الدراسة»: execution stage deferred until the study concludes
 export const TBD_BATCH = 'للتحديد بعد الدراسة';
 

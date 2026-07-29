@@ -37,6 +37,7 @@ import {
   typeLabelDefFor,
   TBD_BATCH,
   seedExpectedResults,
+  DEFAULT_CONTACT_EMAILS,
 } from './domain';
 import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
@@ -173,6 +174,8 @@ type State = {
   items: Item[];
   launchPlans: LaunchPlan[];
   expectedResults: ExpectedResult[];
+  // contact-page inquiry inboxes (editable from the admin backoffice)
+  contactEmails: Record<string, string>;
   users: UserRec[];
   readNotifs: string[];
   programStep: number;
@@ -249,6 +252,7 @@ type Actions = {
   setSvcFilter: (k: 'svcServiceF' | 'svcSectorF' | 'svcPrioF', v: string) => void;
   setStgFilter: (k: 'stgTaskF' | 'stgSectorF' | 'stgPrioF', v: string) => void;
   setItemDate: (id: string, k: 'startDate' | 'endDate', v: string) => void;
+  setContactEmail: (k: string, v: string) => void;
   toggleStepFilter: (n: number) => void;
   // create wizard
   openCreate: () => void;
@@ -457,6 +461,7 @@ function initialState(): State {
     items: seedItems(),
     launchPlans: recalcPlanBudgets(seedItems(), seedLaunchPlans()),
     expectedResults: seedExpectedResults(),
+    contactEmails: { ...DEFAULT_CONTACT_EMAILS },
     users: seedUsers(DEFAULT_ENTITY),
     readNotifs: [],
     programStep: 1,
@@ -549,6 +554,7 @@ export const useStore = create<Store>((set, get) => {
       items: s.items,
       launchPlans: s.launchPlans,
       expectedResults: s.expectedResults,
+      contactEmails: s.contactEmails,
       users: s.users,
       phase: s.phase,
       setup: s.setup,
@@ -613,6 +619,7 @@ export const useStore = create<Store>((set, get) => {
           ...s,
           launchPlans,
           expectedResults: !fresh && Array.isArray(saved!.expectedResults) ? (saved!.expectedResults as ExpectedResult[]) : seedExpectedResults(),
+          contactEmails: saved!.contactEmails && typeof saved!.contactEmails === 'object' ? { ...DEFAULT_CONTACT_EMAILS, ...(saved!.contactEmails as Record<string, string>) } : { ...DEFAULT_CONTACT_EMAILS },
           view: (saved!.view as State['view']) || 'login',
           lang: (saved!.lang as State['lang']) || 'ar',
           entityName: (saved!.entityName as string) || DEFAULT_ENTITY,
@@ -946,6 +953,10 @@ export const useStore = create<Store>((set, get) => {
     setSvcFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     setStgFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     setItemDate: (id, k, v) => patchItem(id, { [k]: v } as Partial<Item>),
+    setContactEmail: (k, v) => {
+      set((st) => ({ contactEmails: { ...st.contactEmails, [k]: v } }));
+      persist();
+    },
     toggleStepFilter: (n) => set((s) => ({ ui: { ...s.ui, stepFilter: s.ui.stepFilter === n ? null : n } })),
 
     // ---- create wizard ----
