@@ -522,9 +522,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 <DetailGrid cols={3}>
                   <DetailCell label="مستوى المخاطر"><LevelPill v={d.riskLevel} /></DetailCell>
                   <DetailCell label="أولوية الاختيار">
-                    {d.selPriority ? (
+                    {d.stgCalc ? (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E5EEFF', color: '#1D4ED8', borderRadius: 999, padding: '4px 12px', fontSize: 12.5, fontWeight: 800 }}>
-                        {d.selPriority}
+                        {d.stgCalc.cat} · {d.stgCalc.total}/30
                       </span>
                     ) : (
                       '—'

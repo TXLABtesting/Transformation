@@ -149,6 +149,31 @@ export function svcPriority(usage?: string, complexity?: string, readiness?: str
   return 2;
 }
 
+// ---- strategy stream: أولوية التنفيذ matrix --------------------------------
+// Step 1: six 1-5 criteria summed to a 30-point score, banded
+//   عالية 24-30 · متوسطة 16-23 · منخفضة 6-15
+// Step 2: مستوى المخاطر (منخفض/متوسط/عالي)
+// Step 3: عالي المخاطر → أولوية منخفضة دائماً; otherwise the band decides.
+export type StgCalc = { total: number; cat: string; hint: string };
+export function stgPriority(i: {
+  importance?: string;
+  usageIntensity?: string;
+  readinessLevel?: string;
+  impactScore?: string;
+  transformScore?: string;
+  outputClarity?: string;
+  riskLevel?: string;
+}): StgCalc | null {
+  const vals = [i.importance, i.usageIntensity, i.readinessLevel, i.impactScore, i.transformScore, i.outputClarity].map((v) => parseInt(v || '', 10));
+  if (vals.some((v) => isNaN(v) || v < 1 || v > 5) || !(i.riskLevel || '').trim()) return null;
+  const total = vals.reduce((a, b) => a + b, 0);
+  const highRisk = (i.riskLevel || '').startsWith('عال');
+  const band = total >= 24 ? 'عالية' : total >= 16 ? 'متوسطة' : 'منخفضة';
+  const cat = highRisk ? 'أولوية منخفضة' : 'أولوية ' + band;
+  const hint = cat === 'أولوية عالية' ? 'ابدأ أولاً' : cat === 'أولوية متوسطة' ? 'نفّذ تدريجياً' : 'يؤجل أو يعاد تصميمه';
+  return { total, cat, hint };
+}
+
 // ---- 1.3 Roles -------------------------------------------------------------
 export const ROLE: Record<
   RoleKey,
