@@ -4040,15 +4040,16 @@ function CardItem({ c }: { c: CardVM }) {
         {c.desc}
       </div>
 
-      {/* Launch phase + linked launch */}
-      {(c.batchLabel || (c.launchNames && c.launchNames.length > 0)) && (
+      {/* دفعة الإطلاق chip (the legacy linked-launch chip is gone with the
+          launch-plans concept) */}
+      {c.batchLabel && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {c.batchLabel === TBD_BATCH ? (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 999, background: '#FFF3DE', color: '#B45309' }}>
               <Icon d="M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" size={11} color="#B45309" />
               للتحديد بعد الدراسة
             </span>
-          ) : c.batchLabel ? (
+          ) : (
             <span
               style={{
                 display: 'inline-flex',
@@ -4063,28 +4064,7 @@ function CardItem({ c }: { c: CardVM }) {
               }}
             >
               <Icon d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" size={11} color="#2563EB" />
-              التنفيذ ضمن {c.batchLabel.replace('إطلاق ', '')}
-            </span>
-          ) : null}
-          {c.launchNames && c.launchNames.length > 0 && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                fontSize: 10,
-                fontWeight: 700,
-                padding: '3px 9px',
-                borderRadius: 999,
-                background: '#F0F4FB',
-                color: '#3B5AA5',
-                maxWidth: '100%',
-              }}
-            >
-              <Icon d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7" size={11} />
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {c.launchNames.join('، ')}
-              </span>
+              {c.batchLabel.replace('إطلاق ', '')}
             </span>
           )}
         </div>
