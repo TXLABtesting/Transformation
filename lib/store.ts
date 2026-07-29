@@ -42,7 +42,8 @@ import {
   DEFAULT_ABOUT_HERO,
 } from './domain';
 import type { LibraryDoc, ContactInquiry } from './domain';
-import { STREAM_FIELDS, missingFieldsOf } from './domain';
+import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT } from './domain';
+import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
 import type { LaunchPlan, ExpectedResult } from './domain';
@@ -183,6 +184,7 @@ type State = {
   // contact-page inquiry inboxes (editable from the admin backoffice)
   contactEmails: Record<string, string>;
   aboutHero: string;
+  about: AboutContent;
   libraryDocs: LibraryDoc[];
   inquiries: ContactInquiry[];
   users: UserRec[];
@@ -264,6 +266,7 @@ type Actions = {
   assignItemBatch: (id: string, batch: string) => void;
   setContactEmail: (k: string, v: string) => void;
   setAboutHero: (v: string) => void;
+  setAbout: (patch: Partial<AboutContent>) => void;
   updLibDoc: (id: string, patch: Partial<LibraryDoc>) => void;
   addLibDoc: () => void;
   removeLibDoc: (id: string) => void;
@@ -498,6 +501,7 @@ function initialState(): State {
     expectedResults: seedExpectedResults(),
     contactEmails: { ...DEFAULT_CONTACT_EMAILS },
     aboutHero: DEFAULT_ABOUT_HERO,
+    about: JSON.parse(JSON.stringify(DEFAULT_ABOUT)) as AboutContent,
     libraryDocs: DEFAULT_LIBRARY_DOCS.map((d) => ({ ...d })),
     inquiries: [],
     users: seedUsers(DEFAULT_ENTITY),
@@ -594,6 +598,7 @@ export const useStore = create<Store>((set, get) => {
       expectedResults: s.expectedResults,
       contactEmails: s.contactEmails,
       aboutHero: s.aboutHero,
+      about: s.about,
       libraryDocs: s.libraryDocs,
       inquiries: s.inquiries,
       users: s.users,
@@ -662,6 +667,7 @@ export const useStore = create<Store>((set, get) => {
           expectedResults: !fresh && Array.isArray(saved!.expectedResults) ? (saved!.expectedResults as ExpectedResult[]) : seedExpectedResults(),
           contactEmails: saved!.contactEmails && typeof saved!.contactEmails === 'object' ? { ...DEFAULT_CONTACT_EMAILS, ...(saved!.contactEmails as Record<string, string>) } : { ...DEFAULT_CONTACT_EMAILS },
           aboutHero: typeof saved!.aboutHero === 'string' && (saved!.aboutHero as string).trim() ? (saved!.aboutHero as string) : DEFAULT_ABOUT_HERO,
+          about: saved!.about && typeof saved!.about === 'object' ? { ...(JSON.parse(JSON.stringify(DEFAULT_ABOUT)) as AboutContent), ...(saved!.about as Partial<AboutContent>) } : (JSON.parse(JSON.stringify(DEFAULT_ABOUT)) as AboutContent),
           libraryDocs: Array.isArray(saved!.libraryDocs) && (saved!.libraryDocs as LibraryDoc[]).length ? (saved!.libraryDocs as LibraryDoc[]) : DEFAULT_LIBRARY_DOCS.map((d) => ({ ...d })),
           inquiries: Array.isArray(saved!.inquiries) ? (saved!.inquiries as ContactInquiry[]) : [],
           view: (saved!.view as State['view']) || 'login',
@@ -1006,6 +1012,10 @@ export const useStore = create<Store>((set, get) => {
     },
     setAboutHero: (v) => {
       set({ aboutHero: v });
+      persist();
+    },
+    setAbout: (patch) => {
+      set((st) => ({ about: { ...st.about, ...patch } }));
       persist();
     },
     updLibDoc: (id, patch) => {

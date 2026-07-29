@@ -230,9 +230,16 @@ const sectionTitle: React.CSSProperties = { fontSize: 24, fontWeight: 900, textA
 // ---------------------------------------------------------------------------
 // عن المشروع
 // ---------------------------------------------------------------------------
+const SCOPE_ICONS = [IC.bank, IC.cog, IC.headset, IC.target];
 export function AboutPage() {
   const heroFromAdmin = useStore((s) => s.aboutHero);
+  const about = useStore((s) => s.about);
   const hero = (heroFromAdmin || '').trim() || HERO_TEXT;
+  const TL = about.timeline.length ? about.timeline : TIMELINE;
+  const TR = about.tracks.length ? about.tracks : TRACKS;
+  const SC = about.scope.length ? about.scope : SCOPE.map((s0) => ({ title: s0.title, desc: s0.desc }));
+  const PR = about.principles.length ? about.principles : PRINCIPLES;
+  const TG = about.targets;
   return (
     <div style={{ background: '#F7F9FD' }}>
       {/* hero */}
@@ -246,7 +253,7 @@ export function AboutPage() {
         <h2 style={{ ...sectionTitle, marginBottom: 6 }}>مسيرة التحول الحكومي</h2>
         <p style={{ fontSize: 13.5, color: '#7484A0', fontWeight: 600, textAlign: 'center', margin: '0 0 34px' }}>ربع قرن من الريادة في التحول الرقمي الحكومي</p>
         <div style={{ display: 'flex', flexDirection: 'row-reverse', overflowX: 'auto' }}>
-          {TIMELINE.map((t) =>
+          {TL.map((t) =>
             t.major ? (
               <div key={t.year} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, minWidth: 0 }}>
                 <div style={{ fontSize: 26, fontWeight: 900, color: '#2563EB' }}>{t.year}</div>
@@ -288,18 +295,18 @@ export function AboutPage() {
         <h2 style={sectionTitle}>المستهدفات الرئيسية</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 24 }}>
           <div style={{ background: 'linear-gradient(150deg,#0B2A66,#123B85)', borderRadius: 20, padding: '36px 34px', color: '#fff', textAlign: 'center', boxShadow: '0 22px 46px -26px rgba(11,42,102,.7)' }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#8FB4EC', marginBottom: 6 }}>تحويل</div>
-            <div style={{ fontSize: 64, fontWeight: 900, lineHeight: 1 }}>50%</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#C6D8F5', lineHeight: 2, marginTop: 14 }}>من العمليات والمهام والإجراءات والخدمات في الجهة الاتحادية إلى نماذج مدعومة بالذكاء الاصطناعي المساعد</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#8FB4EC', marginBottom: 6 }}>{TG.label1}</div>
+            <div style={{ fontSize: 64, fontWeight: 900, lineHeight: 1 }}>{TG.value1}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#C6D8F5', lineHeight: 2, marginTop: 14 }}>{TG.text1}</div>
           </div>
           <div style={{ background: 'linear-gradient(150deg,#1D4ED8,#2E6FD1)', borderRadius: 20, padding: '36px 34px', color: '#fff', textAlign: 'center', boxShadow: '0 22px 46px -26px rgba(29,78,216,.7)' }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#BFD6F8', marginBottom: 6 }}>تدريب وتأهيل</div>
-            <div style={{ fontSize: 64, fontWeight: 900, lineHeight: 1 }}>100%</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#DBE8FC', lineHeight: 2, marginTop: 14 }}>من موظفي الجهة الاتحادية على الذكاء الاصطناعي المساعد</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#BFD6F8', marginBottom: 6 }}>{TG.label2}</div>
+            <div style={{ fontSize: 64, fontWeight: 900, lineHeight: 1 }}>{TG.value2}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#DBE8FC', lineHeight: 2, marginTop: 14 }}>{TG.text2}</div>
           </div>
         </div>
         <div style={{ marginTop: 18, background: '#EAF1FE', border: '1px solid #C9DBF8', borderRadius: 14, padding: '16px 22px', fontSize: 13, fontWeight: 600, color: '#1F3D77', lineHeight: 2, textAlign: 'center' }}>
-          سيتم تحديد <b>النتائج والأثر المتوقع</b> من تحويل العمليات والخدمات والمهام لتطبيق نماذج وأنظمة الذكاء الاصطناعي المساعد على مستوى الجهة، على أن تكون هذه النتائج كمية وواضحة وقابلة للقياس بالأرقام وتعكس مستوى التحسّن المتوقع
+          {TG.note}
         </div>
       </div>
 
@@ -307,10 +314,10 @@ export function AboutPage() {
       <div style={{ maxWidth: 1060, margin: '0 auto', padding: '44px 32px 8px' }}>
         <h2 style={sectionTitle}>المسارات</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {TRACKS.map((tr) => (
-            <HoverLift key={tr.num}>
+          {TR.map((tr, ti) => (
+            <HoverLift key={tr.title + ti}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 22, background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '20px 26px' }}>
-                <div style={{ fontSize: 34, fontWeight: 900, color: '#DCE6F7', lineHeight: 1, flex: '0 0 64px', textAlign: 'center' }}>{tr.num}</div>
+                <div style={{ fontSize: 34, fontWeight: 900, color: '#DCE6F7', lineHeight: 1, flex: '0 0 64px', textAlign: 'center' }}>{String(ti + 1).padStart(2, '0')}</div>
                 <div style={{ width: 1, alignSelf: 'stretch', background: '#EDF1F8' }} />
                 <div>
                   <div style={{ fontSize: 16.5, fontWeight: 800, color: '#122748', marginBottom: 4 }}>{tr.title}</div>
@@ -326,10 +333,10 @@ export function AboutPage() {
       <div style={{ maxWidth: 1060, margin: '0 auto', padding: '44px 32px 8px' }}>
         <h2 style={sectionTitle}>نطاق التحويل</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 18 }}>
-          {SCOPE.map((s) => (
-            <div key={s.title} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {SC.map((s, si) => (
+            <div key={s.title + si} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ width: 46, height: 46, borderRadius: 12, background: '#EAF1FE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <PIcon d={s.icon} size={24} />
+                <PIcon d={SCOPE_ICONS[si % SCOPE_ICONS.length]} size={24} />
               </div>
               <div style={{ fontSize: 15.5, fontWeight: 800, lineHeight: 1.6, color: '#0F1F3D' }}>{s.title}</div>
               <div style={{ fontSize: 12.5, fontWeight: 600, color: '#5E6E8C', lineHeight: 1.95 }}>{s.desc}</div>
@@ -340,7 +347,7 @@ export function AboutPage() {
           <PIcon d={IC.block} size={30} color="#7E9AC8" />
           <div>
             <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 3 }}>خارج نطاق التحويل</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#B9CDEC', lineHeight: 1.9 }}>{OUT_OF_SCOPE}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#B9CDEC', lineHeight: 1.9 }}>{about.outOfScope || OUT_OF_SCOPE}</div>
           </div>
         </div>
       </div>
@@ -348,11 +355,11 @@ export function AboutPage() {
       {/* principles */}
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '44px 32px 64px' }}>
         <h2 style={sectionTitle}>
-          المبادئ العامة <span style={{ fontSize: 13, fontWeight: 700, color: '#7484A0' }}>· 14 مبدأ</span>
+          المبادئ العامة <span style={{ fontSize: 13, fontWeight: 700, color: '#7484A0' }}>· {PR.length} مبدأ</span>
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(380px,1fr))', gap: '10px 28px' }}>
-          {PRINCIPLES.map((p, i) => (
-            <div key={p.title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '12px 4px', borderBottom: '1px solid #EDF1F8' }}>
+          {PR.map((p, i) => (
+            <div key={p.title + i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '12px 4px', borderBottom: '1px solid #EDF1F8' }}>
               <div style={{ width: 30, height: 30, borderRadius: 8, background: '#EAF1FE', color: '#2563EB', fontSize: 13, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>{i + 1}</div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 800, color: '#0F1F3D' }}>{p.title}</div>
