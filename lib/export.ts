@@ -4,24 +4,37 @@ import { stripHtml } from './richtext';
 // list — replaces the prototype's CDN SheetJS / PptxGenJS with bundled deps.
 // Libraries are dynamically imported so they stay out of the initial bundle.
 // ============================================================================
-import { type Item, typeLabel, typeLabelFor, pathById, wfMeta, transformScore, stageWeight, entOf, parseBudget, formatMoney, execMilestones, isEntityApproved, isProjInit } from './domain';
+import { type Item, typeLabel, typeLabelFor, pathById, wfMeta, transformScore, stageWeight, entOf, parseBudget, formatMoney, execMilestones, isEntityApproved, isProjInit, STREAM_FIELDS, svcPriority, stgPriority } from './domain';
 
 const argb = (hex: string) => 'FF' + hex.replace('#', '').toUpperCase();
 const today = () => new Date().toLocaleDateString('ar-AE', { year: 'numeric', month: 'long', day: 'numeric' });
 
+// أولوية الاختيار per the stream matrix (ops pending its matrix)
+function selPriorityOf(i: Item): string {
+  if (i.type === 'service') {
+    const p = svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
+    return p ? 'الأولوية ' + p : '';
+  }
+  if (i.path === 'strategy' && i.type === 'operation') {
+    const c = stgPriority(i);
+    return c ? c.cat + ' · ' + c.total + '/30' : '';
+  }
+  return '';
+}
 function row(i: Item, entityName: string) {
-  return {
-    التصنيف: typeLabelFor(i.type, i.path),
-    العنوان: i.title,
+  const spec = STREAM_FIELDS[i.path] || [];
+  const base: Record<string, string> = {
+    النوع: typeLabelFor(i.type, i.path),
     المسار: pathById(i.path).name,
     الجهة: entOf(i, entityName),
     الحالة: wfMeta(i).label,
-    الأولوية: i.priority || '',
-    'نطاق العمل': stripHtml(i.scopeOfWork || ''),
-    'نسبة الإنجاز': stageWeight(i) + '%',
-    'درجة التحول': transformScore(i).v,
-    'تمويل اللجنة': i.funded ? 'نعم' : 'لا',
   };
+  spec.forEach((f) => {
+    const raw = (i as unknown as Record<string, unknown>)[f.key];
+    base[f.label] = f.key === 'execBatch' ? String(raw || '').replace('إطلاق ', '') : stripHtml(String(raw ?? ''));
+  });
+  base['أولوية الاختيار'] = selPriorityOf(i);
+  return base;
 }
 
 // ---- shared workbook styling (government-report look) ----------------------
@@ -363,21 +376,26 @@ async function exportExcelStyled(items: Item[], entityName: string) {
   // ---- sheet 2: المدخلات — the detailed table --------------------------------
   const ws = wb.addWorksheet('المدخلات', { views: [{ rightToLeft: true, showGridLines: false }] });
 
-  const headers = Object.keys(row(items[0] || ({} as Item), entityName));
-  const widths = [16, 38, 24, 26, 26, 12, 18, 46, 14, 13, 14];
+  // header union across items (streams have different field sets)
+  const headers = Array.from(new Set(items.flatMap((i) => Object.keys(row(i, entityName)))));
+  if (!headers.length) headers.push('النوع', 'المسار', 'الجهة', 'الحالة');
+  const widths = headers.map((h) => (h === 'العملية الرئيسية' || h === 'المهمة' || h === 'الخدمة' ? 34 : h.includes('الأنشطة') ? 40 : 20));
   const cols = headers.length;
 
   banner(ws, cols, 'منصة التحول للذكاء الاصطناعي المساعد — تقرير المدخلات', `الجهة: ${entityName}  ·  عدد المدخلات: ${items.length}  ·  ${today()}`);
 
   // KPI strip: totals the reader needs before the table
-  const totalBudget = items.reduce((a, i) => a + parseBudget(i.budget), 0);
-  const avgDone = items.length ? Math.round(items.reduce((a, i) => a + stageWeight(i), 0) / items.length) : 0;
   const stats: [string, string][] = [
     ['إجمالي المدخلات', String(items.length)],
-    ['معتمدة للتمويل', String(items.filter((i) => i.funded).length)],
-    ['متوسط نسبة الإنجاز', avgDone + '%'],
+    ['المعتمدة ضمن الدفعات', String(items.filter((i) => i.wf === 'exec' || i.wf === 'budget').length)],
+    ['بانتظار اعتماد رئيس المسار', String(items.filter((i) => i.wf === 'ent1').length)],
   ];
-  const spans: [number, number][] = [[1, 3], [4, 5], [6, 8], [9, 11]];
+  const seg = Math.max(1, Math.floor(cols / 3));
+  const spans: [number, number][] = [
+    [1, seg],
+    [seg + 1, seg * 2],
+    [seg * 2 + 1, cols],
+  ];
   stats.forEach(([label, value], k) => {
     const [c1, c2] = spans[k];
     ws.mergeCells(3, c1, 3, c2);
@@ -529,7 +547,7 @@ export async function downloadUsersTemplate(roleLabels: string[], entities: stri
   banner(ws, cols, 'نموذج رفع المستخدمين', 'عبّئ صفًّا لكل مستخدم. «الاسم» و«البريد» إلزاميان. اختر «الدور» من القائمة؛ «الجهة»/«المسار» حسب الدور.');
   ws.mergeCells(3, 1, 3, cols);
   const note = ws.getCell(3, 1);
-  note.value = 'ملاحظة: منسق المسار يحتاج الجهة والمسار · ممثل الجهة يحتاج الجهة · رئيس المسار يحتاج المسار · المشرف واللجنة لا يحتاجان أيًّا منهما. احذف الصف التوضيحي قبل الرفع.';
+  note.value = 'ملاحظة: منسق المسار يحتاج الجهة والمسار · رئيس المسار ونائبه يحتاجان المسار · اللجنة الوطنية والأمانة العامة والمشرف لا يحتاجون أيًّا منها. احذف الصف التوضيحي قبل الرفع.';
   note.font = { size: 10, color: { argb: 'FF1D4ED8' }, italic: true };
   note.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
   note.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NOTE_BG } as XLColor };

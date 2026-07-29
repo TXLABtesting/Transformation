@@ -4174,23 +4174,6 @@ function CardItem({ c }: { c: CardVM }) {
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#94A3B8', flex: 'none' }} />
             <span>{c.footLabel}</span>
           </span>
-          {c.endDateFmt && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#AEB8C7',
-                whiteSpace: 'nowrap',
-                flex: 'none',
-              }}
-            >
-              <Icon d={CLOCK_D} size={11} color="#AEB8C7" />
-              {c.endDateFmt}
-            </span>
-          )}
         </div>
       </div>
 

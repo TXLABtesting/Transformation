@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 import { useStore, logicRole, actorName } from './store';
 import {
   missingFieldsOf,
+  CONTACT_STREAMS,
   PATHS,
   ROLE,
   ROLE_PILLS,
@@ -1176,7 +1177,7 @@ function build(s: Store) {
 
   // ---- admin console (لوحة المشرف) ----
   const isAdmin = rawRole === 'admin';
-  const roleOrder: RoleKey[] = ['admin', 'ai', 'path', 'entity', 'coord'];
+  const roleOrder: RoleKey[] = ['admin', 'ai', 'secretariat', 'path', 'deputy', 'coord'];
   const streamName = (id?: string) => (id ? pathById(id).name : '');
   const adminUsers = [...s.users]
     .sort((a, b) => roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role) || a.name.localeCompare(b.name, 'ar'))
@@ -1192,7 +1193,9 @@ function build(s: Store) {
   const admin = {
     users: adminUsers,
     roleInfo: ROLE_INFO,
-    streams: PATHS.map((p) => ({ id: p.id, name: p.name })),
+    // heads can be assigned for all five project streams (not only the three
+    // managed inside the platform)
+    streams: CONTACT_STREAMS.filter((c) => c.key !== 'general').map((c) => ({ id: c.key, name: c.label })),
     entities: Array.from(new Set([entityName, ...FEDERAL_ENTITIES])),
     counts: {
       total: s.users.length,
@@ -1921,7 +1924,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     pillLabel,
     recoStripLabel,
     title: i.title,
-    desc: stripHtml(i.desc || ''),
+    desc: [i.sector, i.dept].filter(Boolean).join(' · ') || stripHtml(i.desc || ''),
     launchNames,
     stageMoved: !!i.stageMove,
     typeLabel: typeLabelFor(i.type, i.path),
