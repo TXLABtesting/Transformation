@@ -1172,6 +1172,8 @@ function build(s: Store) {
     : null;
 
   return {
+    inlineCreate: ui.inlineCreate && !!ui.draft && (ui.mStep === 'form' || ui.mStep === 'type'),
+    confirmAdd: ui.confirmAdd,
     svcFilterBar,
     svcKpis,
     resultsPage,
@@ -1708,7 +1710,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfChip,
     wfBg,
     isReturned: rawRole === 'coord' && !!i.ret,
-    retBannerLabel: 'ملاحظات ممثل الجهة',
+    retBannerLabel: 'ملاحظات رئيس المسار',
     retNote: i.ret ? i.ret.note || (i.ret.type === 'info' ? 'طُلبت تفاصيل إضافية' : 'تمت الإعادة للتعديل') : '',
     retFrom: i.ret?.from || '',
     stepBadge: 'المرحلة ' + step,
@@ -2054,21 +2056,17 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     wfChip: wm.chip,
     wfBg: wm.bg,
     priority: i.priority,
-    rankLabel: i.rank ? String(i.rank) : '',
+    // services follow the matrix — no manual ترتيب/أولوية chips
+    rankLabel: i.type === 'service' ? '' : i.rank ? String(i.rank) : '',
     complexity: i.complexity,
     endDateFmt: fmtDate(i.endDate),
     isReturned: rawRole === 'coord' && !!i.ret,
-    retBannerLabel: 'ملاحظات ممثل الجهة',
+    retBannerLabel: 'ملاحظات رئيس المسار',
     retFrom: i.ret?.from || '',
     retNote: i.ret?.note || '',
-    // funded banner (shown inside the detail body)
-    dFunded: !!i.funded,
-    dFundedText: i.funded
-      ? (i.funded.direct
-          ? 'مموّل مباشرة من اللجنة الوطنية'
-          : 'مموّل من اللجنة الوطنية · بترشيح من ' + (i.nom?.by || 'رئيس المسار')) +
-        ' · يبقى التنفيذ من مسؤولية الجهة'
-      : '',
+    // committee-funding banner removed from the flow — never shown
+    dFunded: false,
+    dFundedText: '',
     isProj: i.type === 'project' || i.type === 'initiative',
     isOp: i.type === 'operation',
     isSvc: i.type === 'service',

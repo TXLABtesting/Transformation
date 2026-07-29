@@ -152,6 +152,79 @@ export function CreatePanel({ vm }: { vm: VM }) {
 }
 
 // ---------------------------------------------------------------------------
+// Inline add-manually form — rendered UNDER the list table instead of a popup.
+// Ends with a confirmation (visible-to-stream-head warning): تأكيد / حفظ كمسودة.
+export function InlineCreateForm({ vm }: { vm: VM }) {
+  const s = vm.store;
+  const m = vm.modal;
+  const draft = m.draft;
+  const setField = (k: string, v: unknown) => s.setDraftField(k as never, v);
+  const gv = (k: string): string => (draft ? ((draft as unknown as Record<string, unknown>)[k] as string) ?? '' : '');
+  return (
+    <div style={{ marginTop: 18, background: '#F7F9FD', border: '1px solid #E7ECF4', borderRadius: 18, padding: 20, position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: 'linear-gradient(135deg,#2E74EE,#27C2F0)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: 'none',
+          }}
+        >
+          <Icon d={IC.plus} size={18} color="#fff" />
+        </div>
+        <div className="hd" style={{ flex: 1, fontSize: 15, fontWeight: 800, color: '#13213C' }}>{m.createTitle}</div>
+        <button
+          onClick={() => s.closeInline()}
+          style={{ width: 34, height: 34, borderRadius: 10, border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', cursor: 'pointer', fontSize: 15, fontFamily: 'inherit' }}
+        >
+          ✕
+        </button>
+      </div>
+      {m.mStep === 'type' ? <TypeStep vm={vm} /> : <FormStep vm={vm} setField={setField} gv={gv} />}
+
+      {vm.confirmAdd && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 70, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={() => s.cancelConfirmAdd()} style={{ position: 'absolute', inset: 0, background: 'rgba(8,18,40,.5)', animation: 'fadeIn .2s' }} />
+          <div style={{ position: 'relative', width: 440, maxWidth: '94vw', background: '#fff', borderRadius: 18, boxShadow: '0 30px 80px -30px rgba(2,12,35,.6)', padding: 22 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div className="hd" style={{ flex: 1, fontSize: 15.5, fontWeight: 800, color: '#13213C' }}>تأكيد الإضافة</div>
+              <button
+                onClick={() => s.cancelConfirmAdd()}
+                style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', cursor: 'pointer', fontSize: 14, fontFamily: 'inherit' }}
+              >
+                ✕
+              </button>
+            </div>
+            <p style={{ fontSize: 13, color: '#54627B', lineHeight: 1.9, margin: '12px 0 18px' }}>
+              هل أنت متأكد من الإضافة؟ سيصبح المدخل مرئياً لرئيس المسار بعد التأكيد.
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => s.saveDraftOnly()}
+                style={{ background: '#EEF1F7', border: 'none', borderRadius: 11, padding: '11px 18px', color: '#54627B', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                حفظ كمسودة
+              </button>
+              <button
+                onClick={() => s.confirmInlineAdd()}
+                style={{ background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', border: 'none', borderRadius: 11, padding: '11px 22px', color: '#fff', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 22px -10px rgba(37,99,235,.7)' }}
+              >
+                تأكيد
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // STEP: PATH
 function PathStep({ vm }: { vm: VM }) {
   const m = vm.modal;
@@ -1121,11 +1194,12 @@ function FService({
     </div>
   );
   const pr = m.svcSelPriority;
+  // single brand colour for every priority — no extra colours
   const PR_COLORS: Record<number, { c: string; bg: string }> = {
-    1: { c: '#0E7490', bg: '#E0F6FD' },
-    2: { c: '#1D4ED8', bg: '#E5EEFF' },
-    3: { c: '#1E3A8A', bg: '#E4E9F7' },
-    4: { c: '#334155', bg: '#EAEEF4' },
+    1: { c: '#1D4ED8', bg: '#EAF1FE' },
+    2: { c: '#1D4ED8', bg: '#EAF1FE' },
+    3: { c: '#1D4ED8', bg: '#EAF1FE' },
+    4: { c: '#1D4ED8', bg: '#EAF1FE' },
   };
   return (
     <div>

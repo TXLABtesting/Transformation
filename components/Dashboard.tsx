@@ -1,6 +1,7 @@
 'use client';
 import { Fragment, useState, type CSSProperties, type ReactNode } from 'react';
 import type { VM } from '@/lib/viewModel';
+import { InlineCreateForm } from './CreatePanel';
 import { Icon } from './Icon';
 import { Tour, TOUR_EVENT, type TourStep } from './Tour';
 import { LAUNCH_TYPES, TBD_BATCH } from '@/lib/domain';
@@ -662,13 +663,14 @@ function StageCard({ b, showStream, onManage }: { b: VM['batchSummary'][number];
 
 // ===== services-coordinator KPI strip (أعداد الخدمات الفرعية) =====
 function SvcKpiStrip({ k }: { k: NonNullable<VM['svcKpis']> }) {
+  // one brand colour across the strip — no extra colours
   const cards = [
-    { label: 'إجمالي عدد الخدمات الفرعية', v: k.total, c: '#33415C', bg: '#F1F4F9', border: '#E2E8F2' },
-    { label: 'إجمالي عدد الخدمات الفرعية القابلة للتحول *', v: k.transformable, c: '#33415C', bg: '#F1F4F9', border: '#E2E8F2' },
-    { label: 'إجمالي عدد الخدمات الفرعية المستهدف تحويلها **', v: k.targeted, c: '#33415C', bg: '#F1F4F9', border: '#E2E8F2' },
-    { label: 'أولوية أولى', v: k.p1, c: '#0E7490', bg: '#E0F6FD', border: '#BFE9F8' },
-    { label: 'أولوية ثانية', v: k.p2, c: '#1D4ED8', bg: '#E5EEFF', border: '#CBDCFB' },
-    { label: 'أولوية ثالثة', v: k.p3, c: '#1E3A8A', bg: '#E4E9F7', border: '#CBD5EF' },
+    { label: 'إجمالي عدد الخدمات الفرعية', v: k.total, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
+    { label: 'إجمالي عدد الخدمات الفرعية القابلة للتحول *', v: k.transformable, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
+    { label: 'إجمالي عدد الخدمات الفرعية المستهدف تحويلها **', v: k.targeted, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
+    { label: 'أولوية أولى', v: k.p1, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
+    { label: 'أولوية ثانية', v: k.p2, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
+    { label: 'أولوية ثالثة', v: k.p3, c: '#1D4ED8', bg: '#EAF1FE', border: '#D9E4FD' },
   ];
   return (
     <div data-tour="kpis">
@@ -682,7 +684,7 @@ function SvcKpiStrip({ k }: { k: NonNullable<VM['svcKpis']> }) {
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>* إجمالي الخدمات القابلة للتحول = حسب أولوية الاختيار 1، 2، 3</span>
         <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول</span>
       </div>
@@ -2730,6 +2732,9 @@ export function Dashboard({ vm }: { vm: VM }) {
                   ))}
                 </div>
               )}
+
+              {/* inline add-manually form — under the table, not a popup */}
+              {vm.inlineCreate && <InlineCreateForm vm={vm} />}
             </>
           )}
 
