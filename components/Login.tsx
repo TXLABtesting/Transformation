@@ -222,54 +222,50 @@ export function Login({ vm }: { vm: VM }) {
 
           {/* --- library --- */}
           {tab === 'library' && (
-            <div style={pageCard}>
+            <div style={{ ...pageCard, maxWidth: 640, margin: '0 auto' }}>
               <h2 style={pageTitle}>المكتبة</h2>
-              <p style={{ ...pageText, marginBottom: 16 }}>
-                الوثائق والنماذج المعتمدة الخاصة بالمشروع.
+              <p style={{ ...pageText, marginBottom: 18 }}>
+                الوثائق الرسمية الخاصة بمشروع الذكاء الاصطناعي المساعد.
               </p>
-              <a
-                href="assets/workplan_template.xlsx"
-                download="النموذج.xlsx"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  background: 'rgba(255,255,255,.07)',
-                  border: '1px dashed rgba(159,196,242,.4)',
-                  borderRadius: 14,
-                  padding: '14px 16px',
-                  textDecoration: 'none',
-                }}
-              >
-                <span
-                  style={{
-                    width: 38,
-                    height: 38,
-                    flex: 'none',
-                    borderRadius: 10,
-                    background: 'rgba(39,194,240,.18)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#27C2F0',
-                    fontSize: 15,
-                    fontWeight: 800,
-                  }}
-                >
-                  ⬇
-                </span>
-                <span style={{ flex: 1, textAlign: 'right' }}>
-                  <span style={{ display: 'block', fontSize: 13.5, fontWeight: 800, color: '#fff' }}>
-                    نموذج خطة العمل (Excel)
-                  </span>
-                  <span style={{ display: 'block', fontSize: 11.5, color: '#9FC4F2', marginTop: 2 }}>
-                    النموذج المعتمد لتعبئة المدخلات ورفعها في المنصة
-                  </span>
-                </span>
-              </a>
-              <p style={{ ...pageText, fontSize: 12, color: '#8AA6CC', marginTop: 14 }}>
-                ستُضاف الأدلة والوثائق الإضافية هنا تباعاً.
-              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 16 }}>
+                {[
+                  {
+                    title: 'نظام عمل مشروع الذكاء الاصطناعي المساعد',
+                    cover: 'assets/docs/cover-work-system.png',
+                    file: 'assets/docs/ai-work-system.pdf',
+                    dl: 'نظام-عمل-الذكاء-الاصطناعي-المساعد.pdf',
+                  },
+                  {
+                    title: 'الدليل التعريفي للذكاء الاصطناعي المساعد',
+                    cover: 'assets/docs/cover-definition-guide.png',
+                    file: 'assets/docs/ai-definition-guide.pdf',
+                    dl: 'الدليل-التعريفي-للذكاء-الاصطناعي-المساعد.pdf',
+                  },
+                ].map((doc) => (
+                  <div key={doc.file} style={{ background: 'rgba(255,255,255,.07)', border: '1px solid rgba(159,196,242,.28)', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={doc.cover} alt={doc.title} style={{ width: '100%', borderRadius: 10, boxShadow: '0 14px 30px -14px rgba(0,0,0,.55)' }} />
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#fff', textAlign: 'center', lineHeight: 1.7, minHeight: 44 }}>{doc.title}</div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <a
+                        href={doc.file}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ flex: 1, textAlign: 'center', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 800, textDecoration: 'none' }}
+                      >
+                        إطلاع
+                      </a>
+                      <a
+                        href={doc.file}
+                        download={doc.dl}
+                        style={{ flex: 1, textAlign: 'center', background: 'rgba(255,255,255,.10)', border: '1px solid rgba(159,196,242,.4)', color: '#DCE9F7', borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 800, textDecoration: 'none' }}
+                      >
+                        تحميل
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

@@ -247,6 +247,8 @@ type Actions = {
   mSetPath: (pid: string) => void;
   mSetType: (t: ItemType) => void;
   chooseManual: () => void;
+  openCreateManual: () => void;
+  openCreateBulk: () => void;
   chooseBulk: () => void;
   mBack: () => void;
   setDraftField: (k: keyof Item, v: unknown) => void;
@@ -1053,7 +1055,25 @@ export const useStore = create<Store>((set, get) => {
         },
       }));
     },
-    chooseManual: () => setUi({ method: 'manual', mStep: 'type' }),
+    chooseManual: () => {
+      const s = get();
+      const types = availTypes(s.ui.draft?.path || s.myPath);
+      if (types.length === 1) {
+        setUi({ method: 'manual' });
+        get().mSetType(types[0].key);
+        return;
+      }
+      setUi({ method: 'manual', mStep: 'type' });
+    },
+    // direct entry points for the two main CTAs on the list page
+    openCreateManual: () => {
+      get().openCreate();
+      get().chooseManual();
+    },
+    openCreateBulk: () => {
+      get().openCreate();
+      get().chooseBulk();
+    },
     // bulk goes straight to the template/upload step — the file carries the types
     chooseBulk: () => setUi({ method: 'bulk', mStep: 'bulk' }),
     mBack: () => {

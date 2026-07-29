@@ -2658,7 +2658,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} label={vm.role === 'ai' ? (vm.navStream ? 'تحميل تقرير اعتماد المسار' : 'تحميل تقرير الاعتماد') : vm.navStream ? 'تحميل تقرير المسار' : 'تحميل التقرير'} />
                 {vm.showAddBtn && (
                   <button
-                    onClick={s.openCreate}
+                    onClick={s.openCreateManual}
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -2676,7 +2676,31 @@ export function Dashboard({ vm }: { vm: VM }) {
                       fontFamily: 'inherit',
                     }}
                   >
-                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة مدخل جديد
+                    <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة يدوية
+                  </button>
+                )}
+                {vm.showAddBtn && (
+                  <button
+                    onClick={s.openCreateBulk}
+                    style={{
+                      flex: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      height: 42,
+                      padding: '0 18px',
+                      background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 11,
+                      fontWeight: 800,
+                      fontSize: 13.5,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px -2px rgba(11,138,75,.4)',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={16} strokeWidth={2.2} /> رفع ملف Excel
                   </button>
                 )}
               </div>
