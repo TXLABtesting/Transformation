@@ -102,6 +102,62 @@ export type ContactInquiry = {
   done: boolean;
 };
 
+// ---- per-stream entry field specs (single source for the entry form, the
+// Excel template, bulk import mapping and missing-data checks) ----
+export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
+  services: [
+    { key: 'title', label: 'الخدمة' },
+    { key: 'subService', label: 'الخدمة الفرعية' },
+    { key: 'sector', label: 'القطاع المعني' },
+    { key: 'dept', label: 'الإدارة المعنية' },
+    { key: 'section', label: 'القسم المعني' },
+    { key: 'usageIntensity', label: 'كثافة الاستخدام' },
+    { key: 'complexity', label: 'مستوى التعقيد' },
+    { key: 'readinessLevel', label: 'الجاهزية' },
+    { key: 'transformYes', label: 'أولوية التحول' },
+  ],
+  strategy: [
+    { key: 'axis', label: 'المحور' },
+    { key: 'title', label: 'المهمة' },
+    { key: 'subActivities', label: 'الأنشطة' },
+    { key: 'sector', label: 'القطاع المعني' },
+    { key: 'dept', label: 'الإدارة المعنية' },
+    { key: 'section', label: 'القسم المعني' },
+    { key: 'automationLevel', label: 'مستوى الأتمتة' },
+    { key: 'automationSystem', label: 'نظام الأتمتة' },
+    { key: 'usageIntensity', label: 'كثافة الاستخدام' },
+    { key: 'importance', label: 'الأهمية' },
+    { key: 'readinessLevel', label: 'الجاهزية' },
+    { key: 'impactScore', label: 'درجة الأثر' },
+    { key: 'transformScore', label: 'القابلية للتحول' },
+    { key: 'outputClarity', label: 'وضوح المخرجات' },
+    { key: 'riskLevel', label: 'مستوى المخاطر' },
+    { key: 'transformYes', label: 'أولوية التحول' },
+  ],
+  ops: [
+    { key: 'opType', label: 'تصنيف العملية' },
+    { key: 'title', label: 'العملية الرئيسية' },
+    { key: 'subActivities', label: 'الأنشطة الفرعية' },
+    { key: 'sector', label: 'القطاع المعني' },
+    { key: 'dept', label: 'الإدارة المعنية' },
+    { key: 'section', label: 'القسم المعني' },
+    { key: 'isAutomated', label: 'هل النشاط/العملية مؤتمت؟' },
+    { key: 'automationSystem', label: 'نظام/نسبة الأتمتة' },
+    { key: 'usageIntensity', label: 'كثافة الاستخدام' },
+    { key: 'readinessLevel', label: 'الجاهزية' },
+    { key: 'impactScore', label: 'درجة الأثر' },
+    { key: 'complexity', label: 'مستوى التعقيد' },
+    { key: 'transformScore', label: 'القابلية للتحول' },
+    { key: 'transformYes', label: 'أولوية التحول' },
+  ],
+};
+const plainOf = (v: unknown): string => String(v ?? '').replace(/<[^>]*>/g, '').trim();
+// labels of the required entry fields this item has not filled yet
+export function missingFieldsOf(i: Record<string, unknown> & { path?: string }): string[] {
+  const spec = STREAM_FIELDS[i.path || ''] || [];
+  return spec.filter((f) => !plainOf(i[f.key])).map((f) => f.label);
+}
+
 // «للتحديد بعد الدراسة»: execution stage deferred until the study concludes
 export const TBD_BATCH = 'للتحديد بعد الدراسة';
 
@@ -124,10 +180,9 @@ export function availTypes(path: string): TypeOption[] {
   if (path === 'services') return [{ key: 'service', label: 'خدمة' }];
   // the strategy stream accepts TASK (مهمة) entries only (no projects)
   if (path === 'strategy') return [{ key: 'operation', label: 'مهمة' }];
-  const base: TypeOption[] = [{ key: 'project', label: 'مشروع' }];
-  // operations exist in the operations stream and العمل الحكومي الاستراتيجي only
-  if (path === 'ops' || path === 'strategy') base.push({ key: 'operation', label: path === 'strategy' ? 'مهمة' : 'عملية' });
-  return base;
+  // مشاريع as a standalone type are gone — the operations stream records
+  // operations only (المشاريع is one of its تصنيف values)
+  return [{ key: 'operation', label: 'عملية' }];
 }
 
 // which type columns apply to a stream (drives dashboard breakdowns)
@@ -993,7 +1048,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = process.env.NEXT_PUBLIC_DEMO_DATA === '1' ? 'demo3' : 'v3';
+export const SEED_V = process.env.NEXT_PUBLIC_DEMO_DATA === '1' ? 'demo4' : 'v4';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 

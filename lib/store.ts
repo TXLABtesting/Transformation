@@ -42,19 +42,20 @@ import {
   DEFAULT_ABOUT_HERO,
 } from './domain';
 import type { LibraryDoc, ContactInquiry } from './domain';
+import { STREAM_FIELDS, missingFieldsOf } from './domain';
 import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
 import type { LaunchPlan, ExpectedResult } from './domain';
 import { type ReviewResult } from './ai';
 
-// Plain (non-AI) validation of imported rows — a row needs a title to be
-// importable; a missing description is flagged but still imported.
-const plainVerdict = (r: BulkRow): BulkRow =>
-  !(r.title || '').trim()
-    ? { ...r, _v: 'يوجد خطأ', _note: 'الاسم مفقود — لن يُستورد هذا الصف' }
-    : !(r.desc || '').trim()
-      ? { ...r, _v: 'بحاجة إلى مراجعة', _note: 'الوصف غير مكتمل — يمكن استكماله يدوياً بعد الاستيراد' }
-      : { ...r, _v: 'جاهز', _note: 'مكتمل وصالح للإرسال' };
+// Validation against the stream's entry-field spec: a row needs a title to be
+// importable; rows with missing fields import as DRAFTS flagged «بيانات ناقصة».
+const plainVerdict = (r: BulkRow): BulkRow => {
+  if (!(r.title || '').trim()) return { ...r, _v: 'يوجد خطأ', _note: 'اسم المدخل مفقود — لن يُستورد هذا الصف' };
+  const miss = r.missing || [];
+  if (miss.length) return { ...r, _v: 'بيانات ناقصة', _note: 'الحقول الناقصة: ' + miss.join('، ') };
+  return { ...r, _v: 'جاهز', _note: 'مكتمل — سيُرسل لاعتماد رئيس المسار بعد التأكيد' };
+};
 
 export type MStep = 'path' | 'type' | 'method' | 'form' | 'review' | 'bulk' | 'bulkReview' | 'done';
 
@@ -70,6 +71,7 @@ export type BulkRow = {
   title: string;
   desc: string;
   extra?: Partial<Item>;
+  missing?: string[];
   _v?: string;
   _note?: string;
 };
@@ -139,6 +141,7 @@ export type UiState = {
   // sidebar navigation
   navSection: string; // 'overview' | 'projects' | 'operations' | 'services' | 'launchplans'
   navStream: string | null; // drill-down stream inside a type section
+  draftSel: string[]; // coordinator: selected drafts for group send
   batchFilter: string | null; // drill-down from a مرحلة card into its items
   // services-stream list filters: الخدمة / القطاع / الأولوية
   svcServiceF: string;
@@ -242,7 +245,6 @@ type Actions = {
   setAdminDash: (v: boolean) => void;
   setFilter: (v: string) => void;
   setStatusFilter: (v: string) => void;
-  setDevStage: (id: string, stage: string, mode?: 'all' | 'single') => void;
   confirmOk: () => void;
   confirmAlt: () => void;
   closeConfirm: () => void;
@@ -268,6 +270,9 @@ type Actions = {
   addInquiry: (q: { name: string; phone: string; email: string; stream: string; message: string }) => void;
   toggleInquiryDone: (id: string) => void;
   toggleStepFilter: (n: number) => void;
+  toggleDraftSel: (id: string) => void;
+  clearDraftSel: () => void;
+  submitDrafts: (ids: string[]) => void;
   // create wizard
   openCreate: () => void;
   closeModal: () => void;
@@ -436,6 +441,7 @@ function defaultUi(): UiState {
     dViewStep: null,
     navSection: 'overview',
     navStream: null,
+    draftSel: [],
     batchFilter: null,
     svcServiceF: 'all',
     svcSectorF: 'all',
@@ -878,81 +884,13 @@ export const useStore = create<Store>((set, get) => {
     },
     setFilter: (v) => setUi({ filter: v }),
     setStatusFilter: (v) => setUi({ statusFilter: v }),
-    // simplified delivery status: قيد التطوير / تم التطوير / تم الإطلاق
-    setDevStage: (id, stage, mode) => {
-      const s = get();
-      const target = findItem(id);
-      if (!target) return;
-      const wf = stage === 'launched' ? 'done' : stage === 'developed' ? 'launch' : 'exec';
-      // launching a المدخل ALWAYS asks for confirmation first (launches fire as a
-      // unit — you cannot launch one entry and leave the rest).
-      const coLaunched = () => {
-        const planIds = target.launchPlanIds || [];
-        if (!planIds.length) return [] as Item[];
-        return s.items.filter(
-          (it) =>
-            it.id !== id &&
-            (it.launchPlanIds || []).some((x) => planIds.includes(x)) &&
-            wfOf(it) !== 'done' &&
-            (it.transformability || '') !== 'غير قابل'
-        );
-      };
-      if (stage === 'launched' && mode !== 'all' && mode !== 'single') {
-        const siblings = coLaunched();
-        const names = siblings.map((sb) => '«' + sb.title + '»').join('، ');
-        setUi({
-          confirmModal: {
-            kind: 'launchAll',
-            title: 'تأكيد الإطلاق',
-            body: siblings.length
-              ? 'هل تريد إطلاق هذا المدخل؟ سيتم أيضًا إطلاق ' +
-                siblings.length +
-                ' ' +
-                (siblings.length === 1 ? 'مدخل آخر' : 'مدخلات أخرى') +
-                ' ضمن الإطلاق نفسه، وستتحوّل حالتها إلى «تم الإطلاق»: ' +
-                names +
-                '.'
-              : 'هل تريد إطلاق هذا المدخل؟',
-            okLabel: 'نعم، إطلاق',
-            cancelLabel: 'إلغاء',
-            payload: { id },
-          },
-        });
-        return;
-      }
-      if (stage === 'launched' && mode === 'all') {
-        const sibIds = coLaunched().map((x) => x.id);
-        set((st) => ({
-          items: st.items.map((it) =>
-            it.id === id || sibIds.includes(it.id) ? { ...it, wf: 'done' as WfState } : it
-          ),
-        }));
-        persist();
-        toast(
-          sibIds.length
-            ? 'تم إطلاق المدخل وجميع مدخلات الإطلاق نفسه'
-            : 'تم إطلاق ' + typeLabelDefFor(target.type, target.path) + ' رسمياً'
-        );
-        return;
-      }
-      patchItem(id, () => ({ wf: wf as WfState }));
-      persist();
-      toast(
-        stage === 'launched'
-          ? 'تم إطلاق ' + typeLabelDefFor(target.type, target.path) + ' رسمياً'
-          : stage === 'developed'
-            ? 'اكتمل تطوير ' + typeLabelDefFor(target.type, target.path) + ' — يمكن الانتقال إلى الإطلاق'
-            : typeLabelDefFor(target.type, target.path) + ' قيد التطوير'
-      );
-    },
     // ---- in-app confirmation dialog ----
     closeConfirm: () => setUi({ confirmModal: null }),
     confirmOk: () => {
       const cm = get().ui.confirmModal;
       if (!cm) return;
       setUi({ confirmModal: null });
-      if (cm.kind === 'launchAll') get().setDevStage(cm.payload.id, 'launched', 'all');
-      else if (cm.kind === 'deleteItem') get().deleteItem(cm.payload.id, true);
+      if (cm.kind === 'deleteItem') get().deleteItem(cm.payload.id, true);
       else if (cm.kind === 'withdrawDraft') get().withdrawToDraft(cm.payload.id, true);
       else if (cm.kind === 'deletePlan') get().removeLaunchPlan(cm.payload.id, true);
       else if (cm.kind === 'crossMove') get().togglePlanItem(cm.payload.planId, cm.payload.itemId, true);
@@ -962,7 +900,6 @@ export const useStore = create<Store>((set, get) => {
       const cm = get().ui.confirmModal;
       if (!cm) return;
       setUi({ confirmModal: null });
-      if (cm.kind === 'launchAll') get().setDevStage(cm.payload.id, 'launched', 'single');
     },
     setNavSection: (v) => setUi({ navSection: v, navStream: null, batchFilter: null, search: '', statusFilter: 'all' }),
     setNavStream: (v) => setUi({ navStream: v }),
@@ -1020,6 +957,32 @@ export const useStore = create<Store>((set, get) => {
       persist();
     },
     toggleStepFilter: (n) => set((s) => ({ ui: { ...s.ui, stepFilter: s.ui.stepFilter === n ? null : n } })),
+    toggleDraftSel: (id) =>
+      set((st) => ({
+        ui: { ...st.ui, draftSel: st.ui.draftSel.includes(id) ? st.ui.draftSel.filter((x) => x !== id) : [...st.ui.draftSel, id] },
+      })),
+    clearDraftSel: () => setUi({ draftSel: [] }),
+    // group send-for-approval: only complete drafts move to رئيس المسار
+    submitDrafts: (ids) => {
+      const st = get();
+      const ok: string[] = [];
+      ids.forEach((id) => {
+        const it = st.items.find((x) => x.id === id);
+        if (!it || wfOf(it) !== 'draft') return;
+        if (missingFieldsOf(it as unknown as Record<string, unknown>).length) return;
+        ok.push(id);
+      });
+      if (ok.length) {
+        set((s2) => ({
+          items: s2.items.map((it) =>
+            ok.includes(it.id) ? { ...it, wf: 'ent1' as WfState, approval: 'تم الإرسال', ret: null, log: withLog(s2, it, 'submit') } : it
+          ),
+        }));
+        persist();
+      }
+      setUi({ draftSel: [] });
+      toast(ok.length ? 'تم إرسال ' + ok.length + (ok.length === 1 ? ' مدخل' : ' مدخلات') + ' لاعتماد رئيس المسار' : 'لم يُرسل أي مدخل — نرجو استكمال الحقول الناقصة أولاً');
+    },
 
     // ---- create wizard ----
     openCreate: () => {
@@ -1398,25 +1361,59 @@ export const useStore = create<Store>((set, get) => {
     importWorkplan: async (buf: ArrayBuffer) => {
       setUi({ mStep: 'bulkReview', bulkLoading: true, bulkLoaded: false, bulkRows: [], bulkLaunches: [] });
       try {
-        const { parseWorkplan } = await import('./workplan');
-        const parsed = await parseWorkplan(buf);
-        if (!parsed.rows.length && !parsed.launches.length) {
-          setUi({ mStep: 'bulk', bulkLoading: false });
-          return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام النموذج');
-        }
-        const rows: BulkRow[] = parsed.rows.map((r) => ({
-          type: r.type,
-          path: r.path,
-          title: r.title,
-          desc: r.desc,
-          extra: r.extra,
-        }));
-        setUi({
-          bulkLoading: false,
-          bulkLoaded: true,
-          bulkRows: rows.map(plainVerdict),
-          bulkLaunches: parsed.launches,
+        const s0 = get();
+        const path = s0.ui.draft?.path || s0.myPath;
+        const spec = STREAM_FIELDS[path] || [];
+        const mod = await import('exceljs');
+        const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(buf);
+        const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
+        // find the header row: the row matching most spec labels on any sheet
+        let best: { ws: import('exceljs').Worksheet; row: number; map: Record<number, string> } | null = null;
+        wb.eachSheet((ws) => {
+          for (let r = 1; r <= Math.min(ws.rowCount, 12); r++) {
+            const map: Record<number, string> = {};
+            let hits = 0;
+            ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
+              const h = norm(cell.value && typeof cell.value === 'object' && 'richText' in (cell.value as object) ? (cell.value as { richText: { text: string }[] }).richText.map((t) => t.text).join('') : cell.text ?? cell.value);
+              const f = spec.find((sf) => sf.label === h || h.includes(sf.label) || sf.label.includes(h && h.length > 3 ? h : '\u0000'));
+              if (f) {
+                map[col] = f.key;
+                hits++;
+              }
+            });
+            if (hits >= Math.min(3, spec.length) && (!best || hits > Object.keys(best.map).length)) best = { ws, row: r, map };
+          }
         });
+        if (!best) {
+          setUi({ mStep: 'bulk', bulkLoading: false });
+          return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام نموذج المسار');
+        }
+        const b = best as { ws: import('exceljs').Worksheet; row: number; map: Record<number, string> };
+        const rows: BulkRow[] = [];
+        for (let r = b.row + 1; r <= b.ws.rowCount; r++) {
+          const fields: Record<string, string> = {};
+          b.ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
+            const key = b.map[col];
+            if (key) fields[key] = norm(cell.text ?? cell.value);
+          });
+          if (!Object.values(fields).some((v) => v)) continue;
+          const missing = spec.filter((sf) => !norm(fields[sf.key])).map((sf) => sf.label);
+          rows.push({
+            type: path === 'services' ? 'service' : 'operation',
+            path,
+            title: fields.title || '',
+            desc: '',
+            extra: fields as Partial<Item>,
+            missing,
+          });
+        }
+        if (!rows.length) {
+          setUi({ mStep: 'bulk', bulkLoading: false });
+          return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام نموذج المسار');
+        }
+        setUi({ bulkLoading: false, bulkLoaded: true, bulkRows: rows.map(plainVerdict), bulkLaunches: [] });
       } catch {
         setUi({ mStep: 'bulk', bulkLoading: false });
         toast('تعذّرت قراءة الملف — تأكد أنه بصيغة .xlsx وبالنموذج الصحيح');
@@ -1427,16 +1424,19 @@ export const useStore = create<Store>((set, get) => {
       const path = s.ui.draft?.path || s.myPath;
       const toAdd = s.ui.bulkRows
         .filter((r) => r._v !== 'يوجد خطأ')
-        .map((r, ri) => ({
-          ...blankItem((r.type as ItemType) || 'project', r.path || path),
-          ...(r.extra || {}),
-          id: 'n' + Date.now() + ri + Math.floor(Math.random() * 1000),
-          title: r.title,
-          desc: r.desc,
-          approval: 'تم الإرسال',
-          wf: 'ent1' as WfState,
-          ret: null,
-        }));
+        .map((r, ri) => {
+          const complete = !(r.missing || []).length;
+          return {
+            ...blankItem((r.type as ItemType) || 'operation', r.path || path),
+            ...(r.extra || {}),
+            id: 'n' + Date.now() + ri + Math.floor(Math.random() * 1000),
+            title: r.title,
+            desc: r.desc,
+            approval: complete ? 'تم الإرسال' : 'مسودة',
+            wf: (complete ? 'ent1' : 'draft') as WfState,
+            ret: null,
+          };
+        });
       // launch plans carried by the workplan file → إدارة خطط الإطلاق (deduped)
       const newPlans = s.ui.bulkLaunches
         .filter((l) => !s.launchPlans.some((p) => p.title === l.title && p.date === l.date))

@@ -492,6 +492,29 @@ export async function downloadBulkTemplate(types: { key: string; label: string }
 }
 
 // ---- Admin: users bulk template + reader -----------------------------------
+// نموذج رفع مدخلات المسار — الأعمدة هي حقول نموذج الإدخال نفسها
+export async function downloadItemsTemplate(streamName: string, headers: string[]) {
+  const mod = await import('exceljs');
+  const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'منصة التحول للذكاء الاصطناعي المساعد';
+  const ws = wb.addWorksheet('المدخلات', { views: [{ rightToLeft: true, showGridLines: false }] });
+  const cols = headers.length;
+  banner(ws, cols, 'نموذج رفع مدخلات ' + streamName, 'عبّئ صفًّا لكل مدخل بالأعمدة نفسها الظاهرة في نموذج الإدخال. الحقول الناقصة ستُبرز في المراجعة قبل التأكيد.');
+  const headRow = 3;
+  headers.forEach((h, ci) => {
+    const c = ws.getCell(headRow, ci + 1);
+    c.value = h;
+    c.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } as XLColor };
+    ws.getColumn(ci + 1).width = Math.max(18, h.length + 6);
+  });
+  ws.getRow(headRow).height = 26;
+  const buf = await wb.xlsx.writeBuffer();
+  downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'نموذج-مدخلات-' + streamName + '.xlsx');
+}
+
 export async function downloadUsersTemplate(roleLabels: string[], entities: string[], streamNames: string[]) {
   const mod = await import('exceljs');
   const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;

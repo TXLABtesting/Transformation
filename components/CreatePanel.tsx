@@ -3,8 +3,9 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { LAUNCH_TYPES, typeLabel, pathById } from '@/lib/domain';
+import { STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
+import { downloadItemsTemplate } from '@/lib/export';
 
 // ============================================================================
 // Create wizard side-panel (§9) — faithful RTL reproduction of the prototype.
@@ -1677,35 +1678,21 @@ function BulkStep({ vm }: { vm: VM }) {
         </label>
       </div>
 
-      {/* optional: download the template only if you don't already have it */}
+      {/* optional: download the stream template (same columns as the entry form) */}
       <div style={{ fontSize: 12, color: '#8A97AD', fontWeight: 600, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         ليس لديك النموذج؟
-        <a
-          href="assets/workplan_template.xlsx"
-          download="النموذج.xlsx"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#2563EB', fontWeight: 800, textDecoration: 'none' }}
+        <button
+          onClick={() => {
+            const path = vm.store.ui.draft?.path || vm.store.myPath;
+            downloadItemsTemplate(pathById(path).name, (STREAM_FIELDS[path] || []).map((f) => f.label));
+          }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#2563EB', fontWeight: 800, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
         >
           <Icon d={IC.download} size={15} color="#2563EB" />
-          تنزيل النموذج (Excel)
-        </a>
+          تنزيل نموذج المسار (Excel)
+        </button>
       </div>
 
-      <button
-        onClick={() => s.mBack()}
-        style={{
-          background: '#fff',
-          border: '1px solid #DCE3EE',
-          borderRadius: 12,
-          padding: '12px 20px',
-          color: '#54627B',
-          fontWeight: 700,
-          fontSize: 13,
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-        }}
-      >
-        الرجوع
-      </button>
     </div>
   );
 }
@@ -1768,7 +1755,7 @@ function BulkReviewStep({ vm }: { vm: VM }) {
         <>
           <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
             {tile(m.bulkReadyCount, 'جاهز', '#0B8A4B', '#E3F6EC')}
-            {tile(m.bulkReviewCount, 'بحاجة لمراجعة', '#B45309', '#FFF3DE')}
+            {tile(m.bulkReviewCount, 'بيانات ناقصة', '#B45309', '#FFF3DE')}
             {tile(m.bulkErrorCount, 'يوجد خطأ', '#D23B45', '#FCEEEF')}
           </div>
 
@@ -1854,7 +1841,7 @@ function BulkReviewStep({ vm }: { vm: VM }) {
               marginBottom: 14,
             }}
           >
-            سيتم إرسال الصفوف الجاهزة وبحاجة لمراجعة فقط. الصفوف التي بها أخطاء لن تُرسَل.
+            بعد التأكيد: الصفوف المكتملة تُرسل لاعتماد رئيس المسار مباشرة، والصفوف ذات البيانات الناقصة تُحفظ كمسودات مميزة بـ«بيانات ناقصة» لاستكمالها. الصفوف التي بها أخطاء لن تُستورد.
           </div>
 
           <div style={{ display: 'flex', gap: 10 }}>

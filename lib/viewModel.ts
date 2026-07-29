@@ -6,6 +6,7 @@
 import { useMemo } from 'react';
 import { useStore, logicRole, actorName } from './store';
 import {
+  missingFieldsOf,
   PATHS,
   ROLE,
   ROLE_PILLS,
@@ -206,14 +207,27 @@ function build(s: Store) {
     completedPct: scope.length ? Math.round((completedCount / scope.length) * 100) : 0,
   };
 
-  // ---- per-type delivery breakdown for the overview counts band ----
+  // ---- per-type breakdown for the overview counts band ----
+  // transformable follows each stream's matrix (ops provisional until approved)
+  const isTransformableEntry = (i: Item): boolean => {
+    if (i.type === 'service') {
+      const pr = svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
+      return pr != null && pr <= 3;
+    }
+    if (i.path === 'strategy' && i.type === 'operation') {
+      const cat = stgPriority(i)?.cat || '';
+      return cat === 'أولوية عالية' || cat === 'أولوية متوسطة';
+    }
+    if (i.path === 'ops' && i.type === 'operation') return parseInt(i.transformScore || '', 10) >= 3;
+    return (i.transformability || '') !== 'غير قابل';
+  };
+  const isTargetedEntry = (i: Item): boolean => (i.transformYes || '') === 'نعم';
   const deliveryBreak = (pick: (i: Item) => boolean) => {
     const set = scope.filter(pick);
     return [
-      { label: 'غير قابلة للتحويل', v: set.filter((i) => (i.transformability || '') === 'غير قابل').length },
-      { label: 'قيد التطوير', v: set.filter((i) => devStatusOfItem(i) === 'underDev').length },
-      { label: 'تم التطوير', v: set.filter((i) => devStatusOfItem(i) === 'developed').length },
-      { label: 'تم الإطلاق', v: set.filter((i) => devStatusOfItem(i) === 'launched').length },
+      { label: 'القابلة للتحول', v: set.filter(isTransformableEntry).length },
+      { label: 'المستهدف تحويلها', v: set.filter(isTargetedEntry).length },
+      { label: 'غير قابلة للتحويل', v: set.filter((i) => !isTransformableEntry(i)).length },
     ];
   };
   const kpiBreak = {
@@ -268,22 +282,14 @@ function build(s: Store) {
     launchPct: grandBudget ? 100 - eoExecPct : 0,
     execFrac: grandBudget ? Math.min(0.92, Math.max(0.08, execBudgetTotal / grandBudget)) : 0.67,
   };
-  const notCap = roleBase.filter((i) => (i.transformability || '') === 'غير قابل').length;
-  // the new model has no development pipeline: entries are approved into
-  // دفعات الإطلاق and later launched
+  // the same numbers the stream dashboards show, aggregated at entry level
+  const trN = roleBase.filter(isTransformableEntry).length;
   const inputsCard = {
     total: roleBase.length,
-    capable: roleBase.length - notCap,
-    approved: roleBase.filter((i) => {
-      const w = wfOf(i);
-      return w === 'exec' || w === 'budget';
-    }).length,
-    launched: roleBase.filter((i) => {
-      const w = wfOf(i);
-      return w === 'launch' || w === 'done';
-    }).length,
-    notCapable: notCap,
-    capFrac: roleBase.length ? Math.min(0.94, Math.max(0.06, (roleBase.length - notCap) / roleBase.length)) : 0.75,
+    transformable: trN,
+    targeted: roleBase.filter(isTargetedEntry).length,
+    notCapable: roleBase.length - trN,
+    capFrac: roleBase.length ? Math.min(0.94, Math.max(0.06, trN / roleBase.length)) : 0.75,
   };
   // nominations summary (stream head view) — what I nominated and its status
   const nomFundedN = roleBase.filter((i) => !!i.funded).length;
@@ -381,9 +387,8 @@ function build(s: Store) {
             { label: 'خدمة', n: inStage.filter((i) => i.type === 'service').length },
           ],
           statusBreak: [
-            { label: 'قيد التطوير', n: inStage.filter((i) => devStatusOfItem(i) === 'underDev').length },
-            { label: 'تم التطوير', n: inStage.filter((i) => devStatusOfItem(i) === 'developed').length },
-            { label: 'تم الإطلاق', n: inStage.filter((i) => devStatusOfItem(i) === 'launched').length },
+            { label: 'القابلة للتحول', n: inStage.filter(isTransformableEntry).length },
+            { label: 'المستهدف تحويلها', n: inStage.filter(isTargetedEntry).length },
           ],
         };
       }),
@@ -951,10 +956,9 @@ function build(s: Store) {
       );
   const recap = {
     total: portfolioScope.length,
-    notCapable: portfolioScope.filter((i) => !agentifiable(i)).length,
-    underDev: portfolioScope.filter((i) => devStatusOf(i) === 'underDev').length,
-    developed: portfolioScope.filter((i) => devStatusOf(i) === 'developed').length,
-    launched: portfolioScope.filter((i) => devStatusOf(i) === 'launched').length,
+    transformable: portfolioScope.filter(isTransformableEntry).length,
+    targeted: portfolioScope.filter(isTargetedEntry).length,
+    notCapable: portfolioScope.filter((i) => !isTransformableEntry(i)).length,
   };
   // list inside the portfolio page (respects search + status + fund filters)
   const sectionCards = !isTypeSection
@@ -1079,7 +1083,6 @@ function build(s: Store) {
   })();
 
   // ---- program steps + countdown ----
-  const programSteps = buildProgramSteps(s, base);
   const firstMs = execMilestones()[0];
   const cd = countdown(firstMs.end!);
   const dl = daysLeft(firstMs.end!);
@@ -1098,9 +1101,9 @@ function build(s: Store) {
       rawRole === 'entity'
         ? 'متابعة مدخلات الجهة حسب المسارات، مراحل التقدم، وحالة الاعتماد.'
         : rawRole === 'coord'
-          ? 'متابعة مدخلات المسار حسب النوع، المرحلة، حالة التطوير والتكلفة التقديرية.'
+          ? 'متابعة مدخلات المسار حسب النوع والأولوية ودفعات الإطلاق.'
           : rawRole === 'path'
-            ? 'مراجعة مدخلات جميع الجهات ضمن المسار وترشيح الأنسب للاعتماد.'
+            ? 'مراجعة مدخلات جميع الجهات ضمن المسار واعتمادها.'
             : 'رحلة منظمة من الحصر والاختيار إلى التنفيذ وقياس الأثر لضمان تحول فعّال ومؤثر',
     firstMsName: firstMs.name,
     // top-bar countdown display copy (assessment/review phase closing)
@@ -1433,7 +1436,6 @@ function build(s: Store) {
     // (entity/coord); oversight roles (committee, stream rep) don't see it
     showProgramBanner: rawRole === 'entity' || rawRole === 'coord' || rawRole === 'path',
     banner,
-    programSteps,
     isAiRole,
     // rail + kpis
     showRail,
@@ -1564,6 +1566,23 @@ function build(s: Store) {
       count: ui.assignSel.length,
       actionLabel: assignIsChange ? 'تغيير دفعة الإطلاق' : 'تعيين دفعة الإطلاق',
     },
+    // coordinator draft selection: group send-for-approval with missing-data gate
+    draftBar: (() => {
+      const sel = s.items.filter((i) => ui.draftSel.includes(i.id) && wfOf(i) === 'draft');
+      return {
+        show: rawRole === 'coord' && sel.length > 0,
+        count: sel.length,
+        items: sel.map((i) => ({
+          id: i.id,
+          title: i.title || 'بدون عنوان',
+          missing: missingFieldsOf(i as unknown as Record<string, unknown>),
+        })),
+        anyMissing: sel.some((i) => missingFieldsOf(i as unknown as Record<string, unknown>).length > 0),
+        onSend: () => s.submitDrafts(sel.map((i) => i.id)),
+        onComplete: sel.length === 1 ? () => s.openDetail(sel[0].id) : null,
+        onClear: () => s.clearDraftSel(),
+      };
+    })(),
     assignModal: ui.assign
       ? {
           batch: ui.assign.batch,
@@ -1965,6 +1984,10 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     launchLabel,
     // coordinator bulk-assign checkbox
     showAssignCheck: rawRole === 'coord',
+    showDraftCheck: ctx.rawRole === 'coord' && wfOf(i) === 'draft',
+    draftChecked: s.ui.draftSel.includes(i.id),
+    onToggleDraftSel: () => s.toggleDraftSel(i.id),
+    missingCount: wfOf(i) === 'draft' ? missingFieldsOf(i as unknown as Record<string, unknown>).length : 0,
     assignChecked: s.ui.assignSel.includes(i.id),
     onToggleAssignSel: () => s.toggleAssignSel(i.id),
     nomBy: i.nom?.by || '',
@@ -2002,43 +2025,9 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
 
 function pathCta(w: string, ret: boolean): string {
   if (w === 'draft') return ret ? 'تعديل المدخل وإعادة إرساله' : 'إكمال وإرسال';
-  if (w === 'exec') return 'تحديث حالة التطوير';
-  return 'تحديث خطة الإطلاق';
+  return 'عرض التفاصيل';
 }
 
-function buildProgramSteps(s: Store, base: Item[]) {
-  const rawRole = s.role;
-  const twoStep = rawRole === 'ai' || rawRole === 'path';
-  const phases = twoStep ? TWO_STEP_PHASES : s.programPhases;
-  const cur = twoStep ? (s.programStep >= 3 ? 2 : 1) : s.programStep || 1;
-  const respFor = (num: number): string => {
-    // two-step stepper (ai / path): the committee interfaces with the entity
-    // rep for both approval and execution, so both steps show ممثل الجهة.
-    if (twoStep) return 'ممثل الجهة';
-    return ({ 1: 'منسق المسار في الجهة', 2: 'ممثل الجهة', 3: 'منسق المسار في الجهة' } as Record<number, string>)[num] || '';
-  };
-  const fnum = (num: number) => (twoStep ? (num === 2 ? 3 : 1) : num);
-  const countFor = (num: number): number => {
-    if (twoStep) return base.filter((i) => (num === 2 ? stepIndexOf(i) >= 3 : stepIndexOf(i) < 3)).length;
-    return base.filter((i) => stepIndexOf(i) === num).length;
-  };
-  return phases.map((ph, idx) => {
-    const num = idx + 1;
-    const state = num < cur ? 'done' : num === cur ? 'active' : 'todo';
-    return {
-      num: String(num),
-      label: ph.n,
-      resp: respFor(num),
-      stepCount: countFor(num),
-      state,
-      isDone: state === 'done',
-      statusLabel: state === 'done' ? 'مكتملة' : state === 'active' ? 'جارية الآن' : 'قادمة',
-      deadlineFmt: fmtDate(ph.deadline),
-      onStepFilter: () => s.toggleStepFilter(fnum(num)),
-      active: s.ui.stepFilter === fnum(num),
-    };
-  });
-}
 
 function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
   const { rawRole, role, myName, ent } = ctx;
@@ -2216,11 +2205,6 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
   const stepLabels = twoStep
     ? [{ n: 'اعتماد اختيار أولويات التحول الذكي' }, { n: 'تنفيذ واختبار التحول والإطلاق' }]
     : DEFAULT_PROGRAM_PHASES.map((p) => ({ n: p.n }));
-  const dSteps = stepLabels.map((sl, idx) => {
-    const num = idx + 1;
-    const st = num < cur ? 'done' : num === cur ? 'active' : 'todo';
-    return { num: String(num), label: sl.n, isDone: st === 'done', state: st };
-  });
 
   const execRows = (i.execChecklist || []).map((x) => ({
     key: x.key,
@@ -2325,7 +2309,6 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     scoreColor: score.color,
     scoreExpl: score.expl,
     // steps
-    dSteps,
     // scope — falls back to the launch plan's group-level cost when the item
     // has none of its own (cost defined per launch, not per item)
     scopeOfWork: i.scopeOfWork || (planCost?.scope ? planCost.scope + ' (على مستوى خطة الإطلاق)' : ''),
@@ -2400,9 +2383,6 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     onFinishLaunch: () => s.finishLaunch(i.id),
     // simplified 3-state delivery status
     isAgentifiable: (i.transformability || '') !== 'غير قابل',
-    devStage: w === 'done' ? 'launched' : w === 'launch' ? 'developed' : 'underDev',
-    canEditStage: rawRole === 'coord' && ['exec', 'launch', 'done'].includes(w),
-    onSetStage: (stage: string) => s.setDevStage(i.id, stage),
   };
 }
 
@@ -2435,9 +2415,9 @@ function buildLogRows(i: Item) {
     const w = wfOf(i);
     // newest first: approval/pending above submission
     if (['exec', 'launch', 'done'].includes(w))
-      rows.push({ action: actLabel({ action: 'approve', role: 'ممثل الجهة' }), color: ALOG.approve.c, sub: fmtDateTime(t.approvedAt), note: '', hasNote: false });
+      rows.push({ action: actLabel({ action: 'approve', role: 'رئيس المسار' }), color: ALOG.approve.c, sub: fmtDateTime(t.approvedAt), note: '', hasNote: false });
     else if (w === 'ent1')
-      rows.push({ action: actLabel({ action: 'pending', role: 'ممثل الجهة' }), color: ALOG.pending.c, sub: fmtDateTime(t.submittedAt), note: '', hasNote: false });
+      rows.push({ action: actLabel({ action: 'pending', role: 'رئيس المسار' }), color: ALOG.pending.c, sub: fmtDateTime(t.submittedAt), note: '', hasNote: false });
     rows.push({ action: actLabel({ action: 'submit' }), color: ALOG.submit.c, sub: 'منسق المسار في الجهة · ' + fmtDateTime(t.submittedAt), note: '', hasNote: false });
   }
   return rows;
@@ -2445,10 +2425,8 @@ function buildLogRows(i: Item) {
 
 // add-panel title lists the types the chosen stream actually offers
 function addTitleFor(p: string): string {
-  // title mirrors the stream's actual types: خدمات / مهام / مشاريع أو عمليات
-  const parts = availTypes(p).map((t) =>
-    t.key === 'project' ? 'مشاريع' : t.key === 'service' ? 'خدمات' : p === 'strategy' ? 'مهام' : 'عمليات'
-  );
+  // title mirrors the stream's actual types: خدمات / مهام / عمليات
+  const parts = availTypes(p).map((t) => (t.key === 'service' ? 'خدمات' : p === 'strategy' ? 'مهام' : 'عمليات'));
   return 'إضافة ' + parts.join(' أو ');
 }
 
@@ -2541,7 +2519,7 @@ function buildModal(s: Store) {
     bulkLoading: ui.bulkLoading,
     bulkLoaded: ui.bulkLoaded,
     bulkReadyCount: ui.bulkRows.filter((r) => r._v === 'جاهز').length,
-    bulkReviewCount: ui.bulkRows.filter((r) => r._v === 'بحاجة إلى مراجعة').length,
+    bulkReviewCount: ui.bulkRows.filter((r) => r._v === 'بيانات ناقصة').length,
     bulkErrorCount: ui.bulkRows.filter((r) => r._v === 'يوجد خطأ').length,
   };
 }

@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
 
@@ -132,6 +133,79 @@ export function AssignBar({ vm }: { vm: VM }) {
         </button>
       </div>
     </div>
+  );
+}
+
+// coordinator drafts: floating bar with «إكمال وإرسال» + «إرسال للاعتماد».
+// Sending with missing fields opens a popup listing them per selected entry.
+export function DraftBar({ vm }: { vm: VM }) {
+  const [popup, setPopup] = useState(false);
+  const db = vm.draftBar;
+  if (!db.show) return null;
+  const btn: React.CSSProperties = { border: 'none', borderRadius: 11, padding: '10px 22px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
+  return (
+    <>
+      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 22, zIndex: 56, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#0F1F3D', color: '#fff', borderRadius: 16, padding: '12px 14px 12px 22px', boxShadow: '0 22px 55px -14px rgba(4,12,30,.6)', animation: 'fadeUp .2s', pointerEvents: 'auto', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <span style={{ fontSize: 13, fontWeight: 800 }}>المحدّد: {db.count}</span>
+          <button onClick={db.onClear} style={{ ...btn, background: 'transparent', border: '1px solid rgba(255,255,255,.28)', color: '#fff' }}>
+            تخطي
+          </button>
+          {db.onComplete && (
+            <button onClick={db.onComplete} style={{ ...btn, background: 'transparent', border: '1px solid rgba(255,255,255,.45)', color: '#fff' }}>
+              إكمال وإرسال
+            </button>
+          )}
+          <button
+            onClick={() => (db.anyMissing ? setPopup(true) : db.onSend())}
+            style={{ ...btn, background: '#fff', color: '#0F1F3D' }}
+          >
+            إرسال للاعتماد
+          </button>
+        </div>
+      </div>
+
+      {popup && (
+        <div onClick={() => setPopup(false)} style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(9,20,45,.45)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, direction: 'rtl' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, background: '#fff', borderRadius: 18, boxShadow: '0 30px 80px -20px rgba(2,12,35,.5)', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EEF1F7', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 34, height: 34, borderRadius: 10, background: '#FFF3DE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></svg>
+              </span>
+              <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>حقول ناقصة في المدخلات المحددة</div>
+            </div>
+            <div style={{ padding: '14px 20px', maxHeight: '52vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {db.items.map((it) => (
+                <div key={it.id} style={{ border: it.missing.length ? '1px solid #F5D9AE' : '1px solid #E7ECF4', background: it.missing.length ? '#FFFBF3' : '#F8FAF8', borderRadius: 12, padding: '11px 14px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{it.title}</div>
+                  {it.missing.length ? (
+                    <div style={{ fontSize: 12, color: '#B45309', fontWeight: 700, marginTop: 5, lineHeight: 1.9 }}>
+                      الحقول الناقصة: {it.missing.join('، ')}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: '#0B8A4B', fontWeight: 700, marginTop: 5 }}>مكتمل — جاهز للإرسال</div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: '14px 20px', borderTop: '1px solid #EEF1F7', display: 'flex', gap: 8, justifyContent: 'flex-start' }}>
+              <button
+                onClick={() => {
+                  setPopup(false);
+                  db.onSend();
+                }}
+                style={{ background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, padding: '11px 20px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                إرسال المدخلات المكتملة فقط
+              </button>
+              <button onClick={() => setPopup(false)} style={{ background: '#fff', border: '1px solid #DCE3EE', color: '#54627B', borderRadius: 11, padding: '11px 20px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                إغلاق واستكمال البيانات
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
