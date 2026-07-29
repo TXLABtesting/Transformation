@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CONTACT_STREAMS } from '@/lib/domain';
 
 // ===========================================================================
@@ -118,51 +118,97 @@ const DOCS: Doc[] = [
 // ---------------------------------------------------------------------------
 export function PublicNav({ tab, onNav, onLogin }: { tab: PublicTab; onNav: (t: PublicTab) => void; onLogin: () => void }) {
   const [hov, setHov] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  // ≤768px: logo + hamburger with a drawer (per the handoff responsive rules)
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const upd = () => setMobile(mq.matches);
+    upd();
+    mq.addEventListener('change', upd);
+    return () => mq.removeEventListener('change', upd);
+  }, []);
+
+  const linkBtn = (n: { key: PublicTab; label: string }, block: boolean) => {
+    const active = tab === n.key;
+    // per handoff: pill outline on About/Contact, bottom border on Library
+    const libStyle = active && n.key === 'library' && !block;
+    return (
+      <button
+        key={n.key}
+        onClick={() => {
+          setMenuOpen(false);
+          onNav(n.key);
+        }}
+        onMouseEnter={() => setHov(n.key)}
+        onMouseLeave={() => setHov(null)}
+        style={{
+          fontSize: 14,
+          fontWeight: active ? 800 : 700,
+          lineHeight: 1.9,
+          color: active ? '#2563EB' : hov === n.key ? '#0F1F3D' : '#54627B',
+          padding: block ? '12px 18px' : '7px 18px',
+          whiteSpace: 'nowrap',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          textAlign: block ? 'right' : 'center',
+          width: block ? '100%' : undefined,
+          background: libStyle ? 'transparent' : active ? '#F0F5FF' : hov === n.key ? '#F4F7FC' : 'transparent',
+          border: 'none',
+          borderRadius: libStyle ? 0 : 12,
+          borderBottom: libStyle ? '3px solid #2563EB' : 'none',
+          ...(active && !libStyle ? { border: '1.5px solid #2563EB' } : {}),
+        }}
+      >
+        {n.label}
+      </button>
+    );
+  };
+
   return (
-    <div style={{ background: '#fff', borderBottom: '1px solid #E7ECF4', padding: '14px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+    <div style={{ position: 'relative', background: '#fff', borderBottom: '1px solid #E7ECF4', padding: mobile ? '12px 18px' : '14px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', zIndex: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="assets/logo.png" alt="مشروع الذكاء الاصطناعي المساعد" style={{ height: 62 }} />
+        <img src="assets/logo.png" alt="مشروع الذكاء الاصطناعي المساعد" style={{ height: mobile ? 48 : 62 }} />
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        {NAV_LINKS.map((n) => {
-          const active = tab === n.key;
-          // per handoff: pill outline on About/Contact, bottom border on Library
-          const libStyle = active && n.key === 'library';
-          return (
-            <button
-              key={n.key}
-              onClick={() => onNav(n.key)}
-              onMouseEnter={() => setHov(n.key)}
-              onMouseLeave={() => setHov(null)}
-              style={{
-                fontSize: 14,
-                fontWeight: active ? 800 : 700,
-                color: active ? '#2563EB' : hov === n.key ? '#0F1F3D' : '#54627B',
-                padding: '9px 18px',
-                whiteSpace: 'nowrap',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                background: libStyle ? 'transparent' : active ? '#F0F5FF' : hov === n.key ? '#F4F7FC' : 'transparent',
-                border: 'none',
-                borderRadius: libStyle ? 0 : 12,
-                borderBottom: libStyle ? '3px solid #2563EB' : 'none',
-                ...(active && !libStyle ? { border: '1.5px solid #2563EB' } : {}),
-              }}
-            >
-              {n.label}
-            </button>
-          );
-        })}
-      </div>
-      <button
-        onClick={onLogin}
-        onMouseEnter={() => setHov('login')}
-        onMouseLeave={() => setHov(null)}
-        style={{ background: hov === 'login' ? '#1B3260' : '#0F1F3D', color: '#fff', border: 'none', borderRadius: 12, padding: '10px 20px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
-      >
-        تسجيل الدخول
-      </button>
+      {!mobile && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+          {NAV_LINKS.map((n) => linkBtn(n, false))}
+        </div>
+      )}
+      {!mobile && (
+        <button
+          onClick={onLogin}
+          onMouseEnter={() => setHov('login')}
+          onMouseLeave={() => setHov(null)}
+          style={{ background: hov === 'login' ? '#1B3260' : '#0F1F3D', color: '#fff', border: 'none', borderRadius: 12, padding: '10px 20px', fontSize: 13.5, fontWeight: 800, lineHeight: 1.9, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          تسجيل الدخول
+        </button>
+      )}
+      {mobile && (
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label="القائمة"
+          style={{ width: 44, height: 44, borderRadius: 12, background: '#F4F7FC', border: '1px solid #E7ECF4', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        >
+          <PIcon d={menuOpen ? 'M18 6L6 18|M6 6l12 12' : 'M3 6h18|M3 12h18|M3 18h18'} size={20} color="#0F1F3D" sw={2.2} />
+        </button>
+      )}
+      {mobile && menuOpen && (
+        <div style={{ position: 'absolute', top: '100%', right: 0, left: 0, background: '#fff', borderBottom: '1px solid #E7ECF4', boxShadow: '0 24px 44px -24px rgba(15,31,61,.4)', display: 'flex', flexDirection: 'column', padding: '8px 12px 14px', gap: 2 }}>
+          {NAV_LINKS.map((n) => linkBtn(n, true))}
+          <button
+            onClick={() => {
+              setMenuOpen(false);
+              onLogin();
+            }}
+            style={{ marginTop: 8, background: '#0F1F3D', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 20px', fontSize: 13.5, fontWeight: 800, lineHeight: 1.9, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            تسجيل الدخول
+          </button>
+        </div>
+      )}
     </div>
   );
 }
