@@ -35,6 +35,7 @@ import {
   parseBudget,
   typeLabelDef,
   typeLabelDefFor,
+  TBD_BATCH,
   seedExpectedResults,
 } from './domain';
 import { stripHtml } from './richtext';
@@ -982,12 +983,31 @@ export const useStore = create<Store>((set, get) => {
     fNext: () => {
       const s = get();
       const d = s.ui.draft;
+      // services stream: a single-step form with its own required set; the
+      // execution stage defaults to «سيتم التحديد بعد الدراسة»
+      if (d?.type === 'service') {
+        const filledSvc = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
+        const ds = d as unknown as Record<string, unknown>;
+        const reqSvc = ['title', 'subService', 'sector', 'dept', 'section', 'usageIntensity', 'complexity', 'readinessLevel', 'transformYes'];
+        if (reqSvc.some((k) => !filledSvc(ds[k]))) {
+          return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
+        }
+        if (['title', 'subService', 'sector', 'dept', 'section'].some((k) => /[A-Za-z]/.test(stripHtml(String(ds[k] ?? ''))))) {
+          return toast('يرجى إدخال النص بالعربية فقط في الحقول العربية');
+        }
+        if (!(d.execBatch || '').trim()) {
+          set((st) => (st.ui.draft ? { ui: { ...st.ui, draft: { ...st.ui.draft, execBatch: TBD_BATCH } } } : {}));
+        }
+        get().submitItem();
+        return;
+      }
       // every input is mandatory except the estimated budget — validate the
       // current step's fields before moving on
       const filled = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
       const dd = (d || {}) as unknown as Record<string, unknown>;
       const isOp = d?.type === 'operation';
-      const isSvc = d?.type === 'service';
+      // services returned early above; widen so the shared arrays still typecheck
+      const isSvc = (d?.type as string) === 'service';
       // agent count/nature apply to operations & services only (not projects)
       const hasAgents = isOp || isSvc;
       const requiredByStep: Record<number, string[]> = {

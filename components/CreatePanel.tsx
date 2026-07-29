@@ -347,9 +347,10 @@ function FormStep({
 
   return (
     <div>
-      {/* numbered stepper */}
+      {/* numbered stepper (hidden for single-step forms) */}
+      {m.fLabels.length > 1 && (
       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 16 }}>
-        {[1, 2, 3, 4, 5].map((n) => {
+        {m.fLabels.map((_l, _i) => _i + 1).map((n) => {
           const completed = n < fStep;
           const current = n === fStep;
           const filled = completed || current;
@@ -401,7 +402,7 @@ function FormStep({
                     flex: 1,
                     height: 2,
                     borderRadius: 2,
-                    background: n < 5 ? (n < fStep ? '#2563EB' : '#E1E7F1') : 'transparent',
+                    background: n < m.fLabels.length ? (n < fStep ? '#2563EB' : '#E1E7F1') : 'transparent',
                   }}
                 />
               </div>
@@ -421,16 +422,23 @@ function FormStep({
           );
         })}
       </div>
+      )}
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>{m.fStepTitle}</div>
         <div style={{ fontSize: 12, color: '#8A97AD', marginTop: 2 }}>{m.fStepHint}</div>
       </div>
 
-      {fStep === 1 && <F1 vm={vm} setField={setField} gv={gv} />}
-      {fStep === 2 && <F2 vm={vm} setField={setField} gv={gv} />}
-      {fStep === 3 && <FOutcome vm={vm} setField={setField} gv={gv} />}
-      {fStep === 4 && <FBudget vm={vm} setField={setField} gv={gv} />}
-      {fStep === 5 && <FPhases vm={vm} />}
+      {m.mIsService ? (
+        <FService vm={vm} setField={setField} gv={gv} />
+      ) : (
+        <>
+          {fStep === 1 && <F1 vm={vm} setField={setField} gv={gv} />}
+          {fStep === 2 && <F2 vm={vm} setField={setField} gv={gv} />}
+          {fStep === 3 && <FOutcome vm={vm} setField={setField} gv={gv} />}
+          {fStep === 4 && <FBudget vm={vm} setField={setField} gv={gv} />}
+          {fStep === 5 && <FPhases vm={vm} />}
+        </>
+      )}
 
       {/* form actions (sticky bottom) */}
       <div
@@ -1079,6 +1087,114 @@ function FPhases({ vm }: { vm: VM }) {
         </select>
       </div>
       )}
+    </div>
+  );
+}
+
+// F-SERVICE — الخدمات الحكومية: single-step entry (approved field set only).
+// أولوية الاختيار is auto-derived from كثافة الاستخدام × مستوى التعقيد × الجاهزية.
+function FService({
+  vm,
+  setField,
+  gv,
+}: {
+  vm: VM;
+  setField: (k: string, v: unknown) => void;
+  gv: (k: string) => string;
+}) {
+  const m = vm.modal;
+  const sel = (label: string, key: string, opts: string[]) => (
+    <div style={{ marginBottom: 14 }}>
+      <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
+      <select value={gv(key)} onChange={(e) => setField(key, e.target.value)} style={inputStyle}>
+        <option value="">اختر…</option>
+        {opts.map((o) => (
+          <option key={o}>{o}</option>
+        ))}
+      </select>
+    </div>
+  );
+  const txt = (label: string, key: string, ph?: string) => (
+    <div style={{ marginBottom: 14 }}>
+      <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
+      <input value={gv(key)} onChange={(e) => setField(key, arabicOnly(e.target.value))} placeholder={ph} style={inputStyle} />
+    </div>
+  );
+  const pr = m.svcSelPriority;
+  const PR_COLORS: Record<number, { c: string; bg: string }> = {
+    1: { c: '#0E7490', bg: '#E0F6FD' },
+    2: { c: '#1D4ED8', bg: '#E5EEFF' },
+    3: { c: '#1E3A8A', bg: '#E4E9F7' },
+    4: { c: '#334155', bg: '#EAEEF4' },
+  };
+  return (
+    <div>
+      <div style={cardStyle}>
+        {txt('الخدمة', 'title', 'اسم الخدمة الرئيسية')}
+        {txt('الخدمة الفرعية', 'subService', 'اسم الخدمة الفرعية')}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>القطاع المعني <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={gv('sector')} onChange={(e) => setField('sector', arabicOnly(e.target.value))} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>الإدارة المعنية <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={gv('dept')} onChange={(e) => setField('dept', arabicOnly(e.target.value))} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>القسم المعني <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={gv('section')} onChange={(e) => setField('section', arabicOnly(e.target.value))} style={inputStyle} />
+          </div>
+        </div>
+      </div>
+      <div style={cardStyle}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>مصفوفة أولوية الاختيار</div>
+        {sel('كثافة الاستخدام', 'usageIntensity', ['منخفضة', 'متوسطة', 'مرتفعة'])}
+        {sel('مستوى التعقيد', 'complexity', ['منخفض', 'متوسط', 'مرتفع'])}
+        {sel('مستوى الجاهزية', 'readinessLevel', ['منخفض', 'متوسط', 'مرتفع'])}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>أولوية الاختيار</label>
+          {pr ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: PR_COLORS[pr].bg, color: PR_COLORS[pr].c, borderRadius: 999, padding: '8px 16px', fontSize: 13.5, fontWeight: 800 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: PR_COLORS[pr].c, flex: 'none' }} />
+              الأولوية {pr}
+            </span>
+          ) : (
+            <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px' }}>
+              تُحسب تلقائياً بعد اختيار كثافة الاستخدام ومستوى التعقيد ومستوى الجاهزية
+            </div>
+          )}
+        </div>
+        <div style={{ marginBottom: 0 }}>
+          <label style={labelStyle}>أولوية التحول <span style={{ color: '#D23B45' }}>*</span></label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {['نعم', 'لا'].map((opt) => {
+              const active = gv('transformYes') === opt;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setField('transformYes', opt)}
+                  style={{
+                    flex: 1,
+                    border: '1px solid ' + (active ? '#2563EB' : '#DCE3EE'),
+                    background: active ? '#EAF1FE' : '#fff',
+                    color: active ? '#1D4ED8' : '#54627B',
+                    borderRadius: 11,
+                    padding: '11px 13px',
+                    fontSize: 13.5,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

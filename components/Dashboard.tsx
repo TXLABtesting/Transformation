@@ -363,7 +363,10 @@ function EntityOverview({ vm }: { vm: VM }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-      {/* ===== Section 1: التكلفة الإجمالية + إجمالي المدخلات ===== */}
+      {/* ===== Section 1: services-coordinator KPI strip OR inputs summary ===== */}
+      {vm.svcKpis ? (
+        <SvcKpiStrip k={vm.svcKpis} />
+      ) : (
       <div data-r="dash-top" data-tour="kpis" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
         {/* --- إجمالي المدخلات (right) --- */}
         <div data-tour="inputs-card" style={cardStyle}>
@@ -403,6 +406,7 @@ function EntityOverview({ vm }: { vm: VM }) {
         </div>
 
       </div>
+      )}
 
       {/* ===== Section 2: overview cards (by stream for entity · by type for coord) ===== */}
       <div>
@@ -652,6 +656,36 @@ function StageCard({ b, showStream, onManage }: { b: VM['batchSummary'][number];
         عرض المدخلات
         <Icon d="M15 18l-6-6 6-6" size={13} color="#1D4ED8" />
       </button>
+    </div>
+  );
+}
+
+// ===== services-coordinator KPI strip (أعداد الخدمات الفرعية) =====
+function SvcKpiStrip({ k }: { k: NonNullable<VM['svcKpis']> }) {
+  const cards = [
+    { label: 'إجمالي عدد الخدمات الفرعية', v: k.total, c: '#33415C', bg: '#F1F4F9', border: '#E2E8F2' },
+    { label: 'إجمالي عدد الخدمات الفرعية القابلة للتحول *', v: k.transformable, c: '#33415C', bg: '#F1F4F9', border: '#E2E8F2' },
+    { label: 'إجمالي عدد الخدمات الفرعية المستهدف تحويلها **', v: k.targeted, c: '#33415C', bg: '#F1F4F9', border: '#E2E8F2' },
+    { label: 'أولوية أولى', v: k.p1, c: '#0E7490', bg: '#E0F6FD', border: '#BFE9F8' },
+    { label: 'أولوية ثانية', v: k.p2, c: '#1D4ED8', bg: '#E5EEFF', border: '#CBDCFB' },
+    { label: 'أولوية ثالثة', v: k.p3, c: '#1E3A8A', bg: '#E4E9F7', border: '#CBD5EF' },
+  ];
+  return (
+    <div data-tour="kpis">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
+        {cards.map((c) => (
+          <div key={c.label} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16, padding: '4px 4px 0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ background: c.bg, border: '1px solid ' + c.border, borderRadius: 13, padding: '12px 12px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="hd" style={{ fontSize: 12.5, fontWeight: 800, color: c.c, textAlign: 'center', lineHeight: 1.6 }}>{c.label}</span>
+            </div>
+            <div style={{ padding: '12px 10px 14px', textAlign: 'center', fontSize: 26, fontWeight: 800, color: '#13213C', lineHeight: 1 }}>{c.v}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>* إجمالي الخدمات القابلة للتحول = حسب أولوية الاختيار 1، 2، 3</span>
+        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول</span>
+      </div>
     </div>
   );
 }
