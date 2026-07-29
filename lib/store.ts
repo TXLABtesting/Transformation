@@ -598,7 +598,9 @@ export const useStore = create<Store>((set, get) => {
     } catch {
       /* ignore quota */
     }
-    apiPut(data);
+    // public (pre-login) pages persist locally only — an anonymous visitor must
+    // never overwrite the shared server state
+    if (s.view !== 'login') apiPut(data);
   };
 
   // mutate a single item by id
@@ -733,10 +735,10 @@ export const useStore = create<Store>((set, get) => {
       // including the email (used for official notifications)
       if (n > 1) {
         const r = get().setup.rep;
-        if (!(r.name || '').trim()) return toast('نرجو إدخال اسم ممثل الجهة');
+        if (!(r.name || '').trim()) return toast('نرجو إدخال اسم مسؤول الجهة');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((r.email || '').trim()))
-          return toast('نرجو إدخال بريد إلكتروني صحيح لممثل الجهة');
-        if (!(r.phone || '').trim()) return toast('نرجو إدخال رقم هاتف ممثل الجهة');
+          return toast('نرجو إدخال بريد إلكتروني صحيح لمسؤول الجهة');
+        if (!(r.phone || '').trim()) return toast('نرجو إدخال رقم هاتف مسؤول الجهة');
       }
       setUi({ setupStep: n });
     },

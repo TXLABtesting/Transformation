@@ -269,47 +269,8 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 padding: '12px 13px',
               }}
             >
-              <div style={labelStyle}>الأولوية</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                {d.priority ? <LevelPill v={d.priority} /> : null}
-                {d.rankLabel && (
-                  <span
-                    style={{
-                      fontSize: 10.5,
-                      fontWeight: 800,
-                      padding: '3px 9px',
-                      borderRadius: 999,
-                      background: '#EAF1FE',
-                      color: '#1D4ED8',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    الترتيب {d.rankLabel}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div
-              style={{
-                background: '#fff',
-                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-                borderRadius: 13,
-                padding: '12px 13px',
-              }}
-            >
-              <div style={labelStyle}>التصنيف</div>
-              <div><LevelPill v={d.complexity} /></div>
-            </div>
-            <div
-              style={{
-                background: '#fff',
-                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-                borderRadius: 13,
-                padding: '12px 13px',
-              }}
-            >
-              <div style={labelStyle}>تاريخ الإطلاق المتوقع</div>
-              <div style={valueStyle}>{d.endDateFmt}</div>
+              <div style={labelStyle}>دفعة الإطلاق</div>
+              <div style={valueStyle}>{(d.execBatchName || '').replace('إطلاق ', '') || '—'}</div>
             </div>
           </div>
           </div>
@@ -383,34 +344,6 @@ export function DetailPanel({ vm }: { vm: VM }) {
               gap: 12,
             }}
           >
-            <DetailGrid cols={1}>
-              <DetailCell label="الوصف">
-                <RichTextView html={d.desc} style={{ fontSize: 13.5, color: '#33415C', lineHeight: 1.8, fontWeight: 400 }} />
-              </DetailCell>
-            </DetailGrid>
-
-            {/* --- PROJECT / INITIATIVE --- */}
-            {d.isProj && (
-              <>
-                <DetailSecHead title="النتائج المتوقعة" />
-                <DetailGrid cols={2}>
-                  <DetailCell label="المخرجات المتوقعة"><RichTextView html={d.expectedOutputs} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
-                  <DetailCell label="النتائج المتوقعة"><RichTextView html={d.expectedOutcomes} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell>
-                </DetailGrid>
-                <DetailGrid cols={2}>
-                  <DetailCell label="الأثر المتوقع"><RichTextView html={d.expectedImpact} style={valueStyle} /></DetailCell>
-                  <DetailCell label="نسبة التحول">{d.targetPct}%</DetailCell>
-                </DetailGrid>
-
-                <DetailSecHead title="جاهزية التحول" />
-                <DetailGrid cols={3}>
-                  <DetailCell label="قابلية التحول"><TransformPill v={d.transformability} /></DetailCell>
-                  <DetailCell label="أولوية التحول"><LevelPill v={d.transformPriority} /></DetailCell>
-                  <DetailCell label="جاهزية التحول">{d.readiness}</DetailCell>
-                </DetailGrid>
-              </>
-            )}
-
             {/* --- STRATEGY TASK (حصر قائمة المهام) --- */}
             {d.isStgTask && (
               <>
@@ -495,78 +428,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               </>
             )}
 
-            {/* --- OPERATION --- */}
-            {d.isOp && !d.isStgTask && !d.isOpsTask && (
-              <>
-                <DetailSecHead title={'خصائص ' + d.opWordDef} />
-                <DetailGrid cols={3}>
-                  <DetailCell label={'نوع ' + d.opWordDef}>{d.opType}</DetailCell>
-                  <DetailCell label="كثافة الاستخدام"><LevelPill v={d.usageIntensity} /></DetailCell>
-                  <DetailCell label="الأنشطة الفرعية"><RichTextView html={d.subActivities} style={valueStyle} /></DetailCell>
-                </DetailGrid>
-                {d.linkedToService && (
-                  <DetailGrid cols={2}>
-                    <DetailCell label={'هل ' + d.opWordDef + ' مرتبطة بخدمة؟'}>{d.linkedToService}</DetailCell>
-                    {d.linkedServiceName ? <DetailCell label="الخدمة المرتبطة">{d.linkedServiceName}</DetailCell> : null}
-                  </DetailGrid>
-                )}
-
-                <DetailSecHead title="جاهزية التحول" />
-                <DetailGrid cols={3}>
-                  <DetailCell label="قابلية التحول"><TransformPill v={d.transformability} /></DetailCell>
-                  <DetailCell label="أولوية التحول"><LevelPill v={d.transformPriority} /></DetailCell>
-                  <DetailCell label="جاهزية التحول">{d.readiness}</DetailCell>
-                </DetailGrid>
-
-                {(d.durationBefore || d.durationAfter) && (
-                  <DetailGrid cols={2}>
-                    <DetailCell label="المدة الزمنية للإنجاز قبل التحويل">{d.durationBefore || '—'}</DetailCell>
-                    <DetailCell label="المدة الزمنية للإنجاز بعد التحويل">{d.durationAfter || '—'}</DetailCell>
-                  </DetailGrid>
-                )}
-                <DetailSecHead title="الأتمتة" />
-                {(() => {
-                  const cells = [
-                    <DetailCell key="lvl" label="مستوى الأتمتة"><AutoLevel pct={d.automationPct} level={d.automationLevel} /></DetailCell>,
-                    ...(d.automationSystem ? [<DetailCell key="sys" label="نظام الأتمتة">{d.automationSystem}</DetailCell>] : []),
-                  ];
-                  return <DetailGrid cols={Math.min(3, cells.length)}>{cells}</DetailGrid>;
-                })()}
-
-                <DetailSecHead title="الجهة المعنية" />
-                {(() => {
-                  const cells = [
-                    <DetailCell key="fed" tint label="الجهة الاتحادية المعنية" iconD={IC_BUILDING}>{d.itemEntityName}</DetailCell>,
-                    ...(d.sector ? [<DetailCell key="sec" tint label="القطاع المعني" iconD={IC_TAG}>{d.sector}</DetailCell>] : []),
-                    ...(d.dept ? [<DetailCell key="dept" tint label="الإدارة المعنية" iconD={IC_GRID}>{d.dept}</DetailCell>] : []),
-                    ...(d.section ? [<DetailCell key="sect" tint label="القسم المعني" iconD={IC_PEOPLE}>{d.section}</DetailCell>] : []),
-                  ];
-                  return <DetailGrid cols={2} tint>{cells}</DetailGrid>;
-                })()}
-              </>
-            )}
-
             {/* --- OUTCOMES for non-project types (entered in step 3) --- */}
-            {!d.isProj && (d.expectedOutputs || d.expectedOutcomes || d.expectedImpact || !!d.targetPct || !!d.aiModels) && (
-              <>
-                <DetailSecHead title="النتائج المتوقعة" />
-                {(d.expectedOutputs || d.expectedOutcomes) && (
-                  <DetailGrid cols={d.expectedOutputs && d.expectedOutcomes ? 2 : 1}>
-                    {d.expectedOutputs ? <DetailCell label="المخرجات المتوقعة"><RichTextView html={d.expectedOutputs} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell> : null}
-                    {d.expectedOutcomes ? <DetailCell label="النتائج المتوقعة"><RichTextView html={d.expectedOutcomes} style={{ fontSize: 13, color: '#33415C', lineHeight: 1.7, fontWeight: 400 }} /></DetailCell> : null}
-                  </DetailGrid>
-                )}
-                {(() => {
-                  const cells = [
-                    ...(d.expectedImpact ? [<DetailCell key="imp" label="الأثر المتوقع"><RichTextView html={d.expectedImpact} style={valueStyle} /></DetailCell>] : []),
-                    ...(d.aiModels ? [<DetailCell key="ai" label="العدد المتوقع لمساعدي الذكاء الاصطناعي">{d.aiModels}</DetailCell>] : []),
-                    ...(d.agentNature ? [<DetailCell key="nat" label="طبيعة عمل مساعدي الذكاء الاصطناعي">{d.agentNature}</DetailCell>] : []),
-                    ...(d.targetPct ? [<DetailCell key="pct" label="نسبة التحول">{d.targetPct}%</DetailCell>] : []),
-                  ];
-                  return cells.length ? <DetailGrid cols={Math.min(3, cells.length)}>{cells}</DetailGrid> : null;
-                })()}
-              </>
-            )}
 
             {/* --- SERVICE --- */}
             {d.isSvc && (
@@ -631,79 +493,12 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   </span>
                 )}
               </div>
-              {d.subMilestones.length > 0 && (
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ ...labelStyle, marginBottom: 8 }}>المراحل الفرعية</div>
-                  {d.subMilestones.map((sm, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 9,
-                        padding: '7px 0',
-                        borderBottom: i < d.subMilestones.length - 1 ? '1px solid #F0F3F8' : 'none',
-                      }}
-                    >
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563EB', flex: 'none' }} />
-                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#33405A', flex: 1 }}>{sm.name}</span>
-                      <span style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 700 }}>
-                        {sm.startFmt} — {sm.endFmt}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           )}
           </div>
 
           <div style={{ display: 'contents' }}>
           {/* ===== PLANNED LAUNCHES (read-only, pre-launch stages) ===== */}
-          {!d.showLaunchView && d.plannedLaunches.length > 0 && (
-            <div style={sectionCard}>
-              <div style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C', marginBottom: 10 }}>
-                خطة الإطلاق
-              </div>
-              {d.plannedLaunches.map((l, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '9px 0',
-                    borderBottom: i < d.plannedLaunches.length - 1 ? '1px solid #F0F3F8' : 'none',
-                  }}
-                >
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB', flex: 'none' }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>
-                      {l.title}
-                      {l.shared && (
-                        <span
-                          style={{
-                            marginRight: 7,
-                            background: '#E5EEFF',
-                            color: '#2563EB',
-                            borderRadius: 999,
-                            padding: '2px 8px',
-                            fontSize: 10,
-                            fontWeight: 800,
-                          }}
-                        >
-                          مشتركة
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#9AA6BC', fontWeight: 400, marginTop: 2 }}>
-                      {l.ltype} · التسليم المتوقع {l.dateFmt}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
           </div>
 
           <div style={{ display: 'contents' }}>
@@ -759,39 +554,6 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 </div>
               </div>
 
-              <div
-                style={{
-                  background: '#fff',
-                  border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-                  borderRadius: 16,
-                  padding: 16,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 800,
-                    color: '#13213C',
-                    marginBottom: 12,
-                  }}
-                >
-                  معايير التقييم
-                </div>
-                <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                  <div>
-                    <div style={labelStyle}>الأولوية</div>
-                    <div><LevelPill v={d.priority} /></div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>مستوى التعقيد</div>
-                    <div><LevelPill v={d.complexity} /></div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>الأثر المتوقع</div>
-                    <RichTextView html={d.expectedImpact} style={valueStyle} />
-                  </div>
-                </div>
-              </div>
             </>
           )}
           </div>

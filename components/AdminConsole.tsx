@@ -516,8 +516,8 @@ function IconBtn({ d, title, onClick, danger }: { d: string; title: string; onCl
 
 // ---- Assign stream heads + committee --------------------------------------
 function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) => void; onAdd: (seed: UserRec) => void }) {
-  const heads = a.users.filter((u) => u.role === 'path');
-  const committee = a.users.filter((u) => u.role === 'ai');
+  const heads = a.users.filter((u) => (u.role === 'path' || u.role === 'deputy'));
+  const committee = a.users.filter((u) => (u.role === 'ai' || u.role === 'secretariat'));
   const headByStream = (id: string) => heads.find((h) => h.streamId === id);
   return (
     <div style={{ display: 'grid', gap: 18 }}>
@@ -598,7 +598,7 @@ function RolesTab({ a }: { a: VM['admin'] }) {
 function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRec; onClose: () => void; onSave: (u: UserRec) => void }) {
   const [f, setF] = useState<UserRec>(user);
   const set = (patch: Partial<UserRec>) => setF((x) => ({ ...x, ...patch }));
-  const needsEntity = f.role === 'entity' || f.role === 'coord';
+  const needsEntity = f.role === 'coord';
   const needsStream = f.role === 'coord' || f.role === 'path';
   const emailOk = /^\S+@\S+\.\S+$/.test(f.email.trim());
   const valid = f.name.trim() && emailOk && (!needsEntity || f.entityName) && (!needsStream || f.streamId);

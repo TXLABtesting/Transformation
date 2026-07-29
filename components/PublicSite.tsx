@@ -46,50 +46,6 @@ const IC = {
 const HERO_TEXT =
   'بتوجيهات من صاحب السمو الشيخ محمد بن زايد آل نهيان، رئيس الدولة "حفظه الله"، أعلن صاحب السمو الشيخ محمد بن راشد آل مكتوم، نائب رئيس الدولة رئيس مجلس الوزراء حاكم دبي "رعاه الله"، في أبريل 2026 عن إطلاق مشروع وطني استراتيجي، بإشراف سمو الشيخ منصور بن زايد آل نهيان، نائب رئيس الدولة نائب رئيس مجلس الوزراء رئيس ديوان الرئاسة، يهدف إلى تحويل 50% من العمليات والمهام والإجراءات والخدمات الحكومية إلى نماذج وأنظمة مدعومة بالذكاء الاصطناعي المساعد خلال عامين، بما يسهم في خفض التكاليف التشغيلية، ورفع الكفاءة الحكومية، وتعزيز جودة المخرجات والخدمات، وتسريع الإنجاز، ودعم اتخاذ القرار، وذلك لبناء أفضل حكومة في العالم ولتعزيز جاهزية الدولة لمتغيرات المستقبل.';
 
-const TIMELINE: { year: string; title: string; sub: string; major: boolean }[] = [
-  { year: '2001', title: 'الحكومة الإلكترونية', sub: 'إطلاق التعاملات الحكومية الإلكترونية', major: true },
-  { year: '2013', title: 'الحكومة الذكية', sub: 'التحول إلى الخدمات عبر الهواتف الذكية', major: true },
-  { year: '2017', title: 'تعيين أول وزير', sub: 'للذكاء الاصطناعي في العالم', major: false },
-  { year: '2019', title: 'الحكومة الرقمية', sub: 'التحول الرقمي الشامل للخدمات والبنية الحكومية', major: true },
-  { year: '2020', title: 'أول جامعة للذكاء الاصطناعي', sub: 'جامعة محمد بن زايد للذكاء الاصطناعي', major: false },
-  { year: '2026', title: 'الذكاء الاصطناعي المساعد', sub: 'إطلاق المشروع الوطني الاستراتيجي', major: true },
-];
-
-const TRACKS: { num: string; title: string; desc: string }[] = [
-  { num: '01', title: 'الخدمات الحكومية', desc: 'تحويل الخدمات وباقات الخدمات لتطبيق نماذج وأنظمة الذكاء الاصطناعي المساعد' },
-  { num: '02', title: 'العمل الحكومي الاستراتيجي', desc: 'تحويل المهام الاستراتيجية لتطبيق نماذج وأنظمة الذكاء الاصطناعي المساعد' },
-  { num: '03', title: 'العمليات والدعم المؤسسي', desc: 'تحويل العمليات التخصصية وعمليات الدعم المؤسسي لتطبيق نماذج وأنظمة الذكاء الاصطناعي المساعد' },
-  { num: '04', title: 'بناء القدرات والتدريب', desc: 'تطوير وتأهيل الموظفين الحكوميين في مجال الذكاء الاصطناعي المساعد' },
-  { num: '05', title: 'تقنيات الذكاء الاصطناعي والبيانات', desc: 'تطوير المنظومة التقنية والبنية التحتية للذكاء الاصطناعي المساعد' },
-];
-
-const SCOPE: { icon: string; title: string; desc: string }[] = [
-  { icon: IC.bank, title: 'الإجراءات الحكومية', desc: 'الإجراءات والمعاملات الحكومية الداخلية والمشتركة بين الجهات الاتحادية.' },
-  { icon: IC.cog, title: 'العمليات', desc: 'العمليات التخصصية وعمليات الدعم المؤسسي في الجهات الاتحادية.' },
-  { icon: IC.headset, title: 'الخدمات الحكومية', desc: 'الخدمات وباقات الخدمات المقدمة للأفراد والجهات عبر مساعدي الذكاء الاصطناعي.' },
-  { icon: IC.target, title: 'المهام الاستراتيجية', desc: 'المهام الاستراتيجية والأنشطة المرتبطة بها في العمل الحكومي.' },
-];
-
-const OUT_OF_SCOPE =
-  'العمليات والمهام والإجراءات والخدمات التي سيتم تحديدها واعتمادها بأنها غير قابلة/غير مجدية لتبني الذكاء الاصطناعي المساعد من قبل اللجنة الوطنية للذكاء الاصطناعي المساعد أو رئيس المسار المعني على مستوى الحكومة.';
-
-const PRINCIPLES: { title: string; desc: string }[] = [
-  { title: 'الشمولية', desc: 'يشمل التحول جميع الجهات الاتحادية وجميع العمليات والمهام والإجراءات والخدمات القابلة للتحويل.' },
-  { title: 'الأثر القابل للقياس', desc: 'نتائج كمية واضحة وقابلة للقياس بالأرقام تعكس مستوى التحسّن المتوقع من التحويل.' },
-  { title: 'الإنسان أولاً', desc: 'يبقى الموظف الحكومي مسؤولاً عن القرار، والذكاء الاصطناعي المساعد أداة تمكين له.' },
-  { title: 'الحوكمة الموحدة', desc: 'إشراف اللجنة الوطنية للذكاء الاصطناعي المساعد على المسارات والاعتمادات على مستوى الحكومة.' },
-  { title: 'الأولوية وفق المصفوفات', desc: 'تُحدَّد أولويات التحويل وفق مصفوفات أولوية معتمدة لكل مسار.' },
-  { title: 'الأمن وحماية البيانات', desc: 'الالتزام بأعلى معايير أمن المعلومات وخصوصية البيانات الحكومية.' },
-  { title: 'الجاهزية التقنية', desc: 'الاعتماد على بنية تقنية موحّدة وقابلة للتوسع على مستوى الحكومة الاتحادية.' },
-  { title: 'بناء القدرات', desc: 'تدريب وتأهيل 100% من موظفي الجهات الاتحادية على الذكاء الاصطناعي المساعد.' },
-  { title: 'التنفيذ على دفعات', desc: 'الإطلاق عبر دفعات زمنية معتمدة لكل مسار مع متابعة دورية للتقدم.' },
-  { title: 'الشفافية والمتابعة', desc: 'تحديث مستمر لحالة المدخلات ومراحل التقدم عبر المنصة الوطنية الموحدة.' },
-  { title: 'التكامل الحكومي', desc: 'مشاركة النماذج والحلول الناجحة وإعادة استخدامها بين الجهات الاتحادية.' },
-  { title: 'خفض التكاليف ورفع الكفاءة', desc: 'تحسين الإنفاق التشغيلي وتسريع الإنجاز الحكومي عبر التحول.' },
-  { title: 'جودة المخرجات', desc: 'تعزيز جودة الخدمات والمخرجات والقرارات المدعومة بالبيانات.' },
-  { title: 'الاستدامة والتوسع', desc: 'التوسع التدريجي في التطبيق وصولاً إلى حكومة معزَّزة بالذكاء الاصطناعي المساعد.' },
-];
-
 type Doc = { id: string; title: string; cat: 'guide' | 'system'; catLabel: string; date: string; cover: string; file: string; dl: string };
 const DOC_ASSETS: Record<string, { cover: string; file: string; dl: string }> = {
   guide: {
@@ -151,7 +107,7 @@ export function PublicNav({ tab, onNav, onLogin }: { tab: PublicTab; onNav: (t: 
           fontWeight: active ? 800 : 700,
           lineHeight: 1.9,
           color: active ? '#2563EB' : hov === n.key ? '#0F1F3D' : '#54627B',
-          padding: block ? '12px 18px' : '7px 18px',
+          padding: block ? '12px 18px' : '9px 18px',
           whiteSpace: 'nowrap',
           cursor: 'pointer',
           fontFamily: 'inherit',
@@ -232,13 +188,21 @@ const sectionTitle: React.CSSProperties = { fontSize: 24, fontWeight: 900, textA
 // ---------------------------------------------------------------------------
 const SCOPE_ICONS = [IC.bank, IC.cog, IC.headset, IC.target];
 export function AboutPage() {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const upd = () => setMobile(mq.matches);
+    upd();
+    mq.addEventListener('change', upd);
+    return () => mq.removeEventListener('change', upd);
+  }, []);
   const heroFromAdmin = useStore((s) => s.aboutHero);
   const about = useStore((s) => s.about);
   const hero = (heroFromAdmin || '').trim() || HERO_TEXT;
-  const TL = about.timeline.length ? about.timeline : TIMELINE;
-  const TR = about.tracks.length ? about.tracks : TRACKS;
-  const SC = about.scope.length ? about.scope : SCOPE.map((s0) => ({ title: s0.title, desc: s0.desc }));
-  const PR = about.principles.length ? about.principles : PRINCIPLES;
+  const TL = about.timeline;
+  const TR = about.tracks;
+  const SC = about.scope;
+  const PR = about.principles;
   const TG = about.targets;
   return (
     <div style={{ background: '#F7F9FD' }}>
@@ -252,6 +216,23 @@ export function AboutPage() {
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '40px 32px 20px' }}>
         <h2 style={{ ...sectionTitle, marginBottom: 6 }}>مسيرة التحول الحكومي</h2>
         <p style={{ fontSize: 13.5, color: '#7484A0', fontWeight: 600, textAlign: 'center', margin: '0 0 34px' }}>ربع قرن من الريادة في التحول الرقمي الحكومي</p>
+        {mobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {TL.map((t) => (
+              <div key={t.year} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none', paddingTop: 4 }}>
+                  <div style={{ width: t.major ? 15 : 11, height: t.major ? 15 : 11, borderRadius: '50%', background: t.major ? '#2563EB' : '#9AA6BC', border: t.major ? '3px solid #DBEAFE' : 'none' }} />
+                  <div style={{ width: 2, flex: 1, minHeight: 26, background: '#C4D2E8', marginTop: 4 }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: t.major ? 20 : 16, fontWeight: 900, color: '#2563EB', lineHeight: 1.2 }}>{t.year}</div>
+                  <div style={{ fontSize: t.major ? 14 : 12.5, fontWeight: 800, color: '#1F2D49', marginTop: 3 }}>{t.title}</div>
+                  <div style={{ fontSize: 11.5, fontWeight: 600, color: '#7484A0', marginTop: 2, lineHeight: 1.7 }}>{t.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <div style={{ display: 'flex', flexDirection: 'row-reverse', overflowX: 'auto' }}>
           {TL.map((t) =>
             t.major ? (
@@ -288,6 +269,7 @@ export function AboutPage() {
             )
           )}
         </div>
+        )}
       </div>
 
       {/* targets */}
@@ -347,7 +329,7 @@ export function AboutPage() {
           <PIcon d={IC.block} size={30} color="#7E9AC8" />
           <div>
             <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 3 }}>خارج نطاق التحويل</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#B9CDEC', lineHeight: 1.9 }}>{about.outOfScope || OUT_OF_SCOPE}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#B9CDEC', lineHeight: 1.9 }}>{about.outOfScope}</div>
           </div>
         </div>
       </div>
@@ -461,6 +443,7 @@ export function LibraryPage() {
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#8A97AD', marginTop: 2 }}>{d.catLabel} · PDF · {d.date}</div>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
+                    {d.file !== '#' && (
                     <a
                       href={d.file}
                       download={d.dl}
@@ -469,6 +452,8 @@ export function LibraryPage() {
                     >
                       <PIcon d={IC.download} size={20} />
                     </a>
+                    )}
+                    {d.file !== '#' && (
                     <a
                       href={d.file}
                       target="_blank"
@@ -477,6 +462,7 @@ export function LibraryPage() {
                     >
                       إطلاع
                     </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -550,9 +536,14 @@ export function ContactPage() {
     setErrs(e);
     return Object.keys(e).length === 0;
   };
+  const [website, setWebsite] = useState(''); // honeypot — humans never see it
   const submit = () => {
     if (state === 'sending') return;
     if (!validate()) return;
+    if (website.trim()) {
+      setState('error');
+      return;
+    }
     setState('sending');
     // The inquiry lands as a ticket in the admin backoffice (التواصل
     // والاستفسارات), which forwards it to the stream's configured inbox. In
@@ -612,6 +603,7 @@ export function ContactPage() {
                   تعذر إرسال الاستفسار، يرجى المحاولة مجدداً.
                 </div>
               )}
+              <input value={website} onChange={(e) => setWebsite(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: 'absolute', opacity: 0, height: 0, width: 0, pointerEvents: 'none' }} placeholder="website" />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '18px 20px' }}>
                 <div>
                   <label style={label}>الاسم</label>
