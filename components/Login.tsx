@@ -8,7 +8,7 @@ import { AboutPage, ContactPage, LibraryPage, PublicFooter, PublicNav, type Publ
 // design); the other tabs are the public site pages from the design handoff.
 const NAV_ITEMS: { key: PublicTab; label: string }[] = [
   { key: 'home', label: 'الصفحة الرئيسية' },
-  { key: 'about', label: 'عن المشروع' },
+  { key: 'about', label: 'من نحن' },
   { key: 'library', label: 'المكتبة' },
   { key: 'contact', label: 'تواصل معنا' },
 ];
