@@ -7,6 +7,81 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, STREAM_FIELD_OPTIONS, STREAM_FIELD_S
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate } from '@/lib/export';
 
+
+// Repeatable single-line rows for الأنشطة — stored as one newline-joined value
+// so counters, the Excel template and the detail view keep working unchanged.
+function ActivityRows({
+  label,
+  hint,
+  placeholder,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const rows = (() => {
+    const parts = (value || '').split('\n');
+    return parts.length ? parts : [''];
+  })();
+  const commit = (next: string[]) => onChange(next.join('\n'));
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={labelStyle}>
+        {label} <span style={{ color: '#D23B45' }}>*</span>
+      </label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {rows.map((r, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ flex: 'none', width: 22, textAlign: 'center', fontSize: 12, fontWeight: 800, color: '#9AA6BC' }}>{i + 1}</span>
+            <input
+              value={r}
+              onChange={(e) => {
+                const next = [...rows];
+                next[i] = arabicOnly(e.target.value);
+                commit(next);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const next = [...rows];
+                  next.splice(i + 1, 0, '');
+                  commit(next);
+                }
+              }}
+              placeholder={placeholder}
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (rows.length === 1) return commit(['']);
+                commit(rows.filter((_, x) => x !== i));
+              }}
+              title="حذف النشاط"
+              style={{ flex: 'none', width: 38, height: 38, borderRadius: 10, background: '#fff', border: '1px solid #F0D5D5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            >
+              <Icon d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" size={14} color="#C0303B" />
+            </button>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => commit([...rows, ''])}
+        style={{ marginTop: 9, display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EAF0FE', color: '#2563EB', border: 'none', borderRadius: 10, padding: '9px 15px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+      >
+        <Icon d="M12 5v14M5 12h14" size={14} color="#2563EB" strokeWidth={2.4} />
+        إضافة نشاط
+      </button>
+      <div style={{ fontSize: 11, color: '#9AA6BC', marginTop: 6 }}>{hint}</div>
+    </div>
+  );
+}
+
 // ============================================================================
 // Create wizard side-panel (§9) — faithful RTL reproduction of the prototype.
 // ============================================================================
@@ -1233,17 +1308,13 @@ function FOps({
           <label style={labelStyle}>العملية الرئيسية <span style={{ color: '#D23B45' }}>*</span></label>
           <input value={gv('title')} onChange={(e) => setField('title', arabicOnly(e.target.value))} placeholder="اسم العملية الرئيسية" style={inputStyle} />
         </div>
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>الأنشطة الفرعية للعملية الرئيسية <span style={{ color: '#D23B45' }}>*</span></label>
-          <textarea
-            value={gv('subActivities')}
-            onChange={(e) => setField('subActivities', arabicOnly(e.target.value))}
-            placeholder="اكتب كل نشاط فرعي في سطر مستقل"
-            rows={4}
-            style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.8 }}
-          />
-          <div style={{ fontSize: 11, color: '#9AA6BC', marginTop: 5 }}>كل سطر يمثل نشاطاً فرعياً — تُحتسب الأنشطة في ملخص الحصر.</div>
-        </div>
+        <ActivityRows
+          label="الأنشطة الفرعية للعملية الرئيسية"
+          hint="أضف كل نشاط فرعي في حقل مستقل — تُحتسب الأنشطة في ملخص الحصر."
+          placeholder="اسم النشاط الفرعي"
+          value={String(gv('subActivities') ?? '')}
+          onChange={(v) => setField('subActivities', v)}
+        />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
           <div>
             <label style={labelStyle}>القطاع المعني <span style={{ color: '#D23B45' }}>*</span></label>
@@ -1347,17 +1418,13 @@ function FTask({
       <div style={cardStyle}>
         {sel('المحور', 'axis', m.axesOptions)}
         {txt('المهمة', 'title', 'اسم المهمة')}
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>الأنشطة <span style={{ color: '#D23B45' }}>*</span></label>
-          <textarea
-            value={gv('subActivities')}
-            onChange={(e) => setField('subActivities', arabicOnly(e.target.value))}
-            placeholder="اكتب كل نشاط في سطر مستقل"
-            rows={4}
-            style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.8 }}
-          />
-          <div style={{ fontSize: 11, color: '#9AA6BC', marginTop: 5 }}>كل سطر يمثل نشاطاً — تُحتسب الأنشطة في مؤشرات المسار.</div>
-        </div>
+        <ActivityRows
+          label="الأنشطة"
+          hint="أضف كل نشاط في حقل مستقل — تُحتسب الأنشطة في مؤشرات المسار."
+          placeholder="اسم النشاط"
+          value={String(gv('subActivities') ?? '')}
+          onChange={(v) => setField('subActivities', v)}
+        />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
           <div>
             <label style={labelStyle}>القطاع المعني <span style={{ color: '#D23B45' }}>*</span></label>
