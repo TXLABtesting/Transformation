@@ -36,6 +36,7 @@ import {
   typeLabelDef,
   typeLabelDefFor,
   TBD_BATCH,
+  execMilestones,
   seedExpectedResults,
   DEFAULT_CONTACT_EMAILS,
   DEFAULT_LIBRARY_DOCS,
@@ -939,7 +940,17 @@ export const useStore = create<Store>((set, get) => {
     setOpsFilter: (k, v) =>
       // switching away from عمليات الدعم المؤسسي clears the support filter
       setUi(k === 'opsCatF' && v !== SUPPORT_OPTYPE ? ({ [k]: v, opsSupportF: 'all' } as Partial<UiState>) : ({ [k]: v } as Partial<UiState>)),
-    setItemDate: (id, k, v) => patchItem(id, { [k]: v } as Partial<Item>),
+    setItemDate: (id, k, v) => {
+      const it = findItem(id);
+      // keep the entry's dates inside its دفعة window
+      const ph = it ? execMilestones(it.path).find((b) => b.name === it.execBatch) : null;
+      let val = v;
+      if (val && ph) {
+        if (ph.start && val < ph.start) val = ph.start;
+        if (ph.end && val > ph.end) val = ph.end;
+      }
+      patchItem(id, { [k]: val } as Partial<Item>);
+    },
     assignItemBatch: (id, batch) => patchItem(id, { execBatch: batch }),
     setContactEmail: (k, v) => {
       set((st) => ({ contactEmails: { ...st.contactEmails, [k]: v } }));

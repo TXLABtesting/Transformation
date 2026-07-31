@@ -1328,6 +1328,9 @@ function build(s: Store) {
             name: batchDafaaLabel(b.name),
             rawName: b.name,
             period: b.period || '',
+            // item dates must stay inside the دفعة window
+            minDate: b.start || '',
+            maxDate: b.end || '',
             count: roleBase.filter((i) => i.path === bPath && i.execBatch === b.name).length,
             rows: roleBase
               .filter((i) => i.path === bPath && i.execBatch === b.name)
