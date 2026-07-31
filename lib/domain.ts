@@ -170,6 +170,22 @@ export type ContactInquiry = {
 
 // ---- per-stream entry field specs (single source for the entry form, the
 // Excel template, bulk import mapping and missing-data checks) ----
+// عمليات الدعم المؤسسي: الوظائف المساندة المعتمدة
+export const SUPPORT_FUNCTIONS = [
+  'الموارد البشرية',
+  'الشؤون المالية',
+  'المشتريات والعقود',
+  'الدعم التقني',
+  'الأمن السيبراني',
+  'الشؤون الإدارية',
+  'التدقيق الداخلي والحوكمة المؤسسية',
+  'إدارة المرافق والصيانة',
+  'الشؤون التشريعية',
+  'الإعلام والاتصال الحكومي',
+  'السياسات العامة',
+];
+export const SUPPORT_OPTYPE = 'عمليات الدعم المؤسسي';
+
 export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
   services: [
     { key: 'title', label: 'الخدمة' },
@@ -204,6 +220,7 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
   ],
   ops: [
     { key: 'opType', label: 'تصنيف العملية' },
+    { key: 'supportFn', label: 'نوع عملية الدعم المؤسسي' },
     { key: 'title', label: 'العملية الرئيسية' },
     { key: 'subActivities', label: 'الأنشطة الفرعية' },
     { key: 'sector', label: 'القطاع المعني' },
@@ -243,6 +260,7 @@ export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
   },
   ops: {
     opType: ['العمليات التخصصية', 'عمليات الدعم المؤسسي'],
+    supportFn: SUPPORT_FUNCTIONS,
     isAutomated: ['نعم', 'لا'],
     usageIntensity: SCALE_1_5,
     readinessLevel: SCALE_1_5,
@@ -287,6 +305,7 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
   },
   ops: {
     opType: 'عمليات الدعم المؤسسي',
+    supportFn: 'الموارد البشرية',
     title: 'تدقيق طلبات الموارد البشرية',
     subActivities: 'استلام الطلبات، التحقق، إصدار القرار',
     sector: 'قطاع الخدمات المساندة',
@@ -308,7 +327,11 @@ const plainOf = (v: unknown): string => String(v ?? '').replace(/<[^>]*>/g, '').
 // labels of the required entry fields this item has not filled yet
 export function missingFieldsOf(i: Record<string, unknown> & { path?: string }): string[] {
   const spec = STREAM_FIELDS[i.path || ''] || [];
-  return spec.filter((f) => !plainOf(i[f.key])).map((f) => f.label);
+  return spec
+    // نوع عملية الدعم المؤسسي مطلوب فقط عند اختيار «عمليات الدعم المؤسسي»
+    .filter((f) => (f.key === 'supportFn' ? plainOf(i.opType) === SUPPORT_OPTYPE : true))
+    .filter((f) => !plainOf(i[f.key]))
+    .map((f) => f.label);
 }
 
 // «للتحديد بعد الدراسة»: execution stage deferred until the study concludes
@@ -715,6 +738,7 @@ export type Item = {
   notes?: string; // الملاحظات
   // operation-specific
   opType?: string;
+  supportFn?: string; // نوع عملية الدعم المؤسسي (عند اختيار عمليات الدعم المؤسسي)
   subActivities?: string;
   fedEntity?: string;
   sector?: string;
