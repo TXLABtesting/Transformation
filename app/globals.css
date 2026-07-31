@@ -444,3 +444,48 @@ select {
   .segfoot { flex-direction: column; gap: 6px; }
 }
 
+
+/* login card: frosted glass + a gradient light rolling around the border */
+.login-ring {
+  position: relative;
+  border-radius: 22px;
+  padding: 1.6px;
+  overflow: hidden;
+  isolation: isolate;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.login-ring::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 240%;
+  aspect-ratio: 1;
+  background: conic-gradient(
+    from 0deg,
+    rgba(39, 194, 240, 0) 0deg,
+    rgba(39, 194, 240, 0) 200deg,
+    rgba(39, 194, 240, 0.65) 268deg,
+    rgba(120, 216, 255, 0.95) 300deg,
+    rgba(46, 116, 238, 0.7) 330deg,
+    rgba(39, 194, 240, 0) 360deg
+  );
+  animation: loginRing 5.5s linear infinite;
+  z-index: -1;
+}
+@keyframes loginRing {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+.login-ring > .login-card {
+  border-radius: 20.5px;
+  /* frosted glass: nothing behind the card stays legible */
+  background: rgba(10, 22, 46, 0.72);
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-ring::before { animation: none; }
+}

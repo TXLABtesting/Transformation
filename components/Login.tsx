@@ -83,7 +83,7 @@ function InteractiveNumberBackground() {
         if (c.cur < 0.002) c.cur = 0;
         const k = c.cur;
         const size = fontSize * (1 + 0.18 * k);
-        const alpha = c.base + (0.9 - c.base) * k;
+        const alpha = c.base + (1 - c.base) * k;
         // muted blue -> light blue
         const r = Math.round(72 + (85 - 72) * k);
         const g = Math.round(103 + (199 - 103) * k);
@@ -91,8 +91,8 @@ function InteractiveNumberBackground() {
         ctx.font = size.toFixed(1) + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
         if (k > 0.02) {
           // activated digits bloom into a soft blur that grows with strength
-          ctx.shadowColor = `rgba(120,216,255,${(0.75 * k).toFixed(3)})`;
-          ctx.shadowBlur = 18 * k;
+          ctx.shadowColor = `rgba(120,216,255,${(0.85 * k).toFixed(3)})`;
+          ctx.shadowBlur = 22 * k;
           ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
           ctx.fillText(c.v, c.x, c.y - k);
           // second pass widens the halo so the glow reads as a diffuse blur
@@ -152,7 +152,15 @@ function InteractiveNumberBackground() {
     <canvas
       ref={ref}
       aria-hidden="true"
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 0,
+        pointerEvents: 'none',
+        filter: 'blur(1.2px)',
+      }}
     />
   );
 }
@@ -244,9 +252,10 @@ export function Login({ vm }: { vm: VM }) {
               onMouseLeave={() => setNavHov(null)}
               style={{
                 position: 'relative',
-                background: active ? 'rgba(255,255,255,.10)' : hov ? 'rgba(255,255,255,.06)' : 'transparent',
+                background: active ? 'rgba(39,194,240,.14)' : hov ? 'rgba(255,255,255,.07)' : 'transparent',
                 border: 'none',
-                borderRadius: 10,
+                boxShadow: active ? 'inset 0 0 0 1px rgba(120,216,255,.45)' : 'none',
+                borderRadius: 999,
                 padding: '10px 22px',
                 fontSize: 14.5,
                 fontWeight: 800,
@@ -257,19 +266,6 @@ export function Login({ vm }: { vm: VM }) {
               }}
             >
               {n.label}
-              {active && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    right: 18,
-                    left: 18,
-                    bottom: 4,
-                    height: 2.5,
-                    borderRadius: 2,
-                    background: 'linear-gradient(90deg,#27C2F0,#2E74EE)',
-                  }}
-                />
-              )}
             </button>
           );
         })}
@@ -299,19 +295,8 @@ export function Login({ vm }: { vm: VM }) {
           </div>
           <div style={{ height: 40 }} />
 
-          <div
-            style={{
-              background: 'rgba(255,255,255,.08)',
-              border: '1px solid rgba(255,255,255,.16)',
-              borderRadius: 22,
-              padding: '30px 26px',
-              backdropFilter: 'blur(16px) saturate(140%)',
-              WebkitBackdropFilter: 'blur(16px) saturate(140%)',
-              boxShadow: '0 24px 60px -24px rgba(0,0,0,.5)',
-              maxWidth: 420,
-              margin: '0 auto',
-            }}
-          >
+          <div className="login-ring">
+          <div className="login-card" style={{ padding: '30px 26px' }}>
             <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 22px', color: '#fff' }}>
               تسجيل الدخول
             </h1>
@@ -351,6 +336,7 @@ export function Login({ vm }: { vm: VM }) {
             <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, fontWeight: 600, color: '#9FC4F2', lineHeight: 1.8 }}>
               هوية رقمية واحدة موثوقة لجميع المواطنين والمقيمين والزوار
             </div>
+          </div>
           </div>
         </div>
       </div>
