@@ -12,10 +12,10 @@ body {
   padding: 0;
 }
 body {
-  /* GE Alma is the brand type across the platform; it activates once the
+  /* Noto Kufi Arabic is the platform type; titles render in Alexandria
      licensed font file exists at public/assets/fonts/GE-Alma-Black.otf
      (declared in layout.tsx). IBM Plex Sans Arabic is the fallback. */
-  font-family: 'GE Alma', var(--font-base), 'Cairo', system-ui, sans-serif;
+  font-family: var(--font-base), 'Noto Kufi Arabic', system-ui, sans-serif;
   direction: rtl;
   font-weight: 400;
   color: #0f1f3d;
@@ -37,7 +37,7 @@ h1,
 h2,
 h3,
 .hd {
-  font-family: 'GE Alma', var(--font-base), system-ui, sans-serif;
+  font-family: var(--font-head), 'Alexandria', var(--font-base), system-ui, sans-serif;
   font-weight: 700;
 }
 button {
@@ -444,12 +444,3 @@ select {
   .segfoot { flex-direction: column; gap: 6px; }
 }
 
-/* login hero: breathing glow behind the logo */
-@keyframes fxBreath {
-  0%, 100% { opacity: .55; transform: scale(.94); }
-  50% { opacity: 1; transform: scale(1.06); }
-}
-.fx-breath { animation: fxBreath 6.5s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) {
-  .fx-breath { animation: none; opacity: .55; }
-}

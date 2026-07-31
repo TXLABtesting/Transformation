@@ -11,7 +11,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Cairo', 'system-ui', 'sans-serif'],
+        sans: ['Noto Kufi Arabic', 'system-ui', 'sans-serif'],
       },
       colors: {
         // Primary blue
