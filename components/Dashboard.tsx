@@ -811,17 +811,6 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                         {bt.canEditDates && (
                           <td style={{ ...td, whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                              {/* backgroundColor (not background) keeps the global RTL chevron visible */}
-                              <select
-                                value={r.batch}
-                                onChange={(e) => bt.onMove(r.id, e.target.value)}
-                                title="نقل إلى دفعة أخرى"
-                                style={{ border: '1px solid #DCE3EE', borderRadius: 8, padding: '7px 10px', paddingLeft: 26, fontSize: 11.5, fontFamily: 'inherit', color: '#33415C', backgroundColor: '#fff', maxWidth: 150, cursor: 'pointer' }}
-                              >
-                                {bt.batchOptions.map((o) => (
-                                  <option key={o.v} value={o.v}>{o.label}</option>
-                                ))}
-                              </select>
                               <button
                                 onClick={r.onOpen}
                                 style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 11.5, color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 6px -2px rgba(37,99,235,.4)' }}

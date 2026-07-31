@@ -6,7 +6,7 @@ import { Icon } from './Icon';
 import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, streamLaunchBatches, TBD_BATCH, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate } from '@/lib/export';
-import { svcCatalogFor } from '@/lib/svcCatalog';
+import { useSvcCatalog } from '@/lib/svcCatalog';
 
 
 // Repeatable single-line rows for الأنشطة — stored as one newline-joined value
@@ -1568,11 +1568,12 @@ function FService({
     </div>
   );
   const pr = m.svcSelPriority;
-  // دليل الخدمات حسب جهة المنسق — الخدمة الرئيسية والفرعية قوائم منسدلة مترابطة
-  const { services: entServices, scoped } = svcCatalogFor(vm.entityName);
+  // دليل الخدمات حسب جهة المنسق — الخدمة الرئيسية والفرعية قوائم منسدلة
+  // مترابطة مقيدة بخدمات جهته فقط؛ إدخال يدوي عندما لا تكون الجهة في الدليل
+  const entServices = useSvcCatalog(vm.entityName);
   const mainVal = gv('title');
-  const mainOpts = Object.keys(entServices);
-  const subOpts = entServices[mainVal] || [];
+  const mainOpts = entServices ? Object.keys(entServices) : [];
+  const subOpts = (entServices && entServices[mainVal]) || [];
   const withCurrent = (opts: string[], cur: string) => (cur && !opts.includes(cur) ? [cur, ...opts] : opts);
   // single brand colour for every priority — no extra colours
   const PR_COLORS: Record<number, { c: string; bg: string }> = {
@@ -1584,39 +1585,57 @@ function FService({
   return (
     <div>
       <div style={cardStyle}>
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>الخدمة <span style={{ color: '#D23B45' }}>*</span></label>
-          <select
-            value={mainVal}
-            onChange={(e) => {
-              setField('title', e.target.value);
-              setField('subService', '');
-            }}
-            style={inputStyle}
-          >
-            <option value="">اختر الخدمة الرئيسية…</option>
-            {withCurrent(mainOpts, mainVal).map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
-          <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
-            {scoped ? `القائمة وفق دليل خدمات ${vm.entityName}` : 'القائمة الموحدة لدليل الخدمات الاتحادية'}
-          </div>
-        </div>
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>الخدمة الفرعية <span style={{ color: '#D23B45' }}>*</span></label>
-          <select
-            value={gv('subService')}
-            onChange={(e) => setField('subService', e.target.value)}
-            disabled={!mainVal}
-            style={{ ...inputStyle, ...(mainVal ? {} : { background: '#F4F7FC', color: '#9AA6BC', cursor: 'not-allowed' }) }}
-          >
-            <option value="">{mainVal ? 'اختر الخدمة الفرعية…' : 'اختر الخدمة الرئيسية أولاً'}</option>
-            {withCurrent(subOpts, gv('subService')).map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
-        </div>
+        {entServices ? (
+          <>
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>الخدمة <span style={{ color: '#D23B45' }}>*</span></label>
+              <select
+                value={mainVal}
+                onChange={(e) => {
+                  setField('title', e.target.value);
+                  setField('subService', '');
+                }}
+                style={inputStyle}
+              >
+                <option value="">اختر الخدمة الرئيسية…</option>
+                {withCurrent(mainOpts, mainVal).map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </select>
+              <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
+                القائمة وفق دليل خدمات {vm.entityName}
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>الخدمة الفرعية <span style={{ color: '#D23B45' }}>*</span></label>
+              <select
+                value={gv('subService')}
+                onChange={(e) => setField('subService', e.target.value)}
+                disabled={!mainVal}
+                style={{ ...inputStyle, ...(mainVal ? {} : { background: '#F4F7FC', color: '#9AA6BC', cursor: 'not-allowed' }) }}
+              >
+                <option value="">{mainVal ? 'اختر الخدمة الفرعية…' : 'اختر الخدمة الرئيسية أولاً'}</option>
+                {withCurrent(subOpts, gv('subService')).map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </select>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>الخدمة <span style={{ color: '#D23B45' }}>*</span></label>
+              <input value={gv('title')} onChange={(e) => setField('title', arabicOnly(e.target.value))} placeholder="اسم الخدمة الرئيسية" style={inputStyle} />
+              <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
+                لا توجد خدمات مسجلة لجهتك في دليل الخدمات الاتحادي — يمكن إدخال الخدمة يدوياً
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>الخدمة الفرعية <span style={{ color: '#D23B45' }}>*</span></label>
+              <input value={gv('subService')} onChange={(e) => setField('subService', arabicOnly(e.target.value))} placeholder="اسم الخدمة الفرعية" style={inputStyle} />
+            </div>
+          </>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
           <div>
             <label style={labelStyle}>القطاع المعني <span style={{ color: '#D23B45' }}>*</span></label>
