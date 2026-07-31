@@ -2931,7 +2931,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                 </div>
               ) : viewMode === 'list' ? (
-                <ListView cards={vm.sectionCards} />
+                <ListView cards={vm.sectionCards} isOps={vm.listIsOps} />
               ) : (
                 <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
                   {vm.sectionCards.map((c) => (
@@ -3563,7 +3563,7 @@ type CardVM = VM['cards'][number];
 
 // ---------------------------------------------------------------------------
 // List view — the same items as a clean, scannable table
-function ListView({ cards }: { cards: CardVM[] }) {
+function ListView({ cards, isOps }: { cards: CardVM[]; isOps?: boolean }) {
   const th: CSSProperties = {
     textAlign: 'right',
     padding: '10px 14px',
@@ -3595,7 +3595,7 @@ function ListView({ cards }: { cards: CardVM[] }) {
             <th style={{ ...th, width: 30 }} />
             <th style={th}>العنوان</th>
             <th style={th}>التصنيف</th>
-            <th style={th}>المسار</th>
+            {isOps && <th style={th}>نوع عملية الدعم المؤسسي</th>}
             <th style={th}>الحالة</th>
             <th style={th}>آخر تحديث</th>
             <th style={{ ...th, textAlign: 'center' }}>الإجراء</th>
@@ -3655,8 +3655,8 @@ function ListView({ cards }: { cards: CardVM[] }) {
                 ) : null}
               </td>
               <td style={{ ...td, fontWeight: 800, color: '#13213C', maxWidth: 260 }}>{c.title}</td>
-              <td style={{ ...td, whiteSpace: 'nowrap' }}>{c.typeLabel}</td>
-              <td style={td}>{c.pathName}</td>
+              <td style={{ ...td, whiteSpace: 'nowrap' }}>{c.catLabel}</td>
+              {isOps && <td style={td}>{c.supportFn || '—'}</td>}
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
                 <span
                   style={{
