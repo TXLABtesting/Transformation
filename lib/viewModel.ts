@@ -383,7 +383,6 @@ function build(s: Store) {
           label: b.name.replace(/^إطلاق /, ''),
           n: inStage.length,
           typeBreak: [
-            { label: 'مشروع', n: inStage.filter((i) => isProjInit(i.type)).length },
             { label: typeLabelFor('operation', myPath), n: inStage.filter((i) => i.type === 'operation').length },
             { label: 'خدمة', n: inStage.filter((i) => i.type === 'service').length },
           ],
@@ -507,7 +506,6 @@ function build(s: Store) {
       onOpenAll: () => s.openBatchItems(b.name, 'all'),
       // stage-distribution breakdowns (entity rep view)
       typeBreak: [
-        { label: 'المشاريع والمبادرات', n: inBatch.filter((i) => isProjInit(i.type)).length },
         { label: 'الخدمات الحكومية', n: inBatch.filter((i) => i.type === 'service').length },
         { label: 'العمليات', n: inBatch.filter((i) => i.type === 'operation').length },
       ].filter((x) => x.n > 0),
@@ -635,18 +633,18 @@ function build(s: Store) {
           { v: 'all', label: 'جميع الحالات' },
           { v: 'draft', label: 'مسودة' },
           { v: 'pending', label: 'قيد الاعتماد' },
-          { v: 'review', label: 'للمراجعة' },
-          { v: 'inprog', label: 'قيد التنفيذ' },
+          { v: 'review', label: 'للتعديل' },
+          { v: 'inprog', label: 'معتمد' },
         ]
       : rawRole === 'entity'
         ? [
             { v: 'all', label: 'جميع الحالات' },
             { v: 'approve', label: 'للاعتماد' },
-            { v: 'inprog', label: 'قيد التنفيذ' },
+            { v: 'inprog', label: 'معتمد' },
           ]
         : [
             { v: 'all', label: 'جميع الحالات' },
-            { v: 'inprog', label: 'قيد التنفيذ' },
+            { v: 'inprog', label: 'معتمد' },
           ];
 
   // committee-funding filter (entity rep)
@@ -681,14 +679,9 @@ function build(s: Store) {
           allTypesOpt,
           { v: 'op:العمليات التخصصية', label: 'العمليات التخصصية' },
           { v: 'op:عمليات الدعم المؤسسي', label: 'عمليات الدعم المؤسسي' },
-          { v: 'projinit', label: 'المشاريع' },
         ]
       : filterStream === 'strategy'
-        ? [
-            allTypesOpt,
-            { v: 'initiative', label: 'المهام الاستراتيجية' },
-            { v: 'project', label: 'المشاريع' },
-          ]
+        ? [allTypesOpt, { v: 'initiative', label: 'المهام الاستراتيجية' }]
         : filterStream === 'services'
           ? [
               allTypesOpt,
@@ -697,7 +690,6 @@ function build(s: Store) {
             ]
           : [
               allTypesOpt,
-              { v: 'projinit', label: 'مشروع' },
               ...(filterStream === 'all' || streamHasType(filterStream, 'operation') ? [{ v: 'operation', label: 'عملية' }] : []),
               ...(filterStream === 'all' || streamHasType(filterStream, 'service') ? [{ v: 'service', label: 'خدمة' }] : []),
             ];
