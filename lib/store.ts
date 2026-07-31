@@ -1174,7 +1174,7 @@ export const useStore = create<Store>((set, get) => {
       if (d?.type === 'operation' && d?.path === 'ops') {
         const filledO = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
         const dO = d as unknown as Record<string, unknown>;
-        const reqO = ['opType', 'title', 'subActivities', 'sector', 'dept', 'section', 'isAutomated', 'usageIntensity', 'readinessLevel', 'impactScore', 'complexity', 'transformScore', 'transformYes'];
+        const reqO = ['opType', 'title', 'subActivities', 'sector', 'dept', 'section', 'isAutomated', 'transformYes'];
         if (String(dO.isAutomated ?? '') === 'نعم') reqO.push('automationSystem');
         if (String(dO.opType ?? '') === SUPPORT_OPTYPE) reqO.push('supportFn');
         if (reqO.some((k) => !filledO(dO[k]))) {

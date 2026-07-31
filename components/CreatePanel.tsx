@@ -12,13 +12,11 @@ import { downloadItemsTemplate } from '@/lib/export';
 // so counters, the Excel template and the detail view keep working unchanged.
 function ActivityRows({
   label,
-  hint,
   placeholder,
   value,
   onChange,
 }: {
   label: string;
-  hint: string;
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
@@ -77,7 +75,6 @@ function ActivityRows({
         <Icon d="M12 5v14M5 12h14" size={14} color="#2563EB" strokeWidth={2.4} />
         إضافة نشاط
       </button>
-      <div style={{ fontSize: 11, color: '#9AA6BC', marginTop: 6 }}>{hint}</div>
     </div>
   );
 }
@@ -1267,7 +1264,6 @@ function FOps({
       </select>
     </div>
   );
-  const scale = ['1', '2', '3', '4', '5'];
   const yesNo = (label: string, key: string) => (
     <div style={{ marginBottom: 14 }}>
       <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
@@ -1310,7 +1306,6 @@ function FOps({
         </div>
         <ActivityRows
           label="الأنشطة الفرعية للعملية الرئيسية"
-          hint="أضف كل نشاط فرعي في حقل مستقل — تُحتسب الأنشطة في ملخص الحصر."
           placeholder="اسم النشاط الفرعي"
           value={String(gv('subActivities') ?? '')}
           onChange={(v) => setField('subActivities', v)}
@@ -1360,14 +1355,7 @@ function FOps({
       </div>
 
       <div style={cardStyle}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>التقييم (من 1 إلى 5)</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-          {sel('كثافة النشاط/العملية', 'usageIntensity', scale)}
-          {sel('الجاهزية للتحول', 'readinessLevel', scale)}
-          {sel('مستوى الأثر المتوقع من التحول', 'impactScore', scale)}
-          {sel('مستوى التعقيد', 'complexity', scale)}
-        </div>
-        {sel('القابلية للتحول', 'transformScore', scale)}
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>أولوية التحول</div>
         {yesNo('أولوية التحول', 'transformYes')}
         <div style={{ marginBottom: 0 }}>
           <label style={labelStyle}>الملاحظات</label>
@@ -1420,7 +1408,6 @@ function FTask({
         {txt('المهمة', 'title', 'اسم المهمة')}
         <ActivityRows
           label="الأنشطة"
-          hint="أضف كل نشاط في حقل مستقل — تُحتسب الأنشطة في مؤشرات المسار."
           placeholder="اسم النشاط"
           value={String(gv('subActivities') ?? '')}
           onChange={(v) => setField('subActivities', v)}

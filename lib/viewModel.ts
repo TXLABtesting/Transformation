@@ -1242,9 +1242,10 @@ function build(s: Store) {
       ? {
           ops: opsTasks.length,
           acts: stgActs(opsTasks),
-          // provisional until the operations matrix is approved: القابلية
-          // للتحول scored 3+ counts as transformable
-          transformable: stgActs(opsTasks.filter((i) => parseInt(i.transformScore || '', 10) >= 3)),
+          // the ops rating fields were dropped from the form; until the
+          // operations matrix is approved, «القابلة للتحول» mirrors the
+          // entries flagged for transformation
+          transformable: stgActs(opsTasks.filter((i) => (i.transformYes || '') === 'نعم')),
           targeted: stgActs(opsTasks.filter((i) => (i.transformYes || '') === 'نعم')),
         }
       : null;

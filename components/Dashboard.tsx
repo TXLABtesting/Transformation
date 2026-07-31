@@ -3575,42 +3575,6 @@ function ListView({ cards, isOps }: { cards: CardVM[]; isOps?: boolean }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1020 }}>
         <thead>
           <tr>
-            <th style={{ ...th, width: 30 }}>
-              {(() => {
-                // «تحديد الكل» for whichever selection mode the rows expose
-                const sel = cards.filter((c) => c.showDraftCheck || c.showSelectCheck || c.showAssignCheck);
-                if (!sel.length) return null;
-                const isOn = (c: CardVM) => (c.showDraftCheck ? c.draftChecked : c.showSelectCheck ? c.fundChecked : c.assignChecked);
-                const allOn = sel.every(isOn);
-                return (
-                  <span
-                    title={allOn ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
-                    onClick={(e) => {
-                      stop(e);
-                      sel.forEach((c) => {
-                        if (isOn(c) === !allOn) return;
-                        if (c.showDraftCheck) c.onToggleDraftSel();
-                        else if (c.showSelectCheck) c.onToggleFundSel();
-                        else c.onToggleAssignSel();
-                      });
-                    }}
-                    style={{
-                      display: 'inline-flex',
-                      width: 17,
-                      height: 17,
-                      borderRadius: 5,
-                      border: `2px solid ${allOn ? '#2563EB' : '#C7D1E2'}`,
-                      background: allOn ? '#2563EB' : '#fff',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {allOn && <Icon d="M20 6 9 17l-5-5" size={11} color="#fff" strokeWidth={3} />}
-                  </span>
-                );
-              })()}
-            </th>
             <th style={th}>العنوان</th>
             <th style={th}>التصنيف</th>
             {isOps && <th style={th}>نوع عملية الدعم المؤسسي</th>}
@@ -3628,50 +3592,6 @@ function ListView({ cards, isOps }: { cards: CardVM[]; isOps?: boolean }) {
               onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = '#F7F9FD')}
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '')}
             >
-              <td style={td}>
-                {(c.showSelectCheck || c.showAssignCheck || c.showDraftCheck) ? (
-                  <span
-                    onClick={(e) => {
-                      stop(e);
-                      if (c.showDraftCheck) c.onToggleDraftSel();
-                      else if (c.showSelectCheck) c.onToggleFundSel();
-                      else c.onToggleAssignSel();
-                    }}
-                    style={{
-                      display: 'inline-flex',
-                      width: 17,
-                      height: 17,
-                      borderRadius: 5,
-                      border: `2px solid ${(c.showDraftCheck ? c.draftChecked : c.showSelectCheck ? c.fundChecked : c.assignChecked) ? '#2563EB' : '#C7D1E2'}`,
-                      background: (c.showDraftCheck ? c.draftChecked : c.showSelectCheck ? c.fundChecked : c.assignChecked) ? '#2563EB' : '#fff',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {(c.showDraftCheck ? c.draftChecked : c.showSelectCheck ? c.fundChecked : c.assignChecked) && (
-                      <Icon d="M20 6 9 17l-5-5" size={11} color="#fff" strokeWidth={3} />
-                    )}
-                  </span>
-                ) : c.fundLocked ? (
-                  <span
-                    title="معتمد"
-                    style={{
-                      display: 'inline-flex',
-                      width: 17,
-                      height: 17,
-                      borderRadius: 5,
-                      border: '2px solid #BAC3D3',
-                      background: '#BAC3D3',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'default',
-                    }}
-                  >
-                    <Icon d="M20 6 9 17l-5-5" size={11} color="#fff" strokeWidth={3} />
-                  </span>
-                ) : null}
-              </td>
               <td style={{ ...td, fontWeight: 800, color: '#13213C', maxWidth: 260 }}>{c.title}</td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>{c.catLabel}</td>
               {isOps && <td style={td}>{c.supportFn || '—'}</td>}
