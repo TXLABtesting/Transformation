@@ -2261,6 +2261,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     readiness: i.readiness,
     // op fields
     opType: i.opType,
+    supportFn: i.supportFn || '',
     opWordDef: typeLabelDefFor('operation', i.path),
     linkedToService: i.linkedToService,
     linkedServiceName: i.linkedServiceName,

@@ -3,7 +3,7 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, streamLaunchBatches, TBD_BATCH, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById } from '@/lib/domain';
+import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, streamLaunchBatches, TBD_BATCH, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate } from '@/lib/export';
 
@@ -1227,7 +1227,8 @@ function FOps({
   return (
     <div>
       <div style={cardStyle}>
-        {sel('التصنيف', 'opType', ['العمليات التخصصية', 'عمليات الدعم المؤسسي'])}
+        {sel('التصنيف', 'opType', ['العمليات التخصصية', SUPPORT_OPTYPE])}
+        {gv('opType') === SUPPORT_OPTYPE && sel('نوع عملية الدعم المؤسسي', 'supportFn', SUPPORT_FUNCTIONS)}
         <div style={{ marginBottom: 14 }}>
           <label style={labelStyle}>العملية الرئيسية <span style={{ color: '#D23B45' }}>*</span></label>
           <input value={gv('title')} onChange={(e) => setField('title', arabicOnly(e.target.value))} placeholder="اسم العملية الرئيسية" style={inputStyle} />

@@ -394,8 +394,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
             {d.isOpsTask && (
               <>
                 <DetailSecHead title="بيانات العملية" />
-                <DetailGrid cols={2}>
+                <DetailGrid cols={d.supportFn ? 3 : 2}>
                   <DetailCell label="التصنيف">{d.opType}</DetailCell>
+                  {d.supportFn ? <DetailCell label="نوع عملية الدعم المؤسسي">{d.supportFn}</DetailCell> : null}
                   <DetailCell label="الأنشطة الفرعية"><RichTextView html={(d.subActivities || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>
                 </DetailGrid>
                 <DetailGrid cols={3}>

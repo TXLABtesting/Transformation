@@ -42,7 +42,7 @@ import {
   DEFAULT_ABOUT_HERO,
 } from './domain';
 import type { LibraryDoc, ContactInquiry } from './domain';
-import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT } from './domain';
+import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE } from './domain';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
@@ -1175,6 +1175,7 @@ export const useStore = create<Store>((set, get) => {
         const filledO = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
         const dO = d as unknown as Record<string, unknown>;
         const reqO = ['opType', 'title', 'subActivities', 'sector', 'dept', 'section', 'isAutomated', 'automationSystem', 'usageIntensity', 'readinessLevel', 'impactScore', 'complexity', 'transformScore', 'transformYes'];
+        if (String(dO.opType ?? '') === SUPPORT_OPTYPE) reqO.push('supportFn');
         if (reqO.some((k) => !filledO(dO[k]))) {
           return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
         }
