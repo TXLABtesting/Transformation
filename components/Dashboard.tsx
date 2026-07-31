@@ -705,29 +705,6 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
         <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>دفعات الإطلاق لمسار {bt.streamName}</div>
         <div style={{ fontSize: 12.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>مدخلات كل دفعة مع تواريخ البدء والانتهاء وأولوية الاختيار والحالة.</div>
       </div>
-      {bt.streamTabs && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          {bt.streamTabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={t.onSelect}
-              style={{
-                background: t.active ? '#EAF0FE' : '#fff',
-                border: t.active ? '1px solid #D9E4FD' : '1px solid #E7ECF4',
-                borderRadius: 999,
-                padding: '8px 16px',
-                fontSize: 12,
-                fontWeight: 800,
-                color: t.active ? '#2563EB' : '#54627B',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      )}
       {bt.batches.map((b) => {
         return (
           <div key={b.name} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, overflow: 'hidden' }}>
@@ -2385,7 +2362,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           <div data-r="railhelp" data-tour="guide" style={{ padding: 12 }}>
             <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{vm.role === 'ai' ? 'دليل اللجنة الوطنية' : vm.role === 'coord' ? 'دليل منسق المسار في الجهة' : vm.role === 'path' ? 'دليل رئيس المسار' : 'دليل الاستخدام'}</div>
+                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>إرشادات استخدام المنصة</div>
                 <span
                   style={{
                     flex: 'none',
@@ -2401,9 +2378,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                 >
                   <Icon d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" size={18} color="#2563EB" />
                 </span>
-              </div>
-              <div style={{ fontSize: 12, color: '#6B7A93', fontWeight: 400, lineHeight: 1.7, marginTop: 8, textAlign: 'right' }}>
-                {vm.role === 'ai' ? 'إرشادات متابعة المدخلات المعتمدة ودفعات الإطلاق عبر المسارات.' : vm.role === 'coord' ? 'إرشادات تعبئة قوائم الحصر وتوزيع المدخلات على دفعات الإطلاق.' : vm.role === 'path' ? 'إرشادات مراجعة مدخلات المسار واعتمادها.' : 'تعرّف على آلية تسجيل المدخلات ومتابعتها عبر دفعات الإطلاق.'}
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}

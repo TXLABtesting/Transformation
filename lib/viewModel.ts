@@ -871,6 +871,20 @@ function build(s: Store) {
     onClick: () => s.setNavSection(key),
   });
   const invHead = { key: 'invhead', label: 'قوائم الحصر', icon: '', sub: false, pin: false, heading: true, count: undefined as number | undefined, active: false, onClick: () => {} };
+  const lplanHead = { key: 'lplanhead', label: 'دفعات الإطلاق', icon: '', sub: false, pin: false, heading: true, count: undefined as number | undefined, active: false, onClick: () => {} };
+  // دفعات الإطلاق per-stream subitems — every batches page is bound to its own
+  // stream, so entries can never be placed on another stream's batches
+  const lplanItem = (pid: string, active: boolean, onClick: () => void) => ({
+    key: 'lp-' + pid,
+    label: 'مسار ' + pathById(pid).name,
+    icon: PIC[pid],
+    sub: true,
+    pin: true,
+    heading: false,
+    count: undefined as number | undefined,
+    active,
+    onClick,
+  });
   const streamItem = (pid: string, count: number, active: boolean, onClick: () => void) => ({
     key: 'inv-' + pid,
     label: 'مسار ' + pathById(pid).name,
@@ -892,7 +906,13 @@ function build(s: Store) {
               s.setNavSection('all');
             })
           ),
-          plainNav('lplan', 'دفعات الإطلاق', NAV_ROCKET),
+          lplanHead,
+          ...coordStreamIds.map((pid) =>
+            lplanItem(pid, navSection === 'lplan' && myPath === pid, () => {
+              s.setMyPath(pid);
+              s.setNavSection('lplan');
+            })
+          ),
         ]
       : rawRole === 'path'
         ? [
@@ -915,7 +935,13 @@ function build(s: Store) {
                   s.setNavStream(p.id);
                 })
               ),
-              plainNav('lplan', 'دفعات الإطلاق', NAV_ROCKET),
+              lplanHead,
+              ...PATHS.map((p) =>
+                lplanItem(p.id, navSection === 'lplan' && navStream === p.id, () => {
+                  s.setNavSection('lplan');
+                  s.setNavStream(p.id);
+                })
+              ),
               plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
             ]
           : navItems;
@@ -1310,11 +1336,6 @@ function build(s: Store) {
         return {
           streamName: pathById(bPath).name,
           canEditDates: rawRole === 'coord',
-          // the committee oversees every stream — tabs switch the tables
-          streamTabs:
-            rawRole === 'ai'
-              ? PATHS.map((p) => ({ id: p.id, label: 'مسار ' + p.name, active: p.id === bPath, onSelect: () => s.setNavStream(p.id) }))
-              : null,
           // move-to-batch options (raw names carried; labels shown)
           batchOptions: streamLaunchBatches(bPath).map((b) => ({ v: b.name, label: batchDafaaLabel(b.name) })),
           onMove: (id: string, batch: string) => s.assignItemBatch(id, batch),
