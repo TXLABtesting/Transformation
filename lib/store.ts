@@ -1092,16 +1092,14 @@ export const useStore = create<Store>((set, get) => {
       if (d?.type === 'operation' && d?.path === 'ops') {
         const filledO = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
         const dO = d as unknown as Record<string, unknown>;
-        const reqO = ['opType', 'title', 'subActivities', 'sector', 'dept', 'section', 'isAutomated', 'automationSystem', 'usageIntensity', 'readinessLevel', 'impactScore', 'complexity', 'transformScore', 'transformYes'];
+        const reqO = ['opType', 'title', 'subActivities', 'sector', 'dept', 'section', 'isAutomated', 'usageIntensity', 'readinessLevel', 'impactScore', 'complexity', 'transformScore', 'transformYes'];
+        if (String(dO.isAutomated ?? '') === 'نعم') reqO.push('automationSystem');
         if (String(dO.opType ?? '') === SUPPORT_OPTYPE) reqO.push('supportFn');
         if (reqO.some((k) => !filledO(dO[k]))) {
           return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
         }
         if (['title', 'subActivities', 'sector', 'dept', 'section'].some((k) => /[A-Za-z]/.test(stripHtml(String(dO[k] ?? ''))))) {
           return toast('يرجى إدخال النص بالعربية فقط في الحقول العربية');
-        }
-        if (!(d.execBatch || '').trim()) {
-          return toast('نرجو اختيار دفعة الإطلاق قبل الإرسال للاعتماد');
         }
         if (s.ui.inlineCreate) {
           setUi({ confirmAdd: true });
@@ -1121,9 +1119,6 @@ export const useStore = create<Store>((set, get) => {
         if (['title', 'subActivities', 'sector', 'dept', 'section'].some((k) => /[A-Za-z]/.test(stripHtml(String(dt[k] ?? ''))))) {
           return toast('يرجى إدخال النص بالعربية فقط في الحقول العربية');
         }
-        if (!(d.execBatch || '').trim()) {
-          return toast('نرجو اختيار دفعة الإطلاق قبل الإرسال للاعتماد');
-        }
         if (s.ui.inlineCreate) {
           setUi({ confirmAdd: true });
           return;
@@ -1142,9 +1137,6 @@ export const useStore = create<Store>((set, get) => {
         }
         if (['title', 'subService', 'sector', 'dept', 'section'].some((k) => /[A-Za-z]/.test(stripHtml(String(ds[k] ?? ''))))) {
           return toast('يرجى إدخال النص بالعربية فقط في الحقول العربية');
-        }
-        if (!(d.execBatch || '').trim()) {
-          return toast('نرجو اختيار دفعة الإطلاق قبل الإرسال للاعتماد');
         }
         if (s.ui.inlineCreate) {
           setUi({ confirmAdd: true });
