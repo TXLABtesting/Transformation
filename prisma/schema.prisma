@@ -30,8 +30,25 @@ model Entity {
   streamOwners StreamOwner[]
   users        User[]
   userScopes   UserEntityScope[]
+  services     ServiceCatalog[]
 
   @@map("entities")
+}
+
+/// دليل الخدمات الاتحادية — main/sub service pairs per entity. Source of the
+/// services-stream dropdowns: coordinators only ever see their own entity's
+/// rows (scoping enforced server-side in /api/svc-catalog).
+model ServiceCatalog {
+  id          String @id @default(cuid())
+  entityId    String @map("entity_id")
+  mainService String @map("main_service")
+  subService  String @map("sub_service")
+
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([entityId, mainService, subService])
+  @@index([entityId])
+  @@map("service_catalog")
 }
 
 /// Transformation stream (المسار) — 5 predefined; head = رئيس المسار.

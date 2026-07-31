@@ -19,6 +19,9 @@ import {
   type Item as MockItem,
 } from '../lib/domain';
 import { FEDERAL_ENTITIES } from '../lib/entities';
+import SVC_CATALOG_RAW from '../lib/svcCatalog.json';
+
+const SVC_CATALOG = SVC_CATALOG_RAW as Record<string, Record<string, string[]>>;
 
 const prisma = new PrismaClient();
 
@@ -112,6 +115,22 @@ async function main() {
   for (const nameAr of entityNames) {
     const e = await prisma.entity.upsert({ where: { nameAr }, update: {}, create: { nameAr } });
     entityIdByName.set(nameAr, e.id);
+  }
+
+  // 2b) دليل الخدمات الاتحادية — main/sub services per entity (services-stream
+  // dropdowns). Entities present in the catalog but not yet in the DB are
+  // created so their coordinators get their scoped list immediately.
+  for (const [entName, services] of Object.entries(SVC_CATALOG)) {
+    let entityId = entityIdByName.get(entName);
+    if (!entityId) {
+      const e = await prisma.entity.upsert({ where: { nameAr: entName }, update: {}, create: { nameAr: entName } });
+      entityIdByName.set(entName, e.id);
+      entityId = e.id;
+    }
+    const rows = Object.entries(services).flatMap(([mainService, subs]) =>
+      subs.map((subService) => ({ entityId: entityId!, mainService, subService }))
+    );
+    if (rows.length) await prisma.serviceCatalog.createMany({ data: rows, skipDuplicates: true });
   }
 
   // 3) Execution batches (المراحل الربعية الخمس)

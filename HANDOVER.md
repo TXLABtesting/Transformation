@@ -34,12 +34,34 @@ money exclusively.
 
 ## 3. Database
 
-`prisma migrate deploy` creates 20 tables. Verified on a fresh
+`prisma migrate deploy` creates 21 tables. Verified on a fresh
 PostgreSQL 16: migrations apply cleanly; `prisma db seed` inserts
 **reference data only** — 5 `streams` (official order + رؤساء المسارات as
 `head_name`), 35 `entities`, 3 `program_phases`, 5 `exec_batches`
-(المراحل), the 100M budget in `settings` — and leaves `users`, `items`,
-`launch_plans` and every transaction table **empty**.
+(المراحل), the 100M budget in `settings`, and `service_catalog` (دليل
+الخدمات الاتحادية: أزواج الخدمة الرئيسية/الفرعية لكل جهة، من
+`lib/svcCatalog.json`) — and leaves `users`, `items`, `launch_plans` and
+every transaction table **empty**.
+
+### دليل الخدمات (service_catalog)
+
+- Table `service_catalog(entity_id FK→entities, main_service, sub_service)`
+  with a unique key on the triple — migration `0010_service_catalog`.
+- Seeded from `lib/svcCatalog.json` (merged from the two approved Excel
+  catalogs, 47 entities). Entities present in the catalog but missing from
+  `entities` are created by the seed. To refresh the catalog, replace the
+  JSON and re-run `prisma db seed` (idempotent, `skipDuplicates`).
+- API: `GET /api/svc-catalog` returns `{ services: { main: [subs] } }`
+  **scoped server-side to the session user's entity** (`user.entityId`,
+  falling back to the first `user_entity_scopes` row). Only global roles
+  (system/program admin, committee) may pass `?entityId=` to inspect
+  another entity. Requires the `items:view` permission.
+- UI: the services-stream إضافة form (`components/CreatePanel.tsx`,
+  `lib/svcCatalog.ts → useSvcCatalog`) renders الخدمة/الخدمة الفرعية as
+  dependent dropdowns from this endpoint; when the entity has no catalog
+  rows the form falls back to manual input with a notice. The static demo
+  build (`NEXT_PUBLIC_DEMO_MODE=1`) reads the bundled JSON instead of the
+  API, with the same entity-only scoping.
 
 Transaction tables: `items`, `item_launch_plans`, `launch_plans`,
 `launches`, `item_launches`, `exec_checklist_items`, `sub_milestones`,
