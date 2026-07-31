@@ -1529,7 +1529,7 @@ function build(s: Store) {
         batch: i.execBatch === TBD_BATCH ? '' : i.execBatch || '',
       })),
     // active مرحلة drill-down chip on portfolio pages
-    listIsOps: filterStream === 'ops',
+    listStream: filterStream,
     batchChip: batchFilter
       ? { label: batchFilter.replace(/^إطلاق /, ''), onClear: () => s.setBatchFilter(null) }
       : null,
@@ -1951,6 +1951,17 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     // ops entries classify by opType; the support function gets its own column
     catLabel: i.path === 'ops' && i.opType ? i.opType : typeLabelFor(i.type, i.path),
     supportFn: i.supportFn || '',
+    axis: i.axis || '',
+    subService: i.subService || '',
+    // computed أولوية الاختيار per the stream's matrix
+    prioLabel: (() => {
+      if (i.path === 'strategy') return stgPriority(i)?.cat || '';
+      if (i.type === 'service') {
+        const pr = svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
+        return pr ? 'أولوية ' + (pr === 1 ? 'أولى' : pr === 2 ? 'ثانية' : 'ثالثة') : '';
+      }
+      return '';
+    })(),
     typeColor: t.color,
     typeBg: t.bg,
     pathName: p.name,

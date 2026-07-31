@@ -2924,7 +2924,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                 </div>
               ) : viewMode === 'list' ? (
-                <ListView cards={vm.sectionCards} isOps={vm.listIsOps} />
+                <ListView cards={vm.sectionCards} stream={vm.listStream} />
               ) : (
                 <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
                   {vm.sectionCards.map((c) => (
@@ -3556,7 +3556,13 @@ type CardVM = VM['cards'][number];
 
 // ---------------------------------------------------------------------------
 // List view — the same items as a clean, scannable table
-function ListView({ cards, isOps }: { cards: CardVM[]; isOps?: boolean }) {
+// strategy matrix categories keep their colours in the list
+function PrioText({ v }: { v: string }) {
+  const c = v === 'أولوية عالية' ? '#0B8A4B' : v === 'أولوية متوسطة' ? '#B45309' : '#C0303B';
+  return <span style={{ color: c, fontWeight: 800 }}>{v}</span>;
+}
+
+function ListView({ cards, stream }: { cards: CardVM[]; stream?: string | null }) {
   const th: CSSProperties = {
     textAlign: 'right',
     padding: '10px 14px',
@@ -3585,9 +3591,25 @@ function ListView({ cards, isOps }: { cards: CardVM[]; isOps?: boolean }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1020 }}>
         <thead>
           <tr>
-            <th style={th}>العنوان</th>
-            <th style={th}>التصنيف</th>
-            {isOps && <th style={th}>نوع عملية الدعم المؤسسي</th>}
+            <th style={th}>{stream === 'strategy' ? 'المهمة' : stream === 'services' ? 'الخدمة' : 'العنوان'}</th>
+            {stream === 'ops' ? (
+              <>
+                <th style={th}>التصنيف</th>
+                <th style={th}>نوع عملية الدعم المؤسسي</th>
+              </>
+            ) : stream === 'strategy' ? (
+              <>
+                <th style={th}>المحور</th>
+                <th style={th}>أولوية الاختيار</th>
+              </>
+            ) : stream === 'services' ? (
+              <>
+                <th style={th}>الخدمة الفرعية</th>
+                <th style={th}>أولوية الاختيار</th>
+              </>
+            ) : (
+              <th style={th}>التصنيف</th>
+            )}
             <th style={th}>الحالة</th>
             <th style={{ ...th, textAlign: 'center' }}>الإجراء</th>
           </tr>
@@ -3602,8 +3624,24 @@ function ListView({ cards, isOps }: { cards: CardVM[]; isOps?: boolean }) {
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '')}
             >
               <td style={{ ...td, fontWeight: 800, color: '#13213C', maxWidth: 260 }}>{c.title}</td>
-              <td style={{ ...td, whiteSpace: 'nowrap' }}>{c.catLabel}</td>
-              {isOps && <td style={td}>{c.supportFn || '—'}</td>}
+              {stream === 'ops' ? (
+                <>
+                  <td style={{ ...td, whiteSpace: 'nowrap' }}>{c.catLabel}</td>
+                  <td style={td}>{c.supportFn || '—'}</td>
+                </>
+              ) : stream === 'strategy' ? (
+                <>
+                  <td style={td}>{c.axis || '—'}</td>
+                  <td style={td}>{c.prioLabel ? <PrioText v={c.prioLabel} /> : '—'}</td>
+                </>
+              ) : stream === 'services' ? (
+                <>
+                  <td style={td}>{c.subService || '—'}</td>
+                  <td style={td}>{c.prioLabel || '—'}</td>
+                </>
+              ) : (
+                <td style={{ ...td, whiteSpace: 'nowrap' }}>{c.catLabel}</td>
+              )}
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
                 <span
                   style={{
