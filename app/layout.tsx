@@ -1,14 +1,20 @@
 import type { Metadata } from 'next';
-import { IBM_Plex_Sans_Arabic } from 'next/font/google';
+import { Noto_Kufi_Arabic, Alexandria } from 'next/font/google';
 import './globals.css';
 
-// Brand type: IBM Plex Sans Arabic across the whole product — titles carry the
-// bold weights, body/paragraph text stays regular (see globals.css)
-const ibm = IBM_Plex_Sans_Arabic({
+// Brand type: Noto Kufi Arabic across the whole product; titles (.hd, h1-h3)
+// render in Alexandria (see globals.css)
+const noto = Noto_Kufi_Arabic({
   subsets: ['arabic', 'latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
   variable: '--font-base',
+});
+const alexandria = Alexandria({
+  subsets: ['arabic', 'latin'],
+  weight: ['500', '600', '700', '800', '900'],
+  display: 'swap',
+  variable: '--font-head',
 });
 
 export const metadata: Metadata = {
@@ -26,17 +32,8 @@ export default function RootLayout({
 }) {
   const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
   return (
-    <html lang="ar" dir="rtl" className={ibm.variable}>
+    <html lang="ar" dir="rtl" className={noto.variable + ' ' + alexandria.variable}>
       <head>
-        {/* GE Alma (licensed) — drop the font files into public/assets/fonts/
-            and the whole platform switches over; until then the fallback
-            (IBM Plex Sans Arabic) renders. Black carries every weight so the
-            brand cut is used for titles and body alike. */}
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `@font-face{font-family:'GE Alma';src:url('${base}/assets/fonts/GE-Alma-Black.otf') format('opentype'),url('${base}/assets/fonts/GE-Alma-Black.ttf') format('truetype');font-weight:100 900;font-style:normal;font-display:swap;}`,
-          }}
-        />
       </head>
       <body>
         {/* Set the responsive density zoom before first paint (no flash);
