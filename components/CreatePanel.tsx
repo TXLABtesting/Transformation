@@ -1487,12 +1487,20 @@ function FTask({
               <div>
                 <label style={labelStyle}>أولوية الاختيار</label>
                 {m.stgCalc ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minHeight: 44 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EAF1FE', color: '#1D4ED8', borderRadius: 999, padding: '8px 16px', fontSize: 13.5, fontWeight: 800 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D4ED8', flex: 'none' }} />
-                      {m.stgCalc.cat} · {m.stgCalc.total}/30
-                    </span>
-                  </div>
+                  (() => {
+                    // matrix colours: عالية أخضر · متوسطة برتقالي · منخفضة أحمر
+                    const cat = m.stgCalc.cat;
+                    const c = cat === 'أولوية عالية' ? '#0B8A4B' : cat === 'أولوية متوسطة' ? '#B45309' : '#C0303B';
+                    const bg = cat === 'أولوية عالية' ? '#EAF7F0' : cat === 'أولوية متوسطة' ? '#FFF3DE' : '#FDECEA';
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minHeight: 44 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: bg, color: c, borderRadius: 999, padding: '8px 16px', fontSize: 13.5, fontWeight: 800 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: c, flex: 'none' }} />
+                          {cat} · {m.stgCalc.total}/30
+                        </span>
+                      </div>
+                    );
+                  })()
                 ) : (
                   <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px' }}>
                     تُحسب تلقائياً بعد استكمال التقييمات الستة ومستوى المخاطر

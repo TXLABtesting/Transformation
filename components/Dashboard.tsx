@@ -614,6 +614,7 @@ function StageCard({ b, showStream, onManage }: { b: VM['batchSummary'][number];
 function SegKpiStrip({ acts, prios, notes }: { acts: { label: string; v: number | string }[]; prios: { label: string; v: number | string }[]; notes: string[] }) {
   return (
     <div data-tour="kpis">
+      {/* totals on one row, priorities always on their own row below */}
       <div className="segkpi">
         {acts.map((c) => (
           <div key={c.label} className="segbox">
@@ -621,13 +622,17 @@ function SegKpiStrip({ acts, prios, notes }: { acts: { label: string; v: number 
             <span className="segval">{c.v}</span>
           </div>
         ))}
-        {prios.map((c) => (
-          <div key={c.label} className="segbox prio">
-            <span className="hd seglbl">{c.label}</span>
-            <span className="segval">{c.v}</span>
-          </div>
-        ))}
       </div>
+      {prios.length > 0 && (
+        <div className="segkpi" style={{ marginTop: 12 }}>
+          {prios.map((c) => (
+            <div key={c.label} className="segbox prio">
+              <span className="hd seglbl">{c.label}</span>
+              <span className="segval">{c.v}</span>
+            </div>
+          ))}
+        </div>
+      )}
       {notes.length > 0 && (
         <div className="segfoot">
           {notes.map((n) => (
