@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { CONTACT_STREAMS, type LibraryDoc } from '@/lib/domain';
+import { CONTACT_STREAMS, DOC_CATS, docCatLabel, type DocCat, type LibraryDoc } from '@/lib/domain';
 import { useStore } from '@/lib/store';
 
 // ===========================================================================
@@ -46,7 +46,7 @@ const IC = {
 const HERO_TEXT =
   'بتوجيهات من صاحب السمو الشيخ محمد بن زايد آل نهيان، رئيس الدولة "حفظه الله"، أعلن صاحب السمو الشيخ محمد بن راشد آل مكتوم، نائب رئيس الدولة رئيس مجلس الوزراء حاكم دبي "رعاه الله"، في أبريل 2026 عن إطلاق مشروع وطني استراتيجي، بإشراف سمو الشيخ منصور بن زايد آل نهيان، نائب رئيس الدولة نائب رئيس مجلس الوزراء رئيس ديوان الرئاسة، يهدف إلى تحويل 50% من العمليات والمهام والإجراءات والخدمات الحكومية إلى نماذج وأنظمة مدعومة بالذكاء الاصطناعي المساعد خلال عامين، بما يسهم في خفض التكاليف التشغيلية، ورفع الكفاءة الحكومية، وتعزيز جودة المخرجات والخدمات، وتسريع الإنجاز، ودعم اتخاذ القرار، وذلك لبناء أفضل حكومة في العالم ولتعزيز جاهزية الدولة لمتغيرات المستقبل.';
 
-type Doc = { id: string; title: string; cat: 'guide' | 'system'; catLabel: string; date: string; cover: string; file: string; dl: string };
+type Doc = { id: string; title: string; cat: DocCat; catLabel: string; date: string; cover: string; file: string; dl: string };
 const DOC_ASSETS: Record<string, { cover: string; file: string; dl: string }> = {
   guide: {
     cover: 'assets/docs/cover-definition-guide.png',
@@ -83,7 +83,7 @@ const toDoc = (d: LibraryDoc): Doc => {
     id: d.id,
     title: d.title,
     cat: d.cat,
-    catLabel: d.cat === 'system' ? 'نظام عمل' : 'دليل',
+    catLabel: docCatLabel(d.cat),
     date: d.date,
     cover: d.coverUrl || asset?.cover || '',
     file: d.fileUrl || asset?.file || '#',
@@ -401,17 +401,12 @@ const normAr = (s: string) => s.replace(/[أإآ]/g, 'ا').replace(/[ً-ْ]/g, '
 
 export function LibraryPage() {
   const [q, setQ] = useState('');
-  const [cat, setCat] = useState<'all' | 'guide' | 'system'>('all');
+  const [cat, setCat] = useState<'all' | DocCat>('all');
   const storeDocs = useStore((s) => s.libraryDocs);
   const docs = useMemo(() => {
     const nq = normAr(q.trim());
     return storeDocs.map(toDoc).filter((d) => (cat === 'all' || d.cat === cat) && (!nq || normAr(d.title).includes(nq)));
   }, [q, cat, storeDocs]);
-  const chips: { k: 'all' | 'guide' | 'system'; label: string }[] = [
-    { k: 'all', label: 'الكل' },
-    { k: 'guide', label: 'الأدلة' },
-    { k: 'system', label: 'أنظمة العمل' },
-  ];
   return (
     <div style={{ background: '#fff' }}>
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '56px 40px 72px' }}>
@@ -429,25 +424,38 @@ export function LibraryPage() {
                 style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 12.5, fontWeight: 600, color: '#0F1F3D', minWidth: 0, fontFamily: 'inherit' }}
               />
             </div>
-            {chips.map((c) => (
-              <button
-                key={c.k}
-                onClick={() => setCat(c.k)}
+            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+              <select
+                value={cat}
+                onChange={(e) => setCat(e.target.value as 'all' | DocCat)}
+                aria-label="تصفية المنشورات"
                 style={{
-                  background: cat === c.k ? '#0F1F3D' : '#F4F7FC',
-                  color: cat === c.k ? '#fff' : '#54627B',
-                  border: cat === c.k ? 'none' : '1px solid #E7ECF4',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  background: '#F4F7FC',
+                  border: '1px solid #E7ECF4',
                   borderRadius: 999,
-                  padding: '8px 20px',
+                  padding: '9px 20px 9px 40px',
                   fontSize: 12.5,
                   fontWeight: 800,
+                  color: '#0F1F3D',
                   cursor: 'pointer',
                   fontFamily: 'inherit',
+                  minWidth: 210,
+                  direction: 'rtl',
                 }}
               >
-                {c.label}
-              </button>
-            ))}
+                <option value="all">كل المنشورات</option>
+                {DOC_CATS.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              <span style={{ position: 'absolute', left: 16, pointerEvents: 'none', display: 'inline-flex' }}>
+                <PIcon d="M6 9l6 6 6-6" size={15} color="#54627B" sw={2.2} />
+              </span>
+            </div>
           </div>
         </div>
 

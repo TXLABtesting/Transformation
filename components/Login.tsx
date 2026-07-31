@@ -89,14 +89,23 @@ function InteractiveNumberBackground() {
         const g = Math.round(103 + (199 - 103) * k);
         const b = Math.round(153 + (255 - 153) * k);
         ctx.font = size.toFixed(1) + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
-        if (k > 0.15) {
-          ctx.shadowColor = `rgba(85,199,255,${(k * 0.5).toFixed(3)})`;
-          ctx.shadowBlur = 6 * k;
+        if (k > 0.02) {
+          // activated digits bloom into a soft blur that grows with strength
+          ctx.shadowColor = `rgba(120,216,255,${(0.75 * k).toFixed(3)})`;
+          ctx.shadowBlur = 18 * k;
+          ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+          ctx.fillText(c.v, c.x, c.y - k);
+          // second pass widens the halo so the glow reads as a diffuse blur
+          ctx.shadowBlur = 34 * k;
+          ctx.globalAlpha = 0.55 * k;
+          ctx.fillText(c.v, c.x, c.y - k);
+          ctx.globalAlpha = 1;
+          ctx.shadowBlur = 0;
         } else {
           ctx.shadowBlur = 0;
+          ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+          ctx.fillText(c.v, c.x, c.y - k);
         }
-        ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
-        ctx.fillText(c.v, c.x, c.y - k);
       }
       ctx.shadowBlur = 0;
     };
