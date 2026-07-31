@@ -470,7 +470,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
           {d.execBatchName && (
             <div style={sectionCard}>
               <div style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C', marginBottom: 10 }}>
-                خطة التنفيذ
+                دفعة الإطلاق
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span

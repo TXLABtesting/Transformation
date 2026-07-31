@@ -773,9 +773,9 @@ export type WfMeta = { step: number; label: string; who: string; chip: string; b
 export const WFMETA: Record<string, WfMeta> = {
   draft: { step: 1, label: 'مسودة', who: 'path', chip: '#64748B', bg: '#EFF2F7' },
   ent1: { step: 1, label: 'قيد الاعتماد', who: 'path', chip: '#B45309', bg: '#FFF3DE' },
-  pm1: { step: 2, label: 'بانتظار اعتماد اللجنة الوطنية', who: 'ai', chip: '#B45309', bg: '#FFF3DE' },
-  exec: { step: 3, label: 'قيد التنفيذ', who: 'path', chip: '#2563EB', bg: '#EAF0FE' },
-  launch: { step: 3, label: 'قيد الإطلاق', who: 'path', chip: '#2563EB', bg: '#EAF0FE' },
+  pm1: { step: 2, label: 'قيد الاعتماد', who: 'ai', chip: '#B45309', bg: '#FFF3DE' },
+  exec: { step: 3, label: 'معتمد', who: 'path', chip: '#0B8A4B', bg: '#EAF7F0' },
+  launch: { step: 3, label: 'معتمد', who: 'path', chip: '#0B8A4B', bg: '#EAF7F0' },
   done: { step: 3, label: 'تم الإطلاق', who: '-', chip: '#0B8A4B', bg: '#E3F6EC' },
 };
 export const wfMeta = (i: Item): WfMeta => WFMETA[wfOf(i)] || WFMETA.draft;
