@@ -1,6 +1,6 @@
 # المنصة الحكومية لتخطيط ومتابعة مشروع الذكاء الاصطناعي المساعد
 
-**AI Transformation Portal** — an Arabic, right-to-left government portal to collect, review, score, fund, and track AI‑transformation candidates (projects, initiatives, operations, services) submitted by federal entities across five predefined transformation streams.
+**AI Transformation Portal** — an Arabic, right-to-left government portal to collect, review, approve, and track AI‑transformation candidates (عملية / مهمة / خدمة) submitted by federal entities across three predefined transformation streams (العمليات والدعم المؤسسي · العمل الحكومي الاستراتيجي · الخدمات الحكومية).
 
 This is a faithful reimplementation of the Claude Design prototype (`AI Transformation Portal.dc.html`) in a real stack: **Next.js 14 (App Router) · React · TypeScript · Tailwind · Postgres · Docker**, with the AI review step wired to an internal, self‑hosted OpenAI‑compatible model.
 
@@ -8,18 +8,20 @@ This is a faithful reimplementation of the Claude Design prototype (`AI Transfor
 
 ---
 
-## Roles (4)
+## Roles
 
-| Role (Arabic) | Key | Scope | Can create | Fills data | Approves | Funding |
-|---|---|---|---|---|---|---|
-| منسق المسار في الجهة | `coord` | own entity + own stream | ✅ | ✅ | — | — |
-| ممثل المسار | `path` | own stream, all entities | — | read‑only | — | nominates |
-| ممثل الجهة | `entity` | whole entity | — | — | ✅ (sole approver) | receives notices |
-| اللجنة الوطنية | `ai` | everything | — | — | — | funds (basket) |
+| Role (Arabic) | Key | Scope | Can create | Approves |
+|---|---|---|---|---|
+| منسق المسار في الجهة | `coord` | own entity + own stream(s) | ✅ (manual + bulk Excel) | — |
+| رئيس المسار | `path` | own stream, all entities | — | ✅ (the ent1 gate) |
+| نائب رئيس المسار | `deputy` | own stream, all entities | — | ✅ |
+| اللجنة الوطنية (الرئيس + الأمانة) | `ai` | everything, approved only | — | — |
+| مشرف النظام | `admin` | global | — | — |
 
-A role switcher in the header previews all four profiles against shared data (as in the prototype).
+All accounts are provisioned centrally by the system admin (no self-service
+team setup). A role switcher exists only in the demo build.
 
-Workflow: `draft → ent1 (بانتظار اعتماد ممثل الجهة) → exec → launch → done`. Every submission passes an **AI review** first. The national committee **funds** items via a basket instead of approving gates.
+Workflow: `مسودة → قيد الاعتماد (رئيس المسار/نائبه) → معتمد (locked)`; returned entries show «للتعديل». Approved entries are distributed over دفعات الإطلاق per stream.
 
 ---
 
@@ -90,4 +92,4 @@ project/,chats/ original Claude Design bundle (reference)
 
 ## Design tokens
 
-Blue `#2E74EE→#1F5FE0` · navy `#0B2A66/#0F1F3D` · approve green `#0B8A4B` · basket teal `#0E7C86` · statuses reject `#C0303B` / pending `#B45309`. Font: **Cairo**. RTL throughout.
+Blue `#2E74EE→#1F5FE0` · navy `#0B2A66/#0F1F3D` · approve green `#0B8A4B` · statuses reject `#C0303B` / pending `#B45309`. Fonts: **Noto Kufi Arabic** (body) + **Alexandria** (titles). RTL throughout.

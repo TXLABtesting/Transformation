@@ -50,13 +50,13 @@ const PERMISSIONS = [
 ];
 
 // Role → permission matrix.
-// NOTE: deliberate deviation from the reference seed — entity_representative
-// also gets items:approve / items:reject: our confirmed business flow has the
-// entity rep as the sole ent1 approver.
+// NOTE: the confirmed business flow has رئيس المسار ونائبه (stream_owner) as
+// the sole ent1 approver — entity_representative is legacy/view-level and
+// holds no approval permissions.
 const ROLE_PERMISSION_MATRIX: Record<string, string[]> = {
   system_admin: PERMISSIONS,
   program_admin: PERMISSIONS.filter((p) => !p.startsWith('settings:')),
-  entity_representative: ['entities:view','streams:view','items:view','items:create','items:update','items:submit','items:approve','items:reject','items:export','launch_plans:view','funding:view','nominations:view','reports:view','reports:export'],
+  entity_representative: ['entities:view','streams:view','items:view','items:export','launch_plans:view','reports:view','reports:export'],
   entity_admin: ['entities:view','entities:update','streams:view','items:view','items:create','items:update','items:submit','items:export','launch_plans:view','funding:view','nominations:view','reports:view','reports:export'],
   entity_coordinator: ['entities:view','streams:view','items:view','items:create','items:update','items:submit','items:export','launch_plans:view','funding:view','nominations:view','reports:view'],
   stream_owner: ['entities:view','streams:view','items:view','items:approve','items:reject','items:export','launch_plans:view','launch_plans:approve','funding:view','nominations:view','nominations:approve','nominations:reject','reports:view'],

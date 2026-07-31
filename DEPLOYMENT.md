@@ -2,7 +2,9 @@
 
 Handoff notes for the IT team. The app is a Next.js 14 portal with a Postgres
 database (Prisma). It ships **clean**: no mock data, the role switcher is
-removed, and the portal opens as **ممثل الجهة** after sign-in.
+removed, and sign-in lands directly on the coordinator workspace (no
+self-service setup screen — accounts are provisioned centrally by the
+system admin).
 
 ## 1. Prerequisites
 
@@ -17,7 +19,7 @@ removed, and the portal opens as **ممثل الجهة** after sign-in.
 cp .env.example .env          # fill in values (see §4)
 docker compose up -d db       # Postgres 16
 npm ci
-npx prisma migrate deploy     # creates ALL tables (migrations 0001–0005)
+npx prisma migrate deploy     # creates ALL tables (migrations 0001–0010)
 npx prisma db seed            # reference data only (see §3)
 npm run build && npm start    # or: docker compose up -d app
 ```
@@ -25,22 +27,25 @@ npm run build && npm start    # or: docker compose up -d app
 ## 3. Database
 
 `prisma/schema.prisma` + `prisma/migrations/` are the source of truth.
-`prisma migrate deploy` creates 20 tables, including:
+`prisma migrate deploy` creates all tables (through `0010_service_catalog`),
+including:
 
-- **Reference:** `streams` (the 5 مسارات in official order, with the
-  predefined رؤساء المسارات), `entities` (35 = the federal entities + the
-  session entity), `program_phases`, `exec_batches` (المراحل), `settings`
-  (approved committee budget = 100M).
-- **Users:** `users` — login accounts. The seed pre-creates the five
+- **Reference:** `streams` (the 3 مسارات in official order, with the
+  predefined رؤساء المسارات), `entities` (the federal entities + every
+  entity in the services catalog), `program_phases`, `exec_batches`
+  (دفعات الإطلاق with their date windows), `service_catalog` (دليل
+  الخدمات الاتحادية — entity-scoped main/sub services feeding the
+  services-stream dropdowns), `settings`.
+- **Users:** `users` — login accounts. The seed pre-creates the
   **رؤساء المسارات** with their official names/titles; **emails and phone
   numbers are intentionally NULL** and should be filled by IT when wiring
-  sign-in. Entity reps / coordinators / committee users are added per entity.
-- **Transactions:** `items`, `item_launch_plans`, `launch_plans`
-  (execution budget is **derived** = sum of attached items' budgets;
-  `launch_budget` is informational), `launches`, `item_launches`,
-  `exec_checklist_items`, `sub_milestones`, `log_entries` (audit trail),
-  `nominations`, `fundings`, `funding_cancellations`, `entity_reps`,
-  `stream_owners`, `app_state`.
+  sign-in. All other accounts (heads, deputies, coordinators, committee)
+  are provisioned centrally by the system admin.
+- **Transactions:** `items`, `exec_checklist_items`, `sub_milestones`,
+  `log_entries` (audit trail), `stream_owners`, `app_state` — plus legacy
+  tables kept for compatibility (`launch_plans`, `item_launch_plans`,
+  `launches`, `item_launches`, `nominations`, `fundings`,
+  `funding_cancellations`, `entity_reps`).
 
 The seed is idempotent — safe to run repeatedly.
 
@@ -55,20 +60,24 @@ The seed is idempotent — safe to run repeatedly.
 - `NEXT_PUBLIC_UAEPASS_MODE=live` + `UAEPASS_*` — real UAE PASS OIDC.
   In `mock` mode the sign-in button goes straight into the app.
 - `NEXT_PUBLIC_DEFAULT_ROLE` — role used until real role-mapping is wired
-  (default `entity`). Valid: `entity | coord | path | ai`.
+  (default `coord`). Valid: `coord | path | deputy | ai | admin`.
 
 ## 5. What IT still needs to wire
 
 1. **Role mapping:** the header role switcher was removed. After UAE PASS
    sign-in, resolve the user against the `users` table (by email/Emirates ID)
    and set their role/stream/entity in the session.
-2. **Stream-head accounts:** fill `email`/`phone` for the five pre-seeded
-   رؤساء المسارات rows in `users`.
-3. **TLS / reverse proxy**, secrets management, and backups for Postgres.
+2. **Stream-head accounts:** fill `email`/`phone` for the pre-seeded
+   رؤساء المسارات rows in `users`, and add the deputies.
+3. **Automatic email notifications:** wire `POST /api/notify` to the
+   government SMTP gateway (event → recipient matrix in `HANDOVER.md`,
+   templates in `docs/email-templates.md`).
+4. **TLS / reverse proxy**, secrets management, and backups for Postgres.
 
 ## 6. Verification checklist (already run against a fresh Postgres 16)
 
-- `npx prisma migrate deploy` → 5 migrations apply cleanly.
-- `npx prisma db seed` → 5 streams, 35 entities, 5 users (stream heads),
-  0 items (clean start).
+- `npx prisma migrate deploy` → all migrations (0001–0010) apply cleanly.
+- `npx prisma db seed` → 3 streams, the federal entities, the
+  `service_catalog` rows (47 entities / ~1,855 pairs), 0 items (clean
+  start); re-running the seed is idempotent.
 - `npm run build` → compiles with no errors.

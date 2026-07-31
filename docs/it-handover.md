@@ -18,7 +18,7 @@ managed by Prisma.
 ```bash
 cp .env.example .env         # then fill in the (REQUIRED) values — see §2
 npm ci
-npm run db:setup             # migrate deploy (0001 → 0009) + generate + seed
+npm run db:setup             # migrate deploy (0001 → 0010) + generate + seed
 npm run build && npm start   # serves on PORT (default 3000)
 ```
 
@@ -67,48 +67,53 @@ Secrets belong in the host's secret manager — never in the repository.
 ## 3. Database structure (Prisma → Postgres)
 
 Schema: `prisma/schema.prisma` (tables/columns are snake_case via `@map`;
-the client uses camelCase). Migrations: `prisma/migrations/0001…0009`.
+the client uses camelCase). Migrations: `prisma/migrations/0001…0010`.
 
 **Reference data**
-- `streams` — the five transformation streams (ids: `ops`, `strategy`,
-  `services`, `capacity`, `tech`) with the official stream heads.
-- `entities` — federal entities (seeded with the 34 entities).
+- `streams` — the three transformation streams (ids: `ops`, `strategy`,
+  `services` — العمليات والدعم المؤسسي، العمل الحكومي الاستراتيجي،
+  الخدمات الحكومية) with the official stream heads.
+- `entities` — federal entities (seeded from the reference list plus every
+  entity present in the services catalog).
 - `program_phases` — program phases with editable deadlines (committee).
-- `exec_batches` — the four execution/launch stages (المراحل) with periods.
-- `settings` — key/value (e.g. `approvedBudget` for the committee wallet).
+- `exec_batches` — the launch milestones (التقييم والتهيئة، دفعات الإطلاق
+  الأولى…السادسة، التوسع في التطبيق) with their date windows. Item
+  start/end dates are constrained to their دفعة window.
+- `service_catalog` — دليل الخدمات الاتحادية (migration `0010`):
+  `(entity_id FK, main_service, sub_service)` with a unique triple. Feeds
+  the services-stream الخدمة/الخدمة الفرعية dropdowns, **scoped to the
+  coordinator's entity**. Seeded from `lib/svcCatalog.json` (47 entities /
+  ~1,855 rows); refresh by replacing the JSON and re-running the seed.
+- `settings` — key/value.
 
-**Team setup (per entity)**
-- `entity_reps` — official entity representative (one per entity).
+**Team records (per entity)**
 - `stream_owners` — per-stream owner inside the entity (unique per
   entity+stream).
+- `entity_reps` — legacy (the ممثل الجهة role is not part of the current
+  confirmed flow; kept for compatibility).
 
 **Portfolio**
-- `items` — every مشروع/مبادرة/عملية/خدمة. Carries the assessment fields,
-  outcome/scope fields, type-specific fields, the execution stage
-  (`exec_batch` — one of the four stages or the literal
-  «للتحديد بعد الدراسة» when the stage is deferred pending study), the
-  returned-with-notes state (`ret_*`), and the
-  stage-move marker (`stage_move_*` — set when an item is moved between
-  stages; the client notifies all stakeholders).
-  `wf` is the workflow enum:
-  `draft → ent1 → pm1 → pm2 → ent2 → budget → exec → launch → done`
-  (the UI presents the simplified delivery view: قيد التطوير / تم التطوير /
-  تم الإطلاق on top of `budget|exec / launch / done`).
-- `launch_plans` — centrally managed launches per stage (name, type, date,
-  launch-level scope, informational launch budget). The **execution budget
-  is derived**: the server/client recomputes it as the sum of attached
-  items' budgets — do not write it independently.
-- `item_launch_plans` — join table (an item may join several launches, all
-  within its single stage).
+- `items` — every عملية / مهمة / خدمة (types `operation` and `service`;
+  `project`/`initiative` remain in the enum for legacy data only). Carries
+  the per-stream form fields (ops: التصنيف/نوع عملية الدعم المؤسسي/
+  الأنشطة/الأتمتة؛ strategy: المحور/مصفوفة الأولوية/الأتمتة؛ services:
+  الخدمة/الخدمة الفرعية/مصفوفة أولوية الاختيار), the دفعة assignment
+  (`exec_batch` — a دفعة name or «للتحديد بعد الدراسة»), the
+  returned-with-notes state (`ret_*`), and the batch-move marker
+  (`stage_move_*` — drives the رئيس المسار notification).
+  `wf` is the workflow enum; the current flow uses
+  `draft → ent1 → exec` and the UI presents exactly four statuses:
+  مسودة / قيد الاعتماد / للتعديل (returned) / معتمد. Approved entries are
+  locked from editing.
 - `exec_checklist_items`, `sub_milestones` — per-item execution details.
-- `launches`, `item_launches` — legacy per-item launch rows kept for the
-  detail view history; new planning goes through `launch_plans`.
+- `launch_plans`, `item_launch_plans`, `launches`, `item_launches` —
+  **legacy** (the managed launch-plan concept was removed from the flow;
+  دفعات الإطلاق are the `exec_batches` reference rows).
 
 **Governance**
 - `log_entries` — the approval/action audit trail shown in السجل.
-- `nominations` — ترشيحات رؤساء المسارات (what the committee reviews).
-- `fundings` / `funding_cancellations` — committee funding decisions with
-  the mandatory cancellation reason.
+- `nominations`, `fundings` / `funding_cancellations` — **legacy** (the
+  nomination/funding concepts were removed from the confirmed flow).
 
 **Access control (RBAC), audit & notifications** (migrations `0007`–`0009`)
 - `roles` — backend access roles keyed by a stable `code` (nine codes, see
@@ -143,7 +148,7 @@ the client uses camelCase). Migrations: `prisma/migrations/0001…0009`.
   persistence. Harmless in production; can stay empty.
 
 The full table list (with columns) lives in `prisma/schema.prisma`; the
-versioned DDL is in `prisma/migrations/0001…0009`.
+versioned DDL is in `prisma/migrations/0001…0010`.
 
 ## 4. Role management
 
@@ -153,52 +158,54 @@ admin console via the legacy `users.role` key. Mapping:
 
 | Backend code | Arabic | UI role | Scope enforced by the API |
 | --- | --- | --- | --- |
-| `system_admin` | مدير النظام | `admin` | global (bypasses permission checks) |
+| `system_admin` | مشرف النظام | `admin` | global (bypasses permission checks) |
 | `program_admin` | مدير البرنامج | `ai` | global |
-| `ai_committee` | اللجنة الوطنية | `ai` | global, approved items only |
-| `stream_owner` | رئيس المسار | `path` | own stream across all entities |
-| `entity_representative` | ممثل الجهة | `entity` | own entity across all streams, no drafts |
-| `entity_admin` | مسؤول الجهة | `entity` | own entity + entity updates |
-| `entity_coordinator` | منسق المسار في الجهة | `coord` | own entity + own stream, incl. drafts |
-| `viewer` | مستعرض | `entity` | read-only within scopes |
-| `auditor` | مدقق | `entity` | read-only + `audit:view` |
+| `ai_committee` | اللجنة الوطنية (الرئيس + الأمانة العامة) | `ai` | global, approved items only |
+| `stream_owner` | رئيس المسار / نائب رئيس المسار | `path` / `deputy` | own stream across all entities — **the ent1 approver** |
+| `entity_coordinator` | منسق المسار في الجهة | `coord` | own entity + own stream(s), incl. drafts |
+| `entity_admin` | مسؤول الجهة | `entity` | own entity + entity updates (legacy) |
+| `entity_representative` | ممثل الجهة | `entity` | **legacy — not in the current flow** |
+| `viewer` | مستعرض | — | read-only within scopes |
+| `auditor` | مدقق | — | read-only + `audit:view` |
 
 Role → permission assignments live in `role_permissions` (seeded from
-`prisma/seed.ts`). **Deliberate deviation from the reference permission
-matrix:** `entity_representative` is granted `items:approve` and
-`items:reject` — in our confirmed business flow the entity representative is
-the sole approver at the `ent1` gate (the upstream reference seed omitted
-these, contradicting its own client behaviour).
+`prisma/seed.ts`). **Approval sits with the stream:** `stream_owner`
+(رئيس المسار ونائبه) carries `items:approve` / `items:reject` and is the
+sole approver at the `ent1` gate — matching the client, where اعتماد /
+إعادة للتعديل / طلب تفاصيل actions render only for the stream head and
+deputy. `entity_representative` is view-level legacy and holds no approval
+permissions.
 
-**Who provisions whom:** `system_admin` manages all accounts and role rules
-(`/api/admin/users`, `/api/admin/role-rules`) and assigns the stream heads
-(`stream_owner`) and national committee (`ai_committee`); the entity rep
-provisions its own coordinators in team setup (`/api/team/register` creates
-`role_assignment_rules` consumed on the coordinator's first login).
+**Who provisions whom:** `system_admin` manages **all accounts for all
+entities** and role rules (`/api/admin/users`, `/api/admin/role-rules`) —
+stream heads and deputies (`stream_owner` + stream scope), coordinators
+(`entity_coordinator` + entity/stream scopes), and the national committee
+(`ai_committee`). There is no self-service team-setup screen.
 `BOOTSTRAP_ADMIN_EMAILS` auto-provisions the very first system admin(s) on
 login.
 
 **Seeded starter accounts** (in `users`, keyed by email on the
 `@aigp.gov.ae` placeholder domain): the system admin (`admin@…`), the national
-committee, the five stream heads (`head.<stream>@…`), the default entity
-representative (`rep@…`), and one coordinator per stream (`coord.<stream>@…`).
-Each is seeded active with its backend role in `user_roles` plus the matching
-entity/stream scopes. To go live, re-point each account's `email` to the
-verified UAE PASS identity (or deactivate and create real ones).
+committee, the three stream heads (`head.<stream>@…`), and one coordinator
+per stream (`coord.<stream>@…`). Each is seeded active with its backend
+role in `user_roles` plus the matching entity/stream scopes. To go live,
+re-point each account's `email` to the verified UAE PASS identity (or
+deactivate and create real ones).
 
 Rules the application assumes (enforce when provisioning users):
-- `coord` and `entity` **must** have `entity_id`; `coord` and `path`
-  **must** have `stream_id`; `ai` has neither.
-- One `entity` user per entity is the approver (mirrored in `entity_reps`).
-- The five `path` users are the official stream heads (names pre-seeded on
-  `streams.head_name`); attach their emails when known.
+- `coord` **must** have `entity_id`; `coord`, `path` and `deputy` **must**
+  have `stream_id`; `ai` has neither.
+- The `path`/`deputy` users per stream are the official stream head and
+  deputy (head names pre-seeded on `streams.head_name`); attach their
+  emails when known.
 - Deactivate (never delete) users via `is_active = false` so the audit log
   keeps valid author names.
 
 Data visibility implemented by the app (for reference):
 - Drafts (`wf = 'draft'`) are visible **only** to the coordinator.
-- `ent1` (awaiting entity approval) is visible to coord + entity rep.
-- The committee acts only on nominations (`nominations`), not raw items.
+- `ent1` (قيد الاعتماد) is visible to the coordinator and the stream
+  head/deputy, who approve or return it.
+- The committee sees approved entries only (read-only, national view).
 
 ## 5. Server API (enforced endpoints)
 
@@ -213,10 +220,15 @@ writes an `audit_logs` row (`lib/security/`):
 - **Items**: `GET|POST /api/items`, `GET|PATCH|DELETE /api/items/:id`,
   `POST /api/items/:id/submit|approve|reject|return` (workflow actions with
   log entries + audit).
-- **Portfolio reads**: `GET /api/funding`, `GET /api/nominations`,
-  `GET /api/launch-plans` — all scope-filtered.
-- **Team setup**: `POST /api/team/register` — upserts `entity_reps` /
-  `stream_owners` and creates `role_assignment_rules` for the team.
+- **Services catalog**: `GET /api/svc-catalog` — دليل الخدمات الاتحادية
+  for the services-stream dropdowns, **scoped server-side to the session
+  user's entity**; only global roles may pass `?entityId=`. Requires
+  `items:view`.
+- **Portfolio reads (legacy)**: `GET /api/funding`, `GET /api/nominations`,
+  `GET /api/launch-plans` — scope-filtered; kept for compatibility only
+  (the concepts are out of the current flow).
+- **Team records (legacy)**: `POST /api/team/register` — kept for
+  compatibility; provisioning is done by the admin via `/api/admin/*`.
 - **Admin**: `GET|POST /api/admin/users`, `GET|PATCH /api/admin/users/:id`,
   `POST /api/admin/users/:id/enable|disable`,
   `POST /api/admin/users/:id/roles` (+ `DELETE …/roles/:roleId`),
@@ -261,13 +273,13 @@ provisioned.
 
 ## 7. Operational notes
 
-- **Budgets**: item budgets are free-text in Arabic; the parsed numeric
-  value is mirrored into `budget_amount` (BigInt, drhm) for reporting.
-  Plan execution budgets are always recomputed from attached items.
 - **Notifications** are currently derived in the client from data state
-  (returns, nominations, funding, stage moves). If IT wants push/email
-  later, the same triggers can be raised from the API layer; templates are
-  in `docs/email-templates.md`.
+  (submissions, approvals, returns, batch moves). The mandatory automatic
+  email notifications (submission → stream head/deputy; approval/return →
+  coordinator; batch move → stream head) must be wired by IT via
+  `POST /api/notify` against the government SMTP gateway — the event →
+  recipient matrix is in `HANDOVER.md`, templates in
+  `docs/email-templates.md`.
 - **Exports** (Excel/PowerPoint) are generated client-side; no server
   dependency. The Excel report fills the official workplan template
   (`public/assets/workplan_template.xlsx`) — the same sections entities use
