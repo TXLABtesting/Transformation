@@ -83,10 +83,17 @@ export const DEFAULT_CONTACT_EMAILS: Record<string, string> = {
 };
 
 // ---- public-site content managed from the admin backoffice ----
-export type LibraryDoc = { id: string; title: string; cat: 'guide' | 'system'; date: string; fileUrl?: string; coverUrl?: string };
+export type DocCat = 'guide' | 'policy' | 'other';
+export const DOC_CATS: { key: DocCat; label: string }[] = [
+  { key: 'guide', label: 'الأدلة والمعايير' },
+  { key: 'policy', label: 'السياسات والاستراتيجيات' },
+  { key: 'other', label: 'أخرى' },
+];
+export const docCatLabel = (c: string) => DOC_CATS.find((x) => x.key === c)?.label || 'أخرى';
+export type LibraryDoc = { id: string; title: string; cat: DocCat; date: string; fileUrl?: string; coverUrl?: string };
 export const DEFAULT_LIBRARY_DOCS: LibraryDoc[] = [
   { id: 'guide', title: 'الدليل التعريفي للذكاء الاصطناعي المساعد', cat: 'guide', date: 'يوليو 2026' },
-  { id: 'system', title: 'نظام عمل مشروع الذكاء الاصطناعي المساعد', cat: 'system', date: 'يوليو 2026' },
+  { id: 'system', title: 'نظام عمل مشروع الذكاء الاصطناعي المساعد', cat: 'policy', date: 'يوليو 2026' },
 ];
 export const DEFAULT_ABOUT_HERO =
   'بتوجيهات من صاحب السمو الشيخ محمد بن زايد آل نهيان، رئيس الدولة "حفظه الله"، أعلن صاحب السمو الشيخ محمد بن راشد آل مكتوم، نائب رئيس الدولة رئيس مجلس الوزراء حاكم دبي "رعاه الله"، في أبريل 2026 عن إطلاق مشروع وطني استراتيجي، بإشراف سمو الشيخ منصور بن زايد آل نهيان، نائب رئيس الدولة نائب رئيس مجلس الوزراء رئيس ديوان الرئاسة، يهدف إلى تحويل 50% من العمليات والمهام والإجراءات والخدمات الحكومية إلى نماذج وأنظمة مدعومة بالذكاء الاصطناعي المساعد خلال عامين، بما يسهم في خفض التكاليف التشغيلية، ورفع الكفاءة الحكومية، وتعزيز جودة المخرجات والخدمات، وتسريع الإنجاز، ودعم اتخاذ القرار، وذلك لبناء أفضل حكومة في العالم ولتعزيز جاهزية الدولة لمتغيرات المستقبل.';

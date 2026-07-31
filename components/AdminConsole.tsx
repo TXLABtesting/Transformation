@@ -6,7 +6,7 @@
 // in team setup, so they appear here read-only for oversight.
 // ---------------------------------------------------------------------------
 import { useMemo, useState, type CSSProperties } from 'react';
-import { CONTACT_STREAMS } from '@/lib/domain';
+import { DOC_CATS, type DocCat, CONTACT_STREAMS } from '@/lib/domain';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
 import type { RoleKey, UserRec } from '@/lib/domain';
@@ -431,9 +431,12 @@ function SiteTab() {
               </div>
               <div>
                 <label style={labelSt}>التصنيف</label>
-                <select value={d.cat} onChange={(e) => s.updLibDoc(d.id, { cat: e.target.value as 'guide' | 'system' })} style={{ ...inputSt, paddingLeft: 26, cursor: 'pointer' }}>
-                  <option value="guide">دليل</option>
-                  <option value="system">نظام عمل</option>
+                <select value={d.cat} onChange={(e) => s.updLibDoc(d.id, { cat: e.target.value as DocCat })} style={{ ...inputSt, paddingLeft: 26, cursor: 'pointer' }}>
+                  {DOC_CATS.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
