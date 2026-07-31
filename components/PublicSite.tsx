@@ -257,7 +257,7 @@ export function AboutPage() {
             ))}
           </div>
         ) : (
-        <div style={{ display: 'flex', flexDirection: 'row-reverse', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
           {TL.map((t) =>
             t.major ? (
               <div key={t.year} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, minWidth: 0 }}>
@@ -269,10 +269,10 @@ export function AboutPage() {
                 </div>
                 {t.img ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={t.img} alt={t.title} style={{ width: 128, height: 128, borderRadius: '50%', objectFit: 'cover', border: '1px solid #DCE4F0' }} />
+                  <img src={t.img} alt={t.title} style={{ width: 'clamp(80px, 8.6vw, 128px)', height: 'clamp(80px, 8.6vw, 128px)', borderRadius: '50%', objectFit: 'cover', border: '1px solid #DCE4F0' }} />
                 ) : (
                   <div
-                    style={{ width: 128, height: 128, borderRadius: '50%', background: 'repeating-linear-gradient(45deg,#E3EAF5 0 8px,#EFF3FA 8px 16px)', border: '1px solid #DCE4F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace', fontSize: 10, color: '#8A97AD' }}
+                    style={{ width: 'clamp(80px, 8.6vw, 128px)', height: 'clamp(80px, 8.6vw, 128px)', borderRadius: '50%', background: 'repeating-linear-gradient(45deg,#E3EAF5 0 8px,#EFF3FA 8px 16px)', border: '1px solid #DCE4F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace', fontSize: 10, color: '#8A97AD' }}
                   >
                     صورة
                   </div>
