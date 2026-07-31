@@ -203,6 +203,9 @@ export function Login({ vm }: { vm: VM }) {
                 Sign in with UAE PASS
               </span>
             </button>
+            <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, fontWeight: 600, color: '#9FC4F2', lineHeight: 1.8 }}>
+              هوية رقمية واحدة موثوقة لجميع المواطنين والمقيمين والزوار
+            </div>
           </div>
         </div>
       </div>
