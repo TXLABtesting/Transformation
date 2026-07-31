@@ -110,7 +110,7 @@ export const DEFAULT_ABOUT: AboutContent = {
   timeline: [
     { year: '2001', title: 'الحكومة الإلكترونية', sub: '', major: true },
     { year: '2013', title: 'الحكومة الذكية', sub: '', major: true },
-    { year: '2017', title: 'تعيين أول وزير', sub: 'للذكاء الاصطناعي', major: false },
+    { year: '2017', title: 'تعيين أول وزير', sub: 'للذكاء الاصطناعي', major: false, img: 'assets/timeline-2017.jpg' },
     { year: '2019', title: 'الحكومة الرقمية', sub: '', major: true },
     { year: '2026', title: 'حكومة الذكاء الاصطناعي المساعد', sub: '', major: true, img: 'assets/timeline-2026.jpg' },
   ],
