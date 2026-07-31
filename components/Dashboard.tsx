@@ -3579,7 +3579,6 @@ function ListView({ cards, isOps }: { cards: CardVM[]; isOps?: boolean }) {
             <th style={th}>التصنيف</th>
             {isOps && <th style={th}>نوع عملية الدعم المؤسسي</th>}
             <th style={th}>الحالة</th>
-            <th style={th}>آخر تحديث</th>
             <th style={{ ...th, textAlign: 'center' }}>الإجراء</th>
           </tr>
         </thead>
@@ -3621,9 +3620,6 @@ function ListView({ cards, isOps }: { cards: CardVM[]; isOps?: boolean }) {
                     بيانات ناقصة
                   </span>
                 )}
-              </td>
-              <td style={{ ...td, whiteSpace: 'nowrap', color: '#8A97AD', fontSize: 11.5 }}>
-                {c.statusStamp || '—'}
               </td>
               <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
                 {c.canApprove ? (
