@@ -616,13 +616,13 @@ function SegKpiStrip({ acts, prios, notes }: { acts: { label: string; v: number 
     <div data-tour="kpis">
       <div className="segkpi">
         {acts.map((c) => (
-          <div key={c.label} className="seg">
+          <div key={c.label} className="segbox">
             <span className="hd seglbl">{c.label}</span>
             <span className="segval">{c.v}</span>
           </div>
         ))}
         {prios.map((c) => (
-          <div key={c.label} className="seg prio">
+          <div key={c.label} className="segbox prio">
             <span className="hd seglbl">{c.label}</span>
             <span className="segval">{c.v}</span>
           </div>
@@ -925,20 +925,13 @@ function OpsKpiStrip({ k }: { k: NonNullable<VM['opsKpis']> }) {
   return (
     <SegKpiStrip
       acts={[
+        { label: 'إجمالي عدد العمليات الرئيسية', v: k.ops },
         { label: 'إجمالي عدد الأنشطة الفرعية', v: k.acts },
-        { label: 'إجمالي عدد الأنشطة الفرعية القابلة للتحول *', v: k.transformable },
-        { label: 'إجمالي عدد الأنشطة الفرعية المستهدف تحويلها **', v: k.targeted },
+        { label: 'إجمالي عدد الأنشطة الفرعية القابلة للتحول', v: k.transformable },
+        { label: 'إجمالي عدد الأنشطة الفرعية المستهدف تحويلها', v: k.targeted },
       ]}
-      prios={[
-        { label: 'أولوية أولى', v: '—' },
-        { label: 'أولوية ثانية', v: '—' },
-        { label: 'أولوية ثالثة', v: '—' },
-      ]}
-      notes={[
-        '* مؤقتاً وفق «القابلية للتحول» (3 فأعلى) — تُستبدل بمصفوفة أولوية العمليات بعد اعتمادها',
-        '** يتم احتسابها بناءً على الإجابة «نعم» في أولوية التحول',
-        'بطاقات الأولوية تُفعّل بعد اعتماد المصفوفة',
-      ]}
+      prios={[]}
+      notes={[]}
     />
   );
 }
@@ -2739,10 +2732,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                 )}
               </div>
 
-              {vm.role === 'coord' && (
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: -8 }}>متابعة مدخلات المسار حسب حالة الاعتماد ودفعات الإطلاق.</div>
-              )}
-
               {/* services scope: the six approved numbers replace the status recap */}
               {vm.svcKpis ? (
                 <SvcKpiStrip k={vm.svcKpis} />
@@ -2856,7 +2845,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                   <>
                     <FilterSelect value={vm.filterValue} options={vm.typeOptions} onChange={(v) => s.setFilter(v)} />
                     <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
-                    <FilterSelect value={vm.batchFilterValue} options={vm.batchFilterOptions} minWidth={170} onChange={(v) => s.setBatchFilter(v === 'all' ? null : v)} />
                   </>
                 )}
                 <button
@@ -3606,7 +3594,7 @@ function ListView({ cards }: { cards: CardVM[] }) {
           <tr>
             <th style={{ ...th, width: 30 }} />
             <th style={th}>العنوان</th>
-            <th style={th}>النوع</th>
+            <th style={th}>التصنيف</th>
             <th style={th}>المسار</th>
             <th style={th}>الحالة</th>
             <th style={th}>آخر تحديث</th>
