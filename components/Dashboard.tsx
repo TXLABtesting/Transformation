@@ -649,6 +649,7 @@ function SvcKpiStrip({ k }: { k: NonNullable<VM['svcKpis']> }) {
   return (
     <SegKpiStrip
       acts={[
+        { label: 'إجمالي عدد الخدمات الرئيسية', v: k.mainSvc },
         { label: 'إجمالي عدد الخدمات الفرعية', v: k.total },
         { label: 'إجمالي عدد الخدمات الفرعية القابلة للتحول', v: k.transformable },
         { label: 'إجمالي عدد الخدمات الفرعية المستهدف تحويلها', v: k.targeted },
