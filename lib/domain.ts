@@ -226,11 +226,6 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'section', label: 'القسم المعني' },
     { key: 'isAutomated', label: 'هل النشاط/العملية مؤتمت؟' },
     { key: 'automationSystem', label: 'نظام/نسبة الأتمتة' },
-    { key: 'usageIntensity', label: 'كثافة الاستخدام' },
-    { key: 'readinessLevel', label: 'الجاهزية' },
-    { key: 'impactScore', label: 'درجة الأثر' },
-    { key: 'complexity', label: 'مستوى التعقيد' },
-    { key: 'transformScore', label: 'القابلية للتحول' },
     { key: 'transformYes', label: 'أولوية التحول' },
   ],
 };
@@ -259,11 +254,6 @@ export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
     opType: ['العمليات التخصصية', 'عمليات الدعم المؤسسي'],
     supportFn: SUPPORT_FUNCTIONS,
     isAutomated: ['نعم', 'لا'],
-    usageIntensity: SCALE_1_5,
-    readinessLevel: SCALE_1_5,
-    impactScore: SCALE_1_5,
-    complexity: SCALE_1_5,
-    transformScore: SCALE_1_5,
     transformYes: ['نعم', 'لا'],
   },
 };
@@ -279,7 +269,6 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
     complexity: 'منخفض',
     readinessLevel: 'مرتفع',
     transformYes: 'نعم',
-    execBatch: 'الدفعة الأولى',
   },
   strategy: {
     axis: 'محور السياسات العامة',
@@ -298,7 +287,6 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
     outputClarity: '5',
     riskLevel: 'منخفض',
     transformYes: 'نعم',
-    execBatch: 'الدفعة الأولى',
   },
   ops: {
     opType: 'عمليات الدعم المؤسسي',
@@ -309,14 +297,7 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
     dept: 'إدارة الموارد البشرية',
     section: 'قسم شؤون الموظفين',
     isAutomated: 'لا',
-    automationSystem: 'لا يوجد',
-    usageIntensity: '4',
-    readinessLevel: '3',
-    impactScore: '4',
-    complexity: '2',
-    transformScore: '4',
     transformYes: 'نعم',
-    execBatch: 'الدفعة الثانية',
   },
 };
 
