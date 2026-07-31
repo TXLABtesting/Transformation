@@ -1804,7 +1804,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfChip = '#B45309';
     wfBg = '#FFF3DE';
   } else if (w === 'exec' || w === 'launch') {
-    wfLabel = batchShort ? 'معتمد · ' + batchShort : 'معتمد';
+    wfLabel = 'معتمد';
     wfChip = '#0B8A4B';
     wfBg = '#EAF7F0';
   }
