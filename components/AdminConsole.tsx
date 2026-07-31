@@ -383,7 +383,7 @@ function SiteTab() {
         </div>
       </SiteSection>
 
-      <SiteSection title="نطاق التحويل" sub="بطاقات النطاق ونص «خارج نطاق التحويل»." onAdd={() => s.setAbout({ scope: [...ab.scope, { title: '', desc: '' }] })}>
+      <SiteSection title="نطاق التحويل" sub="بطاقات نطاق التحويل المعروضة للزوار." onAdd={() => s.setAbout({ scope: [...ab.scope, { title: '', desc: '' }] })}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {ab.scope.map((t, i) => (
             <div key={i} style={rowShell}>
@@ -392,7 +392,6 @@ function SiteTab() {
               {delBtn(() => delFrom('scope', i))}
             </div>
           ))}
-          <textarea value={ab.outOfScope} onChange={(e) => s.setAbout({ outOfScope: e.target.value })} rows={3} placeholder="نص خارج نطاق التحويل" style={siteTa} />
         </div>
       </SiteSection>
 

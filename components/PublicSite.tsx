@@ -331,7 +331,7 @@ export function AboutPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {TR.map((tr, ti) => (
             <HoverLift key={tr.title + ti}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 22, background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '20px 26px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 22, background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '20px 26px', boxShadow: '0 12px 30px -20px rgba(15,31,61,.28)' }}>
                 <div style={{ fontSize: 34, fontWeight: 900, color: '#DCE6F7', lineHeight: 1, flex: '0 0 64px', textAlign: 'center' }}>{String(ti + 1).padStart(2, '0')}</div>
                 <div style={{ width: 1, alignSelf: 'stretch', background: '#EDF1F8' }} />
                 <div>
@@ -349,7 +349,7 @@ export function AboutPage() {
         <h2 style={sectionTitle}>نطاق التحويل</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 18 }}>
           {SC.map((s, si) => (
-            <div key={s.title + si} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div key={s.title + si} style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 12px 30px -20px rgba(15,31,61,.28)' }}>
               <div style={{ width: 46, height: 46, borderRadius: 12, background: '#EAF1FE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <PIcon d={SCOPE_ICONS[si % SCOPE_ICONS.length]} size={24} />
               </div>
@@ -357,13 +357,6 @@ export function AboutPage() {
               <div style={{ fontSize: 12.5, fontWeight: 600, color: '#5E6E8C', lineHeight: 1.95 }}>{s.desc}</div>
             </div>
           ))}
-        </div>
-        <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 18, background: '#0F1F3D', borderRadius: 16, padding: '20px 26px', color: '#fff' }}>
-          <PIcon d={IC.block} size={30} color="#7E9AC8" />
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 3 }}>خارج نطاق التحويل</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#B9CDEC', lineHeight: 1.9 }}>{about.outOfScope}</div>
-          </div>
         </div>
       </div>
 
@@ -529,7 +522,7 @@ function DocCover({ d }: { d: Doc }) {
         overflow: 'hidden',
         cursor: 'pointer',
         transition: 'box-shadow .25s',
-        boxShadow: h ? '0 26px 56px -26px rgba(15,31,61,.5)' : 'none',
+        boxShadow: h ? '0 26px 56px -26px rgba(15,31,61,.5)' : '0 12px 30px -20px rgba(15,31,61,.22)',
       }}
     >
       {d.cover ? (
