@@ -310,6 +310,7 @@ export function missingFieldsOf(i: Record<string, unknown> & { path?: string }):
     .filter((f) => (f.key === 'supportFn' ? plainOf(i.opType) === SUPPORT_OPTYPE : true))
     // نظام الأتمتة مطلوب فقط للعمليات المؤتمتة
     .filter((f) => (f.key === 'automationSystem' && i.path === 'ops' ? plainOf(i.isAutomated) === 'نعم' : true))
+    .filter((f) => (f.key === 'automationSystem' && i.path === 'strategy' ? plainOf(i.automationLevel) !== 'غير مؤتمتة' : true))
     .filter((f) => !plainOf(i[f.key]))
     .map((f) => f.label);
 }

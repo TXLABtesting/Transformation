@@ -1431,27 +1431,38 @@ function FTask({
       <div style={cardStyle}>
         <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>الأتمتة</div>
         {sel('مستوى الأتمتة', 'automationLevel', ['مؤتمتة كلياً', 'مؤتمتة جزئياً', 'غير مؤتمتة'])}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 0 }}>
-          <div>
-            <label style={labelStyle}>ما هي نسبة الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={5}
-                value={Number(gv('automationPct')) || 0}
-                onChange={(e) => setField('automationPct', Number(e.target.value))}
-                style={{ flex: 1, accentColor: '#2563EB' }}
-              />
-              <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', minWidth: 42, textAlign: 'left' }}>{Number(gv('automationPct')) || 0}%</span>
+        {(() => {
+          const lvl = String(gv('automationLevel') ?? '');
+          // غير مؤتمتة: no automation details at all
+          if (lvl !== 'مؤتمتة كلياً' && lvl !== 'مؤتمتة جزئياً') return null;
+          const full = lvl === 'مؤتمتة كلياً';
+          // كلياً is locked at 100%; جزئياً can never reach 100%
+          const pct = full ? 100 : Math.min(95, Number(gv('automationPct')) || 0);
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 0 }}>
+              <div>
+                <label style={labelStyle}>ما هي نسبة الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input
+                    type="range"
+                    min={0}
+                    max={full ? 100 : 95}
+                    step={5}
+                    disabled={full}
+                    value={pct}
+                    onChange={(e) => setField('automationPct', Math.min(full ? 100 : 95, Number(e.target.value)))}
+                    style={{ flex: 1, accentColor: '#2563EB', opacity: full ? 0.7 : 1 }}
+                  />
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', minWidth: 42, textAlign: 'left' }}>{pct}%</span>
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>ما هو نظام الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
+                <input value={gv('automationSystem')} onChange={(e) => setField('automationSystem', e.target.value)} style={inputStyle} />
+              </div>
             </div>
-          </div>
-          <div>
-            <label style={labelStyle}>ما هو نظام الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
-            <input value={gv('automationSystem')} onChange={(e) => setField('automationSystem', e.target.value)} style={inputStyle} />
-          </div>
-        </div>
+          );
+        })()}
       </div>
 
       <div style={cardStyle}>
@@ -1465,51 +1476,59 @@ function FTask({
           {sel('وضوح المخرجات وقابليتها للمراجعة', 'outputClarity', scale)}
         </div>
         {sel('مستوى المخاطر', 'riskLevel', ['منخفض', 'متوسط', 'عالي'])}
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>أولوية الاختيار</label>
-          {m.stgCalc ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EAF1FE', color: '#1D4ED8', borderRadius: 999, padding: '8px 16px', fontSize: 13.5, fontWeight: 800 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D4ED8', flex: 'none' }} />
-                {m.stgCalc.cat} · {m.stgCalc.total}/30
-              </span>
-              <span style={{ fontSize: 12, color: '#8A97AD', fontWeight: 700 }}>{m.stgCalc.hint}</span>
+        {/* أولوية الاختيار + أولوية التحول side by side; the second is derived
+            from the first (عالية/متوسطة → نعم، منخفضة → لا) and read-only */}
+        {(() => {
+          const cat = m.stgCalc?.cat || '';
+          const derived = cat ? (cat === 'أولوية منخفضة' ? 'لا' : 'نعم') : '';
+          if (derived && gv('transformYes') !== derived) setField('transformYes', derived);
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 0 }}>
+              <div>
+                <label style={labelStyle}>أولوية الاختيار</label>
+                {m.stgCalc ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minHeight: 44 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EAF1FE', color: '#1D4ED8', borderRadius: 999, padding: '8px 16px', fontSize: 13.5, fontWeight: 800 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D4ED8', flex: 'none' }} />
+                      {m.stgCalc.cat} · {m.stgCalc.total}/30
+                    </span>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px' }}>
+                    تُحسب تلقائياً بعد استكمال التقييمات الستة ومستوى المخاطر
+                  </div>
+                )}
+              </div>
+              <div>
+                <label style={labelStyle}>أولوية التحول</label>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {['نعم', 'لا'].map((opt) => {
+                    const active = derived === opt;
+                    return (
+                      <span
+                        key={opt}
+                        style={{
+                          flex: 1,
+                          textAlign: 'center',
+                          border: '1px solid ' + (active ? '#2563EB' : '#E7ECF4'),
+                          background: active ? '#EAF1FE' : '#F7F9FD',
+                          color: active ? '#1D4ED8' : '#AAB4C6',
+                          borderRadius: 11,
+                          padding: '11px 13px',
+                          fontSize: 13.5,
+                          fontWeight: 800,
+                          cursor: 'default',
+                        }}
+                      >
+                        {opt}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          ) : (
-            <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px' }}>
-              تُحسب تلقائياً بعد استكمال التقييمات الستة ومستوى المخاطر
-            </div>
-          )}
-        </div>
-        <div style={{ marginBottom: 0 }}>
-          <label style={labelStyle}>أولوية التحول <span style={{ color: '#D23B45' }}>*</span></label>
-          <div style={{ display: 'flex', gap: 10 }}>
-            {['نعم', 'لا'].map((opt) => {
-              const active = gv('transformYes') === opt;
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setField('transformYes', opt)}
-                  style={{
-                    flex: 1,
-                    border: '1px solid ' + (active ? '#2563EB' : '#DCE3EE'),
-                    background: active ? '#EAF1FE' : '#fff',
-                    color: active ? '#1D4ED8' : '#54627B',
-                    borderRadius: 11,
-                    padding: '11px 13px',
-                    fontSize: 13.5,
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  {opt}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+          );
+        })()}
       </div>
 
     </div>

@@ -150,8 +150,12 @@ export type UiState = {
   svcPrioF: string;
   // strategy-stream list filters: المهمة / القطاع / الأولوية
   stgTaskF: string;
+  stgAxisF: string;
   stgSectorF: string;
   stgPrioF: string;
+  opsCatF: string; // تصنيف العملية
+  opsSectorF: string;
+  opsSupportF: string; // نوع عملية الدعم المؤسسي
   // inline add-manually form (rendered under the table, not a popup)
   inlineCreate: boolean;
   confirmAdd: boolean;
@@ -261,7 +265,8 @@ type Actions = {
   setExecStream: (v: string) => void;
   resetFilters: () => void;
   setSvcFilter: (k: 'svcServiceF' | 'svcSectorF' | 'svcPrioF', v: string) => void;
-  setStgFilter: (k: 'stgTaskF' | 'stgSectorF' | 'stgPrioF', v: string) => void;
+  setStgFilter: (k: 'stgTaskF' | 'stgAxisF' | 'stgSectorF' | 'stgPrioF', v: string) => void;
+  setOpsFilter: (k: 'opsCatF' | 'opsSectorF' | 'opsSupportF', v: string) => void;
   setItemDate: (id: string, k: 'startDate' | 'endDate', v: string) => void;
   assignItemBatch: (id: string, batch: string) => void;
   setContactEmail: (k: string, v: string) => void;
@@ -450,8 +455,12 @@ function defaultUi(): UiState {
     svcSectorF: 'all',
     svcPrioF: 'all',
     stgTaskF: 'all',
+    stgAxisF: 'all',
     stgSectorF: 'all',
     stgPrioF: 'all',
+    opsCatF: 'all',
+    opsSectorF: 'all',
+    opsSupportF: 'all',
     inlineCreate: false,
     confirmAdd: false,
     filter: 'all',
@@ -921,9 +930,12 @@ export const useStore = create<Store>((set, get) => {
     // viewer isn't stranded on a now-empty detail view
     setExecEnt: (v) => setUi({ execEnt: v, detailId: null }),
     setExecStream: (v) => setUi({ execStream: v, detailId: null }),
-    resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null, batchFilter: null, svcServiceF: 'all', svcSectorF: 'all', svcPrioF: 'all', stgTaskF: 'all', stgSectorF: 'all', stgPrioF: 'all' }),
+    resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null, batchFilter: null, svcServiceF: 'all', svcSectorF: 'all', svcPrioF: 'all', stgTaskF: 'all', stgAxisF: 'all', stgSectorF: 'all', stgPrioF: 'all', opsCatF: 'all', opsSectorF: 'all', opsSupportF: 'all' }),
     setSvcFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     setStgFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
+    setOpsFilter: (k, v) =>
+      // switching away from عمليات الدعم المؤسسي clears the support filter
+      setUi(k === 'opsCatF' && v !== SUPPORT_OPTYPE ? ({ [k]: v, opsSupportF: 'all' } as Partial<UiState>) : ({ [k]: v } as Partial<UiState>)),
     setItemDate: (id, k, v) => patchItem(id, { [k]: v } as Partial<Item>),
     assignItemBatch: (id, batch) => patchItem(id, { execBatch: batch }),
     setContactEmail: (k, v) => {
@@ -1112,7 +1124,9 @@ export const useStore = create<Store>((set, get) => {
       if (d?.type === 'operation' && d?.path === 'strategy') {
         const filledT = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
         const dt = d as unknown as Record<string, unknown>;
-        const reqT = ['title', 'axis', 'subActivities', 'sector', 'dept', 'section', 'automationLevel', 'automationSystem', 'usageIntensity', 'importance', 'readinessLevel', 'impactScore', 'transformScore', 'outputClarity', 'riskLevel', 'transformYes'];
+        const reqT = ['title', 'axis', 'subActivities', 'sector', 'dept', 'section', 'automationLevel', 'usageIntensity', 'importance', 'readinessLevel', 'impactScore', 'transformScore', 'outputClarity', 'riskLevel', 'transformYes'];
+        const lvlT = String(dt.automationLevel ?? '');
+        if (lvlT === 'مؤتمتة كلياً' || lvlT === 'مؤتمتة جزئياً') reqT.push('automationSystem');
         if (reqT.some((k) => !filledT(dt[k]))) {
           return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
         }

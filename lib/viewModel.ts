@@ -5,7 +5,7 @@
 // ============================================================================
 import { useMemo } from 'react';
 import { useStore, logicRole, actorName } from './store';
-import {
+import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   missingFieldsOf,
   CONTACT_STREAMS,
   PATHS,
@@ -151,9 +151,14 @@ function build(s: Store) {
   }
   // strategy-stream filters: المهمة / القطاع / الأولوية
   if (filterStream === 'strategy') {
-    if (ui.stgTaskF !== 'all') visible = visible.filter((i) => (i.title || '') === ui.stgTaskF);
-    if (ui.stgSectorF !== 'all') visible = visible.filter((i) => (i.sector || '') === ui.stgSectorF);
+    if (ui.stgAxisF !== 'all') visible = visible.filter((i) => (i.axis || '') === ui.stgAxisF);
     if (ui.stgPrioF !== 'all') visible = visible.filter((i) => (stgPriority(i)?.cat || '') === ui.stgPrioF);
+  }
+  // operations-stream filters: تصنيف العملية / القطاع / نوع عملية الدعم
+  if (filterStream === 'ops') {
+    if (ui.opsCatF !== 'all') visible = visible.filter((i) => (i.opType || '') === ui.opsCatF);
+    if (ui.opsSectorF !== 'all') visible = visible.filter((i) => (i.sector || '') === ui.opsSectorF);
+    if (ui.opsSupportF !== 'all') visible = visible.filter((i) => (i.supportFn || '') === ui.opsSupportF);
   }
   // status filter
   if (ui.statusFilter !== 'all') visible = visible.filter((i) => statusMatch(i, ui.statusFilter, rawRole, s));
@@ -721,31 +726,52 @@ function build(s: Store) {
 
   // strategy-stream filter bar (اسم الجهة عبر فلتر الجهات الحالي)
   const stgScope = roleBase.filter((i) => i.path === 'strategy' && i.type === 'operation');
-  const stgFilterBar =
-    filterStream === 'strategy'
+  // العمليات: same three-filter structure as the other streams, plus a
+  // support-function filter that appears only for عمليات الدعم المؤسسي
+  const opsScope = roleBase.filter((i) => i.path === 'ops');
+  const opsFilterBar =
+    filterStream === 'ops'
       ? {
-          taskOptions: [
-            { v: 'all', label: 'المهمة: الكل' },
-            ...Array.from(new Set(stgScope.map((i) => i.title || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
+          catOptions: [
+            { v: 'all', label: 'تصنيف العملية: الكل' },
+            { v: 'العمليات التخصصية', label: 'العمليات التخصصية' },
+            { v: SUPPORT_OPTYPE, label: SUPPORT_OPTYPE },
           ],
           sectorOptions: [
             { v: 'all', label: 'القطاع: الكل' },
-            ...Array.from(new Set(stgScope.map((i) => i.sector || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
+            ...Array.from(new Set(opsScope.map((i) => i.sector || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
           ],
+          supportOptions: [
+            { v: 'all', label: 'نوع عملية الدعم: الكل' },
+            ...SUPPORT_FUNCTIONS.map((t) => ({ v: t, label: t })),
+          ],
+          showSupport: ui.opsCatF === SUPPORT_OPTYPE,
+          catValue: ui.opsCatF,
+          sectorValue: ui.opsSectorF,
+          supportValue: ui.opsSupportF,
+        }
+      : null;
+
+  const stgFilterBar =
+    filterStream === 'strategy'
+      ? {
+          axisOptions: [
+            { v: 'all', label: 'المحور: الكل' },
+            ...Array.from(new Set(stgScope.map((i) => i.axis || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
+          ],
+          axisValue: ui.stgAxisF,
           prioOptions: [
             { v: 'all', label: 'الأولوية: الكل' },
             { v: 'أولوية عالية', label: 'أولوية عالية' },
             { v: 'أولوية متوسطة', label: 'أولوية متوسطة' },
             { v: 'أولوية منخفضة', label: 'أولوية منخفضة' },
           ],
-          taskValue: ui.stgTaskF,
-          sectorValue: ui.stgSectorF,
           prioValue: ui.stgPrioF,
         }
       : null;
 
   // is any filter currently active (drives the reset button + count)
-  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim() || ui.svcServiceF !== 'all' || ui.svcSectorF !== 'all' || ui.svcPrioF !== 'all' || ui.stgTaskF !== 'all' || ui.stgSectorF !== 'all' || ui.stgPrioF !== 'all';
+  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim() || ui.svcServiceF !== 'all' || ui.svcSectorF !== 'all' || ui.svcPrioF !== 'all' || ui.stgAxisF !== 'all' || ui.stgPrioF !== 'all' || ui.opsCatF !== 'all' || ui.opsSectorF !== 'all' || ui.opsSupportF !== 'all';
 
   // ---- cards ----
   // ---- sidebar navigation (§redesign v2) ----
@@ -1232,6 +1258,7 @@ function build(s: Store) {
           targeted: stgActs(stgTasks.filter((i) => (i.transformYes || '') === 'نعم')),
           p1: stgTasks.filter((i) => stgCatOf(i) === 'أولوية عالية').length,
           p2: stgTasks.filter((i) => stgCatOf(i) === 'أولوية متوسطة').length,
+          p3: stgTasks.filter((i) => stgCatOf(i) === 'أولوية منخفضة').length,
         }
       : null;
 
@@ -1372,6 +1399,7 @@ function build(s: Store) {
     opsKpis,
     stgKpis,
     stgFilterBar,
+    opsFilterBar,
     inlineCreate: ui.inlineCreate && !!ui.draft && (ui.mStep === 'form' || ui.mStep === 'type'),
     confirmAdd: ui.confirmAdd,
     svcFilterBar,
