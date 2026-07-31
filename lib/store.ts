@@ -679,7 +679,15 @@ export const useStore = create<Store>((set, get) => {
           expectedResults: !fresh && Array.isArray(saved!.expectedResults) ? (saved!.expectedResults as ExpectedResult[]) : seedExpectedResults(),
           contactEmails: saved!.contactEmails && typeof saved!.contactEmails === 'object' ? { ...DEFAULT_CONTACT_EMAILS, ...(saved!.contactEmails as Record<string, string>) } : { ...DEFAULT_CONTACT_EMAILS },
           aboutHero: typeof saved!.aboutHero === 'string' && (saved!.aboutHero as string).trim() ? (saved!.aboutHero as string) : DEFAULT_ABOUT_HERO,
-          about: !fresh && saved!.about && typeof saved!.about === 'object' ? { ...(JSON.parse(JSON.stringify(DEFAULT_ABOUT)) as AboutContent), ...(saved!.about as Partial<AboutContent>) } : (JSON.parse(JSON.stringify(DEFAULT_ABOUT)) as AboutContent),
+          about: (() => {
+            const merged = !fresh && saved!.about && typeof saved!.about === 'object' ? { ...(JSON.parse(JSON.stringify(DEFAULT_ABOUT)) as AboutContent), ...(saved!.about as Partial<AboutContent>) } : (JSON.parse(JSON.stringify(DEFAULT_ABOUT)) as AboutContent);
+            // backfill milestone photos added to the defaults after the user's
+            // about content was first persisted (matched by year)
+            merged.timeline = (merged.timeline || []).map((t) =>
+              t.img ? t : { ...t, img: DEFAULT_ABOUT.timeline.find((d) => d.year === t.year)?.img }
+            );
+            return merged;
+          })(),
           libraryDocs: Array.isArray(saved!.libraryDocs) && (saved!.libraryDocs as LibraryDoc[]).length ? (saved!.libraryDocs as LibraryDoc[]) : DEFAULT_LIBRARY_DOCS.map((d) => ({ ...d })),
           inquiries: Array.isArray(saved!.inquiries) ? (saved!.inquiries as ContactInquiry[]) : [],
           view: (saved!.view as State['view']) || 'login',

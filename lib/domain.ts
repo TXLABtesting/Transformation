@@ -112,7 +112,7 @@ export const DEFAULT_ABOUT: AboutContent = {
     { year: '2013', title: 'الحكومة الذكية', sub: '', major: true },
     { year: '2017', title: 'تعيين أول وزير', sub: 'للذكاء الاصطناعي', major: false },
     { year: '2019', title: 'الحكومة الرقمية', sub: '', major: true },
-    { year: '2026', title: 'حكومة الذكاء الاصطناعي المساعد', sub: '', major: true },
+    { year: '2026', title: 'حكومة الذكاء الاصطناعي المساعد', sub: '', major: true, img: 'assets/timeline-2026.jpg' },
   ],
   targets: {
     label1: 'تحويل',
