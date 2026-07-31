@@ -109,8 +109,8 @@ export function PublicNav({ tab, onNav, onLogin }: { tab: PublicTab; onNav: (t: 
 
   const linkBtn = (n: { key: PublicTab; label: string }, block: boolean) => {
     const active = tab === n.key;
-    // per handoff: pill outline on About/Contact, bottom border on Library
-    const libStyle = active && n.key === 'library' && !block;
+    // one active treatment for every tab: the pill outline
+    const libStyle = false;
     return (
       <button
         key={n.key}
