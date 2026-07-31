@@ -305,7 +305,7 @@ export function Login({ vm }: { vm: VM }) {
               onMouseEnter={() => setHover(true)}
               onMouseLeave={() => setHover(false)}
               style={{
-                direction: 'ltr',
+                direction: 'rtl',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -329,8 +329,8 @@ export function Login({ vm }: { vm: VM }) {
                 alt=""
                 style={{ height: 26, maxHeight: 26, width: 'auto', display: 'block' }}
               />
-              <span style={{ fontSize: 18, fontWeight: 800, color: '#1A1A1A', letterSpacing: '.2px' }}>
-                Sign in with UAE PASS
+              <span style={{ fontSize: 16.5, fontWeight: 800, color: '#1A1A1A', whiteSpace: 'nowrap' }}>
+                تسجيل الدخول بالهوية الرقمية
               </span>
             </button>
             <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, fontWeight: 600, color: '#9FC4F2', lineHeight: 1.8 }}>
