@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useViewModel } from '@/lib/viewModel';
 import { Login } from '@/components/Login';
-import { TeamSetup } from '@/components/TeamSetup';
 import { Dashboard } from '@/components/Dashboard';
 import { AdminConsole } from '@/components/AdminConsole';
 import { CreatePanel } from '@/components/CreatePanel';
@@ -29,7 +28,6 @@ export default function Page() {
     <>
       <ResponsiveZoom />
       {vm.isLogin && <Login vm={vm} />}
-      {vm.isSetup && <TeamSetup vm={vm} />}
       {vm.isDashboard && vm.isAdmin && <AdminConsole vm={vm} />}
       {vm.isDashboard && !vm.isAdmin && (
         <>

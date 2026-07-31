@@ -728,9 +728,10 @@ export const useStore = create<Store>((set, get) => {
     toast,
 
     // ---- auth / view ----
+    // sign-in lands directly on the platform — team members are provisioned
+    // centrally by the admin for all entities (no self-service setup screen)
     loginUaePass: () => {
-      const s = get();
-      set({ view: s.setupDone ? 'dashboard' : 'setup' });
+      set({ view: 'dashboard' });
       persist();
     },
     logout: () => {
@@ -827,10 +828,8 @@ export const useStore = create<Store>((set, get) => {
     toggleProfile: () => set((s) => ({ ui: { ...s.ui, profileOpen: !s.ui.profileOpen, notifOpen: false } })),
     openTeam: () => setUi({ teamOpen: true, profileOpen: false }),
     closeTeam: () => setUi({ teamOpen: false }),
-    goEditTeam: () => {
-      set({ view: 'setup' });
-      setUi({ teamOpen: false, setupStep: 1 });
-    },
+    // team members are managed centrally from the admin console
+    goEditTeam: () => setUi({ teamOpen: false }),
     openBasket: () => setUi({ basketOpen: true }),
     closeBasket: () => setUi({ basketOpen: false }),
     openResultModal: (id) => {
