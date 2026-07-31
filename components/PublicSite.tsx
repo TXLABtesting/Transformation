@@ -201,7 +201,7 @@ export function PublicFooter() {
   );
 }
 
-const sectionTitle: React.CSSProperties = { fontSize: 24, fontWeight: 900, textAlign: 'center', margin: '0 0 30px', color: '#0F1F3D' };
+const sectionTitle: React.CSSProperties = { fontSize: 24, fontWeight: 900, textAlign: 'right', margin: '0 0 30px', color: '#0F1F3D' };
 
 // ---------------------------------------------------------------------------
 // عن المشروع
@@ -229,13 +229,13 @@ export function AboutPage() {
       {/* hero */}
       <div style={{ maxWidth: 1060, margin: '0 auto', padding: '64px 32px 24px', textAlign: 'right', direction: 'rtl' }}>
         <h1 style={{ fontSize: 40, fontWeight: 900, margin: '0 0 18px', color: '#0F1F3D' }}>عن المشروع</h1>
-        <p style={{ fontSize: 16, fontWeight: 600, color: '#3B4A66', lineHeight: 2.15, maxWidth: 920, margin: '0 auto', textAlign: 'right', direction: 'rtl' }}>{hero}</p>
+        <p style={{ fontSize: 16, fontWeight: 400, color: '#3B4A66', lineHeight: 2.15, margin: 0, textAlign: 'right', direction: 'rtl' }}>{hero}</p>
       </div>
 
       {/* timeline */}
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '40px 32px 20px' }}>
         <h2 style={{ ...sectionTitle, marginBottom: 6 }}>مسيرة التحول الحكومي</h2>
-        <p style={{ fontSize: 13.5, color: '#7484A0', fontWeight: 600, textAlign: 'center', margin: '0 0 34px' }}>ربع قرن من الريادة في التحول الرقمي الحكومي</p>
+        <p style={{ fontSize: 13.5, color: '#7484A0', fontWeight: 400, textAlign: 'right', margin: '0 0 34px' }}>ربع قرن من الريادة في التحول الرقمي الحكومي</p>
         {mobile ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {TL.map((t) => (
@@ -278,7 +278,7 @@ export function AboutPage() {
                   </div>
                 )}
                 <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1F2D49', textAlign: 'center', lineHeight: 1.7, padding: '0 8px' }}>{t.title}</div>
-                {t.sub ? <div style={{ fontSize: 11.5, fontWeight: 600, color: '#7484A0', textAlign: 'center', lineHeight: 1.7, padding: '0 10px' }}>{t.sub}</div> : null}
+                {t.sub ? <div style={{ fontSize: 11.5, fontWeight: 400, color: '#7484A0', textAlign: 'center', lineHeight: 1.7, padding: '0 10px' }}>{t.sub}</div> : null}
               </div>
             ) : (
               <div key={t.year} style={{ flex: 0.7, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, minWidth: 0 }}>
@@ -302,7 +302,7 @@ export function AboutPage() {
                 <div style={{ fontSize: 17, fontWeight: 900, color: '#2563EB', lineHeight: 1, marginTop: 8 }}>{t.year}</div>
                 <div style={{ marginTop: -6 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#33405A', textAlign: 'center', lineHeight: 1.75, padding: '0 8px' }}>{t.title}</div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#7484A0', textAlign: 'center', lineHeight: 1.75, padding: '0 8px' }}>{t.sub}</div>
+                  <div style={{ fontSize: 11, fontWeight: 400, color: '#7484A0', textAlign: 'center', lineHeight: 1.75, padding: '0 8px' }}>{t.sub}</div>
                 </div>
               </div>
             )
@@ -318,15 +318,15 @@ export function AboutPage() {
           <div style={{ background: 'linear-gradient(150deg,#0B2A66,#123B85)', borderRadius: 20, padding: '36px 34px', color: '#fff', textAlign: 'center', boxShadow: '0 22px 46px -26px rgba(11,42,102,.7)' }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#8FB4EC', marginBottom: 6 }}>{TG.label1}</div>
             <div style={{ fontSize: 64, fontWeight: 900, lineHeight: 1 }}>{TG.value1}</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#C6D8F5', lineHeight: 2, marginTop: 14 }}>{TG.text1}</div>
+            <div style={{ fontSize: 14, fontWeight: 400, color: '#C6D8F5', lineHeight: 2, marginTop: 14 }}>{TG.text1}</div>
           </div>
           <div style={{ background: 'linear-gradient(150deg,#1D4ED8,#2E6FD1)', borderRadius: 20, padding: '36px 34px', color: '#fff', textAlign: 'center', boxShadow: '0 22px 46px -26px rgba(29,78,216,.7)' }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#BFD6F8', marginBottom: 6 }}>{TG.label2}</div>
             <div style={{ fontSize: 64, fontWeight: 900, lineHeight: 1 }}>{TG.value2}</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#DBE8FC', lineHeight: 2, marginTop: 14 }}>{TG.text2}</div>
+            <div style={{ fontSize: 14, fontWeight: 400, color: '#DBE8FC', lineHeight: 2, marginTop: 14 }}>{TG.text2}</div>
           </div>
         </div>
-        <div style={{ marginTop: 18, background: '#EAF1FE', border: '1px solid #C9DBF8', borderRadius: 14, padding: '16px 22px', fontSize: 13, fontWeight: 600, color: '#1F3D77', lineHeight: 2, textAlign: 'center' }}>
+        <div style={{ marginTop: 18, background: '#EAF1FE', border: '1px solid #C9DBF8', borderRadius: 14, padding: '16px 22px', fontSize: 13, fontWeight: 400, color: '#1F3D77', lineHeight: 2, textAlign: 'center' }}>
           {TG.note}
         </div>
       </div>
@@ -360,7 +360,7 @@ export function AboutPage() {
                 <PIcon d={SCOPE_ICONS[si % SCOPE_ICONS.length]} size={24} />
               </div>
               <div style={{ fontSize: 15.5, fontWeight: 800, lineHeight: 1.6, color: '#0F1F3D' }}>{s.title}</div>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#5E6E8C', lineHeight: 1.95 }}>{s.desc}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 400, color: '#5E6E8C', lineHeight: 1.95 }}>{s.desc}</div>
             </div>
           ))}
         </div>
@@ -467,8 +467,7 @@ export function LibraryPage() {
 
         {docs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '70px 0' }}>
-            <PIcon d={IC.search} size={44} color="#8A97AD" />
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#0F1F3D', marginTop: 12 }}>لا توجد وثائق مطابقة</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#0F1F3D' }}>لا توجد وثائق مطابقة</div>
             <div style={{ fontSize: 12.5, fontWeight: 600, color: '#8A97AD', marginTop: 4 }}>جرّب كلمة أخرى أو امسح البحث</div>
           </div>
         ) : (
@@ -666,14 +665,23 @@ export function ContactPage() {
                 </div>
                 <div>
                   <label style={label}>المسار المعني</label>
-                  <select value={f.stream} onChange={(e) => set('stream', e.target.value)} style={{ ...input('stream'), fontWeight: 700, cursor: 'pointer' }}>
-                    <option value="">اختر المسار…</option>
-                    {CONTACT_STREAMS.map((s) => (
-                      <option key={s.key} value={s.key}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <select
+                      value={f.stream}
+                      onChange={(e) => set('stream', e.target.value)}
+                      style={{ ...input('stream'), fontWeight: 700, cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', paddingLeft: 40 }}
+                    >
+                      <option value="">اختر المسار…</option>
+                      {CONTACT_STREAMS.map((s) => (
+                        <option key={s.key} value={s.key}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span style={{ position: 'absolute', left: 16, pointerEvents: 'none', display: 'inline-flex' }}>
+                      <PIcon d="M6 9l6 6 6-6" size={16} color="#54627B" sw={2.2} />
+                    </span>
+                  </div>
                   {err('stream')}
                 </div>
                 <div style={{ gridColumn: '1/-1' }}>
