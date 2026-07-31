@@ -978,7 +978,10 @@ export const useStore = create<Store>((set, get) => {
       // all from one login); production stays restricted to assigned streams
       const demoAllStreams = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
       if (!demoAllStreams && !st.myPaths.includes(p)) return;
-      set({ myPath: p, ui: { ...st.ui, filter: 'all', stepFilter: null } });
+      set({
+        myPath: p,
+        ui: { ...st.ui, filter: 'all', stepFilter: null, modalOpen: false, inlineCreate: false, draft: null, editingId: null, mStep: 'path' },
+      });
       persist();
     },
     setFilter: (v) => setUi({ filter: v }),
@@ -1000,8 +1003,8 @@ export const useStore = create<Store>((set, get) => {
       if (!cm) return;
       setUi({ confirmModal: null });
     },
-    setNavSection: (v) => setUi({ navSection: v, navStream: null, batchFilter: null, search: '', statusFilter: 'all' }),
-    setNavStream: (v) => setUi({ navStream: v }),
+    setNavSection: (v) => setUi({ navSection: v, navStream: null, batchFilter: null, search: '', statusFilter: 'all', modalOpen: false, inlineCreate: false, draft: null, editingId: null, mStep: 'path' }),
+    setNavStream: (v) => setUi({ navStream: v, modalOpen: false, inlineCreate: false, draft: null, editingId: null, mStep: 'path' }),
     setBatchFilter: (v) => setUi({ batchFilter: v }),
     openBatchItems: (batch, section) =>
       setUi({ navSection: section, navStream: null, batchFilter: batch, search: '', statusFilter: 'all' }),
