@@ -229,7 +229,7 @@ export function AboutPage() {
       {/* hero */}
       <div style={{ maxWidth: 1060, margin: '0 auto', padding: '64px 32px 24px', textAlign: 'center' }}>
         <h1 style={{ fontSize: 40, fontWeight: 900, margin: '0 0 18px', color: '#0F1F3D' }}>عن المشروع</h1>
-        <p style={{ fontSize: 16, fontWeight: 600, color: '#3B4A66', lineHeight: 2.15, maxWidth: 920, margin: '0 auto', textAlign: 'justify', textAlignLast: 'center' }}>{hero}</p>
+        <p style={{ fontSize: 16, fontWeight: 600, color: '#3B4A66', lineHeight: 2.15, maxWidth: 920, margin: '0 auto', textAlign: 'right', direction: 'rtl' }}>{hero}</p>
       </div>
 
       {/* timeline */}
