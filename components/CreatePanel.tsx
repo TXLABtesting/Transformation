@@ -1605,48 +1605,58 @@ function FService({
         {sel('كثافة الاستخدام', 'usageIntensity', ['منخفضة', 'متوسطة', 'مرتفعة'])}
         {sel('مستوى التعقيد', 'complexity', ['منخفض', 'متوسط', 'مرتفع'])}
         {sel('مستوى الجاهزية', 'readinessLevel', ['منخفض', 'متوسط', 'مرتفع'])}
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>أولوية التحول <span style={{ color: '#D23B45' }}>*</span></label>
-          <div style={{ display: 'flex', gap: 10 }}>
-            {['نعم', 'لا'].map((opt) => {
-              const active = gv('transformYes') === opt;
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setField('transformYes', opt)}
-                  style={{
-                    flex: 1,
-                    border: '1px solid ' + (active ? '#2563EB' : '#DCE3EE'),
-                    background: active ? '#EAF1FE' : '#fff',
-                    color: active ? '#1D4ED8' : '#54627B',
-                    borderRadius: 11,
-                    padding: '11px 13px',
-                    fontSize: 13.5,
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  {opt}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div style={{ marginBottom: 0 }}>
-          <label style={labelStyle}>أولوية الاختيار</label>
-          {pr ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: PR_COLORS[pr].bg, color: PR_COLORS[pr].c, borderRadius: 999, padding: '8px 16px', fontSize: 13.5, fontWeight: 800 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: PR_COLORS[pr].c, flex: 'none' }} />
-              الأولوية {pr}
-            </span>
-          ) : (
-            <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px' }}>
-              تُحسب تلقائياً بعد اختيار كثافة الاستخدام ومستوى التعقيد ومستوى الجاهزية
+        {/* أولوية الاختيار + أولوية التحول on one row; التحول is derived from
+            the matrix (1-3 → نعم، 4 → لا) and read-only */}
+        {(() => {
+          const derived = pr ? (pr === 4 ? 'لا' : 'نعم') : '';
+          if (derived && gv('transformYes') !== derived) setField('transformYes', derived);
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 0 }}>
+              <div>
+                <label style={labelStyle}>أولوية الاختيار</label>
+                {pr ? (
+                  <div style={{ minHeight: 44, display: 'flex', alignItems: 'center' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: PR_COLORS[pr].bg, color: PR_COLORS[pr].c, borderRadius: 999, padding: '8px 16px', fontSize: 13.5, fontWeight: 800 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: PR_COLORS[pr].c, flex: 'none' }} />
+                      الأولوية {pr}
+                    </span>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px' }}>
+                    تُحسب تلقائياً بعد اختيار كثافة الاستخدام ومستوى التعقيد ومستوى الجاهزية
+                  </div>
+                )}
+              </div>
+              <div>
+                <label style={labelStyle}>أولوية التحول</label>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {['نعم', 'لا'].map((opt) => {
+                    const active = derived === opt;
+                    return (
+                      <span
+                        key={opt}
+                        style={{
+                          flex: 1,
+                          textAlign: 'center',
+                          border: '1px solid ' + (active ? '#2563EB' : '#E7ECF4'),
+                          background: active ? '#EAF1FE' : '#F7F9FD',
+                          color: active ? '#1D4ED8' : '#AAB4C6',
+                          borderRadius: 11,
+                          padding: '11px 13px',
+                          fontSize: 13.5,
+                          fontWeight: 800,
+                          cursor: 'default',
+                        }}
+                      >
+                        {opt}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+          );
+        })()}
       </div>
     </div>
   );
