@@ -1262,28 +1262,30 @@ function FOps({
 
       <div style={cardStyle}>
         <div style={{ fontSize: 14, fontWeight: 800, color: '#1F2D49', marginBottom: 14 }}>الأتمتة</div>
-        {yesNo('هل النشاط/العملية مؤتمت؟', 'isAutomated')}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 0 }}>
-          <div>
-            <label style={labelStyle}>ما هو نظام الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
-            <input value={gv('automationSystem')} onChange={(e) => setField('automationSystem', e.target.value)} style={inputStyle} />
-          </div>
-          <div>
-            <label style={labelStyle}>ما هي نسبة الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={5}
-                value={Number(gv('automationPct')) || 0}
-                onChange={(e) => setField('automationPct', Number(e.target.value))}
-                style={{ flex: 1, accentColor: '#2563EB' }}
-              />
-              <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', minWidth: 42, textAlign: 'left' }}>{Number(gv('automationPct')) || 0}%</span>
+        {yesNo('هل العملية مؤتمتة؟', 'isAutomated')}
+        {gv('isAutomated') === 'نعم' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 0 }}>
+            <div>
+              <label style={labelStyle}>ما هو نظام الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
+              <input value={gv('automationSystem')} onChange={(e) => setField('automationSystem', e.target.value)} style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>ما هي نسبة الأتمتة؟ <span style={{ color: '#D23B45' }}>*</span></label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={Number(gv('automationPct')) || 0}
+                  onChange={(e) => setField('automationPct', Number(e.target.value))}
+                  style={{ flex: 1, accentColor: '#2563EB' }}
+                />
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', minWidth: 42, textAlign: 'left' }}>{Number(gv('automationPct')) || 0}%</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div style={cardStyle}>
@@ -1295,12 +1297,6 @@ function FOps({
           {sel('مستوى التعقيد', 'complexity', scale)}
         </div>
         {sel('القابلية للتحول', 'transformScore', scale)}
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>أولوية الاختيار</label>
-          <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px' }}>
-            تُحسب تلقائياً وفق مصفوفة أولوية العمليات بعد اعتمادها
-          </div>
-        </div>
         {yesNo('أولوية التحول', 'transformYes')}
         <div style={{ marginBottom: 0 }}>
           <label style={labelStyle}>الملاحظات</label>
@@ -1313,21 +1309,6 @@ function FOps({
         </div>
       </div>
 
-      <div style={cardStyle}>
-        <label style={labelStyle}>دفعة الإطلاق <span style={{ color: '#D23B45' }}>*</span></label>
-        <select
-          value={vm.modal.draft?.execBatch || ''}
-          onChange={(e) => vm.store.selectExecBatch(e.target.value)}
-          style={inputStyle}
-        >
-          <option value="">اختر الدفعة…</option>
-          {m.batchOptions.map((b) => (
-            <option key={b.name} value={b.name}>
-              {b.label}
-            </option>
-          ))}
-        </select>
-      </div>
     </div>
   );
 }
@@ -1477,21 +1458,6 @@ function FTask({
         </div>
       </div>
 
-      <div style={cardStyle}>
-        <label style={labelStyle}>دفعة الإطلاق <span style={{ color: '#D23B45' }}>*</span></label>
-        <select
-          value={vm.modal.draft?.execBatch || ''}
-          onChange={(e) => vm.store.selectExecBatch(e.target.value)}
-          style={inputStyle}
-        >
-          <option value="">اختر الدفعة…</option>
-          {m.batchOptions.map((b) => (
-            <option key={b.name} value={b.name}>
-              {b.label}
-            </option>
-          ))}
-        </select>
-      </div>
     </div>
   );
 }
@@ -1600,21 +1566,6 @@ function FService({
             </div>
           )}
         </div>
-      </div>
-      <div style={cardStyle}>
-        <label style={labelStyle}>دفعة الإطلاق <span style={{ color: '#D23B45' }}>*</span></label>
-        <select
-          value={vm.modal.draft?.execBatch || ''}
-          onChange={(e) => vm.store.selectExecBatch(e.target.value)}
-          style={inputStyle}
-        >
-          <option value="">اختر الدفعة…</option>
-          {m.batchOptions.map((b) => (
-            <option key={b.name} value={b.name}>
-              {b.label}
-            </option>
-          ))}
-        </select>
       </div>
     </div>
   );

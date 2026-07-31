@@ -630,7 +630,7 @@ function build(s: Store) {
   const statusOptions =
     rawRole === 'coord'
       ? [
-          { v: 'all', label: 'جميع الحالات' },
+          { v: 'all', label: 'الحالة' },
           { v: 'draft', label: 'مسودة' },
           { v: 'pending', label: 'قيد الاعتماد' },
           { v: 'review', label: 'للتعديل' },
@@ -638,12 +638,12 @@ function build(s: Store) {
         ]
       : rawRole === 'entity'
         ? [
-            { v: 'all', label: 'جميع الحالات' },
+            { v: 'all', label: 'الحالة' },
             { v: 'approve', label: 'للاعتماد' },
             { v: 'inprog', label: 'معتمد' },
           ]
         : [
-            { v: 'all', label: 'جميع الحالات' },
+            { v: 'all', label: 'الحالة' },
             { v: 'inprog', label: 'معتمد' },
           ];
 
@@ -672,7 +672,7 @@ function build(s: Store) {
   const entOptions = [{ v: 'all', label: 'جميع الجهات' }, ...entFilterValues.map((e) => ({ v: e, label: e }))];
   // per-stream type dropdowns (each keeps «جميع الأنواع» first). Streams that
   // define their own taxonomy override the generic list.
-  const allTypesOpt = { v: 'all', label: 'جميع الأنواع' };
+  const allTypesOpt = { v: 'all', label: 'نوع العملية' };
   const typeOptions =
     filterStream === 'ops'
       ? [

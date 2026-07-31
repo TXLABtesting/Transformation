@@ -197,7 +197,6 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'complexity', label: 'مستوى التعقيد' },
     { key: 'readinessLevel', label: 'الجاهزية' },
     { key: 'transformYes', label: 'أولوية التحول' },
-    { key: 'execBatch', label: 'دفعة الإطلاق' },
   ],
   strategy: [
     { key: 'axis', label: 'المحور' },
@@ -216,7 +215,6 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'outputClarity', label: 'وضوح المخرجات' },
     { key: 'riskLevel', label: 'مستوى المخاطر' },
     { key: 'transformYes', label: 'أولوية التحول' },
-    { key: 'execBatch', label: 'دفعة الإطلاق' },
   ],
   ops: [
     { key: 'opType', label: 'تصنيف العملية' },
@@ -234,7 +232,6 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'complexity', label: 'مستوى التعقيد' },
     { key: 'transformScore', label: 'القابلية للتحول' },
     { key: 'transformYes', label: 'أولوية التحول' },
-    { key: 'execBatch', label: 'دفعة الإطلاق' },
   ],
 };
 // select-field options per stream — mirrors the entry forms exactly (used for
@@ -330,6 +327,8 @@ export function missingFieldsOf(i: Record<string, unknown> & { path?: string }):
   return spec
     // نوع عملية الدعم المؤسسي مطلوب فقط عند اختيار «عمليات الدعم المؤسسي»
     .filter((f) => (f.key === 'supportFn' ? plainOf(i.opType) === SUPPORT_OPTYPE : true))
+    // نظام الأتمتة مطلوب فقط للعمليات المؤتمتة
+    .filter((f) => (f.key === 'automationSystem' && i.path === 'ops' ? plainOf(i.isAutomated) === 'نعم' : true))
     .filter((f) => !plainOf(i[f.key]))
     .map((f) => f.label);
 }
@@ -791,7 +790,7 @@ export function wfOf(i: Item): WfState {
 export type WfMeta = { step: number; label: string; who: string; chip: string; bg: string };
 export const WFMETA: Record<string, WfMeta> = {
   draft: { step: 1, label: 'مسودة', who: 'path', chip: '#64748B', bg: '#EFF2F7' },
-  ent1: { step: 1, label: 'بانتظار اعتماد رئيس المسار', who: 'path', chip: '#B45309', bg: '#FFF3DE' },
+  ent1: { step: 1, label: 'قيد الاعتماد', who: 'path', chip: '#B45309', bg: '#FFF3DE' },
   pm1: { step: 2, label: 'بانتظار اعتماد اللجنة الوطنية', who: 'ai', chip: '#B45309', bg: '#FFF3DE' },
   exec: { step: 3, label: 'قيد التنفيذ', who: 'path', chip: '#2563EB', bg: '#EAF0FE' },
   launch: { step: 3, label: 'قيد الإطلاق', who: 'path', chip: '#2563EB', bg: '#EAF0FE' },
@@ -812,7 +811,7 @@ export function stageWeight(i: Item): number {
 }
 
 // A returned item (has `ret`) surfaces a distinct amber status instead of "مسودة".
-export const RETURNED_STATUS = 'بحاجة إلى تعديل';
+export const RETURNED_STATUS = 'للتعديل';
 
 // exec / launch completion gates
 export function execAllDone(it: Item): boolean {

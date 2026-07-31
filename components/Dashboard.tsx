@@ -2168,23 +2168,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                 </div>
                 <HoverDiv
-                  onClick={s.openTeam}
-                  base={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '11px 16px',
-                    cursor: 'pointer',
-                    fontSize: 12.5,
-                    fontWeight: 700,
-                    color: '#42506B',
-                  }}
-                  hover={{ background: '#F7F9FD' }}
-                >
-                  <Icon d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8" size={16} />{' '}
-                  فريق العمل
-                </HoverDiv>
-                <HoverDiv
                   onClick={s.logout}
                   base={{
                     display: 'flex',
@@ -3592,7 +3575,42 @@ function ListView({ cards, isOps }: { cards: CardVM[]; isOps?: boolean }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1020 }}>
         <thead>
           <tr>
-            <th style={{ ...th, width: 30 }} />
+            <th style={{ ...th, width: 30 }}>
+              {(() => {
+                // «تحديد الكل» for whichever selection mode the rows expose
+                const sel = cards.filter((c) => c.showDraftCheck || c.showSelectCheck || c.showAssignCheck);
+                if (!sel.length) return null;
+                const isOn = (c: CardVM) => (c.showDraftCheck ? c.draftChecked : c.showSelectCheck ? c.fundChecked : c.assignChecked);
+                const allOn = sel.every(isOn);
+                return (
+                  <span
+                    title={allOn ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
+                    onClick={(e) => {
+                      stop(e);
+                      sel.forEach((c) => {
+                        if (isOn(c) === !allOn) return;
+                        if (c.showDraftCheck) c.onToggleDraftSel();
+                        else if (c.showSelectCheck) c.onToggleFundSel();
+                        else c.onToggleAssignSel();
+                      });
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      width: 17,
+                      height: 17,
+                      borderRadius: 5,
+                      border: `2px solid ${allOn ? '#2563EB' : '#C7D1E2'}`,
+                      background: allOn ? '#2563EB' : '#fff',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {allOn && <Icon d="M20 6 9 17l-5-5" size={11} color="#fff" strokeWidth={3} />}
+                  </span>
+                );
+              })()}
+            </th>
             <th style={th}>العنوان</th>
             <th style={th}>التصنيف</th>
             {isOps && <th style={th}>نوع عملية الدعم المؤسسي</th>}
@@ -3803,7 +3821,7 @@ function ListView({ cards, isOps }: { cards: CardVM[]; isOps?: boolean }) {
 
 const CARD_PILLS: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: 'مسودة', color: '#5A6B86', bg: '#EEF2F8' },
-  pendEnt: { label: 'بانتظار اعتماد رئيس المسار', color: '#B45309', bg: '#FFF7EB' },
+  pendEnt: { label: 'قيد الاعتماد', color: '#B45309', bg: '#FFF7EB' },
   apprEnt: { label: 'معتمد', color: '#0B8A4B', bg: '#EAF7F0' },
   rejEnt: { label: 'مُعاد للتعديل', color: '#C0392B', bg: '#FDECEA' },
   nominated: { label: 'مُرشَّح للاعتماد', color: '#6D28D9', bg: '#F3EEFD' },
