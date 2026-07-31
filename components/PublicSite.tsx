@@ -13,7 +13,7 @@ export type PublicTab = 'home' | 'about' | 'library' | 'contact';
 
 const NAV_LINKS: { key: PublicTab; label: string }[] = [
   { key: 'home', label: 'الصفحة الرئيسية' },
-  { key: 'about', label: 'عن المشروع' },
+  { key: 'about', label: 'من نحن' },
   { key: 'library', label: 'المنشورات' },
   { key: 'contact', label: 'تواصل معنا' },
 ];
@@ -228,7 +228,7 @@ export function AboutPage() {
     <div style={{ background: '#F7F9FD' }}>
       {/* hero */}
       <div style={{ maxWidth: 1060, margin: '0 auto', padding: '64px 32px 24px', textAlign: 'right', direction: 'rtl' }}>
-        <h1 style={{ fontSize: 40, fontWeight: 900, margin: '0 0 18px', color: '#0F1F3D' }}>عن المشروع</h1>
+        <h1 style={{ fontSize: 40, fontWeight: 900, margin: '0 0 18px', color: '#0F1F3D' }}>من نحن</h1>
         <p style={{ fontSize: 16, fontWeight: 400, color: '#3B4A66', lineHeight: 2.15, margin: 0, textAlign: 'right', direction: 'rtl' }}>{hero}</p>
       </div>
 

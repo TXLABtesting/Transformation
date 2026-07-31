@@ -301,7 +301,7 @@ function SiteTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <SiteSection title="محتوى صفحة «عن المشروع» — النص التعريفي" sub="النص أعلى الصفحة العامة — يُحفظ تلقائياً ويظهر للزوار مباشرة.">
+      <SiteSection title="محتوى صفحة «من نحن» — النص التعريفي" sub="النص أعلى الصفحة العامة — يُحفظ تلقائياً ويظهر للزوار مباشرة.">
         <textarea value={s.aboutHero} onChange={(e) => s.setAboutHero(e.target.value)} rows={7} style={siteTa} />
       </SiteSection>
 
