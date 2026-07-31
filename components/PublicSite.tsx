@@ -291,10 +291,10 @@ export function AboutPage() {
                 <div style={{ height: 38, borderLeft: '2px dotted #B7C4D8', margin: '-6px 0 -2px' }} />
                 {t.img ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={t.img} alt={t.title} style={{ width: 'clamp(58px, 6vw, 88px)', height: 'clamp(58px, 6vw, 88px)', borderRadius: '50%', objectFit: 'cover', border: '1px solid #DCE4F0', marginTop: -4 }} />
+                  <img src={t.img} alt={t.title} style={{ width: 'clamp(80px, 8.6vw, 128px)', height: 'clamp(80px, 8.6vw, 128px)', borderRadius: '50%', objectFit: 'cover', border: '1px solid #DCE4F0', marginTop: -4 }} />
                 ) : (
                   <div
-                    style={{ width: 'clamp(58px, 6vw, 88px)', height: 'clamp(58px, 6vw, 88px)', borderRadius: '50%', background: 'repeating-linear-gradient(45deg,#E3EAF5 0 8px,#EFF3FA 8px 16px)', border: '1px solid #DCE4F0', marginTop: -4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace', fontSize: 9, color: '#8A97AD' }}
+                    style={{ width: 'clamp(80px, 8.6vw, 128px)', height: 'clamp(80px, 8.6vw, 128px)', borderRadius: '50%', background: 'repeating-linear-gradient(45deg,#E3EAF5 0 8px,#EFF3FA 8px 16px)', border: '1px solid #DCE4F0', marginTop: -4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace', fontSize: 10, color: '#8A97AD' }}
                   >
                     صورة
                   </div>

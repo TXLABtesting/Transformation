@@ -1885,39 +1885,6 @@ export function Dashboard({ vm }: { vm: VM }) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Phase countdown (moved out of the banner) */}
-          {vm.showProgramBanner && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                height: 44,
-                padding: '0 13px',
-                borderRadius: 12,
-                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-                background: '#fff',
-                color: '#54627B',
-                fontSize: 12,
-              }}
-            >
-              <span style={{ fontWeight: 400, color: '#6B7A93', whiteSpace: 'nowrap' }}>{vm.banner.countdownLabel}</span>
-              {[
-                { v: String(vm.banner.cd.days), l: 'يوم' },
-                { v: vm.banner.cd.hh, l: 'ساعة' },
-                { v: vm.banner.cd.mm, l: 'دقيقة' },
-                { v: vm.banner.cd.ss, l: 'ثانية' },
-              ].map((seg, si) => (
-                <span key={seg.l} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                  {si > 0 && <span style={{ width: 1, height: 20, background: '#EBEFF6' }} />}
-                  <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
-                    <span dir="ltr" style={{ fontWeight: 800, color: '#13213C', fontSize: 13 }}>{seg.v}</span>
-                    <span style={{ fontSize: 9, color: '#9AA6BC', fontWeight: 400 }}>{seg.l}</span>
-                  </span>
-                </span>
-              ))}
-              <InfoTip keep flip text={vm.banner.countdownCaption + ' — يُرجى استكمال حصر وإدخال جميع المشاريع والمبادرات والعمليات والخدمات قبل انتهائه (' + vm.banner.curPhaseDeadlineFmt + ').'} />
-            </div>
-          )}
 
           {/* Notifications */}
           <div data-tour="notifs" style={{ position: 'relative' }}>
