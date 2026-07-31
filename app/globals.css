@@ -392,7 +392,8 @@ select {
   flex-wrap: wrap;
 }
 .segkpi > .segbox {
-  flex: 1 1 190px;
+  flex: 1 1 0;
+  min-width: 190px;
   min-width: 0;
   padding: 18px 20px;
   display: flex;
@@ -427,7 +428,7 @@ select {
   color: #8A97AD;
 }
 @media (max-width: 767px) {
-  .segkpi > .segbox { flex: 1 1 45%; padding: 15px 16px; }
+  .segkpi > .segbox { flex: 1 1 42%; min-width: 0; padding: 15px 16px; }
   .segkpi .segval { font-size: 26px; }
   .segkpi .seglbl { min-height: auto; }
   .segfoot { flex-direction: column; gap: 6px; }
