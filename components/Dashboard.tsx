@@ -1771,7 +1771,6 @@ export function Dashboard({ vm }: { vm: VM }) {
   // مرحلة manage popups: assign items / manage launches for a given batch
   const [itemsMgrFor, setItemsMgrFor] = useState<string | null>(null);
   const [launchMgrFor, setLaunchMgrFor] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'cards' | 'list'>('list');
   // mobile: the filter bar collapses into one button that opens a full-screen sheet
   const [mobileFilters, setMobileFilters] = useState(false);
   // mobile navigation: the rail collapses into a hamburger drawer, and the
@@ -2865,44 +2864,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {/* action cluster — flex:none keeps the toggle, report and both
                     CTAs together on the same line when the row wraps */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 'none' }}>
-                {/* cards / table view switcher */}
-                <div
-                  style={{
-                    display: 'flex',
-                    background: '#F4F7FC',
-                    border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-                    borderRadius: 11,
-                    padding: 3,
-                    gap: 2,
-                  }}
-                >
-                  {(
-                    [
-                      { k: 'cards' as const, icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z', title: 'عرض البطاقات' },
-                      { k: 'list' as const, icon: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', title: 'عرض الجدول' },
-                    ]
-                  ).map((v) => (
-                    <button
-                      key={v.k}
-                      title={v.title}
-                      onClick={() => setViewMode(v.k)}
-                      style={{
-                        width: 34,
-                        height: 32,
-                        border: viewMode === v.k ? '1px solid #D8E3F5' : '1px solid transparent',
-                        borderRadius: 8,
-                        background: viewMode === v.k ? '#fff' : 'transparent',
-                        boxShadow: viewMode === v.k ? '0 1px 4px rgba(15,31,61,.10)' : 'none',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Icon d={v.icon} size={15} color={viewMode === v.k ? '#1D4ED8' : '#8A97AD'} />
-                    </button>
-                  ))}
-                </div>
                 <ExportMenu onExcel={s.exportExcel} onPpt={s.exportPpt} label={vm.role === 'ai' ? (vm.navStream ? 'تحميل تقرير اعتماد المسار' : 'تحميل تقرير الاعتماد') : vm.navStream ? 'تحميل تقرير المسار' : 'تحميل التقرير'} />
                 </div>
               </div>
@@ -2923,14 +2884,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                     {vm.emptyDesc}
                   </div>
                 </div>
-              ) : viewMode === 'list' ? (
-                <ListView cards={vm.sectionCards} stream={vm.listStream} />
               ) : (
-                <div data-r="cards" data-tour="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
-                  {vm.sectionCards.map((c) => (
-                    <CardItem key={c.id} c={c} />
-                  ))}
-                </div>
+                <ListView cards={vm.sectionCards} stream={vm.listStream} />
               )}
 
               {/* inline add-manually form — under the table, not a popup */}
