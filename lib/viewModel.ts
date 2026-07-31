@@ -1231,6 +1231,8 @@ function build(s: Store) {
   const svcKpis =
     filterStream === 'services'
       ? {
+          // each entry is a sub-service; the main services are its distinct titles
+          mainSvc: new Set(svcItems.map((i) => (i.title || '').trim()).filter(Boolean)).size,
           total: svcItems.length,
           transformable: svcItems.filter((i) => { const p = svcPr(i); return p != null && p <= 3; }).length,
           targeted: svcItems.filter((i) => (i.transformYes || '') === 'نعم').length,
