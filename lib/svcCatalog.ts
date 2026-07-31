@@ -1,5 +1,7 @@
 // دليل الخدمات الاتحادية — الخدمات الرئيسية والفرعية لكل جهة
 // المصدر: ملفا الخدمات المعتمدان (يُدمَجان في lib/svcCatalog.json)
+// القاعدة: منسق الجهة يرى خدمات جهته فقط — لا قائمة موحدة عبر الجهات.
+import { useEffect, useState } from 'react';
 import raw from './svcCatalog.json';
 
 export type EntityCatalog = Record<string, string[]>; // الخدمة الرئيسية -> الخدمات الفرعية
@@ -29,23 +31,37 @@ for (const [ent, services] of Object.entries(CATALOG)) {
   }
 }
 
-// القائمة الموحدة لكل الجهات — تُستخدم عندما لا تكون جهة المنسق ضمن الدليل
-let unionCache: EntityCatalog | null = null;
-function unionCatalog(): EntityCatalog {
-  if (unionCache) return unionCache;
-  const u: EntityCatalog = {};
-  for (const services of Object.values(CATALOG)) {
-    for (const [m, subs] of Object.entries(services)) {
-      u[m] = Array.from(new Set([...(u[m] || []), ...subs]));
-    }
-  }
-  unionCache = Object.fromEntries(Object.entries(u).sort(([a], [b]) => a.localeCompare(b, 'ar')));
-  return unionCache;
+/** خدمات الجهة فقط — null إذا لم تكن الجهة مدرجة في الدليل */
+export function svcCatalogFor(entityName: string): EntityCatalog | null {
+  return byNorm.get(norm(entityName)) || null;
 }
 
-/** الخدمات المتاحة للجهة: قائمة الجهة إن وُجدت، وإلا القائمة الموحدة */
-export function svcCatalogFor(entityName: string): { services: EntityCatalog; scoped: boolean } {
-  const hit = byNorm.get(norm(entityName));
-  if (hit) return { services: hit, scoped: true };
-  return { services: unionCatalog(), scoped: false };
+/**
+ * دليل خدمات الجهة للاستخدام في الواجهة.
+ * - النسخة التجريبية (NEXT_PUBLIC_DEMO_MODE=1): الدليل المضمّن، مقيداً بالجهة.
+ * - نسخة الخادم: يُجلب من /api/svc-catalog (الخادم يقيده بجهة المستخدم من
+ *   الجلسة)، مع الرجوع للدليل المضمّن عند تعذر الاتصال.
+ */
+export function useSvcCatalog(entityName: string): EntityCatalog | null {
+  const bundled = svcCatalogFor(entityName);
+  const [remote, setRemote] = useState<EntityCatalog | null | undefined>(undefined);
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === '1') return;
+    let dead = false;
+    fetch('/api/svc-catalog', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (dead) return;
+        const svcs = d && typeof d === 'object' ? (d as { services?: EntityCatalog }).services : null;
+        setRemote(svcs && Object.keys(svcs).length ? svcs : null);
+      })
+      .catch(() => {
+        if (!dead) setRemote(null);
+      });
+    return () => {
+      dead = true;
+    };
+  }, [entityName]);
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === '1') return bundled;
+  return remote !== undefined && remote !== null ? remote : bundled;
 }
