@@ -289,11 +289,17 @@ export function AboutPage() {
                   <div style={{ flex: 1, borderTop: '2px dashed #C4D2E8' }} />
                 </div>
                 <div style={{ height: 38, borderLeft: '2px dotted #B7C4D8', margin: '-6px 0 -2px' }} />
-                {t.img && (
+                {t.img ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={t.img} alt={t.title} style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '1px solid #DCE4F0', marginTop: -4 }} />
+                  <img src={t.img} alt={t.title} style={{ width: 'clamp(58px, 6vw, 88px)', height: 'clamp(58px, 6vw, 88px)', borderRadius: '50%', objectFit: 'cover', border: '1px solid #DCE4F0', marginTop: -4 }} />
+                ) : (
+                  <div
+                    style={{ width: 'clamp(58px, 6vw, 88px)', height: 'clamp(58px, 6vw, 88px)', borderRadius: '50%', background: 'repeating-linear-gradient(45deg,#E3EAF5 0 8px,#EFF3FA 8px 16px)', border: '1px solid #DCE4F0', marginTop: -4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace', fontSize: 9, color: '#8A97AD' }}
+                  >
+                    صورة
+                  </div>
                 )}
-                <div style={{ fontSize: 17, fontWeight: 900, color: '#2563EB', lineHeight: 1, marginTop: -4 }}>{t.year}</div>
+                <div style={{ fontSize: 17, fontWeight: 900, color: '#2563EB', lineHeight: 1, marginTop: 8 }}>{t.year}</div>
                 <div style={{ marginTop: -6 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#33405A', textAlign: 'center', lineHeight: 1.75, padding: '0 8px' }}>{t.title}</div>
                   <div style={{ fontSize: 11, fontWeight: 600, color: '#7484A0', textAlign: 'center', lineHeight: 1.75, padding: '0 8px' }}>{t.sub}</div>
