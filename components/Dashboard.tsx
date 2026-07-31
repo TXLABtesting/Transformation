@@ -943,8 +943,9 @@ function StgKpiStrip({ k }: { k: NonNullable<VM['stgKpis']> }) {
         { label: 'إجمالي عدد الأنشطة المستهدف تحويلها', v: k.targeted },
       ]}
       prios={[
-        { label: 'أولوية أولى', v: k.p1 },
-        { label: 'أولوية ثانية', v: k.p2 },
+        { label: 'أولوية عالية', v: k.p1 },
+        { label: 'أولوية متوسطة', v: k.p2 },
+        { label: 'أولوية منخفضة', v: k.p3 },
       ]}
       notes={[]}
     />
@@ -2811,12 +2812,22 @@ export function Dashboard({ vm }: { vm: VM }) {
                     <FilterSelect value={vm.svcFilterBar.serviceValue} options={vm.svcFilterBar.serviceOptions} minWidth={130} onChange={(v) => s.setSvcFilter('svcServiceF', v)} />
                     <FilterSelect value={vm.svcFilterBar.sectorValue} options={vm.svcFilterBar.sectorOptions} minWidth={120} onChange={(v) => s.setSvcFilter('svcSectorF', v)} />
                     <FilterSelect value={vm.svcFilterBar.prioValue} options={vm.svcFilterBar.prioOptions} minWidth={120} onChange={(v) => s.setSvcFilter('svcPrioF', v)} />
+                    <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
                   </>
                 ) : vm.stgFilterBar ? (
                   <>
-                    <FilterSelect value={vm.stgFilterBar.taskValue} options={vm.stgFilterBar.taskOptions} minWidth={130} onChange={(v) => s.setStgFilter('stgTaskF', v)} />
-                    <FilterSelect value={vm.stgFilterBar.sectorValue} options={vm.stgFilterBar.sectorOptions} minWidth={120} onChange={(v) => s.setStgFilter('stgSectorF', v)} />
-                    <FilterSelect value={vm.stgFilterBar.prioValue} options={vm.stgFilterBar.prioOptions} minWidth={120} onChange={(v) => s.setStgFilter('stgPrioF', v)} />
+                    <FilterSelect value={vm.stgFilterBar.axisValue} options={vm.stgFilterBar.axisOptions} minWidth={150} onChange={(v) => s.setStgFilter('stgAxisF', v)} />
+                    <FilterSelect value={vm.stgFilterBar.prioValue} options={vm.stgFilterBar.prioOptions} minWidth={140} onChange={(v) => s.setStgFilter('stgPrioF', v)} />
+                    <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
+                  </>
+                ) : vm.opsFilterBar ? (
+                  <>
+                    <FilterSelect value={vm.opsFilterBar.catValue} options={vm.opsFilterBar.catOptions} minWidth={150} onChange={(v) => s.setOpsFilter('opsCatF', v)} />
+                    {vm.opsFilterBar.showSupport && (
+                      <FilterSelect value={vm.opsFilterBar.supportValue} options={vm.opsFilterBar.supportOptions} minWidth={160} onChange={(v) => s.setOpsFilter('opsSupportF', v)} />
+                    )}
+                    <FilterSelect value={vm.opsFilterBar.sectorValue} options={vm.opsFilterBar.sectorOptions} minWidth={120} onChange={(v) => s.setOpsFilter('opsSectorF', v)} />
+                    <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
                   </>
                 ) : (
                   <>
