@@ -195,8 +195,8 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'section', label: 'القسم المعني' },
     { key: 'usageIntensity', label: 'كثافة الاستخدام' },
     { key: 'complexity', label: 'مستوى التعقيد' },
-    { key: 'readinessLevel', label: 'الجاهزية' },
-    { key: 'transformYes', label: 'أولوية التحول' },
+    { key: 'readinessLevel', label: 'مستوى الجاهزية' },
+    // أولوية الاختيار وأولوية التحول تُشتقان من المصفوفة — ليستا عمودَي إدخال
   ],
   strategy: [
     { key: 'axis', label: 'المحور' },
@@ -206,27 +206,30 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'dept', label: 'الإدارة المعنية' },
     { key: 'section', label: 'القسم المعني' },
     { key: 'automationLevel', label: 'مستوى الأتمتة' },
+    { key: 'automationPct', label: 'نسبة الأتمتة (%)' },
     { key: 'automationSystem', label: 'نظام الأتمتة' },
+    { key: 'importance', label: 'مستوى الأهمية' },
     { key: 'usageIntensity', label: 'كثافة الاستخدام' },
-    { key: 'importance', label: 'الأهمية' },
-    { key: 'readinessLevel', label: 'الجاهزية' },
-    { key: 'impactScore', label: 'درجة الأثر' },
-    { key: 'transformScore', label: 'القابلية للتحول' },
-    { key: 'outputClarity', label: 'وضوح المخرجات' },
+    { key: 'readinessLevel', label: 'مستوى الجاهزية' },
+    { key: 'impactScore', label: 'مستوى الأثر المتوقع من التحول' },
+    { key: 'transformScore', label: 'قابلية التحول' },
+    { key: 'outputClarity', label: 'وضوح المخرجات وقابليتها للمراجعة' },
     { key: 'riskLevel', label: 'مستوى المخاطر' },
-    { key: 'transformYes', label: 'أولوية التحول' },
+    // أولوية الاختيار وأولوية التحول تُشتقان من المصفوفة — ليستا عمودَي إدخال
   ],
   ops: [
-    { key: 'opType', label: 'تصنيف العملية' },
+    { key: 'opType', label: 'التصنيف' },
     { key: 'supportFn', label: 'نوع عملية الدعم المؤسسي' },
     { key: 'title', label: 'العملية الرئيسية' },
     { key: 'subActivities', label: 'الأنشطة الفرعية' },
     { key: 'sector', label: 'القطاع المعني' },
     { key: 'dept', label: 'الإدارة المعنية' },
     { key: 'section', label: 'القسم المعني' },
-    { key: 'isAutomated', label: 'هل النشاط/العملية مؤتمت؟' },
-    { key: 'automationSystem', label: 'نظام/نسبة الأتمتة' },
+    { key: 'isAutomated', label: 'هل العملية مؤتمتة؟' },
+    { key: 'automationSystem', label: 'نظام الأتمتة' },
+    { key: 'automationPct', label: 'نسبة الأتمتة (%)' },
     { key: 'transformYes', label: 'أولوية التحول' },
+    { key: 'notes', label: 'الملاحظات' },
   ],
 };
 // select-field options per stream — mirrors the entry forms exactly (used for
@@ -237,7 +240,6 @@ export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
     usageIntensity: ['منخفضة', 'متوسطة', 'مرتفعة'],
     complexity: ['منخفض', 'متوسط', 'مرتفع'],
     readinessLevel: ['منخفض', 'متوسط', 'مرتفع'],
-    transformYes: ['نعم', 'لا'],
   },
   strategy: {
     automationLevel: ['مؤتمتة كلياً', 'مؤتمتة جزئياً', 'غير مؤتمتة'],
@@ -248,7 +250,6 @@ export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
     transformScore: SCALE_1_5,
     outputClarity: SCALE_1_5,
     riskLevel: ['منخفض', 'متوسط', 'عالي'],
-    transformYes: ['نعم', 'لا'],
   },
   ops: {
     opType: ['العمليات التخصصية', 'عمليات الدعم المؤسسي'],
@@ -268,7 +269,6 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
     usageIntensity: 'مرتفعة',
     complexity: 'منخفض',
     readinessLevel: 'مرتفع',
-    transformYes: 'نعم',
   },
   strategy: {
     axis: 'محور السياسات العامة',
@@ -278,6 +278,7 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
     dept: 'إدارة السياسات',
     section: 'قسم التحليل',
     automationLevel: 'مؤتمتة جزئياً',
+    automationPct: '60',
     automationSystem: 'نظام إدارة الوثائق',
     usageIntensity: '4',
     importance: '5',
@@ -286,7 +287,6 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
     transformScore: '4',
     outputClarity: '5',
     riskLevel: 'منخفض',
-    transformYes: 'نعم',
   },
   ops: {
     opType: 'عمليات الدعم المؤسسي',
@@ -298,6 +298,7 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
     section: 'قسم شؤون الموظفين',
     isAutomated: 'لا',
     transformYes: 'نعم',
+    notes: '',
   },
 };
 
@@ -305,12 +306,15 @@ const plainOf = (v: unknown): string => String(v ?? '').replace(/<[^>]*>/g, '').
 // labels of the required entry fields this item has not filled yet
 export function missingFieldsOf(i: Record<string, unknown> & { path?: string }): string[] {
   const spec = STREAM_FIELDS[i.path || ''] || [];
+  const automationKey = (k: string) => k === 'automationSystem' || k === 'automationPct';
   return spec
+    // الملاحظات حقل اختياري
+    .filter((f) => f.key !== 'notes')
     // نوع عملية الدعم المؤسسي مطلوب فقط عند اختيار «عمليات الدعم المؤسسي»
     .filter((f) => (f.key === 'supportFn' ? plainOf(i.opType) === SUPPORT_OPTYPE : true))
-    // نظام الأتمتة مطلوب فقط للعمليات المؤتمتة
-    .filter((f) => (f.key === 'automationSystem' && i.path === 'ops' ? plainOf(i.isAutomated) === 'نعم' : true))
-    .filter((f) => (f.key === 'automationSystem' && i.path === 'strategy' ? plainOf(i.automationLevel) !== 'غير مؤتمتة' : true))
+    // نظام/نسبة الأتمتة مطلوبان فقط للعمليات المؤتمتة
+    .filter((f) => (automationKey(f.key) && i.path === 'ops' ? plainOf(i.isAutomated) === 'نعم' : true))
+    .filter((f) => (automationKey(f.key) && i.path === 'strategy' ? plainOf(i.automationLevel) !== 'غير مؤتمتة' : true))
     .filter((f) => !plainOf(i[f.key]))
     .map((f) => f.label);
 }
@@ -776,7 +780,7 @@ export const WFMETA: Record<string, WfMeta> = {
   pm1: { step: 2, label: 'قيد الاعتماد', who: 'ai', chip: '#B45309', bg: '#FFF3DE' },
   exec: { step: 3, label: 'معتمد', who: 'path', chip: '#0B8A4B', bg: '#EAF7F0' },
   launch: { step: 3, label: 'معتمد', who: 'path', chip: '#0B8A4B', bg: '#EAF7F0' },
-  done: { step: 3, label: 'تم الإطلاق', who: '-', chip: '#0B8A4B', bg: '#E3F6EC' },
+  done: { step: 3, label: 'معتمد', who: '-', chip: '#0B8A4B', bg: '#EAF7F0' },
 };
 export const wfMeta = (i: Item): WfMeta => WFMETA[wfOf(i)] || WFMETA.draft;
 export const stepIndexOf = (i: Item): number => wfMeta(i).step;

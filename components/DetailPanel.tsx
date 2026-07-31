@@ -320,11 +320,17 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <DetailCell label="القسم المعني">{d.section}</DetailCell>
                 </DetailGrid>
                 <DetailSecHead title="الأتمتة" />
-                <DetailGrid cols={3}>
-                  <DetailCell label="مستوى الأتمتة">{d.automationLevel}</DetailCell>
-                  <DetailCell label="نسبة الأتمتة">{d.automationPct != null ? d.automationPct + '%' : '—'}</DetailCell>
-                  <DetailCell label="نظام الأتمتة">{d.automationSystem}</DetailCell>
-                </DetailGrid>
+                {d.automationLevel === 'غير مؤتمتة' ? (
+                  <DetailGrid cols={1}>
+                    <DetailCell label="مستوى الأتمتة">{d.automationLevel}</DetailCell>
+                  </DetailGrid>
+                ) : (
+                  <DetailGrid cols={3}>
+                    <DetailCell label="مستوى الأتمتة">{d.automationLevel}</DetailCell>
+                    <DetailCell label="نسبة الأتمتة">{d.automationPct != null ? d.automationPct + '%' : '—'}</DetailCell>
+                    <DetailCell label="نظام الأتمتة">{d.automationSystem}</DetailCell>
+                  </DetailGrid>
+                )}
                 <DetailSecHead title="التقييم (من 1 إلى 5)" />
                 <DetailGrid cols={3}>
                   <DetailCell label="مستوى الأهمية">{d.importance}</DetailCell>
@@ -340,9 +346,15 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <DetailCell label="مستوى المخاطر"><LevelPill v={d.riskLevel} /></DetailCell>
                   <DetailCell label="أولوية الاختيار">
                     {d.stgCalc ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E5EEFF', color: '#1D4ED8', borderRadius: 999, padding: '4px 12px', fontSize: 12.5, fontWeight: 800 }}>
-                        {d.stgCalc.cat} · {d.stgCalc.total}/30
-                      </span>
+                      (() => {
+                        // same green/orange/red coding as the form and the list
+                        const cl = d.stgCalc.cat === 'أولوية عالية' ? { c: '#0B8A4B', bg: '#EAF7F0' } : d.stgCalc.cat === 'أولوية متوسطة' ? { c: '#B45309', bg: '#FFF3DE' } : { c: '#C0303B', bg: '#FDECEE' };
+                        return (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: cl.bg, color: cl.c, borderRadius: 999, padding: '4px 12px', fontSize: 12.5, fontWeight: 800 }}>
+                            {d.stgCalc.cat} · {d.stgCalc.total}/30
+                          </span>
+                        );
+                      })()
                     ) : (
                       '—'
                     )}
@@ -368,22 +380,23 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <DetailCell label="القسم المعني">{d.section}</DetailCell>
                 </DetailGrid>
                 <DetailSecHead title="الأتمتة" />
-                <DetailGrid cols={3}>
-                  <DetailCell label="هل النشاط/العملية مؤتمت؟">{d.isAutomated}</DetailCell>
-                  <DetailCell label="نظام الأتمتة">{d.automationSystem}</DetailCell>
-                  <DetailCell label="نسبة الأتمتة">{d.automationPct != null ? d.automationPct + '%' : '—'}</DetailCell>
-                </DetailGrid>
-                <DetailSecHead title="التقييم (من 1 إلى 5)" />
-                <DetailGrid cols={3}>
-                  <DetailCell label="كثافة النشاط/العملية">{d.usageIntensity}</DetailCell>
-                  <DetailCell label="الجاهزية للتحول">{d.readinessLevel}</DetailCell>
-                  <DetailCell label="مستوى الأثر المتوقع من التحول">{d.impactScore}</DetailCell>
-                </DetailGrid>
-                <DetailGrid cols={3}>
-                  <DetailCell label="مستوى التعقيد">{d.complexity}</DetailCell>
-                  <DetailCell label="القابلية للتحول">{d.transformScore}</DetailCell>
-                  <DetailCell label="أولوية التحول">{d.transformYes}</DetailCell>
-                </DetailGrid>
+                {d.isAutomated === 'نعم' ? (
+                  <DetailGrid cols={3}>
+                    <DetailCell label="هل العملية مؤتمتة؟">{d.isAutomated}</DetailCell>
+                    <DetailCell label="نظام الأتمتة">{d.automationSystem}</DetailCell>
+                    <DetailCell label="نسبة الأتمتة">{d.automationPct != null ? d.automationPct + '%' : '—'}</DetailCell>
+                  </DetailGrid>
+                ) : (
+                  <DetailGrid cols={2}>
+                    <DetailCell label="هل العملية مؤتمتة؟">{d.isAutomated}</DetailCell>
+                    <DetailCell label="أولوية التحول">{d.transformYes}</DetailCell>
+                  </DetailGrid>
+                )}
+                {d.isAutomated === 'نعم' ? (
+                  <DetailGrid cols={1}>
+                    <DetailCell label="أولوية التحول">{d.transformYes}</DetailCell>
+                  </DetailGrid>
+                ) : null}
                 {d.notesText ? (
                   <DetailGrid cols={1}>
                     <DetailCell label="الملاحظات"><RichTextView html={(d.notesText || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>

@@ -30,11 +30,11 @@ const TOUR_STEPS: TourStep[] = [
 // قوائم الحصر directly: fills the stream inventory and manages دفعات الإطلاق.
 const COORD_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك كمنسق للمسار داخل جهتك.' },
-  { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'المسارات المسندة إليك تظهر هنا. اختر المسار لاستعراض قائمة الحصر الخاصة به — القائمة تعرض المدخلات بعرض الجدول مع فلاتر الخدمة/المهمة والقطاع والأولوية.' },
-  { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات أعداد المدخلات والأنشطة، القابلة للتحول والمستهدف تحويلها، وتوزيع الأولويات المحسوبة تلقائياً وفق مصفوفة المسار المعتمدة.' },
-  { sel: '[data-tour="add"]', title: 'إضافة المدخلات', desc: '«إضافة يدوية» تفتح نموذج الإدخال أسفل الجدول لتعبئة بيانات المدخل في خطوة واحدة، و«رفع ملف Excel» تضيف عدة مدخلات دفعة واحدة. بعد التأكيد يظهر المدخل في القائمة ويُرسل لاعتماد رئيس المسار.' },
-  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'جداول الدفعات لكل مسار: أضف المدخلات إلى الدفعة المناسبة بالاستناد إلى أولوية الاختيار، وانقل بينها، وحدّد تاريخ البدء والانتهاء لكل مدخل.' },
-  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'تصلك هنا ملاحظات رئيس المسار: طلبات التفاصيل الإضافية، والمدخلات المُعادة، وقرارات الاعتماد.' },
+  { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'المسارات المسندة إليك تظهر هنا. اختر المسار لاستعراض قائمة الحصر الخاصة به — جدول المدخلات مع فلاتر المسار (التصنيف أو المحور أو الخدمة، والأولوية) وفلتر الحالة والبحث بالاسم.' },
+  { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات إجمالي المدخلات والأنشطة والقابلة للتحول والمستهدف تحويلها، وتضاف بطاقات الأولويات المحسوبة تلقائياً وفق المصفوفة في مساري العمل الاستراتيجي والخدمات الحكومية.' },
+  { sel: '[data-tour="add"]', title: 'إضافة المدخلات', desc: '«إضافة يدوية» تفتح نموذج الإدخال بحقول المسار — وفي مسار الخدمات تُختار الخدمة الرئيسية والفرعية من دليل خدمات جهتك. «رفع ملف Excel» يعتمد النموذج نفسه: نزّل قالب المسار، والصفوف الناقصة تُستورد كمسودات بوسم «بيانات ناقصة» لإكمالها لاحقاً، والمكتملة تُرسل مباشرة لاعتماد رئيس المسار.' },
+  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية. من زر «إضافة مدخل» توزَّع مدخلات المسار نفسه على دفعاته وفق أولوية الاختيار، وتُحدَّد تواريخ البدء والانتهاء ضمن الفترة الزمنية للدفعة.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'تصلك هنا ملاحظات رئيس المسار: طلبات التفاصيل الإضافية، والمدخلات المُعادة للتعديل، وقرارات الاعتماد.' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن تعبئة قوائم الحصر لمساراتك وتوزيع المدخلات على دفعات الإطلاق، والتأكد من تحديث البيانات بشكل دوري.' },
 ];
 
@@ -42,9 +42,9 @@ const COORD_TOUR_STEPS: TourStep[] = [
 // view-only national oversight over the approved entries of the three streams.
 const AI_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة صلاحياتك في المتابعة على المستوى الوطني.' },
-  { sel: '[data-tour="ai-heading"]', title: 'لوحة اللجنة الوطنية', desc: 'تعرض هذه اللوحة نظرة وطنية شاملة على المدخلات المعتمدة من رؤساء المسارات، وتوزيعها على المسارات الثلاثة والجهات المشاركة.' },
+  { sel: '[data-tour="ai-heading"]', title: 'لوحة اللجنة الوطنية', desc: 'تعرض هذه اللوحة مؤشرات المدخلات المعتمدة من رؤساء المسارات، وبطاقات المسارات الثلاثة مع توزيع مدخلات كل مسار على دفعات الإطلاق.' },
   { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'قوائم حصر المسارات الثلاثة — اختر المسار لاستعراض مدخلاته المعتمدة (اطلاع فقط) مع مؤشراته وفلاتره.' },
-  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'جداول دفعات الإطلاق لكل مسار مع أولوية الاختيار والتواريخ والحالة — تنقّل بين المسارات من أعلى الصفحة.' },
+  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية، تعرض مدخلات كل دفعة مع أولوية الاختيار والتواريخ والحالة (اطلاع فقط).' },
   { sel: '[data-tour="nav-entities"]', title: 'الجهات المشاركة', desc: 'يعرض هذا القسم قائمة الجهات المشاركة وعدد المدخلات المقدمة من كل جهة، لمتابعة مستوى المشاركة والالتزام.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يصلك هنا إشعار بكل مدخل جديد يعتمده رئيس المسار.' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة المدخلات المعتمدة على المستوى الوطني عبر المسارات الثلاثة، والاطلاع على دفعات الإطلاق وجاهزية الجهات.' },
@@ -57,7 +57,7 @@ const PATH_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات أعداد مدخلات المسار من جميع الجهات، القابلة للتحول والمستهدف تحويلها، وتوزيع الأولويات المحسوبة وفق مصفوفة المسار.' },
   { sel: '[data-tour="nav-inv"]', title: 'قائمة حصر المسار', desc: 'قائمة موحّدة لمدخلات جميع الجهات ضمن المسار، مع فلاتر الجهة والقطاع والأولوية والحالة. افتح أي مدخل لاستعراض تفاصيله واعتماده أو إعادته أو طلب معلومات إضافية.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات وطلبات الاعتماد', desc: 'المدخلات الجديدة بانتظار اعتمادك تصلك هنا، ويمكنك اعتمادها أو رفضها أو طلب معلومات إضافية مباشرة من الإشعار.' },
-  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'جداول دفعات الإطلاق للمسار مع أولوية الاختيار والتواريخ والحالة (اطلاع فقط — التوزيع والتواريخ من مسؤولية منسق المسار).' },
+  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'جداول دفعات الإطلاق للمسار مع أولوية الاختيار والتواريخ والحالة (اطلاع فقط — التوزيع والتواريخ من مسؤولية منسق المسار في الجهة).' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن مراجعة مدخلات الجهات ضمن المسار واعتماد الجاهز منها؛ المدخلات المعتمدة تظهر مباشرة للجنة الوطنية.' },
 ];
 
@@ -2238,7 +2238,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   setMobileNav(false);
                 }
               }}
-              data-tour={n.key.startsWith('inv-') ? 'nav-inv' : n.key === 'all' ? 'nav-all' : n.key === 'projects' ? 'nav-projects' : n.key === 'operations' ? 'nav-operations' : n.key === 'services' ? 'nav-services' : n.key === 'launchplans' ? 'nav-exec' : n.key === 'lplan' ? 'nav-launch' : n.key === 'team' ? 'nav-team' : n.key === 'entities' ? 'nav-entities' : undefined}
+              data-tour={n.key.startsWith('inv-') ? 'nav-inv' : n.key === 'all' ? 'nav-all' : n.key === 'projects' ? 'nav-projects' : n.key === 'operations' ? 'nav-operations' : n.key === 'services' ? 'nav-services' : n.key === 'launchplans' ? 'nav-exec' : n.key === 'lplan' || n.key.startsWith('lp-') ? 'nav-launch' : n.key === 'team' ? 'nav-team' : n.key === 'entities' ? 'nav-entities' : undefined}
               style={{
                 position: 'relative',
                 display: 'flex',
@@ -2508,10 +2508,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>لوحة اللجنة الوطنية</div>
               </div>
 
-              {/* Section 1: ملخص المدخلات والترشيحات */}
-              <div>
-                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>ملخص المدخلات</div>
-              </div>
               {/* same KPI boxes as the stream dashboards (no priority boxes) */}
               <SegKpiStrip
                 acts={[
@@ -2524,10 +2520,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                 notes={[]}
               />
 
-              {/* Section 2: المدخلات حسب المسار */}
-              <div>
-                <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب المسار</div>
-              </div>
               <div data-r="seccards" data-tour="ai-streams" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
                 {vm.committeeStreamCards.map((st) => (
                   <div key={st.id} data-tour="ai-stream-card" style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -2550,10 +2542,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                           <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.total}</span>
                         </div>
                         {(() => {
-                          const order = ['مشروع', 'خدمة', 'عملية', 'مهمة'];
-                          return [...st.byType]
-                            .sort((a, b) => order.indexOf(a.label) - order.indexOf(b.label))
-                            .map((tp) => (
+                          return st.byType.map((tp) => (
                               <div key={tp.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                                 <span style={{ fontSize: 12, color: '#54627B', fontWeight: 400 }}>{tp.label}</span>
                                 <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{tp.n}</span>
@@ -3507,7 +3496,21 @@ function ListView({ cards, stream }: { cards: CardVM[]; stream?: string | null }
               onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = '#F7F9FD')}
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '')}
             >
-              <td style={{ ...td, fontWeight: 800, color: '#13213C', maxWidth: 260 }}>{c.title}</td>
+              <td style={{ ...td, fontWeight: 800, color: '#13213C', maxWidth: 260 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9 }}>
+                  {c.showDraftCheck && (
+                    <input
+                      type="checkbox"
+                      checked={c.draftChecked}
+                      onChange={c.onToggleDraftSel}
+                      onClick={stop}
+                      title="تحديد المسودة للإرسال"
+                      style={{ width: 15, height: 15, accentColor: '#2563EB', cursor: 'pointer', flex: 'none' }}
+                    />
+                  )}
+                  {c.title}
+                </span>
+              </td>
               {stream === 'ops' ? (
                 <>
                   <td style={{ ...td, whiteSpace: 'nowrap' }}>{c.catLabel}</td>

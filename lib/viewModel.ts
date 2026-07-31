@@ -138,15 +138,12 @@ function build(s: Store) {
       if (effTypeFilter === 'bundle') return i.type === 'service' && !!i.serviceBundle;
       return i.type === effTypeFilter;
     });
-  // services-stream filters: الخدمة / القطاع / الأولوية
+  // services-stream filters: الخدمة / الأولوية (القطاع filter removed)
   if (filterStream === 'services') {
     if (ui.svcServiceF !== 'all') visible = visible.filter((i) => (i.title || '') === ui.svcServiceF);
-    if (ui.svcSectorF !== 'all') visible = visible.filter((i) => (i.sector || '') === ui.svcSectorF);
     if (ui.svcPrioF !== 'all')
       visible = visible.filter(
-        (i) =>
-          i.type === 'service' &&
-          String(i.transformYes === 'نعم' ? svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) ?? '' : '') === ui.svcPrioF
+        (i) => i.type === 'service' && String(svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) ?? '') === ui.svcPrioF
       );
   }
   // strategy-stream filters: المهمة / القطاع / الأولوية
@@ -644,7 +641,7 @@ function build(s: Store) {
       : rawRole === 'entity'
         ? [
             { v: 'all', label: 'الحالة' },
-            { v: 'approve', label: 'للاعتماد' },
+            { v: 'approve', label: 'قيد الاعتماد' },
             { v: 'inprog', label: 'معتمد' },
           ]
         : [
@@ -707,10 +704,6 @@ function build(s: Store) {
             { v: 'all', label: 'الخدمة: الكل' },
             ...Array.from(new Set(svcScope.filter((i) => i.type === 'service').map((i) => i.title || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
           ],
-          sectorOptions: [
-            { v: 'all', label: 'القطاع: الكل' },
-            ...Array.from(new Set(svcScope.map((i) => i.sector || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
-          ],
           prioOptions: [
             { v: 'all', label: 'الأولوية: الكل' },
             { v: '1', label: 'الأولوية 1' },
@@ -719,7 +712,6 @@ function build(s: Store) {
             { v: '4', label: 'الأولوية 4' },
           ],
           serviceValue: ui.svcServiceF,
-          sectorValue: ui.svcSectorF,
           prioValue: ui.svcPrioF,
         }
       : null;
@@ -1626,7 +1618,10 @@ function build(s: Store) {
         })),
         anyMissing: sel.some((i) => missingFieldsOf(i as unknown as Record<string, unknown>).length > 0),
         onSend: () => s.submitDrafts(sel.map((i) => i.id)),
-        onComplete: sel.length === 1 ? () => s.openDetail(sel[0].id) : null,
+        // multi-select: opens the first entry that still has missing fields
+        onComplete: sel.length
+          ? () => s.openDetail((sel.find((i) => missingFieldsOf(i as unknown as Record<string, unknown>).length > 0) || sel[0]).id)
+          : null,
         onClear: () => s.clearDraftSel(),
       };
     })(),
@@ -1733,7 +1728,9 @@ function statusMatch(i: Item, f: string, rawRole: RoleKey, s: Store): boolean {
   if (f === 'review')
     return rawRole === 'coord' ? !!i.ret : ['pm1', 'pm2', 'ent2'].includes(w) || !!i.ret;
   if (f === 'approve') return w === 'ent1';
-  if (f === 'inprog') return ['budget', 'exec', 'launch'].includes(w);
+  if (f === 'inprog') return ['budget', 'exec', 'launch', 'done'].includes(w);
+  // «مسودة» excludes returned entries — those show (and filter) as «للتعديل»
+  if (f === 'draft') return w === 'draft' && !i.ret;
   return w === f;
 }
 
@@ -1816,7 +1813,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const w = wfOf(i);
   const score = transformScore(i);
   const step = stepIndexOf(i);
-  const canApprove = rawRole === 'entity' && w === 'ent1';
+  // approval is رئيس المسار's (and deputy's) responsibility
+  const canApprove = (rawRole === 'path' || rawRole === 'entity') && w === 'ent1';
   const isFunded = !!i.funded;
   // status chip mirrors the real lifecycle exactly:
   // مسودة → بحاجة إلى تعديل → بانتظار اعتماد ممثل الجهة → مخطط · المرحلة N → مكتمل
@@ -1829,7 +1827,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfLabel = RETURNED_STATUS;
     wfChip = '#B45309';
     wfBg = '#FFF3DE';
-  } else if (w === 'exec' || w === 'launch') {
+  } else if (w === 'exec' || w === 'launch' || w === 'done') {
     wfLabel = 'معتمد';
     wfChip = '#0B8A4B';
     wfBg = '#EAF7F0';
@@ -1891,7 +1889,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardAction = 'edit';
     } else if (w === 'ent1') {
       cardStatus = 'pendEnt';
-      cardCaption = 'بانتظار اعتماد الجهة';
+      cardCaption = 'بانتظار اعتماد رئيس المسار';
       cardAction = 'withdraw';
     } else if (isFunded) {
       cardStatus = 'apprFund';
@@ -1984,7 +1982,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       if (i.path === 'strategy') return stgPriority(i)?.cat || '';
       if (i.type === 'service') {
         const pr = svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
-        return pr ? 'أولوية ' + (pr === 1 ? 'أولى' : pr === 2 ? 'ثانية' : 'ثالثة') : '';
+        return pr ? 'الأولوية ' + pr : '';
       }
       return '';
     })(),
@@ -2246,7 +2244,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
   const w = wfOf(i);
   const step = wm.step;
   const score = transformScore(i);
-  const canApproveGate = rawRole === 'entity' && w === 'ent1';
+  const canApproveGate = (rawRole === 'path' || rawRole === 'entity') && w === 'ent1';
   // detail view is VIEW-ONLY for item data; scope/budget are never edited here
   const canEditScope = false;
   // group-level cost carried by the item's launch plan
@@ -2303,9 +2301,10 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     typeLabel: typeLabelFor(i.type, i.path),
     typeColor: t.color,
     typeBg: t.bg,
-    wfLabel: wm.label,
-    wfChip: wm.chip,
-    wfBg: wm.bg,
+    // same status override as the list cards: returned → للتعديل، approved → معتمد
+    wfLabel: i.ret ? RETURNED_STATUS : ['exec', 'launch', 'done'].includes(w) ? 'معتمد' : wm.label,
+    wfChip: i.ret ? '#B45309' : ['exec', 'launch', 'done'].includes(w) ? '#0B8A4B' : wm.chip,
+    wfBg: i.ret ? '#FFF3DE' : ['exec', 'launch', 'done'].includes(w) ? '#EAF7F0' : wm.bg,
     priority: i.priority,
     // services follow the matrix — no manual ترتيب/أولوية chips
     rankLabel: i.type === 'service' ? '' : i.rank ? String(i.rank) : '',
