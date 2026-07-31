@@ -703,7 +703,6 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
         <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>دفعات الإطلاق لمسار {bt.streamName}</div>
-        <div style={{ fontSize: 12.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>مدخلات كل دفعة مع تواريخ البدء والانتهاء وأولوية الاختيار والحالة.</div>
       </div>
       {bt.batches.map((b) => {
         return (
