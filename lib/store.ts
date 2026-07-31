@@ -43,7 +43,7 @@ import {
   DEFAULT_ABOUT_HERO,
 } from './domain';
 import type { LibraryDoc, ContactInquiry } from './domain';
-import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE } from './domain';
+import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, stgPriority, svcPriority } from './domain';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
@@ -1033,7 +1033,10 @@ export const useStore = create<Store>((set, get) => {
       }
       patchItem(id, { [k]: val } as Partial<Item>);
     },
-    assignItemBatch: (id, batch) => patchItem(id, { execBatch: batch }),
+    // delegate to setItemBatch so cross-batch moves get the confirm dialog,
+    // the stageMove stamp (which drives the رئيس المسار notification) and the
+    // launch-plan/budget cleanup — a plain patch skips all of that
+    assignItemBatch: (id, batch) => get().setItemBatch(id, batch),
     setContactEmail: (k, v) => {
       set((st) => ({ contactEmails: { ...st.contactEmails, [k]: v } }));
       persist();
@@ -1201,7 +1204,7 @@ export const useStore = create<Store>((set, get) => {
         const filledO = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
         const dO = d as unknown as Record<string, unknown>;
         const reqO = ['opType', 'title', 'subActivities', 'sector', 'dept', 'section', 'isAutomated', 'transformYes'];
-        if (String(dO.isAutomated ?? '') === 'نعم') reqO.push('automationSystem');
+        if (String(dO.isAutomated ?? '') === 'نعم') reqO.push('automationSystem', 'automationPct');
         if (String(dO.opType ?? '') === SUPPORT_OPTYPE) reqO.push('supportFn');
         if (reqO.some((k) => !filledO(dO[k]))) {
           return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
@@ -1222,7 +1225,7 @@ export const useStore = create<Store>((set, get) => {
         const dt = d as unknown as Record<string, unknown>;
         const reqT = ['title', 'axis', 'subActivities', 'sector', 'dept', 'section', 'automationLevel', 'usageIntensity', 'importance', 'readinessLevel', 'impactScore', 'transformScore', 'outputClarity', 'riskLevel', 'transformYes'];
         const lvlT = String(dt.automationLevel ?? '');
-        if (lvlT === 'مؤتمتة كلياً' || lvlT === 'مؤتمتة جزئياً') reqT.push('automationSystem');
+        if (lvlT === 'مؤتمتة كلياً' || lvlT === 'مؤتمتة جزئياً') reqT.push('automationSystem', 'automationPct');
         if (reqT.some((k) => !filledT(dt[k]))) {
           return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
         }
@@ -1408,7 +1411,7 @@ export const useStore = create<Store>((set, get) => {
             title: w === 'ent1' ? 'سحب المدخل وحذفه' : 'حذف المسودة',
             body:
               w === 'ent1'
-                ? '«' + it.title + '» مُرسل لممثل الجهة ولم يُعتمد بعد — سيُسحب ويُحذف نهائياً.'
+                ? '«' + it.title + '» مُرسل لرئيس المسار ولم يُعتمد بعد — سيُسحب ويُحذف نهائياً.'
                 : 'سيتم حذف «' + it.title + '» نهائياً.',
             okLabel: w === 'ent1' ? 'سحب المدخل وحذفه' : 'حذف نهائياً',
             cancelLabel: 'إلغاء',
@@ -1519,13 +1522,42 @@ export const useStore = create<Store>((set, get) => {
           // normalize دفعة values coming from the dropdown to the stored form
           if (fields.execBatch && fields.execBatch !== TBD_BATCH && !fields.execBatch.startsWith('إطلاق '))
             fields.execBatch = 'إطلاق ' + fields.execBatch;
-          const missing = spec.filter((sf) => !norm(fields[sf.key])).map((sf) => sf.label);
+          // mirror the entry-form rules: clear inapplicable conditionals,
+          // clamp automation, derive أولوية التحول from the stream matrix
+          const extra: Record<string, unknown> = { ...fields };
+          if (path === 'ops') {
+            if (fields.opType !== SUPPORT_OPTYPE) delete extra.supportFn;
+            if (fields.isAutomated !== 'نعم') {
+              delete extra.automationSystem;
+              delete extra.automationPct;
+            } else if (fields.automationPct) {
+              extra.automationPct = Math.max(0, Math.min(100, Number(fields.automationPct.replace('%', '')) || 0));
+            }
+          }
+          if (path === 'strategy') {
+            const lvl = fields.automationLevel || '';
+            if (lvl === 'غير مؤتمتة') {
+              delete extra.automationSystem;
+              delete extra.automationPct;
+            } else if (lvl === 'مؤتمتة كلياً') {
+              extra.automationPct = 100;
+            } else if (fields.automationPct) {
+              extra.automationPct = Math.max(0, Math.min(95, Number(fields.automationPct.replace('%', '')) || 0));
+            }
+            const calc = stgPriority(fields);
+            if (calc) extra.transformYes = calc.cat === 'أولوية منخفضة' ? 'لا' : 'نعم';
+          }
+          if (path === 'services') {
+            const p = svcPriority(fields.usageIntensity, fields.complexity, fields.readinessLevel);
+            if (p) extra.transformYes = p === 4 ? 'لا' : 'نعم';
+          }
+          const missing = missingFieldsOf({ ...extra, path });
           rows.push({
             type: path === 'services' ? 'service' : 'operation',
             path,
             title: fields.title || '',
             desc: '',
-            extra: fields as Partial<Item>,
+            extra: extra as Partial<Item>,
             missing,
           });
         }
@@ -1573,7 +1605,7 @@ export const useStore = create<Store>((set, get) => {
       set((st) => ({ items: [...toAdd, ...st.items], launchPlans: [...st.launchPlans, ...newPlans] }));
       persist();
       setUi({ mStep: 'done', bulkLaunches: [] });
-      if (newPlans.length) toast('تم استيراد ' + toAdd.length + ' من المشاريع والعمليات والخدمات و' + newPlans.length + ' خطة إطلاق');
+      if (newPlans.length) toast('تم استيراد ' + toAdd.length + ' من المدخلات');
     },
 
     // ---- rank modal ----
@@ -1730,6 +1762,11 @@ export const useStore = create<Store>((set, get) => {
       const it = findItem(rm.id);
       if (!it) return;
       const w = wfOf(it);
+      // only pending-approval entries can be returned — approved ones are locked
+      if (w !== 'ent1' && w !== 'pm1') {
+        setUi({ reqModal: null });
+        return toast('المدخل معتمد — لا يمكن إعادته بعد الاعتماد');
+      }
       const from = w === 'ent1' ? 'رئيس المسار' : 'اللجنة الوطنية';
       const info = rm.mode === 'info';
       patchItem(rm.id, (i) => ({

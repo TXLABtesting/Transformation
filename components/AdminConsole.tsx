@@ -715,7 +715,7 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
   const [f, setF] = useState<UserRec>(user);
   const set = (patch: Partial<UserRec>) => setF((x) => ({ ...x, ...patch }));
   const needsEntity = f.role === 'coord';
-  const needsStream = f.role === 'coord' || f.role === 'path';
+  const needsStream = f.role === 'coord' || f.role === 'path' || f.role === 'deputy';
   const emailOk = /^\S+@\S+\.\S+$/.test(f.email.trim());
   const valid = f.name.trim() && emailOk && (!needsEntity || f.entityName) && (!needsStream || f.streamId);
 
@@ -841,7 +841,7 @@ function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
         .map((c) => {
           const role = roleFromToken(c[2] || '') || 'coord';
           const needsEntity = role === 'entity' || role === 'coord';
-          const needsStream = role === 'coord' || role === 'path';
+          const needsStream = role === 'coord' || role === 'path' || role === 'deputy';
           return {
             valid: true,
             rec: {

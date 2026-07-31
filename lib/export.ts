@@ -4,7 +4,7 @@ import { stripHtml } from './richtext';
 // list — replaces the prototype's CDN SheetJS / PptxGenJS with bundled deps.
 // Libraries are dynamically imported so they stay out of the initial bundle.
 // ============================================================================
-import { type Item, typeLabel, typeLabelFor, pathById, wfMeta, transformScore, stageWeight, entOf, parseBudget, formatMoney, execMilestones, isEntityApproved, isProjInit, STREAM_FIELDS, svcPriority, stgPriority } from './domain';
+import { type Item, typeLabel, typeLabelFor, pathById, wfMeta, wfOf, transformScore, stageWeight, entOf, parseBudget, formatMoney, execMilestones, isEntityApproved, isProjInit, STREAM_FIELDS, svcPriority, stgPriority } from './domain';
 
 const argb = (hex: string) => 'FF' + hex.replace('#', '').toUpperCase();
 const today = () => new Date().toLocaleDateString('ar-AE', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -128,34 +128,6 @@ function fillWorkplan(wb: import('exceljs').Workbook, items: Item[], entityName:
   put(info, 8, 2, ms[0]?.start || '');
   put(info, 9, 2, ms[ms.length - 1]?.end || '');
 
-  // 2) المشاريع القائمة وقيد التنفيذ · 3) المشاريع الجديدة
-  const projs = items.filter((i) => isProjInit(i.type));
-  const existing = projs.filter((i) => isEntityApproved(i));
-  const fresh = projs.filter((i) => !isEntityApproved(i));
-  const cur = wb.getWorksheet('المشاريع القائمة');
-  existing.forEach((i, k) => {
-    const r = 4 + k;
-    put(cur, r, 1, k + 1);
-    put(cur, r, 2, i.title);
-    put(cur, r, 3, stripHtml(i.desc || ''));
-    put(cur, r, 4, i.expectedOutputs || '');
-    put(cur, r, 5, i.endDate || '');
-    put(cur, r, 6, wfMeta(i).label);
-    put(cur, r, 7, pathById(i.path).name);
-    wrap(cur, r, 3); wrap(cur, r, 4);
-  });
-  const nw = wb.getWorksheet('المشاريع الجديدة');
-  fresh.forEach((i, k) => {
-    const r = 4 + k;
-    put(nw, r, 1, k + 1);
-    put(nw, r, 2, i.title);
-    put(nw, r, 3, stripHtml(i.desc || ''));
-    put(nw, r, 4, i.expectedOutputs || '');
-    put(nw, r, 5, i.expectedImpact || '');
-    put(nw, r, 6, pathById(i.path).name);
-    wrap(nw, r, 3); wrap(nw, r, 4);
-  });
-
   // 4) العمليات والدعم المؤسسي — العمليات والخدمات معًا (نفس أعمدة النموذج)
   const ops = items.filter((i) => i.type === 'operation' || i.type === 'service');
   const op = wb.getWorksheet('العمليات والدعم المؤسسي');
@@ -221,18 +193,17 @@ function fillWorkplan(wb: import('exceljs').Workbook, items: Item[], entityName:
     })
   );
 
-  // the report doesn't carry the team-entry section — drop the sheet
-  const team = wb.getWorksheet('فريق العمل');
-  if (team) wb.removeWorksheet(team.id);
+  // sections that no longer exist in the data model — drop their sheets
+  for (const name of ['فريق العمل', 'المشاريع القائمة', 'المشاريع الجديدة']) {
+    const sheet = wb.getWorksheet(name);
+    if (sheet) wb.removeWorksheet(sheet.id);
+  }
 
   // ---- layout pass: sized columns, styled headers, borders -------------------
   // The raw template ships with default column widths; make every sheet read
   // like a finished report while keeping its structure untouched.
   const layout: Record<string, { widths: number[]; headerRow?: number; dataRows?: number }> = {
-    'المعلومات العامة': { widths: [30, 60] },
-    'المشاريع القائمة': { widths: [5, 30, 44, 34, 15, 20, 24], headerRow: 3, dataRows: existing.length },
-    'المشاريع الجديدة': { widths: [5, 30, 44, 34, 34, 24], headerRow: 3, dataRows: fresh.length },
-    'العمليات والدعم المؤسسي': { widths: [5, 30, 18, 30, 14, 18, 22, 16, 15, 12, 18, 15, 14, 15, 15, 14, 16, 14, 24, 28], headerRow: 3, dataRows: ops.length },
+    'المعلومات العامة': { widths: [30, 60] },    'العمليات والدعم المؤسسي': { widths: [5, 30, 18, 30, 14, 18, 22, 16, 15, 12, 18, 15, 14, 15, 15, 14, 16, 14, 24, 28], headerRow: 3, dataRows: ops.length },
     'المستهدفات والنتائج': { widths: [50, 26] },
     'البرنامج الزمني': { widths: [40, 26, 60, 13, 13], headerRow: 3, dataRows: ms.length },
     'الإطلاقات': { widths: [5, 15, 80], headerRow: 3, dataRows: n },
@@ -302,7 +273,6 @@ async function exportExcelStyled(items: Item[], entityName: string) {
   // ---- sheet 1: الملخص — mirrors the PPT summary slide -----------------------
   const sm = wb.addWorksheet('الملخص', { views: [{ rightToLeft: true, showGridLines: false }] });
   {
-    const totalBudget = items.reduce((a, i) => a + parseBudget(i.budget), 0);
     const avgDone = items.length ? Math.round(items.reduce((a, i) => a + stageWeight(i), 0) / items.length) : 0;
     for (let c = 1; c <= 9; c++) sm.getColumn(c).width = 15;
     banner(sm, 9, 'منصة التحول للذكاء الاصطناعي المساعد — ملخص المدخلات', `الجهة: ${entityName}  ·  ${today()}`);
@@ -310,7 +280,7 @@ async function exportExcelStyled(items: Item[], entityName: string) {
     // KPI cards: big value + label, styled like the dashboard cards
     const kpis: [string, string][] = [
       ['إجمالي المدخلات', String(items.length)],
-      ['المعتمدة ضمن الدفعات', String(items.filter((i) => i.wf === 'exec' || i.wf === 'budget').length)],
+      ['المعتمدة ضمن الدفعات', String(items.filter((i) => ['exec', 'launch', 'done'].includes(wfOf(i))).length)],
       ['متوسط نسبة الإنجاز', avgDone + '%'],
     ];
     const kSpans: [number, number][] = [[1, 2], [3, 4], [5, 6], [7, 8]];
@@ -387,8 +357,8 @@ async function exportExcelStyled(items: Item[], entityName: string) {
   // KPI strip: totals the reader needs before the table
   const stats: [string, string][] = [
     ['إجمالي المدخلات', String(items.length)],
-    ['المعتمدة ضمن الدفعات', String(items.filter((i) => i.wf === 'exec' || i.wf === 'budget').length)],
-    ['بانتظار اعتماد رئيس المسار', String(items.filter((i) => i.wf === 'ent1').length)],
+    ['المعتمدة ضمن الدفعات', String(items.filter((i) => ['exec', 'launch', 'done'].includes(wfOf(i))).length)],
+    ['بانتظار اعتماد رئيس المسار', String(items.filter((i) => wfOf(i) === 'ent1').length)],
   ];
   const seg = Math.max(1, Math.floor(cols / 3));
   const spans: [number, number][] = [
@@ -553,13 +523,30 @@ export async function downloadItemsTemplate(
   });
   ws.getRow(ex).height = 20;
 
-  // dropdowns for option fields, rows 5..80
-  const listOf = (arr: string[]) => '"' + arr.join(',').slice(0, 250) + '"';
+  // dropdowns for option fields, rows 5..80. Short lists inline; long lists
+  // (e.g. دليل خدمات الجهة) go on a hidden lookup sheet referenced by range —
+  // Excel caps inline validation lists at 255 characters.
+  let lookup: import('exceljs').Worksheet | null = null;
+  let lookupCol = 0;
+  const listOf = (arr: string[]): string => {
+    const inline = '"' + arr.join(',') + '"';
+    if (inline.length <= 250 && !arr.some((v) => v.includes(','))) return inline;
+    if (!lookup) {
+      lookup = wb.addWorksheet('قوائم', { state: 'veryHidden', views: [{ rightToLeft: true }] });
+    }
+    lookupCol += 1;
+    arr.forEach((v, ri) => {
+      lookup!.getCell(ri + 1, lookupCol).value = v;
+    });
+    const colLetter = lookup.getColumn(lookupCol).letter;
+    return `'قوائم'!$${colLetter}$1:$${colLetter}$${arr.length}`;
+  };
   fields.forEach((f, ci) => {
     const opts = options[f.key];
     if (!opts || !opts.length) return;
+    const formula = listOf(opts);
     for (let r = ex; r <= 80; r++) {
-      ws.getCell(r, ci + 1).dataValidation = { type: 'list', allowBlank: true, formulae: [listOf(opts)] };
+      ws.getCell(r, ci + 1).dataValidation = { type: 'list', allowBlank: true, formulae: [formula] };
     }
   });
   for (let r = ex + 1; r <= 80; r++) ws.getRow(r).height = 20;
@@ -694,7 +681,6 @@ export async function exportPpt(items: Item[], entityName: string) {
   });
 
   // ---- 2) summary slide -----------------------------------------------------
-  const totalBudget = items.reduce((a, i) => a + parseBudget(i.budget), 0);
   const avgDone = items.length ? Math.round(items.reduce((a, i) => a + stageWeight(i), 0) / items.length) : 0;
   const sum = p.addSlide();
   sum.background = { color: 'FFFFFF' };
@@ -703,7 +689,7 @@ export async function exportPpt(items: Item[], entityName: string) {
 
   const kpis: [string, string][] = [
     ['إجمالي المدخلات', String(items.length)],
-    ['المعتمدة ضمن الدفعات', String(items.filter((i) => i.wf === 'exec' || i.wf === 'budget').length)],
+    ['المعتمدة ضمن الدفعات', String(items.filter((i) => ['exec', 'launch', 'done'].includes(wfOf(i))).length)],
     ['متوسط نسبة الإنجاز', avgDone + '%'],
   ];
   // RTL: first KPI sits at the right edge
@@ -757,8 +743,7 @@ export async function exportPpt(items: Item[], entityName: string) {
     const rows: [string, string][] = [
       ['المسار', pathById(i.path).name],
       ['الجهة', entOf(i, entityName)],
-      ['الأولوية', i.priority || '—'],
-      ['درجة التحول', transformScore(i).v + ' / 5'],
+            ['درجة التحول', transformScore(i).v + ' / 5'],
       ['أولوية الاختيار', selPriorityOf(i) || '—'],
     ];
     s.addTable(

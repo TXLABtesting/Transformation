@@ -1034,9 +1034,9 @@ export function Overlays({ vm }: { vm: VM }) {
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
                   {vm.assignModal.isChange
                     ? vm.assignModal.currentBatches.length === 1
-                      ? 'المرحلة الحالية: ' + vm.assignModal.currentBatches[0] + ' — اختر المرحلة الجديدة.'
-                      : 'المحدَّد في مراحل مختلفة — اختر المرحلة الموحّدة الجديدة.'
-                    : 'عيّن مرحلة التنفيذ والإطلاق نفسها لكل ما هو محدَّد.'}
+                      ? 'الدفعة الحالية: ' + vm.assignModal.currentBatches[0] + ' — اختر الدفعة الجديدة.'
+                      : 'المحدَّد في دفعات مختلفة — اختر الدفعة الموحّدة الجديدة.'
+                    : 'عيّن دفعة الإطلاق نفسها لكل ما هو محدَّد.'}
                 </div>
               </div>
               <button
@@ -1064,7 +1064,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   onChange={(e) => s.setAssign({ batch: e.target.value })}
                   style={assignInput}
                 >
-                  <option value="">اختر المرحلة…</option>
+                  <option value="">اختر الدفعة…</option>
                   {vm.assignModal.batchOptions.map((b) => (
                     <option key={b.name} value={b.name}>
                       {b.label}
@@ -1072,7 +1072,7 @@ export function Overlays({ vm }: { vm: VM }) {
                   ))}
                 </select>
                 <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 6 }}>
-                  لربط المشاريع والعمليات والخدمات بخطة إطلاق داخل المرحلة يُرجى استخدام صفحة «مراحل التنفيذ والإطلاق».
+                  تُطبَّق الدفعة على جميع المدخلات المحدَّدة، ويمكن تعديلها لاحقاً من صفحة دفعات الإطلاق الخاصة بالمسار.
                 </div>
               </div>
             </div>

@@ -3,10 +3,10 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, streamLaunchBatches, TBD_BATCH, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById } from '@/lib/domain';
+import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate } from '@/lib/export';
-import { useSvcCatalog } from '@/lib/svcCatalog';
+import { useSvcCatalog, svcCatalogFor } from '@/lib/svcCatalog';
 
 
 // Repeatable single-line rows for الأنشطة — stored as one newline-joined value
@@ -599,27 +599,11 @@ function FormStep({
           margin: '10px -24px -24px',
           padding: '20px 24px 24px',
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           alignItems: 'center',
           background: 'linear-gradient(180deg,rgba(247,249,253,0),#F7F9FD 30%)',
         }}
       >
-        <button
-          onClick={() => s.fPrev()}
-          style={{
-            background: '#fff',
-            border: '1px solid #DCE3EE',
-            borderRadius: 12,
-            padding: '12px 18px',
-            color: '#54627B',
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-          }}
-        >
-          السابق
-        </button>
         <div style={{ display: 'flex', gap: 9 }}>
           <button
             onClick={() => s.saveDraftOnly()}
@@ -1384,6 +1368,15 @@ function FTask({
   gv: (k: string) => string;
 }) {
   const m = vm.modal;
+  // derived values are written outside the render phase: أولوية التحول from
+  // the matrix, and نسبة الأتمتة locked to 100 for «مؤتمتة كلياً»
+  const stgCat = m.stgCalc?.cat || '';
+  const stgDerived = stgCat ? (stgCat === 'أولوية منخفضة' ? 'لا' : 'نعم') : '';
+  const stgLvl = gv('automationLevel');
+  React.useEffect(() => {
+    if (stgDerived && gv('transformYes') !== stgDerived) setField('transformYes', stgDerived);
+    if (stgLvl === 'مؤتمتة كلياً' && Number(gv('automationPct')) !== 100) setField('automationPct', 100);
+  });
   const sel = (label: string, key: string, opts: string[]) => (
     <div style={{ marginBottom: 14 }}>
       <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
@@ -1482,7 +1475,6 @@ function FTask({
         {(() => {
           const cat = m.stgCalc?.cat || '';
           const derived = cat ? (cat === 'أولوية منخفضة' ? 'لا' : 'نعم') : '';
-          if (derived && gv('transformYes') !== derived) setField('transformYes', derived);
           return (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 0 }}>
               <div>
@@ -1571,6 +1563,11 @@ function FService({
   // دليل الخدمات حسب جهة المنسق — الخدمة الرئيسية والفرعية قوائم منسدلة
   // مترابطة مقيدة بخدمات جهته فقط؛ إدخال يدوي عندما لا تكون الجهة في الدليل
   const entServices = useSvcCatalog(vm.entityName);
+  // derive أولوية التحول from the matrix outside the render phase
+  const svcDerived = m.svcSelPriority ? (m.svcSelPriority === 4 ? 'لا' : 'نعم') : '';
+  React.useEffect(() => {
+    if (svcDerived && gv('transformYes') !== svcDerived) setField('transformYes', svcDerived);
+  });
   const mainVal = gv('title');
   const mainOpts = entServices ? Object.keys(entServices) : [];
   const subOpts = (entServices && entServices[mainVal]) || [];
@@ -1660,7 +1657,6 @@ function FService({
             the matrix (1-3 → نعم، 4 → لا) and read-only */}
         {(() => {
           const derived = pr ? (pr === 4 ? 'لا' : 'نعم') : '';
-          if (derived && gv('transformYes') !== derived) setField('transformYes', derived);
           return (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 0 }}>
               <div>
@@ -1778,13 +1774,16 @@ function BulkStep({ vm }: { vm: VM }) {
         <button
           onClick={() => {
             const path = vm.store.ui.draft?.path || vm.store.myPath;
-            const batchOpts = streamLaunchBatches(path).map((b) => b.name.replace(/^إطلاق /, '')).concat([TBD_BATCH]);
-            downloadItemsTemplate(
-              pathById(path).name,
-              STREAM_FIELDS[path] || [],
-              { ...(STREAM_FIELD_OPTIONS[path] || {}), execBatch: batchOpts },
-              STREAM_FIELD_SAMPLE[path] || {}
-            );
+            const opts: Record<string, string[]> = { ...(STREAM_FIELD_OPTIONS[path] || {}) };
+            // services: الخدمة/الخدمة الفرعية dropdowns from the entity's catalog
+            if (path === 'services') {
+              const cat = svcCatalogFor(vm.entityName);
+              if (cat) {
+                opts.title = Object.keys(cat);
+                opts.subService = Array.from(new Set(Object.values(cat).flat()));
+              }
+            }
+            downloadItemsTemplate(pathById(path).name, STREAM_FIELDS[path] || [], opts, STREAM_FIELD_SAMPLE[path] || {});
           }}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#2563EB', fontWeight: 800, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
         >
