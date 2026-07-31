@@ -101,12 +101,11 @@ export type AboutContent = {
 };
 export const DEFAULT_ABOUT: AboutContent = {
   timeline: [
-    { year: '2001', title: 'الحكومة الإلكترونية', sub: 'انطلاق التحول الرقمي الحكومي', major: true },
-    { year: '2013', title: 'الحكومة الذكية', sub: 'الخدمات الحكومية عبر الهواتف الذكية', major: true },
-    { year: '2017', title: 'تعيين أول وزير', sub: 'للذكاء الاصطناعي المساعد', major: false },
-    { year: '2019', title: 'الحكومة الرقمية', sub: 'منظومة حكومية رقمية متكاملة', major: true },
-    { year: '2020', title: 'أول جامعة للذكاء الاصطناعي', sub: 'جامعة محمد بن زايد للذكاء الاصطناعي', major: false },
-    { year: '2026', title: 'الذكاء الاصطناعي المساعد', sub: 'إطلاق المشروع الوطني الاستراتيجي', major: true },
+    { year: '2001', title: 'الحكومة الإلكترونية', sub: '', major: true },
+    { year: '2013', title: 'الحكومة الذكية', sub: '', major: true },
+    { year: '2017', title: 'تعيين أول وزير', sub: 'للذكاء الاصطناعي', major: false },
+    { year: '2019', title: 'الحكومة الرقمية', sub: '', major: true },
+    { year: '2026', title: 'حكومة الذكاء الاصطناعي المساعد', sub: '', major: true },
   ],
   targets: {
     label1: 'تحويل',
@@ -1194,7 +1193,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = process.env.NEXT_PUBLIC_DEMO_DATA === '1' ? 'demo4' : 'v4';
+export const SEED_V = process.env.NEXT_PUBLIC_DEMO_DATA === '1' ? 'demo5' : 'v5';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 

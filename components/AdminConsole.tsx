@@ -410,7 +410,7 @@ function SiteTab() {
 
       <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-          <div style={{ fontSize: 14, fontWeight: 800 }}>وثائق المكتبة</div>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>وثائق المنشورات</div>
           <button
             onClick={s.addLibDoc}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
@@ -420,7 +420,7 @@ function SiteTab() {
           </button>
         </div>
         <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginBottom: 14 }}>
-          الوثائق المعروضة في صفحة «المكتبة» العامة — أرفق ملف PDF وصورة الغلاف مباشرة من هنا.
+          الوثائق المعروضة في صفحة «المنشورات» العامة — أرفق ملف PDF وصورة الغلاف مباشرة من هنا.
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {s.libraryDocs.map((d) => (

@@ -4,7 +4,7 @@ import { CONTACT_STREAMS, type LibraryDoc } from '@/lib/domain';
 import { useStore } from '@/lib/store';
 
 // ===========================================================================
-// Public site (design_handoff_public_site) — عن المشروع / المكتبة / تواصل معنا
+// Public site (design_handoff_public_site) — عن المشروع / المنشورات / تواصل معنا
 // White shared top nav + footer; page backgrounds and tokens per the handoff.
 // The home page (UAE PASS login) keeps the existing platform design.
 // ===========================================================================
@@ -14,7 +14,7 @@ export type PublicTab = 'home' | 'about' | 'library' | 'contact';
 const NAV_LINKS: { key: PublicTab; label: string }[] = [
   { key: 'home', label: 'الصفحة الرئيسية' },
   { key: 'about', label: 'عن المشروع' },
-  { key: 'library', label: 'المكتبة' },
+  { key: 'library', label: 'المنشورات' },
   { key: 'contact', label: 'تواصل معنا' },
 ];
 
@@ -257,7 +257,7 @@ export function AboutPage() {
             ))}
           </div>
         ) : (
-        <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', direction: 'rtl' }}>
           {TL.map((t) =>
             t.major ? (
               <div key={t.year} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, minWidth: 0 }}>
@@ -278,7 +278,7 @@ export function AboutPage() {
                   </div>
                 )}
                 <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1F2D49', textAlign: 'center', lineHeight: 1.7, padding: '0 8px' }}>{t.title}</div>
-                <div style={{ fontSize: 11.5, fontWeight: 600, color: '#7484A0', textAlign: 'center', lineHeight: 1.7, padding: '0 10px' }}>{t.sub}</div>
+                {t.sub ? <div style={{ fontSize: 11.5, fontWeight: 600, color: '#7484A0', textAlign: 'center', lineHeight: 1.7, padding: '0 10px' }}>{t.sub}</div> : null}
               </div>
             ) : (
               <div key={t.year} style={{ flex: 0.7, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, minWidth: 0 }}>
@@ -395,7 +395,7 @@ function HoverLift({ children }: { children: React.ReactNode }) {
 }
 
 // ---------------------------------------------------------------------------
-// المكتبة
+// المنشورات
 // ---------------------------------------------------------------------------
 const normAr = (s: string) => s.replace(/[أإآ]/g, 'ا').replace(/[ً-ْ]/g, '');
 
@@ -417,8 +417,7 @@ export function LibraryPage() {
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '56px 40px 72px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 30 }}>
           <div>
-            <h1 style={{ fontSize: 32, fontWeight: 900, margin: '0 0 6px', color: '#0F1F3D' }}>المكتبة</h1>
-            <p style={{ color: '#5E6E8C', fontSize: 14.5, fontWeight: 600, margin: 0 }}>الوثائق الرسمية الخاصة بمشروع الذكاء الاصطناعي المساعد.</p>
+            <h1 style={{ fontSize: 32, fontWeight: 900, margin: 0, color: '#0F1F3D' }}>المنشورات</h1>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F4F7FC', border: '1px solid #E7ECF4', borderRadius: 999, padding: '8px 16px', width: 260 }}>
@@ -484,12 +483,14 @@ export function LibraryPage() {
                       href={d.file}
                       target="_blank"
                       rel="noreferrer"
+                      title="إطلاع"
+                      aria-label="إطلاع"
                       onClick={(e) => {
                         if (openDocFile(d.file)) e.preventDefault();
                       }}
-                      style={{ background: 'linear-gradient(135deg,#2563EB,#1D4ED8)', color: '#fff', borderRadius: 12, padding: '0 24px', height: 42, display: 'inline-flex', alignItems: 'center', fontSize: 13.5, fontWeight: 800, textDecoration: 'none' }}
+                      style={{ background: 'linear-gradient(135deg,#2563EB,#1D4ED8)', color: '#fff', borderRadius: 12, width: 42, height: 42, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
                     >
-                      إطلاع
+                      <PIcon d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" size={18} color="#fff" />
                     </a>
                     )}
                   </div>

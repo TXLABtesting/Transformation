@@ -1,16 +1,159 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
 import { AboutPage, ContactPage, LibraryPage, PublicFooter, PublicNav, type PublicTab } from './PublicSite';
 
+
+
+// ===========================================================================
+// InteractiveNumberBackground — homepage only. A dense, very faint field of
+// 0-9 digits on canvas; digits near the pointer ease toward light blue and
+// scale up slightly. No spotlight, no glow layer, no particles.
+// ===========================================================================
+function InteractiveNumberBackground() {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const cv = ref.current;
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+    if (!ctx) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+
+    type Cell = { x: number; y: number; v: string; base: number; s: number; cur: number };
+    let cells: Cell[] = [];
+    let W = 0;
+    let H = 0;
+    let raf = 0;
+    let dirty = true;
+    const ptr = { x: -9999, y: -9999, on: false };
+    let radius = 160;
+    let fontSize = 10;
+
+    const build = () => {
+      const rect = cv.getBoundingClientRect();
+      W = rect.width;
+      H = rect.height;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(W * dpr);
+      cv.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // density + radius per breakpoint
+      const wide = W >= 1200;
+      const mid = W >= 768;
+      fontSize = wide ? 10 : mid ? 9 : 8;
+      radius = wide ? 160 : mid ? 130 : 110;
+      const stepX = wide ? 22 : mid ? 20 : 18;
+      const stepY = wide ? 24 : mid ? 22 : 20;
+      cells = [];
+      for (let y = stepY * 0.6; y < H + stepY; y += stepY) {
+        for (let x = stepX * 0.6; x < W + stepX; x += stepX) {
+          cells.push({
+            // tiny controlled jitter so the grid never reads as mechanical
+            x: x + (Math.random() - 0.5) * 3,
+            y: y + (Math.random() - 0.5) * 3,
+            v: String(Math.floor(Math.random() * 10)),
+            base: 0.1 + Math.random() * 0.04, // 0.10-0.14
+            s: 0,
+            cur: 0,
+          });
+        }
+      }
+      dirty = true;
+    };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (const c of cells) {
+        // target strength from pointer distance, smoothstep falloff
+        let target = 0;
+        if (ptr.on) {
+          const dx = c.x - ptr.x;
+          const dy = c.y - ptr.y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < radius) {
+            const t = 1 - d / radius;
+            target = t * t * (3 - 2 * t);
+          }
+        }
+        c.cur += (target - c.cur) * 0.12; // eased approach + gentle release
+        if (c.cur < 0.002) c.cur = 0;
+        const k = c.cur;
+        const size = fontSize * (1 + 0.18 * k);
+        const alpha = c.base + (0.9 - c.base) * k;
+        // muted blue -> light blue
+        const r = Math.round(72 + (85 - 72) * k);
+        const g = Math.round(103 + (199 - 103) * k);
+        const b = Math.round(153 + (255 - 153) * k);
+        ctx.font = size.toFixed(1) + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
+        if (k > 0.15) {
+          ctx.shadowColor = `rgba(85,199,255,${(k * 0.5).toFixed(3)})`;
+          ctx.shadowBlur = 6 * k;
+        } else {
+          ctx.shadowBlur = 0;
+        }
+        ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+        ctx.fillText(c.v, c.x, c.y - k);
+      }
+      ctx.shadowBlur = 0;
+    };
+
+    const loop = () => {
+      const active = ptr.on || cells.some((c) => c.cur > 0.002);
+      if (active || dirty) {
+        draw();
+        dirty = false;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+
+    build();
+    draw();
+    if (!reduced && !coarse) raf = requestAnimationFrame(loop);
+
+    const onMove = (e: MouseEvent) => {
+      const rect = cv.getBoundingClientRect();
+      ptr.x = e.clientX - rect.left;
+      ptr.y = e.clientY - rect.top;
+      ptr.on = ptr.x >= 0 && ptr.y >= 0 && ptr.x <= rect.width && ptr.y <= rect.height;
+    };
+    const onLeave = () => {
+      ptr.on = false;
+    };
+    const onResize = () => {
+      build();
+      draw();
+    };
+    if (!reduced && !coarse) {
+      window.addEventListener('mousemove', onMove, { passive: true });
+      document.documentElement.addEventListener('mouseleave', onLeave);
+    }
+    window.addEventListener('resize', onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('mousemove', onMove);
+      document.documentElement.removeEventListener('mouseleave', onLeave);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
+  return (
+    <canvas
+      ref={ref}
+      aria-hidden="true"
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}
+    />
+  );
+}
 
 // Landing navigation — الصفحة الرئيسية is the login itself (blue, platform
 // design); the other tabs are the public site pages from the design handoff.
 const NAV_ITEMS: { key: PublicTab; label: string }[] = [
   { key: 'home', label: 'الصفحة الرئيسية' },
   { key: 'about', label: 'من نحن' },
-  { key: 'library', label: 'المكتبة' },
+  { key: 'library', label: 'المنشورات' },
   { key: 'contact', label: 'تواصل معنا' },
 ];
 
@@ -58,18 +201,10 @@ export function Login({ vm }: { vm: VM }) {
         direction: 'rtl',
         position: 'relative',
         overflow: 'hidden',
-        background: 'radial-gradient(125% 125% at 50% 0%,#0B2A66 0%,#071A40 55%,#04102A 100%)',
+        background: 'linear-gradient(180deg,#041126 0%,#020713 100%)',
       }}
     >
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          opacity: 0.55,
-          backgroundImage:
-            'radial-gradient(circle at 80% 15%,rgba(39,194,240,.20),transparent 45%),radial-gradient(circle at 15% 85%,rgba(37,99,235,.22),transparent 45%)',
-        }}
-      />
+      <InteractiveNumberBackground />
 
       {/* ===== top navigation ===== */}
       <nav
