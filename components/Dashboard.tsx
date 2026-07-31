@@ -3046,7 +3046,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       <div style={{ flex: 1 }}>
                         <div className="hd" style={{ fontSize: 16.5, fontWeight: 800, color: '#13213C' }}>تخطيط {itemsMgrFor.replace(/^إطلاق /, '')}</div>
                         <div style={{ fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 3, lineHeight: 1.7 }}>
-                          اختر المدخلات التي سيتم تنفيذها ضمن هذه المرحلة من خطة التنفيذ.
+                          اختر المدخلات التي ستُنفَّذ ضمن هذه الدفعة.
                         </div>
                       </div>
                       <button
