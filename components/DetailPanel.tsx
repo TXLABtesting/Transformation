@@ -67,6 +67,14 @@ function DetailCell({ label, iconD, tint, children }: { label: string; iconD?: s
   );
 }
 
+function StatusPill({ label, bg, color }: { label: string; bg: string; color: string }) {
+  return (
+    <span style={{ display: 'inline-block', fontSize: 12, fontWeight: 800, padding: '4px 12px', borderRadius: 999, background: bg, color }}>
+      {label}
+    </span>
+  );
+}
+
 function TransformPill({ v }: { v?: string }) {
   const s = (v || '').trim();
   const bad = s.includes('غير');
@@ -229,53 +237,6 @@ export function DetailPanel({ vm }: { vm: VM }) {
           }}
         >
           <div style={{ display: 'contents' }}>
-          {/* ===== INFO GRID ===== */}
-          <div
-            className="rgrid-2"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4,1fr)',
-              gap: 10,
-            }}
-          >
-            <div
-              style={{
-                background: '#fff',
-                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-                borderRadius: 13,
-                padding: '12px 13px',
-              }}
-            >
-              <div style={labelStyle}>الحالة</div>
-              <span
-                style={{
-                  display: 'inline-block',
-                  fontSize: 11,
-                  fontWeight: 800,
-                  padding: '3px 9px',
-                  borderRadius: 999,
-                  background: d.wfBg,
-                  color: d.wfChip,
-                }}
-              >
-                {d.wfLabel}
-              </span>
-            </div>
-            <div
-              style={{
-                background: '#fff',
-                border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-                borderRadius: 13,
-                padding: '12px 13px',
-              }}
-            >
-              <div style={labelStyle}>دفعة الإطلاق</div>
-              <div style={valueStyle}>{(d.execBatchName || '').replace('إطلاق ', '') || '—'}</div>
-            </div>
-          </div>
-          </div>
-
-          <div style={{ display: 'contents' }}>
           {/* Funded banner */}
           {d.dFunded && (
             <div
@@ -349,6 +310,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               <>
                 <DetailSecHead title="بيانات المهمة" />
                 <DetailGrid cols={2}>
+                  <DetailCell label="الحالة"><StatusPill label={d.wfLabel} bg={d.wfBg} color={d.wfChip} /></DetailCell>
                   <DetailCell label="المحور">{d.axis}</DetailCell>
                   <DetailCell label="الأنشطة"><RichTextView html={(d.subActivities || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>
                 </DetailGrid>
@@ -395,6 +357,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               <>
                 <DetailSecHead title="بيانات العملية" />
                 <DetailGrid cols={d.supportFn ? 3 : 2}>
+                  <DetailCell label="الحالة"><StatusPill label={d.wfLabel} bg={d.wfBg} color={d.wfChip} /></DetailCell>
                   <DetailCell label="التصنيف">{d.opType}</DetailCell>
                   {d.supportFn ? <DetailCell label="نوع عملية الدعم المؤسسي">{d.supportFn}</DetailCell> : null}
                   <DetailCell label="الأنشطة الفرعية"><RichTextView html={(d.subActivities || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>
@@ -436,6 +399,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
               <>
                 <DetailSecHead title="بيانات الخدمة" />
                 <DetailGrid cols={2}>
+                  <DetailCell label="الحالة"><StatusPill label={d.wfLabel} bg={d.wfBg} color={d.wfChip} /></DetailCell>
                   <DetailCell label="الخدمة الفرعية">{d.subService || '—'}</DetailCell>
                   <DetailCell label="القطاع المعني">{d.sector || '—'}</DetailCell>
                   <DetailCell label="الإدارة المعنية">{d.dept || '—'}</DetailCell>
