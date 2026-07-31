@@ -227,7 +227,7 @@ export function AboutPage() {
   return (
     <div style={{ background: '#F7F9FD' }}>
       {/* hero */}
-      <div style={{ maxWidth: 1060, margin: '0 auto', padding: '64px 32px 24px', textAlign: 'center' }}>
+      <div style={{ maxWidth: 1060, margin: '0 auto', padding: '64px 32px 24px', textAlign: 'right', direction: 'rtl' }}>
         <h1 style={{ fontSize: 40, fontWeight: 900, margin: '0 0 18px', color: '#0F1F3D' }}>عن المشروع</h1>
         <p style={{ fontSize: 16, fontWeight: 600, color: '#3B4A66', lineHeight: 2.15, maxWidth: 920, margin: '0 auto', textAlign: 'right', direction: 'rtl' }}>{hero}</p>
       </div>
@@ -363,7 +363,7 @@ export function AboutPage() {
       {/* principles */}
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '44px 32px 64px' }}>
         <h2 style={sectionTitle}>
-          المبادئ العامة <span style={{ fontSize: 13, fontWeight: 700, color: '#7484A0' }}>· {PR.length} مبدأ</span>
+          المبادئ العامة
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(380px,1fr))', gap: '10px 28px' }}>
           {PR.map((p, i) => (
