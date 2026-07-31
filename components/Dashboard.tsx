@@ -2507,13 +2507,11 @@ export function Dashboard({ vm }: { vm: VM }) {
               {/* page heading */}
               <div data-tour="ai-heading" style={{ margin: '2px 0 -4px' }}>
                 <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>لوحة اللجنة الوطنية</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 4 }}>متابعة المدخلات والجهات المشاركة حسب المسارات.</div>
               </div>
 
               {/* Section 1: ملخص المدخلات والترشيحات */}
               <div>
                 <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>ملخص المدخلات</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>نظرة سريعة على حالة المدخلات ومشاركة الجهات.</div>
               </div>
               {/* same KPI boxes as the stream dashboards (no priority boxes) */}
               <SegKpiStrip
@@ -2530,7 +2528,6 @@ export function Dashboard({ vm }: { vm: VM }) {
               {/* Section 2: المدخلات حسب المسار */}
               <div>
                 <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>توزيع المدخلات حسب المسار</div>
-                <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>توزيع المدخلات حسب المسار ودفعات الإطلاق.</div>
               </div>
               <div data-r="seccards" data-tour="ai-streams" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginTop: -8 }}>
                 {vm.committeeStreamCards.map((st) => (
