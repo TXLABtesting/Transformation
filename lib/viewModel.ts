@@ -1500,6 +1500,7 @@ function build(s: Store) {
         batch: i.execBatch === TBD_BATCH ? '' : i.execBatch || '',
       })),
     // active مرحلة drill-down chip on portfolio pages
+    listIsOps: filterStream === 'ops',
     batchChip: batchFilter
       ? { label: batchFilter.replace(/^إطلاق /, ''), onClear: () => s.setBatchFilter(null) }
       : null,
@@ -1608,6 +1609,8 @@ function build(s: Store) {
             id: i.id,
             title: i.title,
             typeLabel: typeLabelFor(i.type, i.path),
+            catLabel: i.path === 'ops' && i.opType ? i.opType : typeLabelFor(i.type, i.path),
+            supportFn: i.supportFn || '',
             checked: (i.launchPlanIds || []).includes(p.id),
             otherBatch: !!i.execBatch && i.execBatch !== p.batch,
             launched: devStatusOfItem(i) === 'launched',
@@ -1916,6 +1919,9 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     launchNames,
     stageMoved: !!i.stageMove,
     typeLabel: typeLabelFor(i.type, i.path),
+    // ops entries classify by opType; the support function gets its own column
+    catLabel: i.path === 'ops' && i.opType ? i.opType : typeLabelFor(i.type, i.path),
+    supportFn: i.supportFn || '',
     typeColor: t.color,
     typeBg: t.bg,
     pathName: p.name,
