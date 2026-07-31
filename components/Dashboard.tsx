@@ -2815,7 +2815,6 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {vm.svcFilterBar ? (
                   <>
                     <FilterSelect value={vm.svcFilterBar.serviceValue} options={vm.svcFilterBar.serviceOptions} minWidth={130} onChange={(v) => s.setSvcFilter('svcServiceF', v)} />
-                    <FilterSelect value={vm.svcFilterBar.sectorValue} options={vm.svcFilterBar.sectorOptions} minWidth={120} onChange={(v) => s.setSvcFilter('svcSectorF', v)} />
                     <FilterSelect value={vm.svcFilterBar.prioValue} options={vm.svcFilterBar.prioOptions} minWidth={120} onChange={(v) => s.setSvcFilter('svcPrioF', v)} />
                     <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
                   </>
