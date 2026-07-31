@@ -258,55 +258,28 @@ export function AboutPage() {
           </div>
         ) : (
         <div style={{ display: 'flex', flexDirection: 'row', direction: 'rtl' }}>
-          {TL.map((t) =>
-            t.major ? (
-              <div key={t.year} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                <div style={{ fontSize: 26, fontWeight: 900, color: '#2563EB' }}>{t.year}</div>
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: 15 }}>
-                  <div style={{ flex: 1, borderTop: '2px dashed #C4D2E8' }} />
-                  <div style={{ width: 15, height: 15, borderRadius: '50%', background: '#2563EB', border: '3px solid #DBEAFE', flex: '0 0 auto' }} />
-                  <div style={{ flex: 1, borderTop: '2px dashed #C4D2E8' }} />
-                </div>
-                {t.img ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={t.img} alt={t.title} style={{ width: 'clamp(80px, 8.6vw, 128px)', height: 'clamp(80px, 8.6vw, 128px)', borderRadius: '50%', objectFit: 'cover', border: '1px solid #DCE4F0' }} />
-                ) : (
-                  <div
-                    style={{ width: 'clamp(80px, 8.6vw, 128px)', height: 'clamp(80px, 8.6vw, 128px)', borderRadius: '50%', background: 'repeating-linear-gradient(45deg,#E3EAF5 0 8px,#EFF3FA 8px 16px)', border: '1px solid #DCE4F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace', fontSize: 10, color: '#8A97AD' }}
-                  >
-                    صورة
-                  </div>
-                )}
-                <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1F2D49', textAlign: 'center', lineHeight: 1.7, padding: '0 8px' }}>{t.title}</div>
-                {t.sub ? <div style={{ fontSize: 11.5, fontWeight: 400, color: '#7484A0', textAlign: 'center', lineHeight: 1.7, padding: '0 10px' }}>{t.sub}</div> : null}
+          {TL.map((t) => (
+            <div key={t.year} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, minWidth: 0 }}>
+              <div style={{ fontSize: t.major ? 26 : 22, fontWeight: 900, color: t.major ? '#2563EB' : '#5B87DB' }}>{t.year}</div>
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: 15 }}>
+                <div style={{ flex: 1, borderTop: '2px dashed #C4D2E8' }} />
+                <div style={{ width: t.major ? 15 : 11, height: t.major ? 15 : 11, borderRadius: '50%', background: t.major ? '#2563EB' : '#9AA6BC', border: t.major ? '3px solid #DBEAFE' : 'none', flex: '0 0 auto' }} />
+                <div style={{ flex: 1, borderTop: '2px dashed #C4D2E8' }} />
               </div>
-            ) : (
-              <div key={t.year} style={{ flex: 0.7, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                <div style={{ fontSize: 26, fontWeight: 900, visibility: 'hidden' }}>0000</div>
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: 15 }}>
-                  <div style={{ flex: 1, borderTop: '2px dashed #C4D2E8' }} />
-                  <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#9AA6BC', flex: '0 0 auto' }} />
-                  <div style={{ flex: 1, borderTop: '2px dashed #C4D2E8' }} />
+              {t.img ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={t.img} alt={t.title} style={{ width: 'clamp(80px, 8.6vw, 128px)', height: 'clamp(80px, 8.6vw, 128px)', borderRadius: '50%', objectFit: 'cover', border: '1px solid #DCE4F0' }} />
+              ) : (
+                <div
+                  style={{ width: 'clamp(80px, 8.6vw, 128px)', height: 'clamp(80px, 8.6vw, 128px)', borderRadius: '50%', background: 'repeating-linear-gradient(45deg,#E3EAF5 0 8px,#EFF3FA 8px 16px)', border: '1px solid #DCE4F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace', fontSize: 10, color: '#8A97AD' }}
+                >
+                  صورة
                 </div>
-                <div style={{ height: 38, borderLeft: '2px dotted #B7C4D8', margin: '-6px 0 -2px' }} />
-                {t.img ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={t.img} alt={t.title} style={{ width: 'clamp(80px, 8.6vw, 128px)', height: 'clamp(80px, 8.6vw, 128px)', borderRadius: '50%', objectFit: 'cover', border: '1px solid #DCE4F0', marginTop: -4 }} />
-                ) : (
-                  <div
-                    style={{ width: 'clamp(80px, 8.6vw, 128px)', height: 'clamp(80px, 8.6vw, 128px)', borderRadius: '50%', background: 'repeating-linear-gradient(45deg,#E3EAF5 0 8px,#EFF3FA 8px 16px)', border: '1px solid #DCE4F0', marginTop: -4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace', fontSize: 10, color: '#8A97AD' }}
-                  >
-                    صورة
-                  </div>
-                )}
-                <div style={{ fontSize: 17, fontWeight: 900, color: '#2563EB', lineHeight: 1, marginTop: 8 }}>{t.year}</div>
-                <div style={{ marginTop: -6 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#33405A', textAlign: 'center', lineHeight: 1.75, padding: '0 8px' }}>{t.title}</div>
-                  <div style={{ fontSize: 11, fontWeight: 400, color: '#7484A0', textAlign: 'center', lineHeight: 1.75, padding: '0 8px' }}>{t.sub}</div>
-                </div>
-              </div>
-            )
-          )}
+              )}
+              <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1F2D49', textAlign: 'center', lineHeight: 1.7, padding: '0 8px' }}>{t.title}</div>
+              {t.sub ? <div style={{ fontSize: 11.5, fontWeight: 400, color: '#7484A0', textAlign: 'center', lineHeight: 1.7, padding: '0 10px' }}>{t.sub}</div> : null}
+            </div>
+          ))}
         </div>
         )}
       </div>

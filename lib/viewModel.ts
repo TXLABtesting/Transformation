@@ -1248,6 +1248,7 @@ function build(s: Store) {
   const opsKpis =
     filterStream === 'ops'
       ? {
+          ops: opsTasks.length,
           acts: stgActs(opsTasks),
           // provisional until the operations matrix is approved: القابلية
           // للتحول scored 3+ counts as transformable
