@@ -789,14 +789,14 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                         ))}
                         <td style={td}>
                           {bt.canEditDates ? (
-                            <input type="date" value={r.start} onChange={(e) => s.setItemDate(r.id, 'startDate', e.target.value)} style={dateIn} />
+                            <input type="date" min={b.minDate || undefined} max={r.end || b.maxDate || undefined} value={r.start} onChange={(e) => s.setItemDate(r.id, 'startDate', e.target.value)} style={dateIn} />
                           ) : (
                             r.start || '—'
                           )}
                         </td>
                         <td style={td}>
                           {bt.canEditDates ? (
-                            <input type="date" value={r.end} onChange={(e) => s.setItemDate(r.id, 'endDate', e.target.value)} style={dateIn} />
+                            <input type="date" min={r.start || b.minDate || undefined} max={b.maxDate || undefined} value={r.end} onChange={(e) => s.setItemDate(r.id, 'endDate', e.target.value)} style={dateIn} />
                           ) : (
                             r.end || '—'
                           )}
