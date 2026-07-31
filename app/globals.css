@@ -443,3 +443,13 @@ select {
   .segkpi .seglbl { min-height: auto; }
   .segfoot { flex-direction: column; gap: 6px; }
 }
+
+/* login hero: breathing glow behind the logo */
+@keyframes fxBreath {
+  0%, 100% { opacity: .55; transform: scale(.94); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+.fx-breath { animation: fxBreath 6.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .fx-breath { animation: none; opacity: .55; }
+}
