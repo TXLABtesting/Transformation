@@ -2552,47 +2552,17 @@ export function Dashboard({ vm }: { vm: VM }) {
                 <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>ملخص المدخلات</div>
                 <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>نظرة سريعة على حالة المدخلات ومشاركة الجهات.</div>
               </div>
-              {(() => {
-                const ic = vm.inputsCard;
-                const t = ic.total || 1;
-                const rest = Math.max(0, ic.transformable - ic.targeted);
-                const inSegs = [
-                  { key: 'targeted', frac: ic.targeted / t, color: '#2563EB', label: 'المستهدف تحويلها', value: ic.targeted },
-                  { key: 'transformable', frac: rest / t, color: '#3B82F6', label: 'القابلة للتحول', value: ic.transformable },
-                  { key: 'notCapable', frac: ic.notCapable / t, color: '#C7D9F5', label: 'غير قابلة للتحويل', value: ic.notCapable },
-                ].filter((x) => x.frac > 0.0001);
-                const inLegend = [
-                  { label: 'القابلة للتحول', v: ic.transformable, dot: '#3B82F6', square: true, bold: true },
-                  { label: 'المستهدف تحويلها', v: ic.targeted, dot: '#2563EB', bold: false, sub: true },
-                  { label: 'غير قابلة للتحويل', v: ic.notCapable, dot: '#C7D9F5', square: true, bold: true, divider: true },
-                ];
-                const card: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 };
-                return (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 16, marginTop: -8 }}>
-                    {/* inputs breakdown donut */}
-                    <div style={card}>
-                      <EoCardHead title="إجمالي المدخلات" iconD={EO_GRID} onArrow={() => s.setNavSection('all')} />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-                        <EoDonutSeg segs={inSegs} dim={null} center={String(ic.total)} sub="إجمالي المدخلات" />
-                        <div style={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                          {inLegend.map((r) => (
-                            <Fragment key={r.label}>
-                              {r.divider && <div style={{ height: 1, background: '#EEF1F6', margin: '5px 0' }} />}
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '6px 10px', marginRight: r.sub ? 12 : 0 }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                                  <span style={{ width: 10, height: 10, borderRadius: r.square ? 3 : '50%', background: r.dot, flex: 'none' }} />
-                                  <span className={r.bold ? 'hd' : undefined} style={{ fontSize: r.bold ? 13.5 : 12.5, fontWeight: r.bold ? 800 : 400, color: r.bold ? '#13213C' : '#6B7A93' }}>{r.label}</span>
-                                </span>
-                                <span style={{ fontSize: r.bold ? 15 : 13, fontWeight: 800, color: '#13213C' }}>{r.v}</span>
-                              </div>
-                            </Fragment>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {/* same KPI boxes as the stream dashboards (no priority boxes) */}
+              <SegKpiStrip
+                acts={[
+                  { label: 'إجمالي المدخلات', v: vm.inputsCard.total },
+                  { label: 'القابلة للتحول', v: vm.inputsCard.transformable },
+                  { label: 'المستهدف تحويلها', v: vm.inputsCard.targeted },
+                  { label: 'غير قابلة للتحويل', v: vm.inputsCard.notCapable },
+                ]}
+                prios={[]}
+                notes={[]}
+              />
 
               {/* Section 2: المدخلات حسب المسار */}
               <div>
