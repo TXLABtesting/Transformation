@@ -4,24 +4,41 @@ import { stripHtml } from './richtext';
 // list — replaces the prototype's CDN SheetJS / PptxGenJS with bundled deps.
 // Libraries are dynamically imported so they stay out of the initial bundle.
 // ============================================================================
-import { type Item, typeLabel, typeLabelFor, pathById, wfMeta, wfOf, transformScore, stageWeight, entOf, parseBudget, formatMoney, execMilestones, isEntityApproved, isProjInit, STREAM_FIELDS, svcPriority, stgPriority } from './domain';
+import { type Item, type ActivityDetail, typeLabel, typeLabelFor, pathById, wfMeta, wfOf, transformScore, stageWeight, entOf, parseBudget, formatMoney, execMilestones, isEntityApproved, isProjInit, STREAM_FIELDS, svcPriority, stgPriority, itemActivities } from './domain';
 
 const argb = (hex: string) => 'FF' + hex.replace('#', '').toUpperCase();
 const today = () => new Date().toLocaleDateString('ar-AE', { year: 'numeric', month: 'long', day: 'numeric' });
 
-// أولوية الاختيار per the stream matrix (ops pending its matrix)
+// أولوية الاختيار — distinct values across the entry's activities
 function selPriorityOf(i: Item): string {
+  const acts = itemActivities(i);
   if (i.type === 'service') {
-    const p = svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
-    return p ? 'الأولوية ' + p : '';
+    const prs = (acts.length ? acts.map((a) => svcPriority(a.usageIntensity, a.complexity, a.readinessLevel)) : [svcPriority(i.usageIntensity, i.complexity, i.readinessLevel)]).filter((p): p is 1 | 2 | 3 | 4 => p != null);
+    const uniq = Array.from(new Set(prs)).sort();
+    return uniq.length ? 'الأولوية ' + uniq.join('، ') : '';
   }
   if (i.path === 'strategy' && i.type === 'operation') {
-    const c = stgPriority(i);
+    const cs = (acts.length ? acts.map((a) => stgPriority(a)) : [stgPriority(i)]).filter((c): c is NonNullable<typeof c> => !!c);
+    return Array.from(new Set(cs.map((c) => c.cat + ' · ' + c.total + '/30'))).join('، ');
+  }
+  return '';
+}
+// أولوية الاختيار of ONE activity (per-row value in the report)
+function actPriorityOf(path: string, type: string, a: ActivityDetail): string {
+  if (type === 'service') {
+    const p = svcPriority(a.usageIntensity, a.complexity, a.readinessLevel);
+    return p ? 'الأولوية ' + p : '';
+  }
+  if (path === 'strategy') {
+    const c = stgPriority(a);
     return c ? c.cat + ' · ' + c.total + '/30' : '';
   }
   return '';
 }
-function row(i: Item, entityName: string) {
+// one report row per نشاط/خدمة فرعية — the entry's header cells repeat on
+// every row of its activities (same shape as the upload template)
+const ACT_KEYS = new Set(['subActivities', 'subService', 'sector', 'dept', 'section', 'isAutomated', 'automationLevel', 'automationSystem', 'automationPct', 'importance', 'usageIntensity', 'readinessLevel', 'impactScore', 'transformScore', 'outputClarity', 'riskLevel', 'complexity', 'transformYes', 'notes']);
+function rowsOf(i: Item, entityName: string): Record<string, string>[] {
   const spec = STREAM_FIELDS[i.path] || [];
   const base: Record<string, string> = {
     النوع: typeLabelFor(i.type, i.path),
@@ -29,12 +46,20 @@ function row(i: Item, entityName: string) {
     الجهة: entOf(i, entityName),
     الحالة: wfMeta(i).label,
   };
-  spec.forEach((f) => {
-    const raw = (i as unknown as Record<string, unknown>)[f.key];
-    base[f.label] = f.key === 'execBatch' ? String(raw || '').replace('إطلاق ', '') : stripHtml(String(raw ?? ''));
-  });
-  base['أولوية الاختيار'] = selPriorityOf(i);
-  return base;
+  const acts = itemActivities(i);
+  const mk = (a: ActivityDetail | null): Record<string, string> => {
+    const r: Record<string, string> = { ...base };
+    spec.forEach((f) => {
+      const src2: Record<string, unknown> = a && ACT_KEYS.has(f.key)
+        ? { ...(i as unknown as Record<string, unknown>), ...(a as unknown as Record<string, unknown>), subActivities: a.name, subService: a.name }
+        : (i as unknown as Record<string, unknown>);
+      const raw = src2[f.key];
+      r[f.label] = f.key === 'execBatch' ? String(raw || '').replace('إطلاق ', '') : stripHtml(String(raw ?? ''));
+    });
+    r['أولوية الاختيار'] = a ? actPriorityOf(i.path, i.type, a) : selPriorityOf(i);
+    return r;
+  };
+  return acts.length ? acts.map((a) => mk(a)) : [mk(null)];
 }
 
 // ---- shared workbook styling (government-report look) ----------------------
@@ -347,7 +372,7 @@ async function exportExcelStyled(items: Item[], entityName: string) {
   const ws = wb.addWorksheet('المدخلات', { views: [{ rightToLeft: true, showGridLines: false }] });
 
   // header union across items (streams have different field sets)
-  const headers = Array.from(new Set(items.flatMap((i) => Object.keys(row(i, entityName)))));
+  const headers = Array.from(new Set(items.flatMap((i) => rowsOf(i, entityName).flatMap((r) => Object.keys(r)))));
   if (!headers.length) headers.push('النوع', 'المسار', 'الجهة', 'الحالة');
   const widths = headers.map((h) => (h === 'العملية الرئيسية' || h === 'المهمة' || h === 'الخدمة' ? 34 : h.includes('الأنشطة') ? 40 : 20));
   const cols = headers.length;
@@ -381,8 +406,8 @@ async function exportExcelStyled(items: Item[], entityName: string) {
   const headRow = 4;
   headerRow(ws, headRow, headers, widths);
 
-  items.forEach((it, i) => {
-    const data = row(it, entityName);
+  const flat = items.flatMap((it) => rowsOf(it, entityName).map((data) => ({ it, data })));
+  flat.forEach(({ it, data }, i) => {
     const meta = wfMeta(it);
     const r = headRow + 1 + i;
     headers.forEach((h, c) => {
@@ -405,10 +430,10 @@ async function exportExcelStyled(items: Item[], entityName: string) {
     ws.getRow(r).height = 22;
   });
 
-  boxAll(ws, headRow, headRow + items.length, cols);
+  boxAll(ws, headRow, headRow + flat.length, cols);
 
   // footer: generation stamp
-  const fr = headRow + items.length + 2;
+  const fr = headRow + flat.length + 2;
   ws.mergeCells(fr, 1, fr, cols);
   const foot = ws.getCell(fr, 1);
   foot.value = `أُنشئ هذا التقرير آليًا من منصة التحول للذكاء الاصطناعي المساعد — ${today()}`;
@@ -764,7 +789,12 @@ export async function exportPpt(items: Item[], entityName: string) {
     // left card: scope of work
     s.addShape(RR, { x: 0.5, y: 1.95, w: 6.23, h: 4.85, rectRadius: 0.09, fill: { color: 'FFFFFF' }, line: { color: LINE, width: 1 } });
     s.addText('الأنشطة', { x: 0.7, y: 2.1, w: 5.83, h: 0.4, align: 'right', color: MUTE, fontSize: 12.5, bold: true });
-    const scope = stripHtml(i.subActivities || i.subService || '') || '—';
+    const actsList = itemActivities(i);
+    const scope =
+      actsList.map((a, k) => {
+        const pr = actPriorityOf(i.path, i.type, a);
+        return `${k + 1}. ${a.name}${pr ? ' — ' + pr : ''}`;
+      }).join('\n') || stripHtml(i.subActivities || i.subService || '') || '—';
     s.addText(scope.length > 900 ? scope.slice(0, 900) + '…' : scope, {
       x: 0.7, y: 2.55, w: 5.83, h: 4.05, align: 'right', valign: 'top', color: '33405A', fontSize: 11.5, lineSpacingMultiple: 1.25,
     });

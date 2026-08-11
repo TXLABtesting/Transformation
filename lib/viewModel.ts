@@ -218,19 +218,33 @@ function build(s: Store) {
 
   // ---- per-type breakdown for the overview counts band ----
   // transformable follows each stream's matrix (ops provisional until approved)
+  // per-نشاط model: an entry counts if ANY of its activities qualifies
   const isTransformableEntry = (i: Item): boolean => {
+    const acts = itemActivities(i);
     if (i.type === 'service') {
+      if (acts.length)
+        return acts.some((a) => {
+          const pr = svcPriority(a.usageIntensity, a.complexity, a.readinessLevel);
+          return pr != null && pr <= 3;
+        });
       const pr = svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
       return pr != null && pr <= 3;
     }
     if (i.path === 'strategy' && i.type === 'operation') {
-      const cat = stgPriority(i)?.cat || '';
-      return cat === 'أولوية عالية' || cat === 'أولوية متوسطة';
+      const cats = acts.length ? acts.map((a) => stgPriority(a)?.cat || '') : [stgPriority(i)?.cat || ''];
+      return cats.some((cat) => cat === 'أولوية عالية' || cat === 'أولوية متوسطة');
     }
-    if (i.path === 'ops' && i.type === 'operation') return parseInt(i.transformScore || '', 10) >= 3;
+    if (i.path === 'ops' && i.type === 'operation') {
+      if (acts.length) return acts.some((a) => (a.transformYes || '') === 'نعم');
+      return (i.transformYes || '') === 'نعم';
+    }
     return (i.transformability || '') !== 'غير قابل';
   };
-  const isTargetedEntry = (i: Item): boolean => (i.transformYes || '') === 'نعم';
+  const isTargetedEntry = (i: Item): boolean => {
+    const acts = itemActivities(i);
+    if (acts.length) return acts.some((a) => activityTransformYes(i.path, a) === 'نعم');
+    return (i.transformYes || '') === 'نعم';
+  };
   const deliveryBreak = (pick: (i: Item) => boolean) => {
     const set = scope.filter(pick);
     return [
@@ -1333,11 +1347,19 @@ function build(s: Store) {
       .filter(Boolean)
       .join('، ');
   const prioCellOf = (i: Item) => {
+    const acts = itemActivities(i);
     if (i.type === 'service') {
-      const p = svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
-      return p ? 'الأولوية ' + p : '—';
+      const prs = (acts.length
+        ? acts.map((a) => svcPriority(a.usageIntensity, a.complexity, a.readinessLevel))
+        : [svcPriority(i.usageIntensity, i.complexity, i.readinessLevel)]
+      ).filter((p): p is 1 | 2 | 3 | 4 => p != null);
+      const uniq = Array.from(new Set(prs)).sort();
+      return uniq.length ? 'الأولوية ' + uniq.join('، ') : '—';
     }
-    if (i.path === 'strategy' && i.type === 'operation') return stgPriority(i)?.cat || '—';
+    if (i.path === 'strategy' && i.type === 'operation') {
+      const cats = (acts.length ? acts.map((a) => stgPriority(a)?.cat || '') : [stgPriority(i)?.cat || '']).filter(Boolean);
+      return cats.length ? Array.from(new Set(cats)).join('، ') : '—';
+    }
     return '—'; // operations: pending the matrix
   };
   // coordinator + head/deputy work on their own stream; the committee (chair +
@@ -2005,12 +2027,20 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     supportFn: i.supportFn || '',
     axis: i.axis || '',
     subService: i.subService || '',
-    // computed أولوية الاختيار per the stream's matrix
+    // computed أولوية الاختيار — distinct values across the entry's activities
     prioLabel: (() => {
-      if (i.path === 'strategy') return stgPriority(i)?.cat || '';
+      const acts = itemActivities(i);
+      if (i.path === 'strategy') {
+        const cats = (acts.length ? acts.map((a) => stgPriority(a)?.cat || '') : [stgPriority(i)?.cat || '']).filter(Boolean);
+        return Array.from(new Set(cats)).join('، ');
+      }
       if (i.type === 'service') {
-        const pr = svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
-        return pr ? 'الأولوية ' + pr : '';
+        const prs = (acts.length
+          ? acts.map((a) => svcPriority(a.usageIntensity, a.complexity, a.readinessLevel))
+          : [svcPriority(i.usageIntensity, i.complexity, i.readinessLevel)]
+        ).filter((p): p is 1 | 2 | 3 | 4 => p != null);
+        const uniq = Array.from(new Set(prs)).sort();
+        return uniq.length ? 'الأولوية ' + uniq.join('، ') : '';
       }
       return '';
     })(),
