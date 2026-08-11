@@ -44,21 +44,12 @@ export function Tour({ steps }: { steps: TourStep[] }) {
     setRect(null);
   }, []);
 
-  // first visit → auto start (after the dashboard has painted)
+  // the guide never auto-starts — it opens only from the «فتح الدليل» button
+  // in the إرشادات استخدام المنصة card (which dispatches TOUR_EVENT)
   useEffect(() => {
-    let done = '1';
-    try {
-      done = localStorage.getItem(DONE_KEY) || '';
-    } catch {
-      /* private mode */
-    }
-    const t = done ? 0 : window.setTimeout(start, 900);
     const onEvent = () => start();
     window.addEventListener(TOUR_EVENT, onEvent);
-    return () => {
-      if (t) window.clearTimeout(t);
-      window.removeEventListener(TOUR_EVENT, onEvent);
-    };
+    return () => window.removeEventListener(TOUR_EVENT, onEvent);
   }, [start]);
 
   // scroll the target into view, then track its rect while the step is shown
