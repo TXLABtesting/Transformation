@@ -43,7 +43,7 @@ import {
   DEFAULT_ABOUT_HERO,
 } from './domain';
 import type { LibraryDoc, ContactInquiry } from './domain';
-import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, stgPriority, svcPriority } from './domain';
+import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, type ActivityDetail } from './domain';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
@@ -1128,13 +1128,16 @@ export const useStore = create<Store>((set, get) => {
       if (d?.type === 'operation' && d?.path === 'ops') {
         const filledO = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
         const dO = d as unknown as Record<string, unknown>;
-        const reqO = ['opType', 'title', 'subActivities', 'sector', 'dept', 'section', 'isAutomated', 'transformYes'];
-        if (String(dO.isAutomated ?? '') === 'نعم') reqO.push('automationSystem', 'automationPct');
+        const actsO = (d.activities || []).filter((a) => Object.values(a).some((v) => stripHtml(String(v ?? '')).trim()));
+        const reqO = ['opType', 'title'];
         if (String(dO.opType ?? '') === SUPPORT_OPTYPE) reqO.push('supportFn');
-        if (reqO.some((k) => !filledO(dO[k]))) {
+        // every نشاط carries its own full details — each section must be complete
+        const actsBadO = actsO.length ? actsO.some((a) => activityMissing('ops', a).length > 0) : true;
+        if (reqO.some((k) => !filledO(dO[k])) || actsBadO) {
           return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
         }
-        if (['title', 'subActivities', 'sector', 'dept', 'section'].some((k) => /[A-Za-z]/.test(stripHtml(String(dO[k] ?? ''))))) {
+        const arabO = [String(dO.title ?? ''), ...actsO.flatMap((a) => [a.name, a.sector, a.dept, a.section].map((v) => String(v ?? '')))];
+        if (arabO.some((v) => /[A-Za-z]/.test(stripHtml(v)))) {
           return toast('يرجى إدخال النص بالعربية فقط في الحقول العربية');
         }
         if (s.ui.inlineCreate) {
@@ -1148,13 +1151,14 @@ export const useStore = create<Store>((set, get) => {
       if (d?.type === 'operation' && d?.path === 'strategy') {
         const filledT = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
         const dt = d as unknown as Record<string, unknown>;
-        const reqT = ['title', 'axis', 'subActivities', 'sector', 'dept', 'section', 'automationLevel', 'usageIntensity', 'importance', 'readinessLevel', 'impactScore', 'transformScore', 'outputClarity', 'riskLevel', 'transformYes'];
-        const lvlT = String(dt.automationLevel ?? '');
-        if (lvlT === 'مؤتمتة كلياً' || lvlT === 'مؤتمتة جزئياً') reqT.push('automationSystem', 'automationPct');
-        if (reqT.some((k) => !filledT(dt[k]))) {
+        const actsT = (d.activities || []).filter((a) => Object.values(a).some((v) => stripHtml(String(v ?? '')).trim()));
+        const reqT = ['title', 'axis'];
+        const actsBadT = actsT.length ? actsT.some((a) => activityMissing('strategy', a).length > 0) : true;
+        if (reqT.some((k) => !filledT(dt[k])) || actsBadT) {
           return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
         }
-        if (['title', 'subActivities', 'sector', 'dept', 'section'].some((k) => /[A-Za-z]/.test(stripHtml(String(dt[k] ?? ''))))) {
+        const arabT = [String(dt.title ?? ''), ...actsT.flatMap((a) => [a.name, a.sector, a.dept, a.section].map((v) => String(v ?? '')))];
+        if (arabT.some((v) => /[A-Za-z]/.test(stripHtml(v)))) {
           return toast('يرجى إدخال النص بالعربية فقط في الحقول العربية');
         }
         if (s.ui.inlineCreate) {
@@ -1169,11 +1173,13 @@ export const useStore = create<Store>((set, get) => {
       if (d?.type === 'service') {
         const filledSvc = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
         const ds = d as unknown as Record<string, unknown>;
-        const reqSvc = ['title', 'subService', 'sector', 'dept', 'section', 'usageIntensity', 'complexity', 'readinessLevel', 'transformYes'];
-        if (reqSvc.some((k) => !filledSvc(ds[k]))) {
+        const actsS = (d.activities || []).filter((a) => Object.values(a).some((v) => stripHtml(String(v ?? '')).trim()));
+        const actsBadS = actsS.length ? actsS.some((a) => activityMissing('services', a).length > 0) : true;
+        if (!filledSvc(ds.title) || actsBadS) {
           return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
         }
-        if (['title', 'subService', 'sector', 'dept', 'section'].some((k) => /[A-Za-z]/.test(stripHtml(String(ds[k] ?? ''))))) {
+        const arabS = [String(ds.title ?? ''), ...actsS.flatMap((a) => [a.sector, a.dept, a.section].map((v) => String(v ?? '')))];
+        if (arabS.some((v) => /[A-Za-z]/.test(stripHtml(v)))) {
           return toast('يرجى إدخال النص بالعربية فقط في الحقول العربية');
         }
         if (s.ui.inlineCreate) {
@@ -1436,56 +1442,102 @@ export const useStore = create<Store>((set, get) => {
           return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام نموذج المسار');
         }
         const b = best as { ws: import('exceljs').Worksheet; row: number; map: Record<number, string> };
-        const rows: BulkRow[] = [];
+        // one Excel row = one نشاط/خدمة فرعية; consecutive rows that share
+        // the same header identity fold into ONE entry with activities[]
+        const rawRows: Record<string, string>[] = [];
         for (let r = b.row + 1; r <= b.ws.rowCount; r++) {
           const fields: Record<string, string> = {};
           b.ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
             const key = b.map[col];
             if (key) fields[key] = norm(cell.text ?? cell.value);
           });
-          if (!Object.values(fields).some((v) => v)) continue;
-          // normalize دفعة values coming from the dropdown to the stored form
-          if (fields.execBatch && fields.execBatch !== TBD_BATCH && !fields.execBatch.startsWith('إطلاق '))
-            fields.execBatch = 'إطلاق ' + fields.execBatch;
-          // mirror the entry-form rules: clear inapplicable conditionals,
-          // clamp automation, derive أولوية التحول from the stream matrix
-          const extra: Record<string, unknown> = { ...fields };
+          if (Object.values(fields).some((v) => v)) rawRows.push(fields);
+        }
+        const keyOf = (f: Record<string, string>) =>
+          path === 'ops'
+            ? [f.title, f.opType, f.supportFn].join('|')
+            : path === 'strategy'
+              ? [f.axis, f.title].join('|')
+              : f.title || '';
+        const pctOf = (v: string | undefined, cap: number) =>
+          v ? Math.max(0, Math.min(cap, Number(String(v).replace('%', '')) || 0)) : undefined;
+        const toActivity = (f: Record<string, string>): ActivityDetail => {
+          const a: ActivityDetail = {
+            name: (path === 'services' ? f.subService : f.subActivities) || '',
+            sector: f.sector,
+            dept: f.dept,
+            section: f.section,
+            notes: f.notes,
+          };
           if (path === 'ops') {
-            if (fields.opType !== SUPPORT_OPTYPE) delete extra.supportFn;
-            if (fields.isAutomated !== 'نعم') {
-              delete extra.automationSystem;
-              delete extra.automationPct;
-            } else if (fields.automationPct) {
-              extra.automationPct = Math.max(0, Math.min(100, Number(fields.automationPct.replace('%', '')) || 0));
+            a.isAutomated = f.isAutomated;
+            if (f.isAutomated === 'نعم') {
+              a.automationSystem = f.automationSystem;
+              a.automationPct = pctOf(f.automationPct, 100);
             }
-          }
-          if (path === 'strategy') {
-            const lvl = fields.automationLevel || '';
-            if (lvl === 'غير مؤتمتة') {
-              delete extra.automationSystem;
-              delete extra.automationPct;
-            } else if (lvl === 'مؤتمتة كلياً') {
-              extra.automationPct = 100;
-            } else if (fields.automationPct) {
-              extra.automationPct = Math.max(0, Math.min(95, Number(fields.automationPct.replace('%', '')) || 0));
+            a.transformYes = f.transformYes;
+          } else if (path === 'strategy') {
+            a.automationLevel = f.automationLevel;
+            if (f.automationLevel === 'مؤتمتة كلياً') {
+              a.automationSystem = f.automationSystem;
+              a.automationPct = 100;
+            } else if (f.automationLevel === 'مؤتمتة جزئياً') {
+              a.automationSystem = f.automationSystem;
+              a.automationPct = pctOf(f.automationPct, 95);
             }
-            const calc = stgPriority(fields);
-            if (calc) extra.transformYes = calc.cat === 'أولوية منخفضة' ? 'لا' : 'نعم';
+            a.importance = f.importance;
+            a.usageIntensity = f.usageIntensity;
+            a.readinessLevel = f.readinessLevel;
+            a.impactScore = f.impactScore;
+            a.transformScore = f.transformScore;
+            a.outputClarity = f.outputClarity;
+            a.riskLevel = f.riskLevel;
+          } else {
+            a.usageIntensity = f.usageIntensity;
+            a.complexity = f.complexity;
+            a.readinessLevel = f.readinessLevel;
           }
-          if (path === 'services') {
-            const p = svcPriority(fields.usageIntensity, fields.complexity, fields.readinessLevel);
-            if (p) extra.transformYes = p === 4 ? 'لا' : 'نعم';
+          a.transformYes = activityTransformYes(path, a) || a.transformYes;
+          return a;
+        };
+        const rows: BulkRow[] = [];
+        let group: { key: string; head: Record<string, string>; acts: ActivityDetail[] } | null = null;
+        const flush = () => {
+          if (!group) return;
+          const head = group.head;
+          const base: Record<string, unknown> = { path, activities: group.acts };
+          if (path === 'ops') {
+            base.title = head.title;
+            base.opType = head.opType;
+            if (head.opType === SUPPORT_OPTYPE) base.supportFn = head.supportFn;
+          } else if (path === 'strategy') {
+            base.title = head.title;
+            base.axis = head.axis;
+          } else {
+            base.title = head.title;
           }
-          const missing = missingFieldsOf({ ...extra, path });
+          const mirrored = mirrorActivities(base as Partial<Item>);
+          const missing = missingFieldsOf({ ...(mirrored as Record<string, unknown>), path });
           rows.push({
             type: path === 'services' ? 'service' : 'operation',
             path,
-            title: fields.title || '',
+            title: String(base.title || ''),
             desc: '',
-            extra: extra as Partial<Item>,
+            extra: mirrored as Partial<Item>,
             missing,
           });
+          group = null;
+        };
+        for (const f of rawRows) {
+          const k = keyOf(f);
+          // a row with a fresh identity (or a named title change) starts a new entry
+          if (!group || (k && k !== group.key)) {
+            flush();
+            group = { key: k, head: f, acts: [] };
+          }
+          group.acts.push(toActivity(f));
         }
+        flush();
         if (!rows.length) {
           setUi({ mStep: 'bulk', bulkLoading: false });
           return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام نموذج المسار');
@@ -1586,7 +1638,9 @@ export const useStore = create<Store>((set, get) => {
         return toast('المدخل معتمد — لا يمكن تعديل بياناته بعد الاعتماد');
       }
       setUi({
-        draft: { ...it },
+        // legacy records carry flat fields only — synthesize the per-نشاط
+        // sections so the form always edits the repeatable structure
+        draft: { ...it, activities: it.activities?.length ? it.activities : itemActivities(it) },
         editingId: id,
         editCtx: { role: s.role, origWf: wfOf(it) },
         mStep: 'form',
@@ -2088,8 +2142,14 @@ function commitDraft(
       logNote = 'تعديل من اللجنة الوطنية';
     }
   }
+  // drop empty نشاط sections, derive per-activity أولوية التحول, and mirror
+  // the first activity onto the legacy flat fields (tables/filters/exports)
+  const cleaned = Array.isArray(draft.activities)
+    ? draft.activities.filter((a) => Object.values(a).some((v) => String(v ?? '').trim()))
+    : undefined;
+  const mirrored = mirrorActivities({ ...draft, activities: cleaned && cleaned.length ? cleaned : undefined });
   const finalItem: Item = {
-    ...draft,
+    ...(mirrored as Item),
     approval: asDraft ? 'مسودة' : approval || 'تم الإرسال',
     wf,
     ret: null,

@@ -200,7 +200,8 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
   strategy: [
     { key: 'axis', label: 'المحور' },
     { key: 'title', label: 'المهمة' },
-    { key: 'subActivities', label: 'الأنشطة' },
+    // one Excel row per نشاط — repeat the المهمة cell for each
+    { key: 'subActivities', label: 'اسم النشاط' },
     { key: 'sector', label: 'القطاع المعني' },
     { key: 'dept', label: 'الإدارة المعنية' },
     { key: 'section', label: 'القسم المعني' },
@@ -220,7 +221,8 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'opType', label: 'التصنيف' },
     { key: 'supportFn', label: 'نوع عملية الدعم المؤسسي' },
     { key: 'title', label: 'العملية الرئيسية' },
-    { key: 'subActivities', label: 'الأنشطة الفرعية' },
+    // one Excel row per نشاط — repeat the العملية الرئيسية cell for each
+    { key: 'subActivities', label: 'اسم النشاط الفرعي' },
     { key: 'sector', label: 'القطاع المعني' },
     { key: 'dept', label: 'الإدارة المعنية' },
     { key: 'section', label: 'القسم المعني' },
@@ -304,6 +306,28 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
 const plainOf = (v: unknown): string => String(v ?? '').replace(/<[^>]*>/g, '').trim();
 // labels of the required entry fields this item has not filled yet
 export function missingFieldsOf(i: Record<string, unknown> & { path?: string }): string[] {
+  // per-نشاط records: validate the header fields + every activity in full
+  const acts = i.activities as ActivityDetail[] | undefined;
+  if (Array.isArray(acts) && acts.length) {
+    const path = i.path || '';
+    const out: string[] = [];
+    if (path === 'ops') {
+      if (!plainOf(i.opType)) out.push('التصنيف');
+      if (plainOf(i.opType) === SUPPORT_OPTYPE && !plainOf(i.supportFn)) out.push('نوع عملية الدعم المؤسسي');
+      if (!plainOf(i.title)) out.push('العملية الرئيسية');
+    } else if (path === 'strategy') {
+      if (!plainOf(i.axis)) out.push('المحور');
+      if (!plainOf(i.title)) out.push('المهمة');
+    } else if (path === 'services') {
+      if (!plainOf(i.title)) out.push('الخدمة');
+    }
+    acts.forEach((a, ai) => {
+      const unit = path === 'services' ? 'الخدمة الفرعية' : 'النشاط';
+      const tag = acts.length > 1 ? ` (${unit} ${ai + 1})` : '';
+      activityMissing(path, a).forEach((lbl) => out.push(lbl + tag));
+    });
+    return out;
+  }
   const spec = STREAM_FIELDS[i.path || ''] || [];
   const automationKey = (k: string) => k === 'automationSystem' || k === 'automationPct';
   return spec
@@ -316,6 +340,123 @@ export function missingFieldsOf(i: Record<string, unknown> & { path?: string }):
     .filter((f) => (automationKey(f.key) && i.path === 'strategy' ? plainOf(i.automationLevel) !== 'غير مؤتمتة' : true))
     .filter((f) => !plainOf(i[f.key]))
     .map((f) => f.label);
+}
+
+// required fields of ONE activity/sub-service, per stream (labels of the gaps)
+export function activityMissing(path: string, a: ActivityDetail): string[] {
+  const out: string[] = [];
+  const need = (v: unknown, lbl: string) => {
+    if (!plainOf(v)) out.push(lbl);
+  };
+  need(a.name, path === 'services' ? 'الخدمة الفرعية' : 'اسم النشاط');
+  need(a.sector, 'القطاع المعني');
+  need(a.dept, 'الإدارة المعنية');
+  need(a.section, 'القسم المعني');
+  if (path === 'ops') {
+    need(a.isAutomated, 'هل النشاط مؤتمت؟');
+    if (plainOf(a.isAutomated) === 'نعم') {
+      need(a.automationSystem, 'نظام الأتمتة');
+      need(a.automationPct, 'نسبة الأتمتة');
+    }
+    need(a.transformYes, 'أولوية التحول');
+  } else if (path === 'strategy') {
+    need(a.automationLevel, 'مستوى الأتمتة');
+    if (plainOf(a.automationLevel) && plainOf(a.automationLevel) !== 'غير مؤتمتة') {
+      need(a.automationSystem, 'نظام الأتمتة');
+      need(a.automationPct, 'نسبة الأتمتة');
+    }
+    need(a.importance, 'مستوى الأهمية');
+    need(a.usageIntensity, 'كثافة الاستخدام');
+    need(a.readinessLevel, 'مستوى الجاهزية');
+    need(a.impactScore, 'مستوى الأثر المتوقع من التحول');
+    need(a.transformScore, 'قابلية التحول');
+    need(a.outputClarity, 'وضوح المخرجات وقابليتها للمراجعة');
+    need(a.riskLevel, 'مستوى المخاطر');
+  } else if (path === 'services') {
+    need(a.usageIntensity, 'كثافة الاستخدام');
+    need(a.complexity, 'مستوى التعقيد');
+    need(a.readinessLevel, 'مستوى الجاهزية');
+  }
+  return out;
+}
+
+// derived أولوية التحول of one activity (stg/svc matrices; ops is manual)
+export function activityTransformYes(path: string, a: ActivityDetail): string {
+  if (path === 'strategy') {
+    const c = stgPriority(a);
+    return c ? (c.cat === 'أولوية منخفضة' ? 'لا' : 'نعم') : '';
+  }
+  if (path === 'services') {
+    const p = svcPriority(a.usageIntensity, a.complexity, a.readinessLevel);
+    return p ? (p === 4 ? 'لا' : 'نعم') : '';
+  }
+  return plainOf(a.transformYes);
+}
+
+// normalized activity list of an item — falls back to synthesizing one entry
+// from the legacy flat fields so older records keep working everywhere
+export function itemActivities(i: Item): ActivityDetail[] {
+  if (Array.isArray(i.activities) && i.activities.length) return i.activities;
+  const names =
+    i.path === 'services'
+      ? [i.subService || ''].filter(Boolean)
+      : String(i.subActivities || '')
+          .replace(/<[^>]*>/g, '\n')
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean);
+  if (!names.length) return [];
+  return names.map((name, idx) => ({
+    name,
+    sector: i.sector,
+    dept: i.dept,
+    section: i.section,
+    isAutomated: i.isAutomated,
+    automationLevel: i.automationLevel,
+    automationSystem: i.automationSystem,
+    automationPct: i.automationPct ?? undefined,
+    importance: i.importance,
+    usageIntensity: i.usageIntensity,
+    readinessLevel: typeof i.readinessLevel === 'string' ? i.readinessLevel : undefined,
+    impactScore: i.impactScore,
+    transformScore: typeof i.transformScore === 'string' ? i.transformScore : undefined,
+    outputClarity: i.outputClarity,
+    riskLevel: i.riskLevel,
+    complexity: i.complexity,
+    transformYes: i.transformYes,
+    notes: idx === 0 ? i.notes : undefined,
+  }));
+}
+
+// mirror the activities back onto the legacy flat fields (first entry wins)
+// so tables, filters, exports and older records stay consistent
+export function mirrorActivities<T extends Partial<Item> & { path?: string }>(d: T): T {
+  const acts = d.activities;
+  if (!Array.isArray(acts) || !acts.length) return d;
+  const path = d.path || '';
+  const withDerived = acts.map((a) => ({ ...a, transformYes: activityTransformYes(path, a) || a.transformYes }));
+  const first = withDerived[0];
+  const out: T = { ...d, activities: withDerived };
+  if (path === 'services') out.subService = withDerived.map((a) => a.name).filter(Boolean).join('، ');
+  else out.subActivities = withDerived.map((a) => a.name).filter(Boolean).join('\n');
+  out.sector = first.sector;
+  out.dept = first.dept;
+  out.section = first.section;
+  out.isAutomated = first.isAutomated;
+  out.automationLevel = first.automationLevel;
+  out.automationSystem = first.automationSystem;
+  out.automationPct = first.automationPct ?? undefined;
+  out.importance = first.importance;
+  out.usageIntensity = first.usageIntensity;
+  out.readinessLevel = first.readinessLevel;
+  out.impactScore = first.impactScore;
+  out.transformScore = first.transformScore as never;
+  out.outputClarity = first.outputClarity;
+  out.riskLevel = first.riskLevel;
+  out.complexity = first.complexity;
+  out.transformYes = withDerived.some((a) => a.transformYes === 'نعم') ? 'نعم' : first.transformYes;
+  out.notes = first.notes ?? d.notes;
+  return out;
 }
 
 // «للتحديد بعد الدراسة»: execution stage deferred until the study concludes
@@ -661,6 +802,34 @@ export type LogEntry = {
 export type Nom = { by: string; role: string; path: string; at: number; direct?: boolean };
 export type Funded = { by: string; at: number; direct?: boolean };
 export type FundCancel = { by: string; at: number; reason: string };
+// one نشاط (ops/strategy) or one خدمة فرعية (services) with its OWN details —
+// the repeatable unit of every entry form
+export type ActivityDetail = {
+  name: string;
+  sector?: string;
+  dept?: string;
+  section?: string;
+  // ops automation
+  isAutomated?: string; // نعم / لا
+  // strategy automation
+  automationLevel?: string; // مؤتمتة كلياً / جزئياً / غير مؤتمتة
+  automationSystem?: string;
+  automationPct?: number;
+  // strategy matrix (1-5 each + المخاطر)
+  importance?: string;
+  usageIntensity?: string;
+  readinessLevel?: string;
+  impactScore?: string;
+  transformScore?: string;
+  outputClarity?: string;
+  riskLevel?: string;
+  // services matrix
+  complexity?: string;
+  // أولوية التحول — manual yes/no in ops, derived from the matrix in stg/svc
+  transformYes?: string;
+  notes?: string;
+};
+
 export type Ret = { type: 'info' | 'reject'; from: string; note: string; gate?: string };
 
 export type Item = {
@@ -720,6 +889,11 @@ export type Item = {
   // operations stream entry fields (حصر قائمة العمليات)
   isAutomated?: string; // هل النشاط/العملية مؤتمت؟ نعم / لا
   notes?: string; // الملاحظات
+  // per-نشاط full details (ops/strategy: الأنشطة، services: الخدمات الفرعية).
+  // Each child carries its own sector/dept/section, automation, matrix and
+  // أولوية التحول; the legacy flat fields mirror the FIRST entry for
+  // compatibility with older records and read surfaces.
+  activities?: ActivityDetail[];
   // operation-specific
   opType?: string;
   supportFn?: string; // نوع عملية الدعم المؤسسي (عند اختيار عمليات الدعم المؤسسي)

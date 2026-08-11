@@ -492,7 +492,7 @@ export async function downloadItemsTemplate(
   const ws = wb.addWorksheet('المدخلات', { views: [{ rightToLeft: true, showGridLines: false }] });
   const cols = fields.length;
 
-  banner(ws, cols, 'نموذج رفع مدخلات ' + streamName, 'عبّئ صفًّا لكل مدخل بالأعمدة نفسها الظاهرة في نموذج الإدخال — الحقول الناقصة ستُبرز في المراجعة قبل التأكيد.');
+  banner(ws, cols, 'نموذج رفع مدخلات ' + streamName, 'عبّئ صفًّا لكل نشاط/خدمة فرعية بالأعمدة نفسها الظاهرة في نموذج الإدخال، وكرّر اسم المدخل الرئيسي في كل صف من أنشطته — الحقول الناقصة ستُبرز في المراجعة قبل التأكيد.');
   ws.mergeCells(3, 1, 3, cols);
   const note = ws.getCell(3, 1);
   note.value = 'ملاحظة: الصف الرمادي أدناه مثال إرشادي فقط — احذفه قبل الرفع. استخدم القوائم المنسدلة حيث تتوفر.';
