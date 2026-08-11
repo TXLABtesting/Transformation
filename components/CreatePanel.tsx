@@ -234,8 +234,15 @@ export function InlineCreateForm({ vm }: { vm: VM }) {
   const draft = m.draft;
   const setField = (k: string, v: unknown) => s.setDraftField(k as never, v);
   const gv = (k: string): string => (draft ? ((draft as unknown as Record<string, unknown>)[k] as string) ?? '' : '');
+  // the form renders below the (possibly long) entries table — bring it into
+  // view when it opens so the coordinator never has to hunt for it
+  const rootRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const t = setTimeout(() => rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+    return () => clearTimeout(t);
+  }, []);
   return (
-    <div style={{ marginTop: 18, background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: 20, position: 'relative' }}>
+    <div ref={rootRef} style={{ marginTop: 18, scrollMarginTop: 90, background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: 20, position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <div
           style={{
