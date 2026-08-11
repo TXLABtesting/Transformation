@@ -56,6 +56,7 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   TWO_STEP_PHASES,
   type Item,
   type RoleKey,
+  itemActivities, activityTransformYes, type ActivityDetail,
 } from './domain';
 import { stripHtml } from './richtext';
 import { FEDERAL_ENTITIES } from './entities';
@@ -142,19 +143,24 @@ function build(s: Store) {
   if (filterStream === 'services') {
     if (ui.svcServiceF !== 'all') visible = visible.filter((i) => (i.title || '') === ui.svcServiceF);
     if (ui.svcPrioF !== 'all')
+      // an entry matches if ANY of its sub-services carries that priority
       visible = visible.filter(
-        (i) => i.type === 'service' && String(svcPriority(i.usageIntensity, i.complexity, i.readinessLevel) ?? '') === ui.svcPrioF
+        (i) =>
+          i.type === 'service' &&
+          itemActivities(i).some((a) => String(svcPriority(a.usageIntensity, a.complexity, a.readinessLevel) ?? '') === ui.svcPrioF)
       );
   }
   // strategy-stream filters: المهمة / القطاع / الأولوية
   if (filterStream === 'strategy') {
     if (ui.stgAxisF !== 'all') visible = visible.filter((i) => (i.axis || '') === ui.stgAxisF);
-    if (ui.stgPrioF !== 'all') visible = visible.filter((i) => (stgPriority(i)?.cat || '') === ui.stgPrioF);
+    if (ui.stgPrioF !== 'all')
+      // an entry matches if ANY of its activities carries that priority
+      visible = visible.filter((i) => itemActivities(i).some((a) => (stgPriority(a)?.cat || '') === ui.stgPrioF));
   }
   // operations-stream filters: تصنيف العملية / القطاع / نوع عملية الدعم
   if (filterStream === 'ops') {
     if (ui.opsCatF !== 'all') visible = visible.filter((i) => (i.opType || '') === ui.opsCatF);
-    if (ui.opsSectorF !== 'all') visible = visible.filter((i) => (i.sector || '') === ui.opsSectorF);
+    if (ui.opsSectorF !== 'all') visible = visible.filter((i) => itemActivities(i).some((a) => (a.sector || '') === ui.opsSectorF) || (i.sector || '') === ui.opsSectorF);
     if (ui.opsSupportF !== 'all') visible = visible.filter((i) => (i.supportFn || '') === ui.opsSupportF);
   }
   // status filter
@@ -731,7 +737,7 @@ function build(s: Store) {
           ],
           sectorOptions: [
             { v: 'all', label: 'القطاع: الكل' },
-            ...Array.from(new Set(opsScope.map((i) => i.sector || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
+            ...Array.from(new Set(opsScope.flatMap((i) => itemActivities(i).map((a) => a.sector || '').concat(i.sector || '')))).filter(Boolean).map((t) => ({ v: t, label: t })),
           ],
           supportOptions: [
             { v: 'all', label: 'نوع عملية الدعم: الكل' },
@@ -996,10 +1002,34 @@ function build(s: Store) {
     targeted: portfolioScope.filter(isTargetedEntry).length,
     notCapable: portfolioScope.filter((i) => !isTransformableEntry(i)).length,
   };
+  // per-stream dropdown filters — the same rules as the overview pipeline,
+  // applied to the coordinator/head list too (an entry matches when ANY of
+  // its activities matches the picked value)
+  const streamFilterMatch = (i: Item): boolean => {
+    if (filterStream === 'services') {
+      if (ui.svcServiceF !== 'all' && (i.title || '') !== ui.svcServiceF) return false;
+      if (
+        ui.svcPrioF !== 'all' &&
+        !(i.type === 'service' && itemActivities(i).some((a) => String(svcPriority(a.usageIntensity, a.complexity, a.readinessLevel) ?? '') === ui.svcPrioF))
+      )
+        return false;
+    }
+    if (filterStream === 'strategy') {
+      if (ui.stgAxisF !== 'all' && (i.axis || '') !== ui.stgAxisF) return false;
+      if (ui.stgPrioF !== 'all' && !itemActivities(i).some((a) => (stgPriority(a)?.cat || '') === ui.stgPrioF)) return false;
+    }
+    if (filterStream === 'ops') {
+      if (ui.opsCatF !== 'all' && (i.opType || '') !== ui.opsCatF) return false;
+      if (ui.opsSectorF !== 'all' && !(itemActivities(i).some((a) => (a.sector || '') === ui.opsSectorF) || (i.sector || '') === ui.opsSectorF)) return false;
+      if (ui.opsSupportF !== 'all' && (i.supportFn || '') !== ui.opsSupportF) return false;
+    }
+    return true;
+  };
   // list inside the portfolio page (respects search + status + fund filters)
   const sectionCards = !isTypeSection
     ? []
     : portfolioScope
+        .filter(streamFilterMatch)
         .filter((i) => (ui.statusFilter !== 'all' ? statusMatch(i, ui.statusFilter, rawRole, s) : true))
         .filter((i) =>
           ui.fundFilter === 'funded' ? !!i.funded : ui.fundFilter === 'notfunded' ? !i.funded : true
@@ -1246,54 +1276,52 @@ function build(s: Store) {
   // أولوية الاختيار is always derived from the matrix. أولوية التحول (نعم/لا)
   // affects ONLY «المستهدف تحويلها» — القابلة للتحول = priority 1-3 regardless
   const svcPr = (i: Item) => svcPriority(i.usageIntensity, i.complexity, i.readinessLevel);
+  // every child (نشاط / خدمة فرعية) carries its own details — KPIs count
+  // the activities themselves, not the parent entries
+  const svcSubs = svcItems.flatMap((i) => itemActivities(i));
+  const svcSubPr = (a: ActivityDetail) => svcPriority(a.usageIntensity, a.complexity, a.readinessLevel);
   const svcKpis =
     filterStream === 'services'
       ? {
-          // each entry is a sub-service; the main services are its distinct titles
           mainSvc: new Set(svcItems.map((i) => (i.title || '').trim()).filter(Boolean)).size,
-          total: svcItems.length,
-          transformable: svcItems.filter((i) => { const p = svcPr(i); return p != null && p <= 3; }).length,
-          targeted: svcItems.filter((i) => (i.transformYes || '') === 'نعم').length,
-          p1: svcItems.filter((i) => svcPr(i) === 1).length,
-          p2: svcItems.filter((i) => svcPr(i) === 2).length,
-          p3: svcItems.filter((i) => svcPr(i) === 3).length,
+          total: svcSubs.length,
+          transformable: svcSubs.filter((a) => { const p = svcSubPr(a); return p != null && p <= 3; }).length,
+          targeted: svcSubs.filter((a) => activityTransformYes('services', a) === 'نعم').length,
+          p1: svcSubs.filter((a) => svcSubPr(a) === 1).length,
+          p2: svcSubs.filter((a) => svcSubPr(a) === 2).length,
+          p3: svcSubs.filter((a) => svcSubPr(a) === 3).length,
         }
       : null;
 
   // ---- strategy coordinator KPI strip (أعداد المهام والأنشطة) ----
   const stgTasks = roleBase.filter((i) => i.path === 'strategy' && i.type === 'operation');
-  const actCount = (i: Item) =>
-    stripHtml(i.subActivities || '')
-      .split(/[\n،,;؛]/)
-      .filter((t) => t.trim()).length;
-  const stgActs = (list: Item[]) => list.reduce((a, i) => a + actCount(i), 0);
-  const stgCatOf = (i: Item) => stgPriority(i)?.cat || '';
-  const stgHiMid = (i: Item) => stgCatOf(i) === 'أولوية عالية' || stgCatOf(i) === 'أولوية متوسطة';
+  const stgActList = stgTasks.flatMap((i) => itemActivities(i));
+  const stgCatOfA = (a: ActivityDetail) => stgPriority(a)?.cat || '';
   const stgKpis =
     filterStream === 'strategy'
       ? {
           tasks: stgTasks.length,
-          acts: stgActs(stgTasks),
-          transformable: stgActs(stgTasks.filter(stgHiMid)),
-          targeted: stgActs(stgTasks.filter((i) => (i.transformYes || '') === 'نعم')),
-          p1: stgTasks.filter((i) => stgCatOf(i) === 'أولوية عالية').length,
-          p2: stgTasks.filter((i) => stgCatOf(i) === 'أولوية متوسطة').length,
-          p3: stgTasks.filter((i) => stgCatOf(i) === 'أولوية منخفضة').length,
+          acts: stgActList.length,
+          transformable: stgActList.filter((a) => ['أولوية عالية', 'أولوية متوسطة'].includes(stgCatOfA(a))).length,
+          targeted: stgActList.filter((a) => activityTransformYes('strategy', a) === 'نعم').length,
+          p1: stgActList.filter((a) => stgCatOfA(a) === 'أولوية عالية').length,
+          p2: stgActList.filter((a) => stgCatOfA(a) === 'أولوية متوسطة').length,
+          p3: stgActList.filter((a) => stgCatOfA(a) === 'أولوية منخفضة').length,
         }
       : null;
 
   // ---- operations coordinator KPI strip (ملخص الحصر) ----
   const opsTasks = roleBase.filter((i) => i.path === 'ops' && i.type === 'operation');
+  const opsActList = opsTasks.flatMap((i) => itemActivities(i));
   const opsKpis =
     filterStream === 'ops'
       ? {
           ops: opsTasks.length,
-          acts: stgActs(opsTasks),
-          // the ops rating fields were dropped from the form; until the
-          // operations matrix is approved, «القابلة للتحول» mirrors the
-          // entries flagged for transformation
-          transformable: stgActs(opsTasks.filter((i) => (i.transformYes || '') === 'نعم')),
-          targeted: stgActs(opsTasks.filter((i) => (i.transformYes || '') === 'نعم')),
+          acts: opsActList.length,
+          // the ops rating matrix is pending approval — «القابلة للتحول»
+          // mirrors the activities flagged for transformation
+          transformable: opsActList.filter((a) => (a.transformYes || '') === 'نعم').length,
+          targeted: opsActList.filter((a) => (a.transformYes || '') === 'نعم').length,
         }
       : null;
 

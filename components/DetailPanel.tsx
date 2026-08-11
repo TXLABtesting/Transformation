@@ -1,8 +1,9 @@
 'use client';
+import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
 import { RichTextEditor, RichTextView } from './RichText';
-import { SC, EXEC_STATUS_OPTS } from '@/lib/domain';
+import { SC, EXEC_STATUS_OPTS, itemActivities, stgPriority, svcPriority, activityTransformYes } from '@/lib/domain';
 
 const CHECK = 'M20 6 9 17l-5-5';
 const CLOCK = 'M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z';
@@ -312,55 +313,54 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 <DetailGrid cols={2}>
                   <DetailCell label="الحالة"><StatusPill label={d.wfLabel} bg={d.wfBg} color={d.wfChip} /></DetailCell>
                   <DetailCell label="المحور">{d.axis}</DetailCell>
-                  <DetailCell label="الأنشطة"><RichTextView html={(d.subActivities || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>
                 </DetailGrid>
-                <DetailGrid cols={3}>
-                  <DetailCell label="القطاع المعني">{d.sector}</DetailCell>
-                  <DetailCell label="الإدارة المعنية">{d.dept}</DetailCell>
-                  <DetailCell label="القسم المعني">{d.section}</DetailCell>
-                </DetailGrid>
-                <DetailSecHead title="الأتمتة" />
-                {d.automationLevel === 'غير مؤتمتة' ? (
-                  <DetailGrid cols={1}>
-                    <DetailCell label="مستوى الأتمتة">{d.automationLevel}</DetailCell>
-                  </DetailGrid>
-                ) : (
-                  <DetailGrid cols={3}>
-                    <DetailCell label="مستوى الأتمتة">{d.automationLevel}</DetailCell>
-                    <DetailCell label="نسبة الأتمتة">{d.automationPct != null ? d.automationPct + '%' : '—'}</DetailCell>
-                    <DetailCell label="نظام الأتمتة">{d.automationSystem}</DetailCell>
-                  </DetailGrid>
-                )}
-                <DetailSecHead title="التقييم (من 1 إلى 5)" />
-                <DetailGrid cols={3}>
-                  <DetailCell label="مستوى الأهمية">{d.importance}</DetailCell>
-                  <DetailCell label="كثافة الاستخدام">{d.usageIntensity}</DetailCell>
-                  <DetailCell label="مستوى الجاهزية">{d.readinessLevel}</DetailCell>
-                </DetailGrid>
-                <DetailGrid cols={3}>
-                  <DetailCell label="مستوى الأثر المتوقع من التحول">{d.impactScore}</DetailCell>
-                  <DetailCell label="قابلية التحول">{d.transformScore}</DetailCell>
-                  <DetailCell label="وضوح المخرجات وقابليتها للمراجعة">{d.outputClarity}</DetailCell>
-                </DetailGrid>
-                <DetailGrid cols={3}>
-                  <DetailCell label="مستوى المخاطر"><LevelPill v={d.riskLevel} /></DetailCell>
-                  <DetailCell label="أولوية الاختيار">
-                    {d.stgCalc ? (
-                      (() => {
-                        // same green/orange/red coding as the form and the list
-                        const cl = d.stgCalc.cat === 'أولوية عالية' ? { c: '#0B8A4B', bg: '#EAF7F0' } : d.stgCalc.cat === 'أولوية متوسطة' ? { c: '#B45309', bg: '#FFF3DE' } : { c: '#C0303B', bg: '#FDECEE' };
-                        return (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: cl.bg, color: cl.c, borderRadius: 999, padding: '4px 12px', fontSize: 12.5, fontWeight: 800 }}>
-                            {d.stgCalc.cat} · {d.stgCalc.total}/30
-                          </span>
-                        );
-                      })()
+                {itemActivities(d.item).map((a, ai, arr) => (
+                  <React.Fragment key={ai}>
+                    <DetailSecHead title={arr.length > 1 ? `النشاط ${ai + 1} — ${a.name}` : `النشاط — ${a.name}`} />
+                    <DetailGrid cols={3}>
+                      <DetailCell label="القطاع المعني">{a.sector}</DetailCell>
+                      <DetailCell label="الإدارة المعنية">{a.dept}</DetailCell>
+                      <DetailCell label="القسم المعني">{a.section}</DetailCell>
+                    </DetailGrid>
+                    {a.automationLevel === 'غير مؤتمتة' ? (
+                      <DetailGrid cols={1}>
+                        <DetailCell label="مستوى الأتمتة">{a.automationLevel}</DetailCell>
+                      </DetailGrid>
                     ) : (
-                      '—'
+                      <DetailGrid cols={3}>
+                        <DetailCell label="مستوى الأتمتة">{a.automationLevel}</DetailCell>
+                        <DetailCell label="نسبة الأتمتة">{a.automationPct != null ? a.automationPct + '%' : '—'}</DetailCell>
+                        <DetailCell label="نظام الأتمتة">{a.automationSystem}</DetailCell>
+                      </DetailGrid>
                     )}
-                  </DetailCell>
-                  <DetailCell label="أولوية التحول">{d.transformYes}</DetailCell>
-                </DetailGrid>
+                    <DetailGrid cols={3}>
+                      <DetailCell label="مستوى الأهمية">{a.importance}</DetailCell>
+                      <DetailCell label="كثافة الاستخدام">{a.usageIntensity}</DetailCell>
+                      <DetailCell label="مستوى الجاهزية">{a.readinessLevel}</DetailCell>
+                    </DetailGrid>
+                    <DetailGrid cols={3}>
+                      <DetailCell label="مستوى الأثر المتوقع من التحول">{a.impactScore}</DetailCell>
+                      <DetailCell label="قابلية التحول">{a.transformScore}</DetailCell>
+                      <DetailCell label="وضوح المخرجات وقابليتها للمراجعة">{a.outputClarity}</DetailCell>
+                    </DetailGrid>
+                    <DetailGrid cols={3}>
+                      <DetailCell label="مستوى المخاطر"><LevelPill v={a.riskLevel} /></DetailCell>
+                      <DetailCell label="أولوية الاختيار">
+                        {(() => {
+                          const calc = stgPriority(a);
+                          if (!calc) return '—';
+                          const cl = calc.cat === 'أولوية عالية' ? { c: '#0B8A4B', bg: '#EAF7F0' } : calc.cat === 'أولوية متوسطة' ? { c: '#B45309', bg: '#FFF3DE' } : { c: '#C0303B', bg: '#FDECEE' };
+                          return (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: cl.bg, color: cl.c, borderRadius: 999, padding: '4px 12px', fontSize: 12.5, fontWeight: 800 }}>
+                              {calc.cat} · {calc.total}/30
+                            </span>
+                          );
+                        })()}
+                      </DetailCell>
+                      <DetailCell label="أولوية التحول">{activityTransformYes('strategy', a) || '—'}</DetailCell>
+                    </DetailGrid>
+                  </React.Fragment>
+                ))}
               </>
             )}
 
@@ -372,36 +372,39 @@ export function DetailPanel({ vm }: { vm: VM }) {
                   <DetailCell label="الحالة"><StatusPill label={d.wfLabel} bg={d.wfBg} color={d.wfChip} /></DetailCell>
                   <DetailCell label="التصنيف">{d.opType}</DetailCell>
                   {d.supportFn ? <DetailCell label="نوع عملية الدعم المؤسسي">{d.supportFn}</DetailCell> : null}
-                  <DetailCell label="الأنشطة الفرعية"><RichTextView html={(d.subActivities || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>
                 </DetailGrid>
-                <DetailGrid cols={3}>
-                  <DetailCell label="القطاع المعني">{d.sector}</DetailCell>
-                  <DetailCell label="الإدارة المعنية">{d.dept}</DetailCell>
-                  <DetailCell label="القسم المعني">{d.section}</DetailCell>
-                </DetailGrid>
-                <DetailSecHead title="الأتمتة" />
-                {d.isAutomated === 'نعم' ? (
-                  <DetailGrid cols={3}>
-                    <DetailCell label="هل العملية مؤتمتة؟">{d.isAutomated}</DetailCell>
-                    <DetailCell label="نظام الأتمتة">{d.automationSystem}</DetailCell>
-                    <DetailCell label="نسبة الأتمتة">{d.automationPct != null ? d.automationPct + '%' : '—'}</DetailCell>
-                  </DetailGrid>
-                ) : (
-                  <DetailGrid cols={2}>
-                    <DetailCell label="هل العملية مؤتمتة؟">{d.isAutomated}</DetailCell>
-                    <DetailCell label="أولوية التحول">{d.transformYes}</DetailCell>
-                  </DetailGrid>
-                )}
-                {d.isAutomated === 'نعم' ? (
-                  <DetailGrid cols={1}>
-                    <DetailCell label="أولوية التحول">{d.transformYes}</DetailCell>
-                  </DetailGrid>
-                ) : null}
-                {d.notesText ? (
-                  <DetailGrid cols={1}>
-                    <DetailCell label="الملاحظات"><RichTextView html={(d.notesText || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>
-                  </DetailGrid>
-                ) : null}
+                {itemActivities(d.item).map((a, ai, arr) => (
+                  <React.Fragment key={ai}>
+                    <DetailSecHead title={arr.length > 1 ? `النشاط ${ai + 1} — ${a.name}` : `النشاط — ${a.name}`} />
+                    <DetailGrid cols={3}>
+                      <DetailCell label="القطاع المعني">{a.sector}</DetailCell>
+                      <DetailCell label="الإدارة المعنية">{a.dept}</DetailCell>
+                      <DetailCell label="القسم المعني">{a.section}</DetailCell>
+                    </DetailGrid>
+                    {a.isAutomated === 'نعم' ? (
+                      <DetailGrid cols={3}>
+                        <DetailCell label="هل النشاط مؤتمت؟">{a.isAutomated}</DetailCell>
+                        <DetailCell label="نظام الأتمتة">{a.automationSystem}</DetailCell>
+                        <DetailCell label="نسبة الأتمتة">{a.automationPct != null ? a.automationPct + '%' : '—'}</DetailCell>
+                      </DetailGrid>
+                    ) : (
+                      <DetailGrid cols={2}>
+                        <DetailCell label="هل النشاط مؤتمت؟">{a.isAutomated || '—'}</DetailCell>
+                        <DetailCell label="أولوية التحول">{a.transformYes || '—'}</DetailCell>
+                      </DetailGrid>
+                    )}
+                    {a.isAutomated === 'نعم' ? (
+                      <DetailGrid cols={1}>
+                        <DetailCell label="أولوية التحول">{a.transformYes || '—'}</DetailCell>
+                      </DetailGrid>
+                    ) : null}
+                    {a.notes ? (
+                      <DetailGrid cols={1}>
+                        <DetailCell label="الملاحظات"><RichTextView html={(a.notes || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>
+                      </DetailGrid>
+                    ) : null}
+                  </React.Fragment>
+                ))}
               </>
             )}
 
@@ -411,32 +414,39 @@ export function DetailPanel({ vm }: { vm: VM }) {
             {d.isSvc && (
               <>
                 <DetailSecHead title="بيانات الخدمة" />
-                <DetailGrid cols={2}>
+                <DetailGrid cols={1}>
                   <DetailCell label="الحالة"><StatusPill label={d.wfLabel} bg={d.wfBg} color={d.wfChip} /></DetailCell>
-                  <DetailCell label="الخدمة الفرعية">{d.subService || '—'}</DetailCell>
-                  <DetailCell label="القطاع المعني">{d.sector || '—'}</DetailCell>
-                  <DetailCell label="الإدارة المعنية">{d.dept || '—'}</DetailCell>
-                  <DetailCell label="القسم المعني">{d.section || '—'}</DetailCell>
                 </DetailGrid>
-
-                <DetailSecHead title="مصفوفة أولوية الاختيار" />
-                <DetailGrid cols={3}>
-                  <DetailCell label="كثافة الاستخدام"><LevelPill v={d.usageIntensity} /></DetailCell>
-                  <DetailCell label="مستوى التعقيد"><LevelPill v={d.complexity} /></DetailCell>
-                  <DetailCell label="مستوى الجاهزية"><LevelPill v={d.readinessLevel} /></DetailCell>
-                </DetailGrid>
-                <DetailGrid cols={2}>
-                  <DetailCell label="أولوية الاختيار">
-                    {d.svcSelPriority ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E5EEFF', color: '#1D4ED8', borderRadius: 999, padding: '4px 12px', fontSize: 12.5, fontWeight: 800 }}>
-                        الأولوية {d.svcSelPriority}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </DetailCell>
-                  <DetailCell label="أولوية التحول">{d.transformYes || '—'}</DetailCell>
-                </DetailGrid>
+                {itemActivities(d.item).map((a, ai, arr) => (
+                  <React.Fragment key={ai}>
+                    <DetailSecHead title={arr.length > 1 ? `الخدمة الفرعية ${ai + 1} — ${a.name}` : `الخدمة الفرعية — ${a.name}`} />
+                    <DetailGrid cols={3}>
+                      <DetailCell label="القطاع المعني">{a.sector || '—'}</DetailCell>
+                      <DetailCell label="الإدارة المعنية">{a.dept || '—'}</DetailCell>
+                      <DetailCell label="القسم المعني">{a.section || '—'}</DetailCell>
+                    </DetailGrid>
+                    <DetailGrid cols={3}>
+                      <DetailCell label="كثافة الاستخدام"><LevelPill v={a.usageIntensity} /></DetailCell>
+                      <DetailCell label="مستوى التعقيد"><LevelPill v={a.complexity} /></DetailCell>
+                      <DetailCell label="مستوى الجاهزية"><LevelPill v={a.readinessLevel} /></DetailCell>
+                    </DetailGrid>
+                    <DetailGrid cols={2}>
+                      <DetailCell label="أولوية الاختيار">
+                        {(() => {
+                          const pr = svcPriority(a.usageIntensity, a.complexity, a.readinessLevel);
+                          return pr ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E5EEFF', color: '#1D4ED8', borderRadius: 999, padding: '4px 12px', fontSize: 12.5, fontWeight: 800 }}>
+                              الأولوية {pr}
+                            </span>
+                          ) : (
+                            '—'
+                          );
+                        })()}
+                      </DetailCell>
+                      <DetailCell label="أولوية التحول">{activityTransformYes('services', a) || '—'}</DetailCell>
+                    </DetailGrid>
+                  </React.Fragment>
+                ))}
               </>
             )}
           </div>
