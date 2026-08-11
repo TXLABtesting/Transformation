@@ -203,6 +203,10 @@ model Item {
   // operation-specific
   opType        String? @map("op_type")
   subActivities String? @map("sub_activities")
+  /// per-نشاط full details (JSON array of ActivityDetail — see lib/domain.ts):
+  /// each child carries its own sector/dept/section, automation, matrix and
+  /// أولوية التحول. The legacy flat columns mirror the FIRST entry.
+  activities    Json?
   sector        String?
   dept          String?
   section       String?

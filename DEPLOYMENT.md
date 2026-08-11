@@ -19,7 +19,7 @@ system admin).
 cp .env.example .env          # fill in values (see §4)
 docker compose up -d db       # Postgres 16
 npm ci
-npx prisma migrate deploy     # creates ALL tables (migrations 0001–0010)
+npx prisma migrate deploy     # creates ALL tables (migrations 0001–0011)
 npx prisma db seed            # reference data only (see §3)
 npm run build && npm start    # or: docker compose up -d app
 ```
@@ -27,7 +27,7 @@ npm run build && npm start    # or: docker compose up -d app
 ## 3. Database
 
 `prisma/schema.prisma` + `prisma/migrations/` are the source of truth.
-`prisma migrate deploy` creates all tables (through `0010_service_catalog`),
+`prisma migrate deploy` creates all tables (through `0011_item_activities`),
 including:
 
 - **Reference:** `streams` (the 3 مسارات in official order, with the
@@ -76,7 +76,7 @@ The seed is idempotent — safe to run repeatedly.
 
 ## 6. Verification checklist (already run against a fresh Postgres 16)
 
-- `npx prisma migrate deploy` → all migrations (0001–0010) apply cleanly.
+- `npx prisma migrate deploy` → all migrations (0001–0011) apply cleanly.
 - `npx prisma db seed` → 3 streams, the federal entities, the
   `service_catalog` rows (47 entities / ~1,855 pairs), 0 items (clean
   start); re-running the seed is idempotent.

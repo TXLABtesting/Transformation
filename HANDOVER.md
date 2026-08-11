@@ -31,7 +31,7 @@ own stream, and moving one notifies رئيس المسار.
 - `lib/` — domain model, store, view-model, services catalog, Excel importer
 - `components/` — UI (inline-styled RTL; Noto Kufi Arabic + Alexandria via
   `next/font`)
-- `prisma/` — schema, migrations `0001…0010`, idempotent seed
+- `prisma/` — schema, migrations `0001…0011`, idempotent seed
 - `k8s/` — Kubernetes manifests (see `k8s/README.md`)
 - `Dockerfile`, `docker-compose.yml`, `.env.example`
 - `DEPLOYMENT.md` — step-by-step environment/DB setup
@@ -40,7 +40,7 @@ own stream, and moving one notifies رئيس المسار.
 ## 3. Database
 
 `prisma migrate deploy` creates the schema (through migration
-`0010_service_catalog`). Verified on a fresh PostgreSQL 16: migrations
+`0011_item_activities`). Verified on a fresh PostgreSQL 16: migrations
 apply cleanly; `prisma db seed` inserts **reference data only** — the 3
 `streams` (official order + رؤساء المسارات as `head_name`), the federal
 `entities`, `program_phases`, `exec_batches` (التقييم والتهيئة، دفعات
