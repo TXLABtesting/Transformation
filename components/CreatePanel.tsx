@@ -6,7 +6,7 @@ import { Icon } from './Icon';
 import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate } from '@/lib/export';
-import { useSvcCatalog, svcCatalogFor } from '@/lib/svcCatalog';
+import { useSvcCatalog, svcCatalogFor, svcCatalogUnion } from '@/lib/svcCatalog';
 
 
 // Repeatable single-line rows for الأنشطة — stored as one newline-joined value
@@ -1650,6 +1650,9 @@ function FTask({
   );
 }
 
+// خيار الإدخال اليدوي داخل قائمة الخدمات — للخدمات غير المدرجة في الدليل
+const MANUAL_SVC = 'أخرى — إدخال يدوي';
+
 // F-SERVICE — الخدمات الحكومية: الخدمة الرئيسية + one full section per خدمة فرعية.
 function FService({
   vm,
@@ -1660,22 +1663,46 @@ function FService({
   setField: (k: string, v: unknown) => void;
   gv: (k: string) => string;
 }) {
-  // دليل الخدمات حسب جهة المنسق — strict entity scoping
+  // دليل الخدمات حسب جهة المنسق — strict entity scoping.
+  // إذا لم تكن الجهة مدرجة في ملفات الدليل نعرض الدليل الاتحادي الكامل بدل ترك القائمة فارغة.
   const entServices = useSvcCatalog(vm.entityName);
+  const scoped = !!entServices;
+  const catalog = entServices || svcCatalogUnion();
+  const [manual, setManual] = React.useState(false);
   const mainVal = gv('title');
-  const mainOpts = entServices ? Object.keys(entServices) : [];
-  const subOpts = entServices ? (entServices[mainVal] || []) : null;
+  const mainOpts = Object.keys(catalog);
+  const subOpts = manual ? null : catalog[mainVal] || [];
   const withCurrent = (opts: string[], cur: string) => (cur && !opts.includes(cur) ? [cur, ...opts] : opts);
   return (
     <div>
       <div style={cardStyle}>
-        {entServices ? (
+        {manual ? (
+          <div style={{ marginBottom: 0 }}>
+            <label style={labelStyle}>الخدمة <span style={{ color: '#D23B45' }}>*</span></label>
+            <input value={mainVal} onChange={(e) => setField('title', arabicOnly(e.target.value))} placeholder="اسم الخدمة الرئيسية" style={inputStyle} />
+            <button
+              onClick={() => {
+                setManual(false);
+                setField('title', '');
+                setField('activities', [{ name: '' }]);
+              }}
+              style={{ marginTop: 6, background: 'transparent', border: 'none', color: '#2563EB', fontWeight: 800, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+            >
+              العودة إلى دليل الخدمات
+            </button>
+          </div>
+        ) : (
           <div style={{ marginBottom: 0 }}>
             <label style={labelStyle}>الخدمة <span style={{ color: '#D23B45' }}>*</span></label>
             <select
               value={mainVal}
               onChange={(e) => {
-                setField('title', e.target.value);
+                if (e.target.value === MANUAL_SVC) {
+                  setManual(true);
+                  setField('title', '');
+                } else {
+                  setField('title', e.target.value);
+                }
                 // the sub-service sections depend on the main service — reset them
                 setField('activities', [{ name: '' }]);
               }}
@@ -1685,17 +1712,12 @@ function FService({
               {withCurrent(mainOpts, mainVal).map((o) => (
                 <option key={o} value={o}>{o}</option>
               ))}
+              <option value={MANUAL_SVC}>{MANUAL_SVC}</option>
             </select>
             <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
-              القائمة وفق دليل خدمات {vm.entityName}
-            </div>
-          </div>
-        ) : (
-          <div style={{ marginBottom: 0 }}>
-            <label style={labelStyle}>الخدمة <span style={{ color: '#D23B45' }}>*</span></label>
-            <input value={gv('title')} onChange={(e) => setField('title', arabicOnly(e.target.value))} placeholder="اسم الخدمة الرئيسية" style={inputStyle} />
-            <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
-              لا توجد خدمات مسجلة لجهتك في دليل الخدمات الاتحادي — يمكن إدخال الخدمة يدوياً
+              {scoped
+                ? `القائمة وفق دليل خدمات ${vm.entityName}`
+                : `جهتك غير مدرجة في دليل الخدمات المرفوع — تُعرض القائمة الاتحادية الكاملة`}
             </div>
           </div>
         )}
@@ -1775,8 +1797,8 @@ function BulkStep({ vm }: { vm: VM }) {
             const opts: Record<string, string[]> = { ...(STREAM_FIELD_OPTIONS[path] || {}) };
             // services: الخدمة/الخدمة الفرعية dropdowns from the entity's catalog
             if (path === 'services') {
-              const cat = svcCatalogFor(vm.entityName);
-              if (cat) {
+              const cat = svcCatalogFor(vm.entityName) || svcCatalogUnion();
+              if (cat && Object.keys(cat).length) {
                 opts.title = Object.keys(cat);
                 opts.subService = Array.from(new Set(Object.values(cat).flat()));
               }
