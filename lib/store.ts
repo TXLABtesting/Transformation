@@ -226,6 +226,8 @@ type Actions = {
   skipSetup: () => void;
   // role
   setRole: (r: RoleKey) => void;
+  // الجهة الاتحادية للمستخدم — مصدر تقييد دليل الخدمات (تجريبي فقط)
+  setEntityName: (name: string) => void;
   // admin — user & role management
   adminSaveUser: (u: UserRec) => void;
   adminToggleUser: (id: string) => void;
@@ -279,7 +281,7 @@ type Actions = {
   // per-نشاط دفعة الإطلاق + dates (the batches page works at نشاط level)
   setActivityDate: (id: string, actIdx: number, k: 'startDate' | 'endDate', v: string) => void;
   assignActivityBatch: (id: string, actIdx: number, batch: string) => void;
-  submitBatchDrafts: (path: string) => void;
+  submitBatchDrafts: (path: string, ids?: string[]) => void;
   setContactEmail: (k: string, v: string) => void;
   setAboutHero: (v: string) => void;
   setAbout: (patch: Partial<AboutContent>) => void;
@@ -813,6 +815,16 @@ export const useStore = create<Store>((set, get) => {
       persist();
     },
 
+    // جهة المستخدم — تُشتق من الجلسة في نسخة الخادم؛ التبديل متاح في النسخة
+    // التجريبية فقط لاستعراض دليل خدمات كل جهة.
+    setEntityName: (name) => {
+      if (process.env.NEXT_PUBLIC_DEMO_MODE !== '1') return;
+      const v = (name || '').trim();
+      if (!v) return;
+      set(() => ({ entityName: v }));
+      persist();
+    },
+
     // ---- admin: user & role management ----
     adminSaveUser: (u) => {
       set((s) => {
@@ -1102,10 +1114,15 @@ export const useStore = create<Store>((set, get) => {
 
     // batches page: send every draft of this stream that has أنشطة placed in a
     // دفعة for approval — placements stay drafts until this is pressed
-    submitBatchDrafts: (path) => {
+    submitBatchDrafts: (path, ids) => {
       const st = get();
+      const pick = ids && ids.length ? new Set(ids) : null;
       const mine = st.items.filter(
-        (i) => i.path === path && entOf(i, st.entityName) === st.entityName && wfOf(i) === 'draft'
+        (i) =>
+          i.path === path &&
+          entOf(i, st.entityName) === st.entityName &&
+          wfOf(i) === 'draft' &&
+          (!pick || pick.has(i.id))
       );
       const placed = mine.filter((i) => itemActivities(i).some((a) => !!activityBatch(i, a)));
       const ok = placed.filter((i) => !missingFieldsOf(i as unknown as Record<string, unknown>).length);

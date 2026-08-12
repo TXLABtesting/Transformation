@@ -1431,6 +1431,8 @@ function build(s: Store) {
             (i) => i.path === bPath && wfOf(i) === 'draft' && itemActivities(i).some((a) => !!activityBatch(i, a))
           ).length,
           onSubmitAll: () => s.submitBatchDrafts(bPath),
+          // send a chosen subset — one مدخل or several at once
+          onSubmitIds: (ids: string[]) => s.submitBatchDrafts(bPath, ids),
           // move-to-batch options (raw names carried; labels shown)
           batchOptions: streamLaunchBatches(bPath).map((b) => ({ v: b.name, label: batchDafaaLabel(b.name) })),
           onMove: (id: string, batch: string) => s.assignItemBatch(id, batch),
@@ -1477,6 +1479,9 @@ function build(s: Store) {
                 // coordinator actions on the placement itself
                 onMove: (to: string) => s.assignActivityBatch(i.id, ai, to),
                 onRemove: () => s.assignActivityBatch(i.id, ai, ''),
+                // the مدخل this row belongs to can be sent on its own
+                canSubmit: rawRole === 'coord' && wfOf(i) === 'draft',
+                onSubmit: () => s.submitBatchDrafts(bPath, [i.id]),
                 // stream head/deputy: act on the parent entry awaiting approval
                 canReview: rawRole === 'path' && wfOf(i) === 'ent1',
                 onApprove: () => s.approveItem(i.id),

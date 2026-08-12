@@ -36,21 +36,14 @@ export function svcCatalogFor(entityName: string): EntityCatalog | null {
   return byNorm.get(norm(entityName)) || null;
 }
 
-let unionCache: EntityCatalog | null = null;
-/**
- * الدليل الاتحادي الكامل (كل الجهات) — يُستخدم فقط كخيار احتياطي عندما تكون
- * جهة المنسق غير مدرجة أصلاً في ملفات الدليل، حتى لا تظهر القوائم فارغة.
- */
-export function svcCatalogUnion(): EntityCatalog {
-  if (unionCache) return unionCache;
-  const out: EntityCatalog = {};
-  for (const services of byNorm.values()) {
-    for (const [main, subs] of Object.entries(services)) {
-      out[main] = Array.from(new Set([...(out[main] || []), ...subs]));
-    }
-  }
-  unionCache = out;
-  return out;
+/** أسماء الجهات المدرجة في دليل الخدمات — لاختيار الجهة في النسخة التجريبية */
+export function svcCatalogEntities(): string[] {
+  return Object.keys(CATALOG).sort((a, b) => a.localeCompare(b, 'ar'));
+}
+
+/** هل لجهة المستخدم خدمات مسجلة في الدليل؟ */
+export function hasSvcCatalog(entityName: string): boolean {
+  return byNorm.has(norm(entityName));
 }
 
 /**
