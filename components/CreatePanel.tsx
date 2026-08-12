@@ -98,6 +98,11 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
   fontFamily: 'inherit',
 };
+// a required field left empty after a failed submit — red ring + marker so
+// the form can scroll to the first gap
+const INVALID_STYLE: React.CSSProperties = { borderColor: '#D23B45', background: '#FFF8F8', boxShadow: '0 0 0 3px rgba(210,59,69,.12)' };
+const isEmptyVal = (v: unknown) => !String(v ?? '').replace(/<[^>]*>/g, '').trim();
+
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: 12,
@@ -1262,28 +1267,41 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
   const upd = (idx: number, patch: Partial<ActivityDetail>) => setActs(acts.map((a, i) => (i === idx ? { ...a, ...patch } : a)));
   const unit = stream === 'services' ? 'الخدمة الفرعية' : 'النشاط';
 
-  const field = (label: string, node: React.ReactNode, req = true) => (
-    <div style={{ marginBottom: 14 }}>
+  const reqOn = (vm.modal.reqHighlight || 0) > 0;
+  const field = (label: string, node: React.ReactNode, req = true, bad = false) => (
+    <div style={{ marginBottom: 14 }} data-invalid={bad ? '1' : undefined}>
       <label style={labelStyle}>{label} {req && <span style={{ color: '#D23B45' }}>*</span>}</label>
       {node}
+      {bad && <div style={{ fontSize: 11.5, color: '#D23B45', fontWeight: 700, marginTop: 5 }}>هذا الحقل مطلوب</div>}
     </div>
   );
-  const txtA = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail, ph?: string) =>
-    field(label, <input value={String(a[key] ?? '')} onChange={(e) => upd(i, { [key]: arabicOnly(e.target.value) } as Partial<ActivityDetail>)} placeholder={ph} style={inputStyle} />);
-  const selA = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail, opts: string[]) =>
-    field(
+  const txtA = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail, ph?: string) => {
+    const bad = reqOn && isEmptyVal(a[key]);
+    return field(
       label,
-      <select value={String(a[key] ?? '')} onChange={(e) => upd(i, { [key]: e.target.value } as Partial<ActivityDetail>)} style={inputStyle}>
+      <input value={String(a[key] ?? '')} onChange={(e) => upd(i, { [key]: arabicOnly(e.target.value) } as Partial<ActivityDetail>)} placeholder={ph} style={{ ...inputStyle, ...(bad ? INVALID_STYLE : {}) }} />,
+      true,
+      bad
+    );
+  };
+  const selA = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail, opts: string[]) => {
+    const bad = reqOn && isEmptyVal(a[key]);
+    return field(
+      label,
+      <select value={String(a[key] ?? '')} onChange={(e) => upd(i, { [key]: e.target.value } as Partial<ActivityDetail>)} style={{ ...inputStyle, ...(bad ? INVALID_STYLE : {}) }}>
         <option value="">اختر…</option>
         {opts.map((o) => (
           <option key={o} value={o}>{o}</option>
         ))}
-      </select>
+      </select>,
+      true,
+      bad
     );
+  };
   const yesNoA = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail) =>
     field(
       label,
-      <div style={{ display: 'flex', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 10, ...(reqOn && isEmptyVal(a[key]) ? { outline: '2px solid rgba(210,59,69,.35)', outlineOffset: 3, borderRadius: 12 } : {}) }}>
         {['نعم', 'لا'].map((opt) => {
           const active = String(a[key] ?? '') === opt;
           return (
@@ -1297,7 +1315,9 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
             </button>
           );
         })}
-      </div>
+      </div>,
+      true,
+      reqOn && isEmptyVal(a[key])
     );
   const derivedPill = (label: string, on: boolean, text: string, colors?: { c: string; bg: string }) =>
     field(
@@ -1422,19 +1442,21 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
                     {field(
                       'قابلية التحول',
                       <select
+                        style={reqOn && isEmptyVal(a.transformScore) ? { ...inputStyle, ...INVALID_STYLE } : inputStyle}
                         value={a.transformScore || ''}
                         onChange={(e) => {
                           const v = e.target.value;
                           // «غير قابل» blocks الجاهزية والأثر — clear any stale values
                           upd(i, isStgBlocked(v) ? { transformScore: v, readinessLevel: '', impactScore: '' } : { transformScore: v });
                         }}
-                        style={inputStyle}
                       >
                         <option value="">اختر…</option>
                         {STG_TRANSFORM_OPTIONS.map((o) => (
                           <option key={o} value={o}>{o}</option>
                         ))}
-                      </select>
+                      </select>,
+                      true,
+                      reqOn && isEmptyVal(a.transformScore)
                     )}
                     {blocked
                       ? blockedField('مستوى الجاهزية')
@@ -1804,7 +1826,7 @@ function BulkReviewStep({ vm }: { vm: VM }) {
         </div>
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>مراجعة الصفوف المستوردة</div>
-          <div style={{ fontSize: 11.5, color: '#9AA6BC' }}>تحقّق من الصفوف المقروءة من الملف قبل الإرسال للاعتماد</div>
+          <div style={{ fontSize: 11.5, color: '#9AA6BC' }}>تحقّق من الصفوف المقروءة من الملف قبل حفظها كمسودات</div>
         </div>
       </div>
 
@@ -1916,7 +1938,7 @@ function BulkReviewStep({ vm }: { vm: VM }) {
               marginBottom: 14,
             }}
           >
-            بعد التأكيد: الصفوف المكتملة تُرسل لاعتماد رئيس المسار مباشرة، والصفوف ذات البيانات الناقصة تُحفظ كمسودات مميزة بـ«بيانات ناقصة» لاستكمالها. الصفوف التي بها أخطاء لن تُستورد.
+            عند الحفظ: تُحفظ جميع الصفوف كمسودات — والصفوف ذات البيانات الناقصة تُميَّز بـ«بيانات ناقصة» لاستكمالها. لا تُرسل أي مدخلات لرئيس المسار إلا بعد اختيارها وتأكيد «إرسال للاعتماد». الصفوف التي بها أخطاء لن تُستورد.
           </div>
 
           <div style={{ display: 'flex', gap: 10 }}>
@@ -1950,7 +1972,7 @@ function BulkReviewStep({ vm }: { vm: VM }) {
                 fontFamily: 'inherit',
               }}
             >
-              الإرسال للاعتماد
+              الحفظ
             </button>
           </div>
         </>

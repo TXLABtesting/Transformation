@@ -29,10 +29,10 @@ const TOUR_STEPS: TourStep[] = [
 // Coordinator (منسق المسار في الجهة) onboarding — the coordinator lands on
 // قوائم الحصر directly: fills the stream inventory and manages دفعات الإطلاق.
 const COORD_TOUR_STEPS: TourStep[] = [
-  { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك كمنسق للمسار داخل جهتك.' },
-  { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'المسارات المسندة إليك تظهر هنا. اختر المسار لاستعراض قائمة الحصر الخاصة به — جدول المدخلات مع فلاتر المسار (التصنيف أو المحور أو الخدمة، والأولوية) وفلتر الحالة والبحث بالاسم.' },
+  { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك كمنسق للمسار في جهتك.' },
+  { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'المسارات المسندة إليك تظهر هنا. اختر المسار لاستعراض قائمة الحصر الخاصة به — جدول المدخلات مع اختيار المعايير (التصنيف أو المحور أو الخدمة، والأولوية) ومعيار الحالة والبحث بالاسم.' },
   { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات إجمالي المدخلات والأنشطة والقابلة للتحول والمستهدف تحويلها، وتضاف بطاقات الأولويات المحسوبة تلقائياً وفق المصفوفة في مساري العمل الاستراتيجي والخدمات الحكومية.' },
-  { sel: '[data-tour="add"]', title: 'إضافة المدخلات', desc: '«إضافة يدوية» تفتح نموذج الإدخال بحقول المسار — وفي مسار الخدمات تُختار الخدمة الرئيسية والفرعية من دليل خدمات جهتك. «رفع ملف Excel» يعتمد النموذج نفسه: نزّل قالب المسار، والصفوف الناقصة تُستورد كمسودات بوسم «بيانات ناقصة» لإكمالها لاحقاً، والمكتملة تُرسل مباشرة لاعتماد رئيس المسار.' },
+  { sel: '[data-tour="add"]', title: 'إضافة المدخلات', desc: '«إضافة المدخلات» تفتح نموذج الإدخال بحقول المسار — وفي مسار الخدمات تُختار الخدمة الرئيسية والفرعية من دليل خدمات جهتك. «رفع ملف Excel» يعتمد النموذج نفسه: نزّل قالب المسار، والصفوف الناقصة تُستورد كمسودات بوسم «بيانات ناقصة» لإكمالها لاحقاً، والمكتملة تُرسل مباشرة لاعتماد رئيس المسار.' },
   { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية. من زر «إضافة نشاط» توزَّع أنشطة المسار على دفعاته وفق أولوية الاختيار — كل نشاط في دفعته وبتواريخ بدء وانتهاء ضمن الفترة الزمنية للدفعة.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'تصلك هنا ملاحظات رئيس المسار: طلبات التفاصيل الإضافية، والمدخلات المُعادة للتعديل، وقرارات الاعتماد.' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن تعبئة قوائم الحصر لمساراتك وتوزيع المدخلات على دفعات الإطلاق، والتأكد من تحديث البيانات بشكل دوري.' },
@@ -2621,7 +2621,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       data-tour="add"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(37,99,235,.35)', fontFamily: 'inherit' }}
                     >
-                      <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة يدوية
+                      <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة المدخلات
                     </button>
                     <button
                       onClick={s.openCreateBulk}
@@ -2733,12 +2733,14 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {vm.svcFilterBar ? (
                   <>
                     <FilterSelect value={vm.svcFilterBar.serviceValue} options={vm.svcFilterBar.serviceOptions} minWidth={130} onChange={(v) => s.setSvcFilter('svcServiceF', v)} />
+                    <FilterSelect value={vm.svcFilterBar.transformValue} options={vm.svcFilterBar.transformOptions} minWidth={150} onChange={(v) => s.setSvcFilter('svcTransformF', v)} />
                     <FilterSelect value={vm.svcFilterBar.prioValue} options={vm.svcFilterBar.prioOptions} minWidth={120} onChange={(v) => s.setSvcFilter('svcPrioF', v)} />
                     <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
                   </>
                 ) : vm.stgFilterBar ? (
                   <>
                     <FilterSelect value={vm.stgFilterBar.axisValue} options={vm.stgFilterBar.axisOptions} minWidth={150} onChange={(v) => s.setStgFilter('stgAxisF', v)} />
+                    <FilterSelect value={vm.stgFilterBar.transformValue} options={vm.stgFilterBar.transformOptions} minWidth={150} onChange={(v) => s.setStgFilter('stgTransformF', v)} />
                     <FilterSelect value={vm.stgFilterBar.prioValue} options={vm.stgFilterBar.prioOptions} minWidth={140} onChange={(v) => s.setStgFilter('stgPrioF', v)} />
                     <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
                   </>
@@ -2748,7 +2750,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     {vm.opsFilterBar.showSupport && (
                       <FilterSelect value={vm.opsFilterBar.supportValue} options={vm.opsFilterBar.supportOptions} minWidth={160} onChange={(v) => s.setOpsFilter('opsSupportF', v)} />
                     )}
-                    <FilterSelect value={vm.opsFilterBar.sectorValue} options={vm.opsFilterBar.sectorOptions} minWidth={120} onChange={(v) => s.setOpsFilter('opsSectorF', v)} />
+                    <FilterSelect value={vm.opsFilterBar.transformValue} options={vm.opsFilterBar.transformOptions} minWidth={150} onChange={(v) => s.setOpsFilter('opsTransformF', v)} />
                     <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
                   </>
                 ) : (

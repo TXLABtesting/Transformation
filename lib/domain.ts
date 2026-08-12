@@ -676,13 +676,9 @@ export const ROLE_INFO: {
 ];
 
 // Real stream representatives (رئيس المسار) — one per transformation stream
-export const PATH_REPS: Record<string, string> = {
-  capacity: 'معالي عهود بنت خلفان الرومي',
-  tech: 'معالي عمر سلطان العلماء',
-  ops: 'معالي مريم بنت أحمد الحمادي',
-  strategy: 'معالي هدى الهاشمي',
-  services: 'سعادة محمد راشد بن طليعة',
-};
+// Stream heads are identified by their ROLE across the platform — the
+// officials' personal names are deliberately not shown anywhere.
+export const PATH_REPS: Record<string, string> = {};
 
 // Role-switcher pill labels (display order in the header)
 export const ROLE_PILLS: { key: RoleKey; label: string }[] = [
