@@ -8,7 +8,7 @@ export function Toast({ msg }: { msg: string }) {
         bottom: 26,
         left: '50%',
         transform: 'translateX(-50%)',
-        zIndex: 80,
+        zIndex: 130,
         background: '#0F1F3D',
         color: '#fff',
         padding: '13px 22px',

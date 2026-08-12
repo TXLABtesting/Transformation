@@ -71,7 +71,7 @@ export const CONTACT_STREAMS: { key: string; label: string }[] = [
   { key: 'ops', label: 'العمليات والدعم المؤسسي' },
   { key: 'capacity', label: 'بناء القدرات والتدريب' },
   { key: 'tech', label: 'تقنيات الذكاء الاصطناعي والبيانات' },
-  { key: 'general', label: 'الأمانة العامة للجنة الوطنية للذكاء الاصطناعي المساعد (استفسارات عامة)' },
+  { key: 'general', label: 'الاستفسارات العامة' },
 ];
 export const DEFAULT_CONTACT_EMAILS: Record<string, string> = {
   services: 'services@aigp.gov.ae',
@@ -100,7 +100,7 @@ export const DEFAULT_ABOUT_HERO =
 // full About-page content — every section editable from the admin backoffice
 export type AboutContent = {
   timeline: { year: string; title: string; sub: string; major: boolean; img?: string }[];
-  targets: { label1: string; value1: string; text1: string; label2: string; value2: string; text2: string; note: string };
+  targets: { label1: string; value1: string; text1: string; label2: string; value2: string; text2: string };
   tracks: { title: string; desc: string }[];
   scope: { title: string; desc: string }[];
   outOfScope: string;
@@ -121,7 +121,6 @@ export const DEFAULT_ABOUT: AboutContent = {
     label2: 'تدريب وتأهيل',
     value2: '100%',
     text2: 'من موظفي الجهة الاتحادية على الذكاء الاصطناعي المساعد',
-    note: 'سيتم تحديد النتائج والأثر المتوقع من تحويل العمليات والخدمات والمهام لتطبيق نماذج وأنظمة الذكاء الاصطناعي المساعد على مستوى الجهة، على أن تكون هذه النتائج كمية وواضحة وقابلة للقياس بالأرقام وتعكس مستوى التحسّن المتوقع',
   },
   tracks: [
     { title: 'مسار العمليات والدعم المؤسسي', desc: 'تحويل العمليات التخصصية وعمليات الدعم المؤسسي لتطبيق نماذج وأنظمة الذكاء الاصطناعي المساعد، بما يعزز الإنتاجية والأداء الحكومي' },

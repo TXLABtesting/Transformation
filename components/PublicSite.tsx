@@ -196,7 +196,7 @@ export function PublicNav({ tab, onNav, onLogin }: { tab: PublicTab; onNav: (t: 
 export function PublicFooter() {
   return (
     <div style={{ textAlign: 'center', padding: '26px 0', fontSize: 11.5, color: '#8A97AD', fontWeight: 600 }}>
-      © 2026 مشروع الذكاء الاصطناعي المساعد، جميع الحقوق محفوظة
+      جميع الحقوق محفوظة © 2026 مشروع الذكاء الاصطناعي المساعد
     </div>
   );
 }
@@ -298,9 +298,6 @@ export function AboutPage() {
             <div style={{ fontSize: 64, fontWeight: 900, lineHeight: 1 }}>{TG.value2}</div>
             <div style={{ fontSize: 14, fontWeight: 400, color: '#DBE8FC', lineHeight: 2, marginTop: 14 }}>{TG.text2}</div>
           </div>
-        </div>
-        <div style={{ marginTop: 18, background: '#EAF1FE', border: '1px solid #C9DBF8', borderRadius: 14, padding: '16px 22px', fontSize: 13, fontWeight: 400, color: '#1F3D77', lineHeight: 2, textAlign: 'center' }}>
-          {TG.note}
         </div>
       </div>
 
