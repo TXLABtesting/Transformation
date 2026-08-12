@@ -43,7 +43,7 @@ import {
   DEFAULT_ABOUT_HERO,
 } from './domain';
 import type { LibraryDoc, ContactInquiry } from './domain';
-import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, type ActivityDetail } from './domain';
+import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
@@ -270,6 +270,9 @@ type Actions = {
   setOpsFilter: (k: 'opsCatF' | 'opsSectorF' | 'opsSupportF', v: string) => void;
   setItemDate: (id: string, k: 'startDate' | 'endDate', v: string) => void;
   assignItemBatch: (id: string, batch: string) => void;
+  // per-نشاط دفعة الإطلاق + dates (the batches page works at نشاط level)
+  setActivityDate: (id: string, actIdx: number, k: 'startDate' | 'endDate', v: string) => void;
+  assignActivityBatch: (id: string, actIdx: number, batch: string) => void;
   setContactEmail: (k: string, v: string) => void;
   setAboutHero: (v: string) => void;
   setAbout: (patch: Partial<AboutContent>) => void;
@@ -1044,6 +1047,53 @@ export const useStore = create<Store>((set, get) => {
     // the stageMove stamp (which drives the رئيس المسار notification) and the
     // launch-plan/budget cleanup — a plain patch skips all of that
     assignItemBatch: (id, batch) => get().setItemBatch(id, batch),
+    setActivityDate: (id, actIdx, k, v) => {
+      const it = findItem(id);
+      if (!it) return;
+      const acts = materializeActs(it);
+      const a = acts[actIdx];
+      if (!a) return;
+      // keep the نشاط's dates inside ITS OWN دفعة window
+      const ph = execMilestones(it.path).find((b) => b.name === activityBatch(it, a));
+      let val = v;
+      if (val && ph) {
+        if (ph.start && val < ph.start) val = ph.start;
+        if (ph.end && val > ph.end) val = ph.end;
+      }
+      const next = acts.map((x, j) => (j === actIdx ? { ...x, [k]: val } : x));
+      patchItem(id, mirrorActivities({ ...it, activities: next }) as Partial<Item>);
+    },
+    assignActivityBatch: (id, actIdx, batch) => {
+      const it = findItem(id);
+      if (!it) return;
+      // pin every نشاط to its CURRENT دفعة/dates first, so moving one never
+      // drags the siblings that were still inheriting the entry's values
+      const acts = materializeActs(it);
+      const a = acts[actIdx];
+      if (!a) return;
+      const from = activityBatch(it, a);
+      if (from === batch) return;
+      // moving between دفعات clears dates that fall outside the new window
+      const ph = execMilestones(it.path).find((b) => b.name === batch);
+      const clamp = (d?: string) => {
+        if (!d || !ph) return d;
+        if (ph.start && d < ph.start) return '';
+        if (ph.end && d > ph.end) return '';
+        return d;
+      };
+      const next = acts.map((x, j) =>
+        j === actIdx ? { ...x, execBatch: batch, startDate: clamp(x.startDate), endDate: clamp(x.endDate) } : x
+      );
+      const s0 = get();
+      patchItem(id, (cur) => ({
+        ...(mirrorActivities({ ...cur, activities: next }) as Partial<Item>),
+        // stamp the move so رئيس المسار is notified (same trigger as entries)
+        ...(from
+          ? { stageMove: { from, to: batch, at: Date.now(), by: actorName(s0) } }
+          : {}),
+      }));
+      toast(from ? 'تم نقل النشاط إلى ' + batch.replace(/^إطلاق /, '') : 'تمت إضافة النشاط إلى ' + batch.replace(/^إطلاق /, ''));
+    },
     setContactEmail: (k, v) => {
       set((st) => ({ contactEmails: { ...st.contactEmails, [k]: v } }));
       persist();
@@ -2198,6 +2248,18 @@ function exportScope(s: State): Item[] {
 }
 
 // ---- draft commit (shared by submit / save-as-draft / edit) ----
+// Every نشاط gets its OWN دفعة/dates written explicitly, resolved from what
+// it effectively shows today (its own value, else the entry's). Without this,
+// changing one نشاط would move the siblings that were still inheriting.
+function materializeActs(it: Item): ActivityDetail[] {
+  return itemActivities(it).map((a) => ({
+    ...a,
+    execBatch: activityBatch(it, a),
+    startDate: a.startDate ?? it.startDate ?? '',
+    endDate: a.endDate ?? it.endDate ?? '',
+  }));
+}
+
 function commitDraft(
   get: () => Store,
   set: (p: Partial<State> | ((s: State) => Partial<State>)) => void,

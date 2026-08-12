@@ -56,7 +56,7 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   TWO_STEP_PHASES,
   type Item,
   type RoleKey,
-  itemActivities, activityTransformYes, type ActivityDetail,
+  itemActivities, activityBatch, activityTransformYes, type ActivityDetail,
 } from './domain';
 import { stripHtml } from './richtext';
 import { FEDERAL_ENTITIES } from './entities';
@@ -1346,6 +1346,15 @@ function build(s: Store) {
       .map((t) => t.trim())
       .filter(Boolean)
       .join('، ');
+  // أولوية الاختيار of ONE نشاط (used by the دفعات tables)
+  const actPrioCellOf = (i: Item, a: ActivityDetail) => {
+    if (i.type === 'service') {
+      const p = svcPriority(a.usageIntensity, a.complexity, a.readinessLevel);
+      return p ? 'الأولوية ' + p : '—';
+    }
+    if (i.path === 'strategy' && i.type === 'operation') return stgPriority(a)?.cat || '—';
+    return '—'; // operations: pending the matrix
+  };
   const prioCellOf = (i: Item) => {
     const acts = itemActivities(i);
     if (i.type === 'service') {
@@ -1378,55 +1387,67 @@ function build(s: Store) {
         return {
           streamName: pathById(bPath).name,
           canEditDates: rawRole === 'coord',
+          // rows are أنشطة (خدمات فرعية in the services stream)
+          unitLabel: bPath === 'services' ? 'خدمات فرعية' : 'أنشطة',
+          unitSingular: bPath === 'services' ? 'خدمة فرعية' : 'نشاط',
           // move-to-batch options (raw names carried; labels shown)
           batchOptions: streamLaunchBatches(bPath).map((b) => ({ v: b.name, label: batchDafaaLabel(b.name) })),
           onMove: (id: string, batch: string) => s.assignItemBatch(id, batch),
+          // the دفعات work at نشاط level: every نشاط / خدمة فرعية is its own
+          // row with its own dates and its own أولوية الاختيار
           cols:
             bPath === 'services'
               ? ['الخدمة', 'الخدمة الفرعية']
               : bPath === 'strategy'
                 ? ['المحور', 'المهمة', 'النشاط']
-                : ['تصنيف العملية', 'العملية الرئيسية', 'الأنشطة الفرعية'],
-          batches: streamLaunchBatches(bPath).map((b) => ({
-            name: batchDafaaLabel(b.name),
-            rawName: b.name,
-            period: b.period || '',
-            // item dates must stay inside the دفعة window
-            minDate: b.start || '',
-            maxDate: b.end || '',
-            count: roleBase.filter((i) => i.path === bPath && i.execBatch === b.name).length,
-            rows: roleBase
-              .filter((i) => i.path === bPath && i.execBatch === b.name)
-              .map((i) => ({
-                id: i.id,
+                : ['تصنيف العملية', 'العملية الرئيسية', 'النشاط الفرعي'],
+          batches: streamLaunchBatches(bPath).map((b) => {
+            // flatten the stream's entries into (entry, نشاط) pairs once
+            const pairs = roleBase
+              .filter((i) => i.path === bPath)
+              .flatMap((i) => itemActivities(i).map((a, ai) => ({ i, a, ai })));
+            const inBatch = pairs.filter(({ i, a }) => activityBatch(i, a) === b.name);
+            return {
+              name: batchDafaaLabel(b.name),
+              rawName: b.name,
+              period: b.period || '',
+              // نشاط dates must stay inside the دفعة window
+              minDate: b.start || '',
+              maxDate: b.end || '',
+              count: inBatch.length,
+              rows: inBatch.map(({ i, a, ai }) => ({
+                id: i.id + '::' + ai,
+                itemId: i.id,
+                actIdx: ai,
                 lead:
                   bPath === 'services'
-                    ? [i.title || '—', i.subService || '—']
+                    ? [i.title || '—', a.name || '—']
                     : bPath === 'strategy'
-                      ? [i.axis || '—', i.title || '—', actsCompact(i) || '—']
-                      : [i.opType || '—', i.title || '—', actsCompact(i) || '—'],
-                start: i.startDate || '',
-                end: i.endDate || '',
-                prio: prioCellOf(i),
+                      ? [i.axis || '—', i.title || '—', a.name || '—']
+                      : [i.opType || '—', i.title || '—', a.name || '—'],
+                start: a.startDate ?? i.startDate ?? '',
+                end: a.endDate ?? i.endDate ?? '',
+                prio: actPrioCellOf(i, a),
                 status: wfMeta(i).label,
-                notes: stripHtml(i.notes || '') || '—',
-                batch: i.execBatch || '',
+                notes: stripHtml(a.notes || i.notes || '') || '—',
+                batch: activityBatch(i, a),
                 onOpen: () => s.openDetail(i.id),
               })),
-            // entries of this stream NOT in this batch — the per-batch add picker
-            // shows the priority so placement can be judged before assigning
-            addable: roleBase
-              .filter((i) => i.path === bPath && i.execBatch !== b.name)
-              .map((i) => ({
-                id: i.id,
-                title: i.title || '—',
-                sub: bPath === 'services' ? i.subService || '' : bPath === 'strategy' ? i.axis || '' : i.opType || '',
-                sector: i.sector || '',
-                prio: prioCellOf(i),
-                currentBatch: i.execBatch ? batchDafaaLabel(i.execBatch) : 'بدون دفعة',
-                onAssign: () => s.assignItemBatch(i.id, b.name),
-              })),
-          })),
+              // أنشطة of this stream NOT in this دفعة — the per-batch picker
+              // shows each نشاط with its own priority so placement is informed
+              addable: pairs
+                .filter(({ i, a }) => activityBatch(i, a) !== b.name)
+                .map(({ i, a, ai }) => ({
+                  id: i.id + '::' + ai,
+                  title: a.name || '—',
+                  sub: [i.title || '', bPath === 'services' ? '' : bPath === 'strategy' ? i.axis || '' : i.opType || ''].filter(Boolean).join(' · '),
+                  sector: a.sector || i.sector || '',
+                  prio: actPrioCellOf(i, a),
+                  currentBatch: activityBatch(i, a) ? batchDafaaLabel(activityBatch(i, a)) : 'بدون دفعة',
+                  onAssign: () => s.assignActivityBatch(i.id, ai, b.name),
+                })),
+            };
+          }),
         };
       })()
     : null;
