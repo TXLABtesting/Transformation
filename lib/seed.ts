@@ -264,7 +264,7 @@ function demoItems(): Item[] {
       launchPlanIds: ['lp5'],
       endDate: '2026-09-15',
       nom: {
-        by: 'سعادة محمد راشد بن طليعة',
+        by: 'رئيس المسار',
         role: 'رئيس المسار',
         path: 'services',
         at: T('2026-06-20T09:00:00'),

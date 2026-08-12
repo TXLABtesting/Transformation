@@ -142,6 +142,8 @@ function build(s: Store) {
   // services-stream filters: الخدمة / الأولوية (القطاع filter removed)
   if (filterStream === 'services') {
     if (ui.svcServiceF !== 'all') visible = visible.filter((i) => (i.title || '') === ui.svcServiceF);
+    if (ui.svcTransformF !== 'all')
+      visible = visible.filter((i) => itemActivities(i).some((a) => activityTransformYes('services', a) === ui.svcTransformF));
     if (ui.svcPrioF !== 'all')
       // an entry matches if ANY of its sub-services carries that priority
       visible = visible.filter(
@@ -153,6 +155,8 @@ function build(s: Store) {
   // strategy-stream filters: المهمة / القطاع / الأولوية
   if (filterStream === 'strategy') {
     if (ui.stgAxisF !== 'all') visible = visible.filter((i) => (i.axis || '') === ui.stgAxisF);
+    if (ui.stgTransformF !== 'all')
+      visible = visible.filter((i) => itemActivities(i).some((a) => activityTransformYes('strategy', a) === ui.stgTransformF));
     if (ui.stgPrioF !== 'all')
       // an entry matches if ANY of its activities carries that priority
       visible = visible.filter((i) => itemActivities(i).some((a) => (stgPriority(a)?.cat || '') === ui.stgPrioF));
@@ -160,7 +164,9 @@ function build(s: Store) {
   // operations-stream filters: تصنيف العملية / القطاع / نوع عملية الدعم
   if (filterStream === 'ops') {
     if (ui.opsCatF !== 'all') visible = visible.filter((i) => (i.opType || '') === ui.opsCatF);
-    if (ui.opsSectorF !== 'all') visible = visible.filter((i) => itemActivities(i).some((a) => (a.sector || '') === ui.opsSectorF) || (i.sector || '') === ui.opsSectorF);
+    // قابلية التحول — matches when ANY نشاط carries that value
+    if (ui.opsTransformF !== 'all')
+      visible = visible.filter((i) => itemActivities(i).some((a) => activityTransformYes('ops', a) === ui.opsTransformF));
     if (ui.opsSupportF !== 'all') visible = visible.filter((i) => (i.supportFn || '') === ui.opsSupportF);
   }
   // status filter
@@ -732,6 +738,13 @@ function build(s: Store) {
             { v: '4', label: 'الأولوية 4' },
           ],
           serviceValue: ui.svcServiceF,
+          // قابلية التحول — the derived نعم/لا of the entry's خدمات فرعية
+          transformOptions: [
+            { v: 'all', label: 'قابلية التحول: الكل' },
+            { v: 'نعم', label: 'نعم' },
+            { v: 'لا', label: 'لا' },
+          ],
+          transformValue: ui.svcTransformF,
           prioValue: ui.svcPrioF,
         }
       : null;
@@ -749,9 +762,11 @@ function build(s: Store) {
             { v: 'العمليات التخصصية', label: 'العمليات التخصصية' },
             { v: SUPPORT_OPTYPE, label: SUPPORT_OPTYPE },
           ],
-          sectorOptions: [
-            { v: 'all', label: 'القطاع: الكل' },
-            ...Array.from(new Set(opsScope.flatMap((i) => itemActivities(i).map((a) => a.sector || '').concat(i.sector || '')))).filter(Boolean).map((t) => ({ v: t, label: t })),
+          // قابلية التحول instead of القطاع (approved filter set)
+          transformOptions: [
+            { v: 'all', label: 'قابلية التحول: الكل' },
+            { v: 'نعم', label: 'نعم' },
+            { v: 'لا', label: 'لا' },
           ],
           supportOptions: [
             { v: 'all', label: 'نوع عملية الدعم: الكل' },
@@ -759,7 +774,7 @@ function build(s: Store) {
           ],
           showSupport: ui.opsCatF === SUPPORT_OPTYPE,
           catValue: ui.opsCatF,
-          sectorValue: ui.opsSectorF,
+          transformValue: ui.opsTransformF,
           supportValue: ui.opsSupportF,
         }
       : null;
@@ -772,6 +787,13 @@ function build(s: Store) {
             ...Array.from(new Set(stgScope.map((i) => i.axis || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
           ],
           axisValue: ui.stgAxisF,
+          // قابلية التحول — the derived نعم/لا of the entry's أنشطة
+          transformOptions: [
+            { v: 'all', label: 'قابلية التحول: الكل' },
+            { v: 'نعم', label: 'نعم' },
+            { v: 'لا', label: 'لا' },
+          ],
+          transformValue: ui.stgTransformF,
           prioOptions: [
             { v: 'all', label: 'الأولوية: الكل' },
             { v: 'أولوية عالية', label: 'أولوية عالية' },
@@ -783,7 +805,7 @@ function build(s: Store) {
       : null;
 
   // is any filter currently active (drives the reset button + count)
-  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim() || ui.svcServiceF !== 'all' || ui.svcSectorF !== 'all' || ui.svcPrioF !== 'all' || ui.stgAxisF !== 'all' || ui.stgPrioF !== 'all' || ui.opsCatF !== 'all' || ui.opsSectorF !== 'all' || ui.opsSupportF !== 'all';
+  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim() || ui.svcServiceF !== 'all' || ui.svcTransformF !== 'all' || ui.svcPrioF !== 'all' || ui.stgAxisF !== 'all' || ui.stgTransformF !== 'all' || ui.stgPrioF !== 'all' || ui.opsCatF !== 'all' || ui.opsTransformF !== 'all' || ui.opsSupportF !== 'all';
 
   // ---- cards ----
   // ---- sidebar navigation (§redesign v2) ----
@@ -1022,6 +1044,7 @@ function build(s: Store) {
   const streamFilterMatch = (i: Item): boolean => {
     if (filterStream === 'services') {
       if (ui.svcServiceF !== 'all' && (i.title || '') !== ui.svcServiceF) return false;
+      if (ui.svcTransformF !== 'all' && !itemActivities(i).some((a) => activityTransformYes('services', a) === ui.svcTransformF)) return false;
       if (
         ui.svcPrioF !== 'all' &&
         !(i.type === 'service' && itemActivities(i).some((a) => String(svcPriority(a.usageIntensity, a.complexity, a.readinessLevel) ?? '') === ui.svcPrioF))
@@ -1030,11 +1053,16 @@ function build(s: Store) {
     }
     if (filterStream === 'strategy') {
       if (ui.stgAxisF !== 'all' && (i.axis || '') !== ui.stgAxisF) return false;
+      if (ui.stgTransformF !== 'all' && !itemActivities(i).some((a) => activityTransformYes('strategy', a) === ui.stgTransformF)) return false;
       if (ui.stgPrioF !== 'all' && !itemActivities(i).some((a) => (stgPriority(a)?.cat || '') === ui.stgPrioF)) return false;
     }
     if (filterStream === 'ops') {
       if (ui.opsCatF !== 'all' && (i.opType || '') !== ui.opsCatF) return false;
-      if (ui.opsSectorF !== 'all' && !(itemActivities(i).some((a) => (a.sector || '') === ui.opsSectorF) || (i.sector || '') === ui.opsSectorF)) return false;
+      if (
+        ui.opsTransformF !== 'all' &&
+        !itemActivities(i).some((a) => activityTransformYes('ops', a) === ui.opsTransformF)
+      )
+        return false;
       if (ui.opsSupportF !== 'all' && (i.supportFn || '') !== ui.opsSupportF) return false;
     }
     return true;
@@ -2642,6 +2670,8 @@ function buildModal(s: Store) {
     fStepHint: fHints[ui.fStep - 1] || '',
     fNextLabel: ui.fStep >= fLabels.length ? 'إرسال للاعتماد' : 'التالي',
     // أولوية الاختيار — live matrix result while filling the services form
+    // >0 → the form highlights the required fields left empty
+    reqHighlight: ui.reqHighlight,
     svcSelPriority: type === 'service' ? svcPriority(draft?.usageIntensity, draft?.complexity, draft?.readinessLevel) : null,
     svcExcluded: false,
     // execution batches (البرنامج الزمني) + centrally-managed launch plans

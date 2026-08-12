@@ -147,15 +147,21 @@ export type UiState = {
   batchFilter: string | null; // drill-down from a مرحلة card into its items
   // services-stream list filters: الخدمة / القطاع / الأولوية
   svcServiceF: string;
+  svcTransformF: string; // قابلية التحول: all | نعم | لا
   svcSectorF: string;
   svcPrioF: string;
   // strategy-stream list filters: المهمة / القطاع / الأولوية
   stgTaskF: string;
   stgAxisF: string;
+  stgTransformF: string; // قابلية التحول: all | نعم | لا
   stgSectorF: string;
   stgPrioF: string;
+  // >0 → highlight the empty required fields in the entry form (bumped on
+  // every failed validation so a repeated click re-scrolls to the first gap)
+  reqHighlight: number;
   opsCatF: string; // تصنيف العملية
   opsSectorF: string;
+  opsTransformF: string; // قابلية التحول: all | نعم | لا
   opsSupportF: string; // نوع عملية الدعم المؤسسي
   // inline add-manually form (rendered under the table, not a popup)
   inlineCreate: boolean;
@@ -265,9 +271,9 @@ type Actions = {
   setExecEnt: (v: string) => void;
   setExecStream: (v: string) => void;
   resetFilters: () => void;
-  setSvcFilter: (k: 'svcServiceF' | 'svcSectorF' | 'svcPrioF', v: string) => void;
-  setStgFilter: (k: 'stgTaskF' | 'stgAxisF' | 'stgSectorF' | 'stgPrioF', v: string) => void;
-  setOpsFilter: (k: 'opsCatF' | 'opsSectorF' | 'opsSupportF', v: string) => void;
+  setSvcFilter: (k: 'svcServiceF' | 'svcSectorF' | 'svcPrioF' | 'svcTransformF', v: string) => void;
+  setStgFilter: (k: 'stgTaskF' | 'stgAxisF' | 'stgSectorF' | 'stgPrioF' | 'stgTransformF', v: string) => void;
+  setOpsFilter: (k: 'opsCatF' | 'opsSectorF' | 'opsTransformF' | 'opsSupportF', v: string) => void;
   setItemDate: (id: string, k: 'startDate' | 'endDate', v: string) => void;
   assignItemBatch: (id: string, batch: string) => void;
   // per-نشاط دفعة الإطلاق + dates (the batches page works at نشاط level)
@@ -471,14 +477,18 @@ function defaultUi(): UiState {
     draftSel: [],
     batchFilter: null,
     svcServiceF: 'all',
+    svcTransformF: 'all',
     svcSectorF: 'all',
     svcPrioF: 'all',
     stgTaskF: 'all',
     stgAxisF: 'all',
+    stgTransformF: 'all',
     stgSectorF: 'all',
     stgPrioF: 'all',
+    reqHighlight: 0,
     opsCatF: 'all',
     opsSectorF: 'all',
+    opsTransformF: 'all',
     opsSupportF: 'all',
     inlineCreate: false,
     confirmAdd: false,
@@ -1026,7 +1036,7 @@ export const useStore = create<Store>((set, get) => {
     // viewer isn't stranded on a now-empty detail view
     setExecEnt: (v) => setUi({ execEnt: v, detailId: null }),
     setExecStream: (v) => setUi({ execStream: v, detailId: null }),
-    resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null, batchFilter: null, svcServiceF: 'all', svcSectorF: 'all', svcPrioF: 'all', stgTaskF: 'all', stgAxisF: 'all', stgSectorF: 'all', stgPrioF: 'all', opsCatF: 'all', opsSectorF: 'all', opsSupportF: 'all' }),
+    resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null, batchFilter: null, svcServiceF: 'all', svcTransformF: 'all', svcSectorF: 'all', svcPrioF: 'all', stgTaskF: 'all', stgAxisF: 'all', stgTransformF: 'all', stgSectorF: 'all', stgPrioF: 'all', opsCatF: 'all', opsSectorF: 'all', opsTransformF: 'all', opsSupportF: 'all' }),
     setSvcFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     setStgFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     setOpsFilter: (k, v) =>
@@ -1223,9 +1233,9 @@ export const useStore = create<Store>((set, get) => {
       get().openCreate();
       get().chooseManual();
       // the manual form renders inline under the table, not as a popup
-      setUi({ modalOpen: false, inlineCreate: true, confirmAdd: false });
+      setUi({ modalOpen: false, inlineCreate: true, confirmAdd: false, reqHighlight: 0 });
     },
-    closeInline: () => setUi({ inlineCreate: false, confirmAdd: false, draft: null, editingId: null }),
+    closeInline: () => setUi({ inlineCreate: false, confirmAdd: false, draft: null, editingId: null, reqHighlight: 0 }),
     confirmInlineAdd: () => {
       setUi({ confirmAdd: false });
       get().submitItem();
@@ -1266,7 +1276,10 @@ export const useStore = create<Store>((set, get) => {
         // every نشاط carries its own full details — each section must be complete
         const actsBadO = actsO.length ? actsO.some((a) => activityMissing('ops', a).length > 0) : true;
         if (reqO.some((k) => !filledO(dO[k])) || actsBadO) {
-          return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
+          {
+            setUi({ reqHighlight: get().ui.reqHighlight + 1 });
+            return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
+          }
         }
         const arabO = [String(dO.title ?? ''), ...actsO.flatMap((a) => [a.name, a.sector, a.dept, a.section].map((v) => String(v ?? '')))];
         if (arabO.some((v) => /[A-Za-z]/.test(stripHtml(v)))) {
@@ -1287,7 +1300,10 @@ export const useStore = create<Store>((set, get) => {
         const reqT = ['title', 'axis'];
         const actsBadT = actsT.length ? actsT.some((a) => activityMissing('strategy', a).length > 0) : true;
         if (reqT.some((k) => !filledT(dt[k])) || actsBadT) {
-          return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
+          {
+            setUi({ reqHighlight: get().ui.reqHighlight + 1 });
+            return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
+          }
         }
         const arabT = [String(dt.title ?? ''), ...actsT.flatMap((a) => [a.name, a.sector, a.dept, a.section].map((v) => String(v ?? '')))];
         if (arabT.some((v) => /[A-Za-z]/.test(stripHtml(v)))) {
@@ -1308,7 +1324,10 @@ export const useStore = create<Store>((set, get) => {
         const actsS = (d.activities || []).filter((a) => Object.values(a).some((v) => stripHtml(String(v ?? '')).trim()));
         const actsBadS = actsS.length ? actsS.some((a) => activityMissing('services', a).length > 0) : true;
         if (!filledSvc(ds.title) || actsBadS) {
-          return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
+          {
+            setUi({ reqHighlight: get().ui.reqHighlight + 1 });
+            return toast('نرجو التكرم باستكمال جميع الحقول المطلوبة (المميزة بعلامة *) قبل المتابعة');
+          }
         }
         const arabS = [String(ds.title ?? ''), ...actsS.flatMap((a) => [a.sector, a.dept, a.section].map((v) => String(v ?? '')))];
         if (arabS.some((v) => /[A-Za-z]/.test(stripHtml(v)))) {
@@ -1396,7 +1415,7 @@ export const useStore = create<Store>((set, get) => {
     saveDraftOnly: () => {
       if (!get().ui.draft) return;
       commitDraft(get, set, persist, toast, 'مسودة', true);
-      setUi({ modalOpen: false, draft: null, editingId: null, inlineCreate: false, confirmAdd: false });
+      setUi({ modalOpen: false, draft: null, editingId: null, inlineCreate: false, confirmAdd: false, reqHighlight: 0 });
     },
     addSub: (pi) =>
       set((s) => {
@@ -1686,15 +1705,17 @@ export const useStore = create<Store>((set, get) => {
       const toAdd = s.ui.bulkRows
         .filter((r) => r._v !== 'يوجد خطأ')
         .map((r, ri) => {
-          const complete = !(r.missing || []).length;
+          // every imported row is saved as a DRAFT — including complete ones.
+          // Nothing reaches رئيس المسار until the coordinator selects the
+          // drafts and confirms «إرسال للاعتماد».
           return {
             ...blankItem((r.type as ItemType) || 'operation', r.path || path),
             ...(r.extra || {}),
             id: 'n' + Date.now() + ri + Math.floor(Math.random() * 1000),
             title: r.title,
             desc: r.desc,
-            approval: complete ? 'تم الإرسال' : 'مسودة',
-            wf: (complete ? 'ent1' : 'draft') as WfState,
+            approval: 'مسودة',
+            wf: 'draft' as WfState,
             ret: null,
           };
         });
@@ -1714,7 +1735,7 @@ export const useStore = create<Store>((set, get) => {
       set((st) => ({ items: [...toAdd, ...st.items], launchPlans: [...st.launchPlans, ...newPlans] }));
       persist();
       setUi({ mStep: 'done', bulkLaunches: [] });
-      if (newPlans.length) toast('تم استيراد ' + toAdd.length + ' من المدخلات');
+      toast('تم حفظ ' + toAdd.length + ' من المدخلات كمسودات — راجعها ثم أرسلها للاعتماد');
     },
 
     // ---- rank modal ----
