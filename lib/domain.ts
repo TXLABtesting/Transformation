@@ -465,7 +465,7 @@ export function mirrorActivities<T extends Partial<Item> & { path?: string }>(d:
   // the entry's own دفعة/dates mirror the first نشاط when it carries them,
   // so batch filters, the detail card, exports and the committee cards keep
   // reading a single item-level value
-  if (first.execBatch) out.execBatch = first.execBatch;
+  if (first.execBatch !== undefined) out.execBatch = first.execBatch;
   if (first.startDate) out.startDate = first.startDate;
   if (first.endDate) out.endDate = first.endDate;
   return out;
@@ -872,7 +872,9 @@ export type ActivityDetail = {
 
 /** effective دفعة of one نشاط — its own, else the parent entry's */
 export function activityBatch(i: Item, a: ActivityDetail): string {
-  return (a.execBatch || '').trim() || (i.execBatch || '').trim();
+  // an explicit '' means «removed from its دفعة»; only an UNSET value inherits
+  // the entry's batch (legacy rows written before per-نشاط batches)
+  return a.execBatch !== undefined ? (a.execBatch || '').trim() : (i.execBatch || '').trim();
 }
 
 export type Ret = { type: 'info' | 'reject'; from: string; note: string; gate?: string };
@@ -1016,6 +1018,10 @@ export function stageWeight(i: Item): number {
 
 // A returned item (has `ret`) surfaces a distinct amber status instead of "مسودة".
 export const RETURNED_STATUS = 'للتعديل';
+// a rejection is NOT a request for more info — it comes back to the
+// coordinator as «تم الرفض» with the reason attached
+export const REJECTED_STATUS = 'تم الرفض';
+export const isRejected = (i: { ret?: { type?: string } | null }): boolean => i.ret?.type === 'reject';
 
 // exec / launch completion gates
 export function execAllDone(it: Item): boolean {

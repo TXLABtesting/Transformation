@@ -42,6 +42,8 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   formatMoney,
   APPROVED_BUDGET,
   RETURNED_STATUS,
+  REJECTED_STATUS,
+  isRejected,
   PATH_REPS,
   entOf,
   fmtDate,
@@ -662,6 +664,7 @@ function build(s: Store) {
           { v: 'draft', label: 'مسودة' },
           { v: 'pending', label: 'قيد الاعتماد' },
           { v: 'review', label: 'للتعديل' },
+          { v: 'rejected', label: 'تم الرفض' },
           { v: 'inprog', label: 'معتمد' },
         ]
       : rawRole === 'entity'
@@ -1418,6 +1421,16 @@ function build(s: Store) {
           // rows are أنشطة (خدمات فرعية in the services stream)
           unitLabel: bPath === 'services' ? 'خدمات فرعية' : 'أنشطة',
           unitSingular: bPath === 'services' ? 'خدمة فرعية' : 'نشاط',
+          // coordinator: move/remove freely, then send the placements for approval
+          canArrange: rawRole === 'coord',
+          moveOptions: streamLaunchBatches(bPath).map((b) => ({ v: b.name, label: batchDafaaLabel(b.name) })),
+          // stream head/deputy review the placements from here as well
+          canReview: rawRole === 'path',
+          submitLabel: 'إرسال للاعتماد',
+          draftCount: roleBase.filter(
+            (i) => i.path === bPath && wfOf(i) === 'draft' && itemActivities(i).some((a) => !!activityBatch(i, a))
+          ).length,
+          onSubmitAll: () => s.submitBatchDrafts(bPath),
           // move-to-batch options (raw names carried; labels shown)
           batchOptions: streamLaunchBatches(bPath).map((b) => ({ v: b.name, label: batchDafaaLabel(b.name) })),
           onMove: (id: string, batch: string) => s.assignItemBatch(id, batch),
@@ -1456,10 +1469,19 @@ function build(s: Store) {
                 start: a.startDate ?? i.startDate ?? '',
                 end: a.endDate ?? i.endDate ?? '',
                 prio: actPrioCellOf(i, a),
-                status: wfMeta(i).label,
+                // rejected / returned entries keep their real status on the دفعات table too
+                status: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : wfMeta(i).label,
                 notes: stripHtml(a.notes || i.notes || '') || '—',
                 batch: activityBatch(i, a),
                 onOpen: () => s.openDetail(i.id),
+                // coordinator actions on the placement itself
+                onMove: (to: string) => s.assignActivityBatch(i.id, ai, to),
+                onRemove: () => s.assignActivityBatch(i.id, ai, ''),
+                // stream head/deputy: act on the parent entry awaiting approval
+                canReview: rawRole === 'path' && wfOf(i) === 'ent1',
+                onApprove: () => s.approveItem(i.id),
+                onReturn: () => s.reqInfoItem(i.id),
+                onReject: () => s.rejectItem(i.id),
               })),
               // أنشطة of this stream NOT in this دفعة — the per-batch picker
               // shows each نشاط with its own priority so placement is informed
@@ -1824,8 +1846,10 @@ function statusMatch(i: Item, f: string, rawRole: RoleKey, s: Store): boolean {
   if (f === 'pending') return ['ent1', 'pm1', 'ent2', 'pm2'].includes(w);
   if (f === 'planned') return ['exec', 'launch', 'budget'].includes(w);
   // simplified role statuses
+  // «للتعديل» = returned for more info · «تم الرفض» = rejected outright
+  if (f === 'rejected') return i.ret?.type === 'reject';
   if (f === 'review')
-    return rawRole === 'coord' ? !!i.ret : ['pm1', 'pm2', 'ent2'].includes(w) || !!i.ret;
+    return rawRole === 'coord' ? !!i.ret && i.ret.type !== 'reject' : ['pm1', 'pm2', 'ent2'].includes(w) || !!i.ret;
   if (f === 'approve') return w === 'ent1';
   if (f === 'inprog') return ['budget', 'exec', 'launch', 'done'].includes(w);
   // «مسودة» excludes returned entries — those show (and filter) as «للتعديل»
@@ -1923,9 +1947,10 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   let wfChip = wm.chip;
   let wfBg = wm.bg;
   if (isReturned) {
-    wfLabel = RETURNED_STATUS;
-    wfChip = '#B45309';
-    wfBg = '#FFF3DE';
+    // rejected → red «تم الرفض»; more-info → amber «للتعديل»
+    wfLabel = isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS;
+    wfChip = isRejected(i) ? '#C0303B' : '#B45309';
+    wfBg = isRejected(i) ? '#FDECEE' : '#FFF3DE';
   } else if (w === 'exec' || w === 'launch' || w === 'done') {
     wfLabel = 'معتمد';
     wfChip = '#0B8A4B';
@@ -2106,8 +2131,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfChip,
     wfBg,
     isReturned: rawRole === 'coord' && !!i.ret,
-    retBannerLabel: 'ملاحظات رئيس المسار',
-    retNote: i.ret ? i.ret.note || (i.ret.type === 'info' ? 'طُلبت تفاصيل إضافية' : 'تمت الإعادة للتعديل') : '',
+    retBannerLabel: isRejected(i) ? 'سبب الرفض من رئيس المسار' : 'ملاحظات رئيس المسار',
+    retNote: i.ret ? i.ret.note || (i.ret.type === 'info' ? 'طُلبت تفاصيل إضافية' : 'لم يُذكر سبب') : '',
     retFrom: i.ret?.from || '',
     stepBadge: 'المرحلة ' + step,
     priority: i.priority,
@@ -2236,7 +2261,7 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
         push('sm-' + i.id, 'info', 'rotate', 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to, tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by, i.id);
     } else if (rawRole === 'coord') {
       // coordinator: returns / info requests from the stream head, and approvals
-      if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تمت الإعادة من ') + (i.ret.from || 'رئيس المسار'), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
+      if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تم الرفض من ') + (i.ret.from || 'رئيس المسار'), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
       if (w === 'exec' || w === 'launch') push('x-' + i.id, 'ok', 'check', 'اعتمد رئيس المسار ' + typeLabelDefFor(i.type, i.path), tl + ' · ' + i.title, i.id);
       if (i.stageMove)
         push('sm-' + i.id, 'info', 'rotate', 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to, tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by, i.id);
@@ -2409,16 +2434,16 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     typeColor: t.color,
     typeBg: t.bg,
     // same status override as the list cards: returned → للتعديل، approved → معتمد
-    wfLabel: i.ret ? RETURNED_STATUS : ['exec', 'launch', 'done'].includes(w) ? 'معتمد' : wm.label,
-    wfChip: i.ret ? '#B45309' : ['exec', 'launch', 'done'].includes(w) ? '#0B8A4B' : wm.chip,
-    wfBg: i.ret ? '#FFF3DE' : ['exec', 'launch', 'done'].includes(w) ? '#EAF7F0' : wm.bg,
+    wfLabel: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : ['exec', 'launch', 'done'].includes(w) ? 'معتمد' : wm.label,
+    wfChip: i.ret ? (isRejected(i) ? '#C0303B' : '#B45309') : ['exec', 'launch', 'done'].includes(w) ? '#0B8A4B' : wm.chip,
+    wfBg: i.ret ? (isRejected(i) ? '#FDECEE' : '#FFF3DE') : ['exec', 'launch', 'done'].includes(w) ? '#EAF7F0' : wm.bg,
     priority: i.priority,
     // services follow the matrix — no manual ترتيب/أولوية chips
     rankLabel: i.type === 'service' ? '' : i.rank ? String(i.rank) : '',
     complexity: i.complexity,
     endDateFmt: fmtDate(i.endDate),
     isReturned: rawRole === 'coord' && !!i.ret,
-    retBannerLabel: 'ملاحظات رئيس المسار',
+    retBannerLabel: isRejected(i) ? 'سبب الرفض من رئيس المسار' : 'ملاحظات رئيس المسار',
     retFrom: i.ret?.from || '',
     retNote: i.ret?.note || '',
     // committee-funding banner removed from the flow — never shown

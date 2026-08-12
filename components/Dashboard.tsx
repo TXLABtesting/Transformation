@@ -32,7 +32,8 @@ const COORD_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك كمنسق للمسار في جهتك.' },
   { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'المسارات المسندة إليك تظهر هنا. اختر المسار لاستعراض قائمة الحصر الخاصة به — جدول المدخلات مع اختيار المعايير (التصنيف أو المحور أو الخدمة، والأولوية) ومعيار الحالة والبحث بالاسم.' },
   { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات إجمالي المدخلات والأنشطة والقابلة للتحول والمستهدف تحويلها، وتضاف بطاقات الأولويات المحسوبة تلقائياً وفق المصفوفة في مساري العمل الاستراتيجي والخدمات الحكومية.' },
-  { sel: '[data-tour="add"]', title: 'إضافة المدخلات', desc: '«إضافة المدخلات» تفتح نموذج الإدخال بحقول المسار — وفي مسار الخدمات تُختار الخدمة الرئيسية والفرعية من دليل خدمات جهتك. «رفع ملف Excel» يعتمد النموذج نفسه: نزّل قالب المسار، والصفوف الناقصة تُستورد كمسودات بوسم «بيانات ناقصة» لإكمالها لاحقاً، والمكتملة تُرسل مباشرة لاعتماد رئيس المسار.' },
+  { sel: '[data-tour="add"]', title: 'إضافة المدخلات', desc: 'اختر الخدمات الرئيسية والفرعية المطلوبة من دليل خدمات الجهة، ثم أضفها إلى المسار.' },
+  { sel: '[data-tour="bulk"]', title: 'رفع ملف Excel', desc: 'حمّل قالب المسار، وأكمل البيانات المطلوبة، ثم ارفع الملف. ستظهر أي بيانات غير مكتملة لتتمكن من استكمالها قبل إرسال المسار للاعتماد.' },
   { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية. من زر «إضافة نشاط» توزَّع أنشطة المسار على دفعاته وفق أولوية الاختيار — كل نشاط في دفعته وبتواريخ بدء وانتهاء ضمن الفترة الزمنية للدفعة.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'تصلك هنا ملاحظات رئيس المسار: طلبات التفاصيل الإضافية، والمدخلات المُعادة للتعديل، وقرارات الاعتماد.' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن تعبئة قوائم الحصر لمساراتك وتوزيع المدخلات على دفعات الإطلاق، والتأكد من تحديث البيانات بشكل دوري.' },
@@ -701,8 +702,22 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
   const dateIn: CSSProperties = { border: '1px solid #DCE3EE', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit', color: '#33415C', background: '#fff' };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>دفعات الإطلاق لمسار {bt.streamName}</div>
+        {bt.canArrange && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 600 }}>
+              {bt.draftCount > 0 ? bt.draftCount + ' مسودة موزّعة على الدفعات' : 'التوزيع يُحفظ كمسودة حتى الإرسال'}
+            </span>
+            <button
+              onClick={bt.onSubmitAll}
+              disabled={bt.draftCount === 0}
+              style={{ background: bt.draftCount ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', border: 'none', borderRadius: 11, padding: '10px 20px', fontSize: 12.5, fontWeight: 800, cursor: bt.draftCount ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}
+            >
+              {bt.submitLabel}
+            </button>
+          </div>
+        )}
       </div>
       {bt.batches.map((b) => {
         return (
@@ -752,7 +767,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                       <th style={th}>أولوية الاختيار</th>
                       <th style={th}>الحالة</th>
                       <th style={th}>ملاحظات</th>
-                      {bt.canEditDates && <th style={th}>الإجراءات</th>}
+                      {(bt.canEditDates || bt.canReview) && <th style={th}>الإجراءات</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -784,9 +799,55 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                           <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.status}</span>
                         </td>
                         <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.notes}>{r.notes}</td>
-                        {bt.canEditDates && (
+                        {(bt.canEditDates || bt.canReview) && (
                           <td style={{ ...td, whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              {/* coordinator: swap the نشاط to another دفعة, or take it out */}
+                              {bt.canArrange && (
+                                <>
+                                  <select
+                                    value={r.batch}
+                                    onChange={(e) => r.onMove(e.target.value)}
+                                    title="نقل إلى دفعة أخرى"
+                                    style={{ border: '1px solid #DCE3EE', borderRadius: 8, padding: '7px 10px', paddingLeft: 26, fontSize: 11.5, fontFamily: 'inherit', color: '#33415C', backgroundColor: '#fff', maxWidth: 150, cursor: 'pointer' }}
+                                  >
+                                    {bt.moveOptions.map((o) => (
+                                      <option key={o.v} value={o.v}>{o.label}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={r.onRemove}
+                                    title={'إزالة من ' + b.name}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#FDF6F6', border: '1px solid #F3D4D7', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#C0303B', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                                  >
+                                    <Icon d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" size={12} color="#C0303B" />
+                                    إزالة
+                                  </button>
+                                </>
+                              )}
+                              {/* stream head/deputy: decide on the entry from here */}
+                              {r.canReview && (
+                                <>
+                                  <button
+                                    onClick={r.onApprove}
+                                    style={{ background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 11.5, color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                                  >
+                                    اعتماد
+                                  </button>
+                                  <button
+                                    onClick={r.onReturn}
+                                    style={{ background: '#FFF3DE', border: '1px solid #F1DCBA', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#B45309', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                                  >
+                                    إعادة للتعديل
+                                  </button>
+                                  <button
+                                    onClick={r.onReject}
+                                    style={{ background: '#FDECEE', border: '1px solid #F3D4D7', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#C0303B', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                                  >
+                                    رفض
+                                  </button>
+                                </>
+                              )}
                               <button
                                 onClick={r.onOpen}
                                 style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 11.5, color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 6px -2px rgba(37,99,235,.4)' }}
@@ -2625,6 +2686,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                     </button>
                     <button
                       onClick={s.openCreateBulk}
+                      data-tour="bulk"
                       style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(11,138,75,.4)', fontFamily: 'inherit' }}
                     >
                       <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={16} strokeWidth={2.2} /> رفع ملف Excel

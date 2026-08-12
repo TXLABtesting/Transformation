@@ -36,6 +36,23 @@ export function svcCatalogFor(entityName: string): EntityCatalog | null {
   return byNorm.get(norm(entityName)) || null;
 }
 
+let unionCache: EntityCatalog | null = null;
+/**
+ * الدليل الاتحادي الكامل (كل الجهات) — يُستخدم فقط كخيار احتياطي عندما تكون
+ * جهة المنسق غير مدرجة أصلاً في ملفات الدليل، حتى لا تظهر القوائم فارغة.
+ */
+export function svcCatalogUnion(): EntityCatalog {
+  if (unionCache) return unionCache;
+  const out: EntityCatalog = {};
+  for (const services of byNorm.values()) {
+    for (const [main, subs] of Object.entries(services)) {
+      out[main] = Array.from(new Set([...(out[main] || []), ...subs]));
+    }
+  }
+  unionCache = out;
+  return out;
+}
+
 /**
  * دليل خدمات الجهة للاستخدام في الواجهة.
  * - النسخة التجريبية (NEXT_PUBLIC_DEMO_MODE=1): الدليل المضمّن، مقيداً بالجهة.

@@ -279,6 +279,7 @@ type Actions = {
   // per-نشاط دفعة الإطلاق + dates (the batches page works at نشاط level)
   setActivityDate: (id: string, actIdx: number, k: 'startDate' | 'endDate', v: string) => void;
   assignActivityBatch: (id: string, actIdx: number, batch: string) => void;
+  submitBatchDrafts: (path: string) => void;
   setContactEmail: (k: string, v: string) => void;
   setAboutHero: (v: string) => void;
   setAbout: (patch: Partial<AboutContent>) => void;
@@ -1001,6 +1002,7 @@ export const useStore = create<Store>((set, get) => {
       if (!a) return;
       const from = activityBatch(it, a);
       if (from === batch) return;
+      const removing = !batch;
       // moving between دفعات clears dates that fall outside the new window
       const ph = execMilestones(it.path).find((b) => b.name === batch);
       const clamp = (d?: string) => {
@@ -1016,11 +1018,17 @@ export const useStore = create<Store>((set, get) => {
       patchItem(id, (cur) => ({
         ...(mirrorActivities({ ...cur, activities: next }) as Partial<Item>),
         // stamp the move so رئيس المسار is notified (same trigger as entries)
-        ...(from
+        ...(from && batch
           ? { stageMove: { from, to: batch, at: Date.now(), by: actorName(s0) } }
           : {}),
       }));
-      toast(from ? 'تم نقل النشاط إلى ' + batch.replace(/^إطلاق /, '') : 'تمت إضافة النشاط إلى ' + batch.replace(/^إطلاق /, ''));
+      toast(
+        removing
+          ? 'تمت إزالة النشاط من ' + from.replace(/^إطلاق /, '')
+          : from
+            ? 'تم نقل النشاط إلى ' + batch.replace(/^إطلاق /, '')
+            : 'تمت إضافة النشاط إلى ' + batch.replace(/^إطلاق /, '')
+      );
     },
     setContactEmail: (k, v) => {
       set((st) => ({ contactEmails: { ...st.contactEmails, [k]: v } }));
@@ -1090,6 +1098,34 @@ export const useStore = create<Store>((set, get) => {
       }
       setUi({ draftSel: [] });
       toast(ok.length ? 'تم إرسال ' + ok.length + (ok.length === 1 ? ' مدخل' : ' مدخلات') + ' لاعتماد رئيس المسار' : 'لم يُرسل أي مدخل — نرجو استكمال الحقول الناقصة أولاً');
+    },
+
+    // batches page: send every draft of this stream that has أنشطة placed in a
+    // دفعة for approval — placements stay drafts until this is pressed
+    submitBatchDrafts: (path) => {
+      const st = get();
+      const mine = st.items.filter(
+        (i) => i.path === path && entOf(i, st.entityName) === st.entityName && wfOf(i) === 'draft'
+      );
+      const placed = mine.filter((i) => itemActivities(i).some((a) => !!activityBatch(i, a)));
+      const ok = placed.filter((i) => !missingFieldsOf(i as unknown as Record<string, unknown>).length);
+      if (ok.length) {
+        const ids = ok.map((i) => i.id);
+        set((s2) => ({
+          items: s2.items.map((it) =>
+            ids.includes(it.id) ? { ...it, wf: 'ent1' as WfState, approval: 'تم الإرسال', ret: null, log: withLog(s2, it, 'submit') } : it
+          ),
+        }));
+        persist();
+      }
+      const short = placed.length - ok.length;
+      toast(
+        ok.length
+          ? 'تم إرسال ' + ok.length + (ok.length === 1 ? ' مدخل' : ' مدخلات') + ' لاعتماد رئيس المسار' + (short ? ' — و' + short + ' بحاجة إلى استكمال الحقول الناقصة' : '')
+          : placed.length
+            ? 'لم يُرسل أي مدخل — نرجو استكمال الحقول الناقصة أولاً'
+            : 'لا توجد مسودات موزّعة على الدفعات لإرسالها'
+      );
     },
 
     // ---- create wizard ----
