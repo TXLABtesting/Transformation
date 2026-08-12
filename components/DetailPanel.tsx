@@ -3,7 +3,7 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { Icon } from './Icon';
 import { RichTextEditor, RichTextView } from './RichText';
-import { SC, EXEC_STATUS_OPTS, itemActivities, stgPriority, svcPriority, activityTransformYes } from '@/lib/domain';
+import { SC, EXEC_STATUS_OPTS, itemActivities, stgPriority, svcPriority, activityTransformYes, isStgBlocked } from '@/lib/domain';
 
 const CHECK = 'M20 6 9 17l-5-5';
 const CLOCK = 'M12 8v4l2.5 1.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z';
@@ -336,12 +336,12 @@ export function DetailPanel({ vm }: { vm: VM }) {
                     <DetailGrid cols={3}>
                       <DetailCell label="مستوى الأهمية">{a.importance}</DetailCell>
                       <DetailCell label="كثافة الاستخدام">{a.usageIntensity}</DetailCell>
-                      <DetailCell label="مستوى الجاهزية">{a.readinessLevel}</DetailCell>
+                      <DetailCell label="وضوح المخرجات وقابليتها للمراجعة">{a.outputClarity}</DetailCell>
                     </DetailGrid>
                     <DetailGrid cols={3}>
-                      <DetailCell label="مستوى الأثر المتوقع من التحول">{a.impactScore}</DetailCell>
                       <DetailCell label="قابلية التحول">{a.transformScore}</DetailCell>
-                      <DetailCell label="وضوح المخرجات وقابليتها للمراجعة">{a.outputClarity}</DetailCell>
+                      <DetailCell label="مستوى الجاهزية">{isStgBlocked(a.transformScore) ? 'لا ينطبق (صفر)' : a.readinessLevel}</DetailCell>
+                      <DetailCell label="مستوى الأثر المتوقع من التحول">{isStgBlocked(a.transformScore) ? 'لا ينطبق (صفر)' : a.impactScore}</DetailCell>
                     </DetailGrid>
                     <DetailGrid cols={3}>
                       <DetailCell label="مستوى المخاطر"><LevelPill v={a.riskLevel} /></DetailCell>
