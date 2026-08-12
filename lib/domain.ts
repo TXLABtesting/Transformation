@@ -456,6 +456,12 @@ export function mirrorActivities<T extends Partial<Item> & { path?: string }>(d:
   out.complexity = first.complexity;
   out.transformYes = withDerived.some((a) => a.transformYes === 'نعم') ? 'نعم' : first.transformYes;
   out.notes = first.notes ?? d.notes;
+  // the entry's own دفعة/dates mirror the first نشاط when it carries them,
+  // so batch filters, the detail card, exports and the committee cards keep
+  // reading a single item-level value
+  if (first.execBatch) out.execBatch = first.execBatch;
+  if (first.startDate) out.startDate = first.startDate;
+  if (first.endDate) out.endDate = first.endDate;
   return out;
 }
 
@@ -828,7 +834,18 @@ export type ActivityDetail = {
   // أولوية التحول — manual yes/no in ops, derived from the matrix in stg/svc
   transformYes?: string;
   notes?: string;
+  // دفعة الإطلاق of THIS نشاط + its own window-bounded dates. Activities of
+  // one entry may sit in different دفعات; the item's own execBatch mirrors
+  // the first activity so item-level consumers keep working.
+  execBatch?: string;
+  startDate?: string;
+  endDate?: string;
 };
+
+/** effective دفعة of one نشاط — its own, else the parent entry's */
+export function activityBatch(i: Item, a: ActivityDetail): string {
+  return (a.execBatch || '').trim() || (i.execBatch || '').trim();
+}
 
 export type Ret = { type: 'info' | 'reject'; from: string; note: string; gate?: string };
 

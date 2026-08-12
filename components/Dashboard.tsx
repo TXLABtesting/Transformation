@@ -33,7 +33,7 @@ const COORD_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'المسارات المسندة إليك تظهر هنا. اختر المسار لاستعراض قائمة الحصر الخاصة به — جدول المدخلات مع فلاتر المسار (التصنيف أو المحور أو الخدمة، والأولوية) وفلتر الحالة والبحث بالاسم.' },
   { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات إجمالي المدخلات والأنشطة والقابلة للتحول والمستهدف تحويلها، وتضاف بطاقات الأولويات المحسوبة تلقائياً وفق المصفوفة في مساري العمل الاستراتيجي والخدمات الحكومية.' },
   { sel: '[data-tour="add"]', title: 'إضافة المدخلات', desc: '«إضافة يدوية» تفتح نموذج الإدخال بحقول المسار — وفي مسار الخدمات تُختار الخدمة الرئيسية والفرعية من دليل خدمات جهتك. «رفع ملف Excel» يعتمد النموذج نفسه: نزّل قالب المسار، والصفوف الناقصة تُستورد كمسودات بوسم «بيانات ناقصة» لإكمالها لاحقاً، والمكتملة تُرسل مباشرة لاعتماد رئيس المسار.' },
-  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية. من زر «إضافة مدخل» توزَّع مدخلات المسار نفسه على دفعاته وفق أولوية الاختيار، وتُحدَّد تواريخ البدء والانتهاء ضمن الفترة الزمنية للدفعة.' },
+  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية. من زر «إضافة نشاط» توزَّع أنشطة المسار على دفعاته وفق أولوية الاختيار — كل نشاط في دفعته وبتواريخ بدء وانتهاء ضمن الفترة الزمنية للدفعة.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'تصلك هنا ملاحظات رئيس المسار: طلبات التفاصيل الإضافية، والمدخلات المُعادة للتعديل، وقرارات الاعتماد.' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن تعبئة قوائم الحصر لمساراتك وتوزيع المدخلات على دفعات الإطلاق، والتأكد من تحديث البيانات بشكل دوري.' },
 ];
@@ -44,7 +44,7 @@ const AI_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة صلاحياتك في المتابعة على المستوى الوطني.' },
   { sel: '[data-tour="ai-heading"]', title: 'لوحة اللجنة الوطنية', desc: 'تعرض هذه اللوحة مؤشرات المدخلات المعتمدة من رؤساء المسارات، وبطاقات المسارات الثلاثة مع توزيع مدخلات كل مسار على دفعات الإطلاق.' },
   { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'قوائم حصر المسارات الثلاثة — اختر المسار لاستعراض مدخلاته المعتمدة (اطلاع فقط) مع مؤشراته وفلاتره.' },
-  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية، تعرض مدخلات كل دفعة مع أولوية الاختيار والتواريخ والحالة (اطلاع فقط).' },
+  { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية، تعرض أنشطة كل دفعة مع أولوية الاختيار والتواريخ والحالة (اطلاع فقط).' },
   { sel: '[data-tour="nav-entities"]', title: 'الجهات المشاركة', desc: 'يعرض هذا القسم قائمة الجهات المشاركة وعدد المدخلات المقدمة من كل جهة، لمتابعة مستوى المشاركة والالتزام.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يصلك هنا إشعار بكل مدخل جديد يعتمده رئيس المسار.' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة المدخلات المعتمدة على المستوى الوطني عبر المسارات الثلاثة، والاطلاع على دفعات الإطلاق وجاهزية الجهات.' },
@@ -712,7 +712,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{b.name}</div>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>{b.count} مدخلات</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>{b.count} {bt.unitLabel}</span>
                 </div>
                 {b.period && (
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 5 }}>
@@ -732,13 +732,13 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#EAF0FE', border: '1px solid #D9E4FD', borderRadius: 999, padding: '6px 14px', fontSize: 11.5, color: '#2563EB', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}
                 >
                   <Icon d="M12 5v14M5 12h14" size={11} color="#2563EB" />
-                  إضافة مدخل
+                  إضافة {bt.unitSingular}
                 </button>
               )}
             </div>
 
             {b.rows.length === 0 ? (
-              <div style={{ padding: '22px 16px', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد مدخلات ضمن هذه الدفعة بعد</div>
+              <div style={{ padding: '22px 16px', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد {bt.unitLabel} ضمن هذه الدفعة بعد</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: bt.canEditDates ? 1080 : 940 }}>
@@ -765,14 +765,14 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                         ))}
                         <td style={td}>
                           {bt.canEditDates ? (
-                            <input type="date" min={b.minDate || undefined} max={r.end || b.maxDate || undefined} value={r.start} onChange={(e) => s.setItemDate(r.id, 'startDate', e.target.value)} style={dateIn} />
+                            <input type="date" min={b.minDate || undefined} max={r.end || b.maxDate || undefined} value={r.start} onChange={(e) => s.setActivityDate(r.itemId, r.actIdx, 'startDate', e.target.value)} style={dateIn} />
                           ) : (
                             r.start || '—'
                           )}
                         </td>
                         <td style={td}>
                           {bt.canEditDates ? (
-                            <input type="date" min={r.start || b.minDate || undefined} max={b.maxDate || undefined} value={r.end} onChange={(e) => s.setItemDate(r.id, 'endDate', e.target.value)} style={dateIn} />
+                            <input type="date" min={r.start || b.minDate || undefined} max={b.maxDate || undefined} value={r.end} onChange={(e) => s.setActivityDate(r.itemId, r.actIdx, 'endDate', e.target.value)} style={dateIn} />
                           ) : (
                             r.end || '—'
                           )}
@@ -832,7 +832,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
               style={{ width: '100%', maxWidth: 620, background: '#fff', borderRadius: 18, boxShadow: '0 30px 80px -20px rgba(2,12,35,.5)', overflow: 'hidden', animation: 'fadeUp .2s ease both' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '16px 20px', borderBottom: '1px solid #EEF1F7' }}>
-                <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>إضافة مدخل إلى {b.name}</div>
+                <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>إضافة {bt.unitSingular} إلى {b.name}</div>
                 <button onClick={() => setAddOpen(null)} style={{ background: '#F1F4F9', border: 'none', borderRadius: 9, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                   <Icon d="M18 6L6 18M6 6l12 12" size={14} color="#33405A" />
                 </button>
@@ -859,7 +859,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                   </select>
                 </div>
                 {addList.length === 0 ? (
-                  <div style={{ padding: '22px 0', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد مدخلات متاحة للإضافة</div>
+                  <div style={{ padding: '22px 0', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد {bt.unitLabel} متاحة للإضافة</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: '52vh', overflowY: 'auto' }}>
                     {addList.map((a) => (
