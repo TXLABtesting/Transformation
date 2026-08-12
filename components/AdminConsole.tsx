@@ -366,7 +366,6 @@ function SiteTab() {
             {inp(ab.targets.value2, (v) => s.setAbout({ targets: { ...ab.targets, value2: v } }), 'الرقم', '0 0 90px')}
             {inp(ab.targets.text2, (v) => s.setAbout({ targets: { ...ab.targets, text2: v } }), 'النص')}
           </div>
-          <textarea value={ab.targets.note} onChange={(e) => s.setAbout({ targets: { ...ab.targets, note: e.target.value } })} rows={3} placeholder="ملاحظة النتائج والأثر المتوقع" style={siteTa} />
         </div>
       </SiteSection>
 

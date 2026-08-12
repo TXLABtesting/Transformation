@@ -587,7 +587,9 @@ export function Overlays({ vm }: { vm: VM }) {
           style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 80,
+            // top layer: a confirmation is raised BY other popups, so it must
+            // always render above them (the batch picker sits at 90)
+            zIndex: 120,
             direction: 'rtl',
             display: 'flex',
             alignItems: 'center',
