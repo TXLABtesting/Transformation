@@ -693,6 +693,9 @@ function BatchPrioPill({ v }: { v: string }) {
 function BatchesTablesPage({ vm }: { vm: VM }) {
   const s = vm.store;
   const bt = vm.batchTables!;
+  // مدخلات مختارة للإرسال — الإرسال يتم على مستوى المدخل: واحد أو مجموعة أو الكل
+  const [sel, setSel] = useState<string[]>([]);
+  const toggleSel = (id: string) => setSel((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const [addOpen, setAddOpen] = useState<string | null>(null); // rawName of the batch whose picker is open
   const [addQ, setAddQ] = useState('');
   const [addSector, setAddSector] = useState('all');
@@ -707,14 +710,32 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
         {bt.canArrange && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 600 }}>
-              {bt.draftCount > 0 ? bt.draftCount + ' مسودة موزّعة على الدفعات' : 'التوزيع يُحفظ كمسودة حتى الإرسال'}
+              {sel.length > 0
+                ? sel.length + (sel.length === 1 ? ' مدخل محدد' : ' مدخلات محددة')
+                : bt.draftCount > 0
+                  ? bt.draftCount + ' مسودة موزّعة على الدفعات'
+                  : 'التوزيع يُحفظ كمسودة حتى الإرسال'}
             </span>
+            {sel.length > 0 && (
+              <button
+                onClick={() => {
+                  bt.onSubmitIds(sel);
+                  setSel([]);
+                }}
+                style={{ background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, padding: '10px 20px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                إرسال المحدد ({sel.length})
+              </button>
+            )}
             <button
-              onClick={bt.onSubmitAll}
+              onClick={() => {
+                bt.onSubmitAll();
+                setSel([]);
+              }}
               disabled={bt.draftCount === 0}
-              style={{ background: bt.draftCount ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', border: 'none', borderRadius: 11, padding: '10px 20px', fontSize: 12.5, fontWeight: 800, cursor: bt.draftCount ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}
+              style={{ background: bt.draftCount ? (sel.length ? '#EAF1FE' : 'linear-gradient(180deg,#2E74EE,#1F5FE0)') : '#C7D2E4', color: bt.draftCount && sel.length ? '#1D4ED8' : '#fff', border: bt.draftCount && sel.length ? '1px solid #C9DBFB' : 'none', borderRadius: 11, padding: '10px 20px', fontSize: 12.5, fontWeight: 800, cursor: bt.draftCount ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}
             >
-              {bt.submitLabel}
+              {sel.length > 0 ? 'إرسال الكل (' + bt.draftCount + ')' : bt.submitLabel}
             </button>
           </div>
         )}
@@ -759,6 +780,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: bt.canEditDates ? 1080 : 940 }}>
                   <thead>
                     <tr>
+                      {bt.canArrange && <th style={{ ...th, width: 34 }} />}
                       {bt.cols.map((c) => (
                         <th key={c} style={th}>{c}</th>
                       ))}
@@ -773,6 +795,19 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                   <tbody>
                     {b.rows.map((r) => (
                       <tr key={r.id}>
+                        {bt.canArrange && (
+                          <td style={{ ...td, width: 34 }}>
+                            {r.canSubmit ? (
+                              <input
+                                type="checkbox"
+                                checked={sel.includes(r.itemId)}
+                                onChange={() => toggleSel(r.itemId)}
+                                title="تحديد المدخل للإرسال"
+                                style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#2563EB' }}
+                              />
+                            ) : null}
+                          </td>
+                        )}
                         {r.lead.map((v, ci) => (
                           <td key={ci} style={{ ...td, cursor: 'pointer', fontWeight: ci === 0 ? 800 : 400, color: ci === 0 ? '#13213C' : '#33415C', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={r.onOpen} title={v}>
                           {v}
@@ -824,6 +859,16 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                                     إزالة
                                   </button>
                                 </>
+                              )}
+                              {/* send this مدخل on its own */}
+                              {r.canSubmit && (
+                                <button
+                                  onClick={r.onSubmit}
+                                  title="إرسال هذا المدخل لاعتماد رئيس المسار"
+                                  style={{ background: '#EAF1FE', border: '1px solid #C9DBFB', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#1D4ED8', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                                >
+                                  إرسال
+                                </button>
                               )}
                               {/* stream head/deputy: decide on the entry from here */}
                               {r.canReview && (

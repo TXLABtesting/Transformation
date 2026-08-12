@@ -6,7 +6,7 @@ import { Icon } from './Icon';
 import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate } from '@/lib/export';
-import { useSvcCatalog, svcCatalogFor, svcCatalogUnion } from '@/lib/svcCatalog';
+import { useSvcCatalog, svcCatalogFor, svcCatalogEntities } from '@/lib/svcCatalog';
 
 
 // Repeatable single-line rows for الأنشطة — stored as one newline-joined value
@@ -1663,19 +1663,44 @@ function FService({
   setField: (k: string, v: unknown) => void;
   gv: (k: string) => string;
 }) {
-  // دليل الخدمات حسب جهة المنسق — strict entity scoping.
-  // إذا لم تكن الجهة مدرجة في ملفات الدليل نعرض الدليل الاتحادي الكامل بدل ترك القائمة فارغة.
+  // دليل الخدمات مرتبط بجهة المستخدم — الخيارات تتغير بتغير الجهة، ولا تُعرض
+  // خدمات جهة أخرى إطلاقاً. لا دليل للجهة ⇒ إدخال يدوي.
   const entServices = useSvcCatalog(vm.entityName);
-  const scoped = !!entServices;
-  const catalog = entServices || svcCatalogUnion();
+  const catalog = entServices || {};
   const [manual, setManual] = React.useState(false);
   const mainVal = gv('title');
   const mainOpts = Object.keys(catalog);
-  const subOpts = manual ? null : catalog[mainVal] || [];
+  const subOpts = manual || !entServices ? null : catalog[mainVal] || [];
   const withCurrent = (opts: string[], cur: string) => (cur && !opts.includes(cur) ? [cur, ...opts] : opts);
   return (
     <div>
       <div style={cardStyle}>
+        {/* الجهة الاتحادية — مصدر قائمة الخدمات. تأتي من جلسة المستخدم؛
+            وفي النسخة التجريبية يمكن تبديلها لاستعراض دليل كل جهة. */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>الجهة الاتحادية</label>
+          {process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? (
+            <select
+              value={vm.entityName}
+              onChange={(e) => {
+                vm.store.setEntityName(e.target.value);
+                setManual(false);
+                setField('title', '');
+                setField('activities', [{ name: '' }]);
+              }}
+              style={inputStyle}
+            >
+              {(svcCatalogEntities().includes(vm.entityName) ? svcCatalogEntities() : [vm.entityName, ...svcCatalogEntities()]).map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          ) : (
+            <input value={vm.entityName} disabled style={{ ...inputStyle, backgroundColor: '#F1F4F9', cursor: 'not-allowed' }} />
+          )}
+          <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
+            قائمة الخدمات أدناه تتبع هذه الجهة فقط
+          </div>
+        </div>
         {manual ? (
           <div style={{ marginBottom: 0 }}>
             <label style={labelStyle}>الخدمة <span style={{ color: '#D23B45' }}>*</span></label>
@@ -1715,9 +1740,9 @@ function FService({
               <option value={MANUAL_SVC}>{MANUAL_SVC}</option>
             </select>
             <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
-              {scoped
+              {entServices
                 ? `القائمة وفق دليل خدمات ${vm.entityName}`
-                : `جهتك غير مدرجة في دليل الخدمات المرفوع — تُعرض القائمة الاتحادية الكاملة`}
+                : `لا توجد خدمات مسجلة لـ${vm.entityName} في دليل الخدمات — استخدم «أخرى — إدخال يدوي»`}
             </div>
           </div>
         )}
@@ -1797,7 +1822,7 @@ function BulkStep({ vm }: { vm: VM }) {
             const opts: Record<string, string[]> = { ...(STREAM_FIELD_OPTIONS[path] || {}) };
             // services: الخدمة/الخدمة الفرعية dropdowns from the entity's catalog
             if (path === 'services') {
-              const cat = svcCatalogFor(vm.entityName) || svcCatalogUnion();
+              const cat = svcCatalogFor(vm.entityName);
               if (cat && Object.keys(cat).length) {
                 opts.title = Object.keys(cat);
                 opts.subService = Array.from(new Set(Object.values(cat).flat()));
