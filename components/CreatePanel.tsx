@@ -3,7 +3,7 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, type ActivityDetail } from '@/lib/domain';
+import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate } from '@/lib/export';
 import { useSvcCatalog, svcCatalogFor } from '@/lib/svcCatalog';
@@ -1329,6 +1329,15 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
       </div>,
       false
     );
+  // a criterion switched off by «غير قابل للتحول» — shown, disabled, scored 0
+  const blockedField = (label: string) =>
+    field(
+      label,
+      <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px', minHeight: 44, display: 'flex', alignItems: 'center' }}>
+        لا ينطبق — غير قابل للتحول (يُحتسب صفراً)
+      </div>,
+      false
+    );
   const scale = ['1', '2', '3', '4', '5'];
 
   return (
@@ -1399,15 +1408,43 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
             <>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49', margin: '4px 0 12px' }}>الأتمتة</div>
               {selAutomationLevel(i, a, upd, field)}
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49', margin: '4px 0 12px' }}>التقييم (من 1 إلى 5)</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-                {selA(i, a, 'مستوى الأهمية', 'importance', scale)}
-                {selA(i, a, 'كثافة الاستخدام', 'usageIntensity', scale)}
-                {selA(i, a, 'مستوى الجاهزية', 'readinessLevel', scale)}
-                {selA(i, a, 'مستوى الأثر المتوقع من التحول', 'impactScore', scale)}
-                {selA(i, a, 'قابلية التحول', 'transformScore', scale)}
-                {selA(i, a, 'وضوح المخرجات وقابليتها للمراجعة', 'outputClarity', scale)}
-              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49', margin: '4px 0 12px' }}>التقييم</div>
+              {/* approved order (RTL: 1 top-right → 6): الأهمية، كثافة الاستخدام،
+                  وضوح المخرجات، قابلية التحول، الجاهزية، الأثر — the last two are
+                  blocked and counted as 0 when قابلية التحول = «غير قابل» */}
+              {(() => {
+                const blocked = isStgBlocked(a.transformScore);
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+                    {selA(i, a, 'مستوى الأهمية', 'importance', scale)}
+                    {selA(i, a, 'كثافة الاستخدام', 'usageIntensity', scale)}
+                    {selA(i, a, 'وضوح المخرجات وقابليتها للمراجعة', 'outputClarity', scale)}
+                    {field(
+                      'قابلية التحول',
+                      <select
+                        value={a.transformScore || ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          // «غير قابل» blocks الجاهزية والأثر — clear any stale values
+                          upd(i, isStgBlocked(v) ? { transformScore: v, readinessLevel: '', impactScore: '' } : { transformScore: v });
+                        }}
+                        style={inputStyle}
+                      >
+                        <option value="">اختر…</option>
+                        {STG_TRANSFORM_OPTIONS.map((o) => (
+                          <option key={o} value={o}>{o}</option>
+                        ))}
+                      </select>
+                    )}
+                    {blocked
+                      ? blockedField('مستوى الجاهزية')
+                      : selA(i, a, 'مستوى الجاهزية', 'readinessLevel', scale)}
+                    {blocked
+                      ? blockedField('مستوى الأثر المتوقع من التحول')
+                      : selA(i, a, 'مستوى الأثر المتوقع من التحول', 'impactScore', scale)}
+                  </div>
+                );
+              })()}
               {selA(i, a, 'مستوى المخاطر', 'riskLevel', ['منخفض', 'متوسط', 'عالي'])}
               {(() => {
                 const calc = stgPriority(a);

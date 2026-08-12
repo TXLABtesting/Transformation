@@ -209,10 +209,10 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'automationSystem', label: 'نظام الأتمتة' },
     { key: 'importance', label: 'مستوى الأهمية' },
     { key: 'usageIntensity', label: 'كثافة الاستخدام' },
+    { key: 'outputClarity', label: 'وضوح المخرجات وقابليتها للمراجعة' },
+    { key: 'transformScore', label: 'قابلية التحول' },
     { key: 'readinessLevel', label: 'مستوى الجاهزية' },
     { key: 'impactScore', label: 'مستوى الأثر المتوقع من التحول' },
-    { key: 'transformScore', label: 'قابلية التحول' },
-    { key: 'outputClarity', label: 'وضوح المخرجات وقابليتها للمراجعة' },
     { key: 'riskLevel', label: 'مستوى المخاطر' },
     // أولوية الاختيار وأولوية التحول تُشتقان من المصفوفة — ليستا عمودَي إدخال
   ],
@@ -234,6 +234,10 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
 };
 // select-field options per stream — mirrors the entry forms exactly (used for
 // the Excel template dropdowns)
+// قابلية التحول (استراتيجي): three approved choices and their backend scores
+export const STG_TRANSFORM_OPTIONS = ['قابل كلياً', 'قابل جزئياً', 'غير قابل'];
+export const STG_TRANSFORM_SCORES: Record<string, number> = { 'قابل كلياً': 5, 'قابل جزئياً': 4, 'غير قابل': 0 };
+export const STG_NOT_TRANSFORMABLE = 'غير قابل';
 const SCALE_1_5 = ['1', '2', '3', '4', '5'];
 export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
   services: {
@@ -247,7 +251,7 @@ export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
     usageIntensity: SCALE_1_5,
     readinessLevel: SCALE_1_5,
     impactScore: SCALE_1_5,
-    transformScore: SCALE_1_5,
+    transformScore: STG_TRANSFORM_OPTIONS,
     outputClarity: SCALE_1_5,
     riskLevel: ['منخفض', 'متوسط', 'عالي'],
   },
@@ -284,7 +288,7 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
     importance: '5',
     readinessLevel: '3',
     impactScore: '4',
-    transformScore: '4',
+    transformScore: 'قابل جزئياً',
     outputClarity: '5',
     riskLevel: 'منخفض',
   },
@@ -366,10 +370,13 @@ export function activityMissing(path: string, a: ActivityDetail): string[] {
     }
     need(a.importance, 'مستوى الأهمية');
     need(a.usageIntensity, 'كثافة الاستخدام');
-    need(a.readinessLevel, 'مستوى الجاهزية');
-    need(a.impactScore, 'مستوى الأثر المتوقع من التحول');
-    need(a.transformScore, 'قابلية التحول');
     need(a.outputClarity, 'وضوح المخرجات وقابليتها للمراجعة');
+    need(a.transformScore, 'قابلية التحول');
+    // «غير قابل للتحول» يغلق الحقلين ويحتسبهما صفراً
+    if (!isStgBlocked(a.transformScore)) {
+      need(a.readinessLevel, 'مستوى الجاهزية');
+      need(a.impactScore, 'مستوى الأثر المتوقع من التحول');
+    }
     need(a.riskLevel, 'مستوى المخاطر');
   } else if (path === 'services') {
     need(a.usageIntensity, 'كثافة الاستخدام');
@@ -557,6 +564,19 @@ export function svcPriority(usage?: string, complexity?: string, readiness?: str
 // Step 2: مستوى المخاطر (منخفض/متوسط/عالي)
 // Step 3: عالي المخاطر → أولوية منخفضة دائماً; otherwise the band decides.
 export type StgCalc = { total: number; cat: string; hint: string };
+/** numeric score of قابلية التحول — null when unset/invalid (legacy 1-5 kept) */
+export function stgTransformScore(v?: string): number | null {
+  const t = (v || '').trim();
+  if (!t) return null;
+  if (t in STG_TRANSFORM_SCORES) return STG_TRANSFORM_SCORES[t];
+  const n = parseInt(t, 10); // legacy records stored 1-5
+  return isNaN(n) || n < 1 || n > 5 ? null : n;
+}
+/** «غير قابل للتحول» → مستوى الجاهزية والأثر مغلقان ويُحتسبان صفراً */
+export function isStgBlocked(v?: string): boolean {
+  return (v || '').trim() === STG_NOT_TRANSFORMABLE;
+}
+
 export function stgPriority(i: {
   importance?: string;
   usageIntensity?: string;
@@ -566,8 +586,21 @@ export function stgPriority(i: {
   outputClarity?: string;
   riskLevel?: string;
 }): StgCalc | null {
-  const vals = [i.importance, i.usageIntensity, i.readinessLevel, i.impactScore, i.transformScore, i.outputClarity].map((v) => parseInt(v || '', 10));
-  if (vals.some((v) => isNaN(v) || v < 1 || v > 5) || !(i.riskLevel || '').trim()) return null;
+  // قابلية التحول: three choices scored 5 / 4 / 0 (legacy rows kept a 1-5 number)
+  const tScore = stgTransformScore(i.transformScore);
+  if (tScore == null) return null;
+  const blocked = isStgBlocked(i.transformScore);
+  // «غير قابل للتحول» blocks الجاهزية والأثر — both count as 0
+  const base = [i.importance, i.usageIntensity, i.outputClarity].map((v) => parseInt(v || '', 10));
+  if (base.some((v) => isNaN(v) || v < 1 || v > 5) || !(i.riskLevel || '').trim()) return null;
+  let readiness = 0;
+  let impact = 0;
+  if (!blocked) {
+    readiness = parseInt(i.readinessLevel || '', 10);
+    impact = parseInt(i.impactScore || '', 10);
+    if ([readiness, impact].some((v) => isNaN(v) || v < 1 || v > 5)) return null;
+  }
+  const vals = [...base, tScore, readiness, impact];
   const total = vals.reduce((a, b) => a + b, 0);
   const highRisk = (i.riskLevel || '').startsWith('عال');
   const band = total >= 24 ? 'عالية' : total >= 16 ? 'متوسطة' : 'منخفضة';
@@ -898,7 +931,7 @@ export type Item = {
   axis?: string; // المحور (قائمة من 7 محاور)
   importance?: string; // مستوى الأهمية 1-5
   impactScore?: string; // مستوى الأثر المتوقع من التحول 1-5
-  transformScore?: string; // قابلية التحول 1-5
+  transformScore?: string; // قابلية التحول: قابل كلياً / جزئياً / غير قابل
   outputClarity?: string; // وضوح المخرجات وقابليتها للمراجعة 1-5
   riskLevel?: string; // مستوى المخاطر: منخفض / متوسط / عالي
   selPriority?: string; // أولوية الاختيار: عالية / متوسطة / منخفضة
