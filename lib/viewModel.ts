@@ -43,6 +43,7 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   APPROVED_BUDGET,
   RETURNED_STATUS,
   REJECTED_STATUS,
+  migrateRole,
   isRejected,
   PATH_REPS,
   entOf,
@@ -79,9 +80,8 @@ function build(s: Store) {
   // the admin can flip into the monitoring dashboards: rendered with the
   // committee's all-seeing scope while a header button returns to the console
   const actualRole = s.role === 'admin' && s.ui.adminDash ? 'ai' : s.role;
-  // deputy behaves exactly like the stream head; the secretariat exactly like
-  // the committee chair — identical permissions, different identity
-  const rawRole: RoleKey = actualRole === 'deputy' ? 'path' : actualRole === 'secretariat' ? 'ai' : actualRole;
+  // الأدوار المحفوظة بالمسميات الملغاة تُرحَّل إلى أدوار البنية المعتمدة
+  const rawRole: RoleKey = migrateRole(actualRole);
   const role = logicRole(rawRole);
   const myPath = s.myPath;
   const entityName = s.entityName;
@@ -1253,37 +1253,31 @@ function build(s: Store) {
 
   // header profile identity follows the previewed role
   const profileName =
-    actualRole === 'path'
-      ? PATH_REPS[myPath] || 'رئيس المسار'
-      : actualRole === 'deputy'
-        ? 'نائب رئيس المسار'
-        : actualRole === 'ai'
-          ? 'رئيس اللجنة الوطنية للذكاء الاصطناعي المساعد'
-          : actualRole === 'secretariat'
-            ? 'الأمانة العامة للجنة الوطنية للذكاء الاصطناعي المساعد'
-            : actualRole === 'admin'
-              ? 'مشرف النظام'
-              : actualRole === 'coord'
-                ? s.setup.owners[myPath]?.name || 'منسق المسار'
-                : repName;
+    rawRole === 'path'
+      ? PATH_REPS[myPath] || 'فريق عمل المسار في المشروع'
+      : rawRole === 'ai'
+        ? 'اللجنة الوطنية للذكاء الاصطناعي المساعد'
+        : rawRole === 'admin'
+          ? 'مشرف النظام'
+          : rawRole === 'coord'
+            ? s.setup.owners[myPath]?.name || 'منسق المسار في الجهة الاتحادية'
+            : repName;
   const profilePos =
-    actualRole === 'path'
-      ? 'رئيس مسار ' + pathById(myPath).name
-      : actualRole === 'deputy'
-        ? 'نائب رئيس مسار ' + pathById(myPath).name
-        : actualRole === 'ai' || actualRole === 'secretariat'
-          ? ROLE.ai.sub
-          : actualRole === 'admin'
-            ? ROLE.admin.sub
-            : actualRole === 'coord'
-              ? 'منسق مسار ' + pathById(myPath).name
-              : repPos;
+    rawRole === 'path'
+      ? 'فريق عمل مسار ' + pathById(myPath).name
+      : rawRole === 'ai'
+        ? ROLE.ai.sub
+        : rawRole === 'admin'
+          ? ROLE.admin.sub
+          : rawRole === 'coord'
+            ? 'منسق مسار ' + pathById(myPath).name + ' في الجهة'
+            : repPos;
   const profileInitials =
     profileName.split(/\s+/).slice(0, 2).map((w) => w[0]).join('') || 'م';
 
   // ---- admin console (لوحة المشرف) ----
   const isAdmin = rawRole === 'admin';
-  const roleOrder: RoleKey[] = ['admin', 'ai', 'secretariat', 'path', 'deputy', 'coord'];
+  const roleOrder: RoleKey[] = ['admin', 'ai', 'path', 'coord'];
   const streamName = (id?: string) => (id ? pathById(id).name : '');
   const adminUsers = [...s.users]
     .sort((a, b) => roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role) || a.name.localeCompare(b.name, 'ar'))
@@ -1941,7 +1935,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const w = wfOf(i);
   const score = transformScore(i);
   const step = stepIndexOf(i);
-  // approval is رئيس المسار's (and deputy's) responsibility
+  // approval is فريق عمل المسار's responsibility
   const canApprove = (rawRole === 'path' || rawRole === 'entity') && w === 'ent1';
   const isFunded = !!i.funded;
   // status chip mirrors the real lifecycle exactly:
@@ -2018,7 +2012,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardAction = 'edit';
     } else if (w === 'ent1') {
       cardStatus = 'pendEnt';
-      cardCaption = 'بانتظار اعتماد رئيس المسار';
+      cardCaption = 'بانتظار اعتماد فريق عمل المسار';
       cardAction = 'withdraw';
     } else if (isFunded) {
       cardStatus = 'apprFund';
@@ -2071,7 +2065,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardAction = 'viewDetails';
     }
   } else {
-    // rawRole === 'ai' — رئيس اللجنة الوطنية / الأمانة العامة: view-only over
+    // rawRole === 'ai' — اللجنة الوطنية للذكاء الاصطناعي المساعد: view-only over
     // entries approved by the stream heads
     if (w === 'done') {
       cardStatus = 'launched';
@@ -2136,7 +2130,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfChip,
     wfBg,
     isReturned: rawRole === 'coord' && !!i.ret,
-    retBannerLabel: isRejected(i) ? 'سبب الرفض من رئيس المسار' : 'ملاحظات رئيس المسار',
+    retBannerLabel: isRejected(i) ? 'سبب الرفض من فريق عمل المسار' : 'ملاحظات فريق عمل المسار',
     retNote: i.ret ? i.ret.note || (i.ret.type === 'info' ? 'طُلبت تفاصيل إضافية' : 'لم يُذكر سبب') : '',
     retFrom: i.ret?.from || '',
     stepBadge: 'المرحلة ' + step,
@@ -2266,13 +2260,13 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
         push('sm-' + i.id, 'info', 'rotate', 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to, tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by, i.id);
     } else if (rawRole === 'coord') {
       // coordinator: returns / info requests from the stream head, and approvals
-      if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تم الرفض من ') + (i.ret.from || 'رئيس المسار'), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
-      if (w === 'exec' || w === 'launch') push('x-' + i.id, 'ok', 'check', 'اعتمد رئيس المسار ' + typeLabelDefFor(i.type, i.path), tl + ' · ' + i.title, i.id);
+      if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تم الرفض من ') + (i.ret.from || 'فريق عمل المسار في المشروع'), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
+      if (w === 'exec' || w === 'launch') push('x-' + i.id, 'ok', 'check', 'اعتمد فريق عمل المسار ' + typeLabelDefFor(i.type, i.path), tl + ' · ' + i.title, i.id);
       if (i.stageMove)
         push('sm-' + i.id, 'info', 'rotate', 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to, tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by, i.id);
     } else if (rawRole === 'ai') {
       // committee chair + secretariat (view-only): newly approved entries
-      if (w === 'exec' || w === 'launch') push('x-' + i.id, 'info', 'send', typeLabelDefFor(i.type, i.path) + ' معتمد من رئيس المسار', tl + ' · ' + i.title + ' · ' + ent(i), i.id);
+      if (w === 'exec' || w === 'launch') push('x-' + i.id, 'info', 'send', typeLabelDefFor(i.type, i.path) + ' معتمد من فريق عمل المسار', tl + ' · ' + i.title + ' · ' + ent(i), i.id);
     }
   });
   const readSet = new Set(s.readNotifs);
@@ -2315,7 +2309,7 @@ function buildBasket(s: Store, ctx: { rawRole: RoleKey; myName: string; ent: (i:
       // unified badge — no person names (names live in the item detail only)
       nomByLine: byCommittee
         ? 'مرشحة للجنة الوطنية · ' + pathById(i.path).name
-        : 'مرشحة من رئيس المسار · ' + pathById(i.path).name,
+        : 'مرشحة من فريق عمل المسار · ' + pathById(i.path).name,
       approved: !!i.funded,
       onOpen: () => s.openDetail(i.id),
       onApprove: () => s.fundItem(i.id, isComNom(i)),
@@ -2448,7 +2442,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     complexity: i.complexity,
     endDateFmt: fmtDate(i.endDate),
     isReturned: rawRole === 'coord' && !!i.ret,
-    retBannerLabel: isRejected(i) ? 'سبب الرفض من رئيس المسار' : 'ملاحظات رئيس المسار',
+    retBannerLabel: isRejected(i) ? 'سبب الرفض من فريق عمل المسار' : 'ملاحظات فريق عمل المسار',
     retFrom: i.ret?.from || '',
     retNote: i.ret?.note || '',
     // committee-funding banner removed from the flow — never shown
@@ -2619,9 +2613,9 @@ function buildLogRows(i: Item) {
     const w = wfOf(i);
     // newest first: approval/pending above submission
     if (['exec', 'launch', 'done'].includes(w))
-      rows.push({ action: actLabel({ action: 'approve', role: 'رئيس المسار' }), color: ALOG.approve.c, sub: fmtDateTime(t.approvedAt), note: '', hasNote: false });
+      rows.push({ action: actLabel({ action: 'approve', role: 'فريق عمل المسار في المشروع' }), color: ALOG.approve.c, sub: fmtDateTime(t.approvedAt), note: '', hasNote: false });
     else if (w === 'ent1')
-      rows.push({ action: actLabel({ action: 'pending', role: 'رئيس المسار' }), color: ALOG.pending.c, sub: fmtDateTime(t.submittedAt), note: '', hasNote: false });
+      rows.push({ action: actLabel({ action: 'pending', role: 'فريق عمل المسار في المشروع' }), color: ALOG.pending.c, sub: fmtDateTime(t.submittedAt), note: '', hasNote: false });
     rows.push({ action: actLabel({ action: 'submit' }), color: ALOG.submit.c, sub: 'منسق المسار في الجهة · ' + fmtDateTime(t.submittedAt), note: '', hasNote: false });
   }
   return rows;

@@ -287,7 +287,7 @@ export function InlineCreateForm({ vm }: { vm: VM }) {
               </button>
             </div>
             <p style={{ fontSize: 13, color: '#54627B', lineHeight: 1.9, margin: '12px 0 18px' }}>
-              هل أنت متأكد من الإضافة؟ سيصبح المدخل مرئياً لرئيس المسار بعد التأكيد.
+              هل أنت متأكد من الإضافة؟ سيصبح المدخل مرئياً لفريق عمل المسار بعد التأكيد.
             </p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button
@@ -1985,7 +1985,7 @@ function BulkReviewStep({ vm }: { vm: VM }) {
               marginBottom: 14,
             }}
           >
-            عند الحفظ: تُحفظ جميع الصفوف كمسودات — والصفوف ذات البيانات الناقصة تُميَّز بـ«بيانات ناقصة» لاستكمالها. لا تُرسل أي مدخلات لرئيس المسار إلا بعد اختيارها وتأكيد «إرسال للاعتماد». الصفوف التي بها أخطاء لن تُستورد.
+            عند الحفظ: تُحفظ جميع الصفوف كمسودات — والصفوف ذات البيانات الناقصة تُميَّز بـ«بيانات ناقصة» لاستكمالها. لا تُرسل أي مدخلات لفريق عمل المسار إلا بعد اختيارها وتأكيد «إرسال للاعتماد». الصفوف التي بها أخطاء لن تُستورد.
           </div>
 
           <div style={{ display: 'flex', gap: 10 }}>
@@ -2050,7 +2050,7 @@ function DoneStep({ vm }: { vm: VM }) {
       </div>
       <div style={{ fontSize: 18, fontWeight: 800, color: '#13213C', marginBottom: 8 }}>تم بنجاح</div>
       <p style={{ fontSize: 13, color: '#8A97AD', lineHeight: 1.8, maxWidth: 340, margin: '0 auto 24px' }}>
-        تمت الإضافة والإرسال لاعتماد رئيس المسار.
+        تمت الإضافة والإرسال لاعتماد فريق عمل المسار.
       </p>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
         <button

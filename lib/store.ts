@@ -43,6 +43,7 @@ import {
   DEFAULT_ABOUT_HERO,
 } from './domain';
 import type { LibraryDoc, ContactInquiry } from './domain';
+import { migrateRole } from './domain';
 import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
@@ -56,7 +57,7 @@ const plainVerdict = (r: BulkRow): BulkRow => {
   if (!(r.title || '').trim()) return { ...r, _v: 'يوجد خطأ', _note: 'اسم المدخل مفقود — لن يُستورد هذا الصف' };
   const miss = r.missing || [];
   if (miss.length) return { ...r, _v: 'بيانات ناقصة', _note: 'الحقول الناقصة: ' + miss.join('، ') };
-  return { ...r, _v: 'جاهز', _note: 'مكتمل — سيُرسل لاعتماد رئيس المسار بعد التأكيد' };
+  return { ...r, _v: 'جاهز', _note: 'مكتمل — سيُرسل لاعتماد فريق عمل المسار بعد التأكيد' };
 };
 
 export type MStep = 'path' | 'type' | 'method' | 'form' | 'review' | 'bulk' | 'bulkReview' | 'done';
@@ -556,28 +557,23 @@ function recalcPlanBudgets(items: Item[], plans: LaunchPlan[]): LaunchPlan[] {
   });
 }
 
-// deputy shares the stream-head logic; the secretariat shares the committee's
-export const logicRole = (r: RoleKey): RoleKey =>
-  r === 'coord' || r === 'deputy' ? 'path' : r === 'secretariat' ? 'ai' : r;
+// المنسق يشترك مع فريق عمل المسار في منطق العرض
+export const logicRole = (r: RoleKey): RoleKey => (r === 'coord' ? 'path' : r);
 
 export const actorName = (s: State): string => {
   if (s.role === 'entity') return s.setup.rep.name || 'ممثل الجهة';
-  if (s.role === 'ai') return 'رئيس اللجنة الوطنية';
-  if (s.role === 'secretariat') return 'الأمانة العامة للجنة الوطنية';
-  // رئيس المسار: the real stream head, per stream
-  if (s.role === 'path') return PATH_REPS[s.myPath] || 'رئيس المسار';
-  if (s.role === 'deputy') return 'نائب رئيس مسار ' + (PATHS.find((p) => p.id === s.myPath)?.name || '');
+  if (s.role === 'ai') return 'اللجنة الوطنية للذكاء الاصطناعي المساعد';
+  // فريق عمل المسار: يُعرَّف بالدور لا بالاسم الشخصي
+  if (s.role === 'path') return PATH_REPS[s.myPath] || 'فريق عمل المسار في المشروع';
   const owner = s.setup.owners[s.myPath];
   if (owner?.name) return owner.name;
-  return 'منسق المسار';
+  return 'منسق المسار في الجهة الاتحادية';
 };
 export const actorRole = (s: State): string => {
   if (s.role === 'entity') return 'ممثل الجهة';
-  if (s.role === 'ai') return 'رئيس اللجنة الوطنية';
-  if (s.role === 'secretariat') return 'الأمانة العامة للجنة الوطنية';
-  if (s.role === 'coord') return 'منسق المسار';
-  if (s.role === 'deputy') return 'نائب رئيس المسار';
-  return 'رئيس المسار';
+  if (s.role === 'ai') return 'اللجنة الوطنية للذكاء الاصطناعي المساعد';
+  if (s.role === 'coord') return 'منسق المسار في الجهة الاتحادية';
+  return 'فريق عمل المسار في المشروع';
 };
 
 function withLog(s: State, it: Item, action: string, note?: string): LogEntry[] {
@@ -694,13 +690,18 @@ export const useStore = create<Store>((set, get) => {
           view: (saved!.view as State['view']) || 'login',
           lang: (saved!.lang as State['lang']) || 'ar',
           entityName: (saved!.entityName as string) || DEFAULT_ENTITY,
-          role: fresh
-            ? ((process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'coord')
-            : ((saved!.role as RoleKey) || (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'coord'),
+          // الأدوار الملغاة (نائب رئيس المسار / الأمانة العامة) تُرحَّل تلقائياً
+          role: migrateRole(
+            fresh
+              ? (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey)
+              : (saved!.role as RoleKey) || (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey)
+          ),
           myPath: (saved!.myPath as string) || 'ops',
           myPaths: Array.isArray(saved!.myPaths) && (saved!.myPaths as string[]).length ? (saved!.myPaths as string[]) : s.myPaths,
           setupDone: !!saved!.setupDone,
-          users: !fresh && Array.isArray(saved!.users) ? (saved!.users as UserRec[]) : seedUsers(DEFAULT_ENTITY),
+          users: !fresh && Array.isArray(saved!.users)
+            ? (saved!.users as UserRec[]).map((u) => ({ ...u, role: migrateRole(u.role) }))
+            : seedUsers(DEFAULT_ENTITY),
           items,
           phase: (saved!.phase as State['phase']) || s.phase,
           setup: (saved!.setup as Setup) || s.setup,
@@ -1109,7 +1110,7 @@ export const useStore = create<Store>((set, get) => {
         persist();
       }
       setUi({ draftSel: [] });
-      toast(ok.length ? 'تم إرسال ' + ok.length + (ok.length === 1 ? ' مدخل' : ' مدخلات') + ' لاعتماد رئيس المسار' : 'لم يُرسل أي مدخل — نرجو استكمال الحقول الناقصة أولاً');
+      toast(ok.length ? 'تم إرسال ' + ok.length + (ok.length === 1 ? ' مدخل' : ' مدخلات') + ' لاعتماد فريق عمل المسار' : 'لم يُرسل أي مدخل — نرجو استكمال الحقول الناقصة أولاً');
     },
 
     // batches page: send every draft of this stream that has أنشطة placed in a
@@ -1138,7 +1139,7 @@ export const useStore = create<Store>((set, get) => {
       const short = placed.length - ok.length;
       toast(
         ok.length
-          ? 'تم إرسال ' + ok.length + (ok.length === 1 ? ' مدخل' : ' مدخلات') + ' لاعتماد رئيس المسار' + (short ? ' — و' + short + ' بحاجة إلى استكمال الحقول الناقصة' : '')
+          ? 'تم إرسال ' + ok.length + (ok.length === 1 ? ' مدخل' : ' مدخلات') + ' لاعتماد فريق عمل المسار' + (short ? ' — و' + short + ' بحاجة إلى استكمال الحقول الناقصة' : '')
           : placed.length
             ? 'لم يُرسل أي مدخل — نرجو استكمال الحقول الناقصة أولاً'
             : 'لا توجد مسودات موزّعة على الدفعات لإرسالها'
@@ -1464,7 +1465,7 @@ export const useStore = create<Store>((set, get) => {
             title: w === 'ent1' ? 'سحب المدخل وحذفه' : 'حذف المسودة',
             body:
               w === 'ent1'
-                ? '«' + it.title + '» مُرسل لرئيس المسار ولم يُعتمد بعد — سيُسحب ويُحذف نهائياً.'
+                ? '«' + it.title + '» مُرسل لفريق عمل المسار ولم يُعتمد بعد — سيُسحب ويُحذف نهائياً.'
                 : 'سيتم حذف «' + it.title + '» نهائياً.',
             okLabel: w === 'ent1' ? 'سحب المدخل وحذفه' : 'حذف نهائياً',
             cancelLabel: 'إلغاء',
@@ -1870,7 +1871,7 @@ export const useStore = create<Store>((set, get) => {
         setUi({ reqModal: null });
         return toast('المدخل معتمد — لا يمكن إعادته بعد الاعتماد');
       }
-      const from = w === 'ent1' ? 'رئيس المسار' : 'اللجنة الوطنية';
+      const from = w === 'ent1' ? 'فريق عمل المسار في المشروع' : 'اللجنة الوطنية للذكاء الاصطناعي المساعد';
       const info = rm.mode === 'info';
       patchItem(rm.id, (i) => ({
         wf: 'draft',
