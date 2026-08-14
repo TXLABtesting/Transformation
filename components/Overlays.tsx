@@ -684,7 +684,11 @@ export function Overlays({ vm }: { vm: VM }) {
                 style={{
                   flex: 1,
                   minWidth: 150,
-                  background: BLUE_GRAD,
+                  // تأكيد الحذف/الإزالة بلون أحمر — بقية التأكيدات بالأزرق
+                  background:
+                    vm.confirmModal.kind === 'deleteItem' || vm.confirmModal.kind === 'deletePlan'
+                      ? 'linear-gradient(180deg,#D6454F,#C0303B)'
+                      : BLUE_GRAD,
                   color: '#fff',
                   border: 'none',
                   borderRadius: 12,
@@ -692,7 +696,10 @@ export function Overlays({ vm }: { vm: VM }) {
                   fontWeight: 800,
                   fontSize: 13.5,
                   cursor: 'pointer',
-                  boxShadow: BLUE_SHADOW,
+                  boxShadow:
+                    vm.confirmModal.kind === 'deleteItem' || vm.confirmModal.kind === 'deletePlan'
+                      ? '0 10px 22px -10px rgba(192,48,59,.6)'
+                      : BLUE_SHADOW,
                   fontFamily: 'inherit',
                 }}
               >
