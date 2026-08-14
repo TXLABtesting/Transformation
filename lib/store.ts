@@ -1455,19 +1455,20 @@ export const useStore = create<Store>((set, get) => {
       const it = get().items.find((x) => x.id === id);
       if (!it) return;
       const w = wfOf(it);
-      const deletable = (w === 'draft' && !it.ret) || w === 'ent1';
-      if (!deletable)
-        return toast('يمكن حذف المسودات أو ما أُرسل ولم يُعتمد بعد فقط');
+      // الإزالة متاحة لكل مدخل لم يُعتمد بعد: مسودة، أو مُعاد للتعديل/مرفوض،
+      // أو مُرسل وقيد الاعتماد (يُسحب ثم يُزال). المعتمد لا يُزال.
+      const deletable = w === 'draft' || w === 'ent1';
+      if (!deletable) return toast('لا يمكن إزالة مدخل معتمد');
       if (!force) {
         setUi({
           confirmModal: {
             kind: 'deleteItem',
-            title: w === 'ent1' ? 'سحب المدخل وحذفه' : 'حذف المسودة',
+            title: w === 'ent1' ? 'سحب المدخل وإزالته' : 'إزالة المدخل',
             body:
               w === 'ent1'
-                ? '«' + it.title + '» مُرسل لفريق عمل المسار ولم يُعتمد بعد — سيُسحب ويُحذف نهائياً.'
-                : 'سيتم حذف «' + it.title + '» نهائياً.',
-            okLabel: w === 'ent1' ? 'سحب المدخل وحذفه' : 'حذف نهائياً',
+                ? '«' + it.title + '» مُرسل لفريق عمل المسار ولم يُعتمد بعد — سيُسحب ويُزال نهائياً.'
+                : 'سيتم إزالة «' + it.title + '» نهائياً.',
+            okLabel: w === 'ent1' ? 'سحب المدخل وإزالته' : 'إزالة نهائياً',
             cancelLabel: 'إلغاء',
             payload: { id },
           },
@@ -1481,7 +1482,7 @@ export const useStore = create<Store>((set, get) => {
       }));
       set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
-      toast(w === 'ent1' ? 'تم سحب المدخل وحذفه: ' + typeLabelDefFor(it.type, it.path) : 'تم حذف المسودة');
+      toast(w === 'ent1' ? 'تم سحب المدخل وإزالته: ' + typeLabelDefFor(it.type, it.path) : 'تمت إزالة المدخل');
     },
     // withdraw a submitted (ent1) المدخل back to the coordinator's DRAFT state
     // — this does NOT delete it (true deletion is deleteItem on a draft).
