@@ -201,10 +201,11 @@ export function MocaWorkspace() {
           <Kpis list={list} />
           <Filters />
           <EntriesTable list={list} />
+          {s.view === 'form' && <InlineFormSection />}
         </div>
       </div>
 
-      {(s.view === 'form' || s.view === 'bulk') && <SidePanel />}
+      {s.view === 'bulk' && <SidePanel />}
       {s.detailId && <DetailDrawer id={s.detailId} />}
       {s.returnTarget && <ReturnDialog />}
       {s.confirm && <ConfirmDialog />}
@@ -694,11 +695,53 @@ function EntriesTable({ list }: { list: MocaEntry[] }) {
   );
 }
 
-// ---- اللوحة الجانبية: الإضافة والرفع ----------------------------------------
+// ---- قسم الإضافة أسفل الجدول — تنزلق الشاشة إليه عند الإضافة أو التعديل ----
+function InlineFormSection() {
+  const s = useMoca();
+  const secRef = useRef<HTMLDivElement>(null);
+  // عند فتح النموذج (إضافة أو تعديل) تنزلق الشاشة إلى القسم تلقائياً
+  useEffect(() => {
+    const t = setTimeout(() => secRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+    return () => clearTimeout(t);
+  }, [s.editingId]);
+  return (
+    <div ref={secRef} style={{ ...PANEL, scrollMarginTop: 76 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '15px 20px', borderBottom: '1px solid #EEF1F7' }}>
+        <div
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 11,
+            background: 'linear-gradient(135deg,#2E74EE,#27C2F0)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: 'none',
+          }}
+        >
+          <Icon d={s.editingId ? IC.pencil : IC.plus} size={19} color="#fff" />
+        </div>
+        <div className="hd" style={{ flex: 1, fontSize: 15, fontWeight: 800, color: '#13213C' }}>
+          {s.editingId ? 'تعديل المدخل' : 'إضافة المدخلات'}
+        </div>
+        <button
+          onClick={() => s.closeForm()}
+          style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', cursor: 'pointer', fontSize: 16, fontFamily: 'inherit' }}
+        >
+          ✕
+        </button>
+      </div>
+      <div style={{ padding: 22 }}>
+        <FormStep />
+      </div>
+    </div>
+  );
+}
+
+// ---- اللوحة الجانبية: رفع الملف --------------------------------------------
 function SidePanel() {
   const s = useMoca();
-  const isBulk = s.view === 'bulk';
-  const close = () => (isBulk ? s.closeBulk() : s.closeForm());
+  const close = () => s.closeBulk();
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, direction: 'rtl' }}>
       <div onClick={close} style={{ position: 'absolute', inset: 0, background: 'rgba(8,18,40,.5)', animation: 'fadeIn .2s' }} />
@@ -730,10 +773,10 @@ function SidePanel() {
               flex: 'none',
             }}
           >
-            <Icon d={isBulk ? IC.upload : IC.plus} size={20} color="#fff" />
+            <Icon d={IC.upload} size={20} color="#fff" />
           </div>
           <div className="hd" style={{ flex: 1, fontSize: 15, fontWeight: 800, color: '#13213C' }}>
-            {isBulk ? 'رفع نموذج حصر المهام والعمليات' : s.editingId ? 'تعديل المدخل' : 'إضافة المدخلات'}
+            رفع نموذج حصر المهام والعمليات
           </div>
           <button
             onClick={close}
@@ -742,7 +785,7 @@ function SidePanel() {
             ✕
           </button>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>{isBulk ? <BulkStep /> : <FormStep />}</div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}><BulkStep /></div>
       </div>
     </div>
   );
