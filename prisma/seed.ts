@@ -32,9 +32,9 @@ const RBAC_ROLES = [
   ['program_admin', 'مدير البرنامج'],
   ['entity_representative', 'ممثل الجهة'],
   ['entity_admin', 'مسؤول الجهة'],
-  ['entity_coordinator', 'منسق المسار في الجهة'],
-  ['stream_owner', 'رئيس المسار'],
-  ['ai_committee', 'اللجنة الوطنية'],
+  ['entity_coordinator', 'منسق المسار في الجهة الاتحادية'],
+  ['stream_owner', 'فريق عمل المسار في المشروع'],
+  ['ai_committee', 'اللجنة الوطنية للذكاء الاصطناعي المساعد'],
   ['viewer', 'مستعرض'],
   ['auditor', 'مدقق'],
 ] as const;
@@ -50,9 +50,9 @@ const PERMISSIONS = [
 ];
 
 // Role → permission matrix.
-// NOTE: the confirmed business flow has رئيس المسار ونائبه (stream_owner) as
-// the sole ent1 approver — entity_representative is legacy/view-level and
-// holds no approval permissions.
+// NOTE: the confirmed business flow has فريق عمل المسار في المشروع
+// (stream_owner) as the sole ent1 approver — entity_representative is
+// legacy/view-level and holds no approval permissions.
 const ROLE_PERMISSION_MATRIX: Record<string, string[]> = {
   system_admin: PERMISSIONS,
   program_admin: PERMISSIONS.filter((p) => !p.startsWith('settings:')),

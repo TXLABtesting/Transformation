@@ -35,7 +35,7 @@ const COORD_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="add"]', title: 'إضافة المدخلات', desc: 'اختر الخدمات الرئيسية والفرعية المطلوبة من دليل خدمات الجهة، ثم أضفها إلى المسار.' },
   { sel: '[data-tour="bulk"]', title: 'رفع ملف Excel', desc: 'حمّل قالب المسار، وأكمل البيانات المطلوبة، ثم ارفع الملف. ستظهر أي بيانات غير مكتملة لتتمكن من استكمالها قبل إرسال المسار للاعتماد.' },
   { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية. من زر «إضافة نشاط» توزَّع أنشطة المسار على دفعاته وفق أولوية الاختيار — كل نشاط في دفعته وبتواريخ بدء وانتهاء ضمن الفترة الزمنية للدفعة.' },
-  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'تصلك هنا ملاحظات رئيس المسار: طلبات التفاصيل الإضافية، والمدخلات المُعادة للتعديل، وقرارات الاعتماد.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'تصلك هنا ملاحظات فريق عمل المسار: طلبات التفاصيل الإضافية، والمدخلات المُعادة للتعديل، وقرارات الاعتماد.' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن تعبئة قوائم الحصر لمساراتك وتوزيع المدخلات على دفعات الإطلاق، والتأكد من تحديث البيانات بشكل دوري.' },
 ];
 
@@ -47,14 +47,14 @@ const AI_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'قوائم حصر المسارات الثلاثة — اختر المسار لاستعراض مدخلاته المعتمدة (اطلاع فقط) مع مؤشراته وفلاتره.' },
   { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية، تعرض أنشطة كل دفعة مع أولوية الاختيار والتواريخ والحالة (اطلاع فقط).' },
   { sel: '[data-tour="nav-entities"]', title: 'الجهات المشاركة', desc: 'يعرض هذا القسم قائمة الجهات المشاركة وعدد المدخلات المقدمة من كل جهة، لمتابعة مستوى المشاركة والالتزام.' },
-  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يصلك هنا إشعار بكل مدخل جديد يعتمده رئيس المسار.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يصلك هنا إشعار بكل مدخل جديد يعتمده فريق عمل المسار.' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة المدخلات المعتمدة على المستوى الوطني عبر المسارات الثلاثة، والاطلاع على دفعات الإطلاق وجاهزية الجهات.' },
 ];
 
-// Stream head + deputy (رئيس المسار ونائبه) onboarding — review coordinators'
+// فريق عمل المسار في المشروع onboarding — review coordinators'
 // submissions within the stream and approve / return them.
 const PATH_TOUR_STEPS: TourStep[] = [
-  { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك كرئيس للمسار أو نائبٍ له.' },
+  { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك ضمن فريق عمل المسار في المشروع.' },
   { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات أعداد مدخلات المسار من جميع الجهات، القابلة للتحول والمستهدف تحويلها، وتوزيع الأولويات المحسوبة وفق مصفوفة المسار.' },
   { sel: '[data-tour="nav-inv"]', title: 'قائمة حصر المسار', desc: 'قائمة موحّدة لمدخلات جميع الجهات ضمن المسار، مع فلاتر الجهة والقطاع والأولوية والحالة. افتح أي مدخل لاستعراض تفاصيله واعتماده أو إعادته أو طلب معلومات إضافية.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات وطلبات الاعتماد', desc: 'المدخلات الجديدة بانتظار اعتمادك تصلك هنا، ويمكنك اعتمادها أو رفضها أو طلب معلومات إضافية مباشرة من الإشعار.' },
@@ -864,7 +864,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                               {r.canSubmit && (
                                 <button
                                   onClick={r.onSubmit}
-                                  title="إرسال هذا المدخل لاعتماد رئيس المسار"
+                                  title="إرسال هذا المدخل لاعتماد فريق عمل المسار"
                                   style={{ background: '#EAF1FE', border: '1px solid #C9DBFB', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#1D4ED8', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
                                 >
                                   إرسال
@@ -2969,7 +2969,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       {/* approved for funding + approved cost — label right, value left */}
                       <div style={{ borderTop: '1px solid #EEF1F7', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>بانتظار اعتماد رئيس المسار</div>
+                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>بانتظار اعتماد فريق عمل المسار</div>
                           <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.pendingApproval}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>

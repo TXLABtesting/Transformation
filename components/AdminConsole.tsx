@@ -631,8 +631,8 @@ function IconBtn({ d, title, onClick, danger }: { d: string; title: string; onCl
 
 // ---- Assign stream heads + committee --------------------------------------
 function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) => void; onAdd: (seed: UserRec) => void }) {
-  const heads = a.users.filter((u) => (u.role === 'path' || u.role === 'deputy'));
-  const committee = a.users.filter((u) => (u.role === 'ai' || u.role === 'secretariat'));
+  const heads = a.users.filter((u) => u.role === 'path');
+  const committee = a.users.filter((u) => u.role === 'ai');
   const headByStream = (id: string) => heads.find((h) => h.streamId === id);
   return (
     <div style={{ display: 'grid', gap: 18 }}>
@@ -651,7 +651,7 @@ function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) 
                   {h?.email && <div style={{ fontSize: 11, color: '#9AA6BC', direction: 'ltr', textAlign: 'right' }}>{h.email}</div>}
                 </div>
                 <button
-                  onClick={() => (h ? onEdit(h) : onAdd({ id: '', role: 'path', name: '', title: `رئيس مسار ${st.name}`, email: '', phone: '', streamId: st.id, active: true }))}
+                  onClick={() => (h ? onEdit(h) : onAdd({ id: '', role: 'path', name: '', title: `فريق عمل مسار ${st.name}`, email: '', phone: '', streamId: st.id, active: true }))}
                   style={{ border: '1px solid #D8E3F5', background: '#F1F5FB', color: '#1D4ED8', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flex: 'none' }}>
                   {h ? 'تعديل' : 'تعيين'}
                 </button>
@@ -714,7 +714,7 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
   const [f, setF] = useState<UserRec>(user);
   const set = (patch: Partial<UserRec>) => setF((x) => ({ ...x, ...patch }));
   const needsEntity = f.role === 'coord';
-  const needsStream = f.role === 'coord' || f.role === 'path' || f.role === 'deputy';
+  const needsStream = f.role === 'coord' || f.role === 'path';
   const emailOk = /^\S+@\S+\.\S+$/.test(f.email.trim());
   const valid = f.name.trim() && emailOk && (!needsEntity || f.entityName) && (!needsStream || f.streamId);
 
@@ -805,9 +805,25 @@ function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
   const [done, setDone] = useState<{ added: number; skipped: number } | null>(null);
 
   const roleLabels = a.roleInfo.map((r) => r.nameAr);
+  // تُقبل أيضاً مسميات الأدوار الملغاة في الملفات القديمة وتُرحَّل تلقائياً
+  const LEGACY_TOKENS: Record<string, RoleKey> = {
+    deputy: 'path',
+    secretariat: 'ai',
+    'نائب رئيس المسار': 'path',
+    'رئيس المسار': 'path',
+    'الأمانة العامة للجنة الوطنية': 'ai',
+    'الأمانة العامة للجنة الوطنية للذكاء الاصطناعي المساعد': 'ai',
+    'رئيس اللجنة الوطنية للذكاء الاصطناعي المساعد': 'ai',
+    'منسق المسار في الجهة': 'coord',
+  };
   const roleFromToken = (t: string): RoleKey | null => {
     const s = t.trim();
-    return a.roleInfo.find((r) => r.key === s)?.key || a.roleInfo.find((r) => r.nameAr === s)?.key || null;
+    return (
+      a.roleInfo.find((r) => r.key === s)?.key ||
+      a.roleInfo.find((r) => r.nameAr === s)?.key ||
+      LEGACY_TOKENS[s] ||
+      null
+    );
   };
   const streamFromToken = (t: string): string | undefined => {
     const s = t.trim();
@@ -840,7 +856,7 @@ function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
         .map((c) => {
           const role = roleFromToken(c[2] || '') || 'coord';
           const needsEntity = role === 'entity' || role === 'coord';
-          const needsStream = role === 'coord' || role === 'path' || role === 'deputy';
+          const needsStream = role === 'coord' || role === 'path';
           return {
             valid: true,
             rec: {

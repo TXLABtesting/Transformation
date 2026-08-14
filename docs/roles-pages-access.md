@@ -28,10 +28,9 @@ setup.
 
 | UI role | Arabic | Backend code | Data scope | One-line job |
 | --- | --- | --- | --- | --- |
-| `coord` | منسق المسار في الجهة | `entity_coordinator` | **own entity + own stream(s)** (incl. drafts) | Fills the stream inventory and distributes entries over دفعات الإطلاق |
-| `path` | رئيس المسار | `stream_owner` | **own stream**, all entities | **The ent1 approver** — اعتماد / إعادة للتعديل / طلب تفاصيل |
-| `deputy` | نائب رئيس المسار | `stream_owner` | **own stream**, all entities | Same review powers as the stream head |
-| `ai` | اللجنة الوطنية (الرئيس + الأمانة العامة) | `ai_committee` | **everything**, approved entries only | National read-only oversight |
+| `coord` | منسق المسار في الجهة الاتحادية | `entity_coordinator` | **own entity + own stream(s)** (incl. drafts) | Fills the stream inventory and distributes entries over دفعات الإطلاق |
+| `path` | فريق عمل المسار في المشروع | `stream_owner` | **own stream**, all entities | **The ent1 approver** — اعتماد / إعادة للتعديل / رفض / طلب تفاصيل |
+| `ai` | اللجنة الوطنية للذكاء الاصطناعي المساعد | `ai_committee` | **everything**, approved entries only | National read-only oversight |
 | `admin` | مشرف النظام | `system_admin` | global | Manages users, roles, the public site and inquiries |
 
 Legacy backend roles (`entity_representative`, `entity_admin`) remain seeded
@@ -76,7 +75,7 @@ and set their dates; export reports.
 **Cannot:** approve or reject; edit an approved (معتمد) entry; place an
 entry on another stream's batches; see other entities.
 
-### 3.2 رئيس المسار ونائبه — `path` + `deputy` / `stream_owner`
+### 3.2 فريق عمل المسار في المشروع — `path` / `stream_owner`
 
 **Who:** the national head (and deputy) of ONE stream, seeing that stream
 across **all** entities. Assigned by the system admin with the stream scope.
@@ -116,7 +115,7 @@ server-side; every action is still audit-logged.
 **Pages:** the admin console instead of the dashboards — plus «لوحات
 المتابعة» to open the monitoring dashboards —
 - **المستخدمون** — create/edit/enable/disable users for **all entities**;
-  الدور (رئيس المسار / نائب رئيس المسار / منسق المسار في الجهة require
+  الدور (فريق عمل المسار في المشروع / منسق المسار في الجهة الاتحادية require
   المسار; the coordinator also requires الجهة); bulk upload from the Excel
   template
 - **رؤساء المسارات واللجنة** — assign the three stream heads and committee
@@ -138,11 +137,11 @@ In production the full management surface is the **admin API suite**
 (coord) add manually / bulk Excel
    │            └── incomplete rows → مسودة «بيانات ناقصة»
    ▼
- مسودة ──► إرسال للاعتماد ──► قيد الاعتماد ──► (رئيس المسار / نائبه) اعتماد ──► معتمد (locked)
+ مسودة ──► إرسال للاعتماد ──► قيد الاعتماد ──► (فريق عمل المسار) اعتماد ──► معتمد (locked)
    ▲                                   │ إعادة للتعديل / طلب تفاصيل
    └────────── «للتعديل» ◄─────────────┘
                                         معتمد ──► توزيع على دفعات الإطلاق (per stream)
-                                                    └─ batch move → notification to رئيس المسار
+                                                    └─ batch move → notification to فريق عمل المسار
 ```
 
 - Drafts (`wf = draft`): visible to the coordinator only.
@@ -191,3 +190,39 @@ read-only view): `program_admin` (مدير البرنامج) — everything exce
 | Entity-scoped services catalog | `app/api/svc-catalog/route.ts`, `lib/svcCatalog.ts` |
 | Page/menu/filter scoping (UX) | `lib/viewModel.ts` |
 | Identity → user mapping on login | `lib/security/user-access.ts` |
+
+
+---
+
+## ملحق — تقليص الأدوار إلى البنية المعتمدة (2026-08-12)
+
+قُلِّصت أدوار المنصة من ستة إلى **أربعة** مطابقةً للهيكل المعتمد:
+
+| الدور | الحالة |
+|---|---|
+| منسق المسار في الجهة الاتحادية | كما هو (إعادة تسمية فقط) |
+| فريق عمل المسار في المشروع | يشمل رئيس المسار **ونائبه** بعد الدمج |
+| اللجنة الوطنية للذكاء الاصطناعي المساعد | تشمل الرئيس **والأمانة العامة** بعد الدمج |
+| مشرف النظام | كما هو |
+
+**لا يلزم أي ترحيل لقاعدة البيانات.** الدورَان الملغيان (`deputy`،
+`secretariat`) لم يكن لهما وجود أصلاً في جدول `roles` — كلاهما كان يُربط
+بنفس رمزَي `stream_owner` و`ai_committee`، والصلاحيات متطابقة تماماً، لذا
+لا تتغير أي صلاحية فعلية.
+
+المطلوب على مستوى الخادم:
+
+1. إعادة تشغيل `npm run db:seed` (idempotent) لتحديث `roles.name_ar`:
+   `stream_owner` → «فريق عمل المسار في المشروع»،
+   `entity_coordinator` → «منسق المسار في الجهة الاتحادية»،
+   `ai_committee` → «اللجنة الوطنية للذكاء الاصطناعي المساعد».
+2. الحسابات المحفوظة بالدورين الملغيين تُرحَّل تلقائياً في الواجهة عبر
+   `migrateRole()`؛ ولتنظيف البيانات المخزَّنة مباشرةً:
+
+```sql
+UPDATE users SET role = 'path' WHERE role = 'deputy';
+UPDATE users SET role = 'ai'   WHERE role = 'secretariat';
+```
+
+3. ملفات رفع المستخدمين القديمة التي تحمل «نائب رئيس المسار» أو «الأمانة
+   العامة للجنة الوطنية» ما زالت تُقبل وتُحوَّل تلقائياً إلى الدور المدمج.
