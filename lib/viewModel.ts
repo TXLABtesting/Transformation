@@ -2201,7 +2201,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     onOpen: () => s.openDetail(i.id),
     onApprove: () => s.approveItem(i.id),
     onMenu: () => s.toggleMenu(i.id),
-    canDelete: rawRole === 'coord' && ((w === 'draft' && !i.ret) || w === 'ent1'),
+    // منسق الجهة يزيل أي مدخل من مدخلاته ما لم يكن معتمداً
+    canDelete: rawRole === 'coord' && (w === 'draft' || w === 'ent1'),
     onDelete: () => s.deleteItem(i.id),
     onWithdrawToDraft: () => s.withdrawToDraft(i.id),
     onReqInfo: () => s.reqInfoItem(i.id),
@@ -2572,6 +2573,9 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     onReqInfo: () => s.reqInfoItem(i.id),
     onReject: () => s.rejectItem(i.id),
     onEdit: () => s.editItem(i.id),
+    // إزالة المدخل من داخل التفاصيل — ما لم يكن معتمداً
+    canDelete: rawRole === 'coord' && (w === 'draft' || w === 'ent1'),
+    onDelete: () => s.deleteItem(i.id),
     onToggleMenu: () => s.toggleDActionMenu(),
     onScopeWork: (v: string) => s.detailField(i.id, 'scopeOfWork', v),
     onBudget: (v: string) => s.detailField(i.id, 'budget', v),

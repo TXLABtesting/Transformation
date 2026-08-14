@@ -3770,12 +3770,67 @@ function ListView({ cards, stream }: { cards: CardVM[]; stream?: string | null }
                     عرض التفاصيل
                   </button>
                 )}
+                {/* إزالة المدخل — متاحة ما لم يكن معتمداً */}
+                {c.canDelete && (
+                  <button
+                    onClick={(e) => {
+                      stop(e);
+                      c.onDelete();
+                    }}
+                    title="إزالة المدخل"
+                    style={{
+                      background: '#FDF6F6',
+                      color: '#C0303B',
+                      border: '1px solid #F3D4D7',
+                      borderRadius: 9,
+                      padding: '7px 12px',
+                      fontWeight: 800,
+                      fontSize: 11.5,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      marginRight: 6,
+                    }}
+                  >
+                    إزالة
+                  </button>
+                )}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+  );
+}
+
+// زر إزالة المدخل — يظهر بجانب الإجراء الأساسي لكل مدخل غير معتمد
+function RemoveEntryBtn({ onDelete }: { onDelete: () => void }) {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onDelete();
+      }}
+      title="إزالة المدخل"
+      style={{
+        flex: 'none',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        background: '#FDF6F6',
+        color: '#C0303B',
+        border: '1px solid #F3D4D7',
+        borderRadius: 10,
+        padding: '9px 14px',
+        fontWeight: 800,
+        fontSize: 12.5,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+      }}
+    >
+      <Icon d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" size={13} color="#C0303B" />
+      إزالة
+    </button>
   );
 }
 
@@ -4137,7 +4192,7 @@ function CardItem({ c }: { c: CardVM }) {
                   size={14}
                   color="#C0392B"
                 />
-                حذف المدخل
+                إزالة المدخل
               </button>
             </div>
           )}
@@ -4145,39 +4200,48 @@ function CardItem({ c }: { c: CardVM }) {
       )}
 
       {c.cardAction === 'withdraw' && (
-        <button
-          onClick={(e) => {
-            stop(e);
-            c.onWithdrawToDraft();
-          }}
-          style={{ ...BTN_NEUTRAL, width: '100%' }}
-        >
-          سحب المدخل
-        </button>
+        <div style={{ display: 'flex', gap: 7 }}>
+          <button
+            onClick={(e) => {
+              stop(e);
+              c.onWithdrawToDraft();
+            }}
+            style={{ ...BTN_NEUTRAL, flex: 1 }}
+          >
+            سحب المدخل
+          </button>
+          {c.canDelete && <RemoveEntryBtn onDelete={c.onDelete} />}
+        </div>
       )}
 
       {c.cardAction === 'editResubmit' && (
-        <button
-          onClick={(e) => {
-            stop(e);
-            c.onPathCta();
-          }}
-          style={{ ...BTN_PRIMARY, width: '100%' }}
-        >
-          تعديل المدخل وإعادة إرساله
-        </button>
+        <div style={{ display: 'flex', gap: 7 }}>
+          <button
+            onClick={(e) => {
+              stop(e);
+              c.onPathCta();
+            }}
+            style={{ ...BTN_PRIMARY, flex: 1 }}
+          >
+            تعديل المدخل وإعادة إرساله
+          </button>
+          {c.canDelete && <RemoveEntryBtn onDelete={c.onDelete} />}
+        </div>
       )}
 
       {c.cardAction === 'viewDetails' && (
-        <button
-          onClick={(e) => {
-            stop(e);
-            c.onOpen();
-          }}
-          style={{ ...BTN_NEUTRAL, width: '100%' }}
-        >
-          عرض التفاصيل
-        </button>
+        <div style={{ display: 'flex', gap: 7 }}>
+          <button
+            onClick={(e) => {
+              stop(e);
+              c.onOpen();
+            }}
+            style={{ ...BTN_NEUTRAL, flex: 1 }}
+          >
+            عرض التفاصيل
+          </button>
+          {c.canDelete && <RemoveEntryBtn onDelete={c.onDelete} />}
+        </div>
       )}
 
       {c.cardAction === 'approveInfoReject' && (
