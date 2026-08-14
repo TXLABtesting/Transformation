@@ -3665,7 +3665,9 @@ function ListView({ cards, stream }: { cards: CardVM[]; stream?: string | null }
                   </span>
                 )}
               </td>
-              <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
+              <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                {/* صف إجراءات ثابت الاتجاه: يبدأ من يمين العمود في كل الصفوف */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
                 {c.canApprove ? (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <button
@@ -3788,12 +3790,12 @@ function ListView({ cards, stream }: { cards: CardVM[]; stream?: string | null }
                       fontSize: 11.5,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
-                      marginRight: 6,
                     }}
                   >
                     إزالة
                   </button>
                 )}
+                </div>
               </td>
             </tr>
           ))}
