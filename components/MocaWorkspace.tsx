@@ -49,7 +49,7 @@ const inputStyle: CSSProperties = {
 };
 const INVALID_STYLE: CSSProperties = {
   borderColor: '#D23B45',
-  background: '#FFF8F8',
+  backgroundColor: '#FFF8F8',
   boxShadow: '0 0 0 3px rgba(210,59,69,.12)',
 };
 const labelStyle: CSSProperties = {
@@ -382,7 +382,7 @@ function Select({
         minWidth,
         maxWidth: 260,
         border: '1px solid #E7ECF4',
-        background: '#fff',
+        backgroundColor: '#fff',
         borderRadius: 11,
         padding: '0 12px',
         fontSize: 12.5,
@@ -477,12 +477,8 @@ function Rail({ list }: { list: MocaEntry[] }) {
         <img src={BASE + '/assets/logo.png'} alt="logo" style={{ height: 46, minWidth: 0, objectFit: 'contain' }} />
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD' }}>حصر المهام والعمليات</div>
-        {item(isCoord ? 'مهام وعمليات جهتي' : 'المدخلات الواردة', IC.list, true, list.length)}
-        <div style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD' }}>الجهة</div>
-        <div style={{ padding: '4px 13px 10px', fontSize: 12, color: '#54627B', fontWeight: 700, lineHeight: 1.8 }}>
-          {isCoord ? mocaScopeLabel(s.unitId, s.unitSector) : MOCA_MINISTRY}
-        </div>
+        <div style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD' }}>قوائم الحصر</div>
+        {item('حصر المهام والعمليات', IC.list, true, list.length)}
       </div>
       <div style={{ padding: 12, borderTop: '1px solid #F0F3F8' }}>
         <div style={{ fontSize: 10.5, color: '#93A1B8', fontWeight: 700, textAlign: 'center', lineHeight: 1.8 }}>
@@ -811,7 +807,7 @@ function FormStep() {
     const st: CSSProperties = {
       ...inputStyle,
       ...(bad ? INVALID_STYLE : {}),
-      ...(blocked ? { background: '#F1F4F9', cursor: 'not-allowed', color: '#8A97AD' } : {}),
+      ...(blocked ? { backgroundColor: '#F1F4F9', cursor: 'not-allowed', color: '#8A97AD' } : {}),
     };
     if (blocked) return <input value="غير مطلوب — العملية غير قابلة للتحول" disabled style={st} />;
     if (f.type === 'select')
@@ -840,11 +836,6 @@ function FormStep() {
 
   return (
     <div>
-      <div style={{ background: '#EEF4FF', border: '1px solid #D7E4FB', color: '#28518F', borderRadius: 12, padding: '12px 15px', fontSize: 12, lineHeight: 1.9, marginBottom: 16 }}>
-        الحقول مطابقة لنموذج حصر المهام والعمليات — {mocaScopeLabel(s.unitId, s.unitSector)}. عند الإرسال تذهب المدخلات
-        مباشرة لاعتماد اللجنة الوطنية للذكاء الاصطناعي المساعد.
-      </div>
-
       {MOCA_GROUPS.map((g) => (
         <div key={g.key} style={cardStyle}>
           <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
