@@ -295,9 +295,9 @@ function Header() {
         {/* نطاق المنسق: الجهة ثم القطاع — بنفس شكل مبدّل المسار في المنصة */}
         {s.role === 'coord' && (
           <>
-            <Select value={s.unitId} onChange={(v) => s.setScope(v, '')} minWidth={210} options={MOCA_UNITS.map((u) => ({ v: u.id, label: u.name }))} />
+            <FilterSelect value={s.unitId} onChange={(v) => s.setScope(v, '')} minWidth={190} options={MOCA_UNITS.map((u) => ({ v: u.id, label: u.name }))} />
             {!!unit.sectors?.length && (
-              <Select value={s.unitSector} onChange={(v) => s.setScope(s.unitId, v)} minWidth={200} options={unit.sectors.map((x) => ({ v: x, label: x }))} />
+              <FilterSelect value={s.unitSector} onChange={(v) => s.setScope(s.unitId, v)} minWidth={180} options={unit.sectors.map((x) => ({ v: x, label: x }))} />
             )}
           </>
         )}
@@ -359,44 +359,6 @@ function Header() {
         </div>
       </div>
     </div>
-  );
-}
-
-function Select({
-  value,
-  onChange,
-  options,
-  minWidth = 170,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: { v: string; label: string }[];
-  minWidth?: number;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{
-        height: 40,
-        minWidth,
-        maxWidth: 260,
-        border: '1px solid #E7ECF4',
-        backgroundColor: '#fff',
-        borderRadius: 11,
-        padding: '0 12px',
-        fontSize: 12.5,
-        fontWeight: 700,
-        color: '#33405A',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        outline: 'none',
-      }}
-    >
-      {options.map((o) => (
-        <option key={o.v} value={o.v}>{o.label}</option>
-      ))}
-    </select>
   );
 }
 
@@ -511,38 +473,108 @@ function Kpis({ list }: { list: MocaEntry[] }) {
   );
 }
 
-// ---- اختيار المعايير --------------------------------------------------------
+// ---- شريط الفلاتر والبحث — بنفس مكوّن الفلاتر في صفحات الجهات ---------------
+const FilterChevron = () => (
+  <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, flex: 'none', stroke: '#9AA6BC', fill: 'none', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
+
+function FilterSelect({
+  value,
+  options,
+  onChange,
+  minWidth = 150,
+}: {
+  value: string;
+  options: { v: string; label: string }[];
+  onChange: (v: string) => void;
+  minWidth?: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const label = options.find((o) => o.v === value)?.label || options[0]?.label || '';
+  const pick = (v: string) => {
+    onChange(v);
+    setOpen(false);
+  };
+  return (
+    <div style={{ position: 'relative', flex: 'none' }}>
+      <div
+        onClick={() => setOpen((o) => !o)}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 10, justifyContent: 'space-between', minWidth, height: 40, background: '#fff', border: '1px solid #E4ECF7', borderRadius: 11, padding: '0 13px', cursor: 'pointer' }}
+      >
+        <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>{label}</span>
+        <FilterChevron />
+      </div>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 39 }} />
+          <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, minWidth: '100%', width: 'max-content', maxWidth: 'min(300px, calc(100vw - 32px))', maxHeight: 320, overflowY: 'auto', background: '#fff', border: '1px solid #E4ECF7', borderRadius: 13, boxShadow: '0 18px 44px -14px rgba(15,31,61,.28)', zIndex: 40 }}>
+            {options.map((o) => (
+              <div
+                key={o.v}
+                onClick={() => pick(o.v)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '11px 14px', fontSize: 12.5, fontWeight: o.v === value ? 800 : 400, color: o.v === value ? '#1D4ED8' : '#33415C', background: o.v === value ? '#F2F7FF' : '#fff', cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                {o.label}
+                {o.v === value && <Icon d="M20 6 9 17l-5-5" size={13} color="#1D4ED8" />}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Filters() {
   const s = useMoca();
   return (
-    <div style={{ ...PANEL, padding: 14, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-      <div style={{ fontSize: 12.5, fontWeight: 800, color: '#33415C', marginInlineEnd: 4 }}>اختيار المعايير</div>
-      <input
-        value={s.search}
-        onChange={(e) => s.setFilter('search', e.target.value)}
-        placeholder="البحث في المهام والعمليات…"
-        style={{ ...inputStyle, width: 'auto', flex: 1, minWidth: 200, height: 40, padding: '0 13px', fontSize: 12.5 }}
-      />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <div style={{ position: 'relative' }}>
+        <input
+          value={s.search}
+          onChange={(e) => s.setFilter('search', e.target.value)}
+          placeholder="البحث باسم المدخل…"
+          style={{
+            height: 40,
+            width: 170,
+            border: '1px solid #E7ECF4',
+            boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
+            backgroundColor: '#fff',
+            borderRadius: 11,
+            padding: '0 36px 0 13px',
+            fontSize: 12.5,
+            fontWeight: 400,
+            color: '#13213C',
+            outline: 'none',
+            fontFamily: 'inherit',
+          }}
+        />
+        <span style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex', pointerEvents: 'none' }}>
+          <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" size={15} color="#9AA6BC" />
+        </span>
+      </div>
       {s.role === 'committee' && (
-        <Select
+        <FilterSelect
           value={s.fUnit}
           onChange={(v) => s.setFilter('fUnit', v)}
-          minWidth={200}
+          minWidth={180}
           options={[{ v: 'all', label: 'الجهة أو المكتب: الكل' }, ...MOCA_UNITS.map((u) => ({ v: u.id, label: u.name }))]}
         />
       )}
-      <Select
+      <FilterSelect
         value={s.fTransform}
         onChange={(v) => s.setFilter('fTransform', v)}
-        minWidth={190}
+        minWidth={170}
         options={[{ v: 'all', label: 'القابلية للتحول: الكل' }, ...MOCA_TRANSFORMABILITY.map((o) => ({ v: o, label: o }))]}
       />
-      <Select
+      <FilterSelect
         value={s.fStatus}
         onChange={(v) => s.setFilter('fStatus', v)}
-        minWidth={200}
+        minWidth={150}
         options={[
-          { v: 'all', label: 'معيار الحالة: الكل' },
+          { v: 'all', label: 'الحالة' },
           { v: 'draft', label: 'مسودة' },
           { v: 'pending', label: 'قيد اعتماد اللجنة الوطنية' },
           { v: 'approved', label: 'معتمد' },
@@ -550,6 +582,7 @@ function Filters() {
           { v: 'rejected', label: 'تم الرفض' },
         ]}
       />
+      <div style={{ flex: 1 }} />
     </div>
   );
 }
