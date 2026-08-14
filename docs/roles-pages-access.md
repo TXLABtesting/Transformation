@@ -9,7 +9,7 @@ sources in code are `prisma/seed.ts` (permission matrix), `lib/security/rbac.ts`
 
 ## 1. How access works (two layers)
 
-1. **UI role** (`users.role`, one of `coord / path / deputy / ai / admin`) —
+1. **UI role** (`users.role`, one of `coord / path / ai / admin`) —
    decides which **screens, menus, cards and buttons** the user sees.
 2. **Backend RBAC** (`user_roles` → `role_permissions` + entity/stream scopes) —
    every API call re-checks: valid session → permission code → entity/stream
@@ -77,7 +77,7 @@ entry on another stream's batches; see other entities.
 
 ### 3.2 فريق عمل المسار في المشروع — `path` / `stream_owner`
 
-**Who:** the national head (and deputy) of ONE stream, seeing that stream
+**Who:** the project work team of ONE stream, seeing that stream
 across **all** entities. Assigned by the system admin with the stream scope.
 
 **Pages (sidebar):**
@@ -145,19 +145,19 @@ In production the full management surface is the **admin API suite**
 ```
 
 - Drafts (`wf = draft`): visible to the coordinator only.
-- قيد الاعتماد (`ent1`): coordinator + stream head/deputy.
+- قيد الاعتماد (`ent1`): coordinator + stream work team.
 - معتمد (`exec` onwards): locked; visible to the committee's national view.
 - Every server-side action lands in `log_entries` (business trail shown in
   السجل) **and** `audit_logs` (security trail with actor/IP/user-agent).
 - Mandatory automatic emails (wired by IT via `POST /api/notify`):
-  submission → stream head + deputy; approval/return/info request →
+  submission → stream work team; approval/return/reject/info request →
   coordinator; batch move → stream head.
 
 ---
 
 ## 5. Backend permission matrix (seeded — `prisma/seed.ts`)
 
-| Permission | coord | stream head/deputy | committee | admin |
+| Permission | coord | stream work team | committee | admin |
 | --- | :-: | :-: | :-: | :-: |
 | items:view / export | ✔ | ✔ | ✔ | ✔ |
 | items:create / update / submit | ✔ | — | — | ✔ |
@@ -169,7 +169,7 @@ In production the full management surface is the **admin API suite**
 
 ¹ Committee approval permissions exist for future gates; in the current flow
 the committee is read-only and the ent1 approval is performed by the stream
-head or deputy.
+stream work team.
 
 **Extra backend-only roles** (no dedicated UI — they land on the closest
 read-only view): `program_admin` (مدير البرنامج) — everything except

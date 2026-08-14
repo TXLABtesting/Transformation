@@ -164,7 +164,7 @@ admin console via the legacy `users.role` key. Mapping:
 | `system_admin` | مشرف النظام | `admin` | global (bypasses permission checks) |
 | `program_admin` | مدير البرنامج | `ai` | global |
 | `ai_committee` | اللجنة الوطنية (الرئيس + الأمانة العامة) | `ai` | global, approved items only |
-| `stream_owner` | رئيس المسار / نائب رئيس المسار | `path` / `deputy` | own stream across all entities — **the ent1 approver** |
+| `stream_owner` | فريق عمل المسار في المشروع | `path` | own stream across all entities — **the ent1 approver** |
 | `entity_coordinator` | منسق المسار في الجهة | `coord` | own entity + own stream(s), incl. drafts |
 | `entity_admin` | مسؤول الجهة | `entity` | own entity + entity updates (legacy) |
 | `entity_representative` | ممثل الجهة | `entity` | **legacy — not in the current flow** |
@@ -176,7 +176,7 @@ Role → permission assignments live in `role_permissions` (seeded from
 (رئيس المسار ونائبه) carries `items:approve` / `items:reject` and is the
 sole approver at the `ent1` gate — matching the client, where اعتماد /
 إعادة للتعديل / طلب تفاصيل actions render only for the stream head and
-deputy. `entity_representative` is view-level legacy and holds no approval
+`entity_representative` is view-level legacy and holds no approval
 permissions.
 
 **Who provisions whom:** `system_admin` manages **all accounts for all
@@ -196,10 +196,10 @@ re-point each account's `email` to the verified UAE PASS identity (or
 deactivate and create real ones).
 
 Rules the application assumes (enforce when provisioning users):
-- `coord` **must** have `entity_id`; `coord`, `path` and `deputy` **must**
+- `coord` **must** have `entity_id`; `coord` and `path` **must**
   have `stream_id`; `ai` has neither.
-- The `path`/`deputy` users per stream are the official stream head and
-  deputy (head names pre-seeded on `streams.head_name`); attach their
+- The `path` users per stream are the stream's project work team
+  (names pre-seeded on `streams.head_name`); attach their
   emails when known.
 - Deactivate (never delete) users via `is_active = false` so the audit log
   keeps valid author names.
@@ -207,7 +207,7 @@ Rules the application assumes (enforce when provisioning users):
 Data visibility implemented by the app (for reference):
 - Drafts (`wf = 'draft'`) are visible **only** to the coordinator.
 - `ent1` (قيد الاعتماد) is visible to the coordinator and the stream
-  head/deputy, who approve or return it.
+  work team, who approve, return or reject it.
 - The committee sees approved entries only (read-only, national view).
 
 ## 5. Server API (enforced endpoints)
@@ -278,7 +278,7 @@ provisioned.
 
 - **Notifications** are currently derived in the client from data state
   (submissions, approvals, returns, batch moves). The mandatory automatic
-  email notifications (submission → stream head/deputy; approval/return →
+  email notifications (submission → stream work team; approval/return →
   coordinator; batch move → stream head) must be wired by IT via
   `POST /api/notify` against the government SMTP gateway — the event →
   recipient matrix is in `HANDOVER.md`, templates in
