@@ -44,6 +44,9 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   RETURNED_STATUS,
   REJECTED_STATUS,
   migrateRole,
+  placementState,
+  placementChip,
+  placementLocked,
   isRejected,
   PATH_REPS,
   entOf,
@@ -1415,18 +1418,23 @@ function build(s: Store) {
           // rows are أنشطة (خدمات فرعية in the services stream)
           unitLabel: bPath === 'services' ? 'خدمات فرعية' : 'أنشطة',
           unitSingular: bPath === 'services' ? 'خدمة فرعية' : 'نشاط',
-          // coordinator: move/remove freely, then send the placements for approval
+          // coordinator: move/remove DRAFT placements freely, then send the
+          // توزيعات for approval — a cycle fully separate from item approval
           canArrange: rawRole === 'coord',
           moveOptions: streamLaunchBatches(bPath).map((b) => ({ v: b.name, label: batchDafaaLabel(b.name) })),
-          // stream head/deputy review the placements from here as well
+          // فريق عمل المسار reviews pending توزيعات from here
           canReview: rawRole === 'path',
           submitLabel: 'إرسال للاعتماد',
-          draftCount: roleBase.filter(
-            (i) => i.path === bPath && wfOf(i) === 'draft' && itemActivities(i).some((a) => !!activityBatch(i, a))
-          ).length,
-          onSubmitAll: () => s.submitBatchDrafts(bPath),
-          // send a chosen subset — one مدخل or several at once
-          onSubmitIds: (ids: string[]) => s.submitBatchDrafts(bPath, ids),
+          // توزيعات مسودة بانتظار الإرسال — أياً كانت حالة مدخلاتها
+          draftCount: roleBase
+            .filter((i) => i.path === bPath)
+            .reduce((n, i) => n + itemActivities(i).filter((a) => placementState(i, a) === 'draft').length, 0),
+          pendingCount: roleBase
+            .filter((i) => i.path === bPath)
+            .reduce((n, i) => n + itemActivities(i).filter((a) => placementState(i, a) === 'pending').length, 0),
+          onSubmitAll: () => s.submitPlacements(bPath),
+          // send a chosen subset of توزيعات (keys itemId::actIdx)
+          onSubmitIds: (ids: string[]) => s.submitPlacements(bPath, ids),
           // move-to-batch options (raw names carried; labels shown)
           batchOptions: streamLaunchBatches(bPath).map((b) => ({ v: b.name, label: batchDafaaLabel(b.name) })),
           onMove: (id: string, batch: string) => s.assignItemBatch(id, batch),
@@ -1465,22 +1473,26 @@ function build(s: Store) {
                 start: a.startDate ?? i.startDate ?? '',
                 end: a.endDate ?? i.endDate ?? '',
                 prio: actPrioCellOf(i, a),
-                // rejected / returned entries keep their real status on the دفعات table too
+                // حالة محتوى المدخل نفسه (دورة الاعتماد الأولى)
                 status: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : wfMeta(i).label,
+                // حالة التوزيع (دورة الاعتماد الثانية) — شريحة مستقلة
+                placement: placementChip(i, a),
+                // التوزيع المعتمد أو قيد الاعتماد مقفل للمنسق
+                locked: placementLocked(i, a),
                 notes: stripHtml(a.notes || i.notes || '') || '—',
                 batch: activityBatch(i, a),
                 onOpen: () => s.openDetail(i.id),
                 // coordinator actions on the placement itself
                 onMove: (to: string) => s.assignActivityBatch(i.id, ai, to),
                 onRemove: () => s.assignActivityBatch(i.id, ai, ''),
-                // the مدخل this row belongs to can be sent on its own
-                canSubmit: rawRole === 'coord' && wfOf(i) === 'draft',
-                onSubmit: () => s.submitBatchDrafts(bPath, [i.id]),
-                // stream head/deputy: act on the parent entry awaiting approval
-                canReview: rawRole === 'path' && wfOf(i) === 'ent1',
-                onApprove: () => s.approveItem(i.id),
-                onReturn: () => s.reqInfoItem(i.id),
-                onReject: () => s.rejectItem(i.id),
+                // إرسال هذا التوزيع وحده للاعتماد
+                canSubmit: rawRole === 'coord' && placementState(i, a) === 'draft',
+                onSubmit: () => s.submitPlacements(bPath, [i.id + '::' + ai]),
+                // فريق عمل المسار: قرار على التوزيع المعلّق نفسه
+                canReview: rawRole === 'path' && placementState(i, a) === 'pending',
+                onApprove: () => s.reviewPlacement(i.id, ai, 'approve'),
+                onReturn: (note: string) => s.reviewPlacement(i.id, ai, 'info', note),
+                onReject: (note: string) => s.reviewPlacement(i.id, ai, 'reject', note),
               })),
               // أنشطة of this stream NOT in this دفعة — the per-batch picker
               // shows each نشاط with its own priority so placement is informed
@@ -2258,13 +2270,31 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
       // stream head / deputy: entries submitted by coordinators awaiting approval
       if (w === 'ent1') push('ent1-' + i.id, 'info', 'inbox', typeLabelDefFor(i.type, i.path) + ' بانتظار اعتمادك', tl + ' · ' + i.title + ' · ' + ent(i), i.id, true);
       if (i.stageMove)
-        push('sm-' + i.id, 'info', 'rotate', 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to, tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by, i.id);
+        push(
+          'sm-' + i.id,
+          'info',
+          'rotate',
+          i.stageMove.from
+            ? 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to
+            : 'توزيع بانتظار اعتمادك على ' + i.stageMove.to,
+          tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by,
+          i.id
+        );
     } else if (rawRole === 'coord') {
       // coordinator: returns / info requests from the stream head, and approvals
       if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تم الرفض من ') + (i.ret.from || 'فريق عمل المسار في المشروع'), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
       if (w === 'exec' || w === 'launch') push('x-' + i.id, 'ok', 'check', 'اعتمد فريق عمل المسار ' + typeLabelDefFor(i.type, i.path), tl + ' · ' + i.title, i.id);
       if (i.stageMove)
-        push('sm-' + i.id, 'info', 'rotate', 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to, tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by, i.id);
+        push(
+          'sm-' + i.id,
+          'info',
+          'rotate',
+          i.stageMove.from
+            ? 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to
+            : 'توزيع بانتظار اعتمادك على ' + i.stageMove.to,
+          tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by,
+          i.id
+        );
     } else if (rawRole === 'ai') {
       // committee chair + secretariat (view-only): newly approved entries
       if (w === 'exec' || w === 'launch') push('x-' + i.id, 'info', 'send', typeLabelDefFor(i.type, i.path) + ' معتمد من فريق عمل المسار', tl + ' · ' + i.title + ' · ' + ent(i), i.id);

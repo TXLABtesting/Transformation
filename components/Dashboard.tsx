@@ -702,8 +702,11 @@ function BatchPrioPill({ v }: { v: string }) {
 function BatchesTablesPage({ vm }: { vm: VM }) {
   const s = vm.store;
   const bt = vm.batchTables!;
-  // مدخلات مختارة للإرسال — الإرسال يتم على مستوى المدخل: واحد أو مجموعة أو الكل
+  // توزيعات مختارة للإرسال — الإرسال يتم على مستوى التوزيع: واحد أو مجموعة أو الكل
   const [sel, setSel] = useState<string[]>([]);
+  // نافذة سبب الإعادة/الرفض لتوزيعٍ يراجعه فريق عمل المسار
+  const [placeNote, setPlaceNote] = useState<{ kind: 'info' | 'reject'; onOk: (note: string) => void } | null>(null);
+  const [placeNoteTxt, setPlaceNoteTxt] = useState('');
   const toggleSel = (id: string) => setSel((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const [addOpen, setAddOpen] = useState<string | null>(null); // rawName of the batch whose picker is open
   const [addQ, setAddQ] = useState('');
@@ -716,14 +719,19 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>دفعات الإطلاق لمسار {bt.streamName}</div>
+        {bt.canReview && bt.pendingCount > 0 && (
+          <span style={{ fontSize: 12, fontWeight: 800, color: '#B45309', background: '#FFF7EB', borderRadius: 999, padding: '6px 14px' }}>
+            {bt.pendingCount} {bt.pendingCount === 1 ? 'توزيع بانتظار اعتمادك' : 'توزيعات بانتظار اعتمادك'}
+          </span>
+        )}
         {bt.canArrange && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 600 }}>
               {sel.length > 0
-                ? sel.length + (sel.length === 1 ? ' مدخل محدد' : ' مدخلات محددة')
+                ? sel.length + (sel.length === 1 ? ' توزيع محدد' : ' توزيعات محددة')
                 : bt.draftCount > 0
-                  ? bt.draftCount + ' مسودة موزّعة على الدفعات'
-                  : 'التوزيع يُحفظ كمسودة حتى الإرسال'}
+                  ? bt.draftCount + (bt.draftCount === 1 ? ' توزيع مسودة بانتظار الإرسال' : ' توزيعات مسودة بانتظار الإرسال')
+                  : 'التوزيع يُحفظ كمسودة حتى الإرسال — والمعتمد يُقفل'}
             </span>
             {sel.length > 0 && (
               <button
@@ -809,9 +817,9 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                             {r.canSubmit ? (
                               <input
                                 type="checkbox"
-                                checked={sel.includes(r.itemId)}
-                                onChange={() => toggleSel(r.itemId)}
-                                title="تحديد المدخل للإرسال"
+                                checked={sel.includes(r.id)}
+                                onChange={() => toggleSel(r.id)}
+                                title="تحديد التوزيع للإرسال"
                                 style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#2563EB' }}
                               />
                             ) : null}
@@ -823,14 +831,14 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                           </td>
                         ))}
                         <td style={td}>
-                          {bt.canEditDates ? (
+                          {bt.canEditDates && !r.locked ? (
                             <input type="date" min={b.minDate || undefined} max={r.end || b.maxDate || undefined} value={r.start} onChange={(e) => s.setActivityDate(r.itemId, r.actIdx, 'startDate', e.target.value)} style={dateIn} />
                           ) : (
                             r.start || '—'
                           )}
                         </td>
                         <td style={td}>
-                          {bt.canEditDates ? (
+                          {bt.canEditDates && !r.locked ? (
                             <input type="date" min={r.start || b.minDate || undefined} max={b.maxDate || undefined} value={r.end} onChange={(e) => s.setActivityDate(r.itemId, r.actIdx, 'endDate', e.target.value)} style={dateIn} />
                           ) : (
                             r.end || '—'
@@ -840,14 +848,31 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                           <BatchPrioPill v={r.prio} />
                         </td>
                         <td style={td}>
-                          <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.status}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                            <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.status}</span>
+                            {r.placement && (
+                              <span
+                                title={r.placement.note ? 'السبب: ' + r.placement.note : undefined}
+                                style={{ fontSize: 11, fontWeight: 800, color: r.placement.color, background: r.placement.bg, borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}
+                              >
+                                {r.placement.label}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.notes}>{r.notes}</td>
                         {(bt.canEditDates || bt.canReview) && (
                           <td style={{ ...td, whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              {/* التوزيع المعتمد مقفل — شارة بدل عناصر التحكم */}
+                              {bt.canArrange && r.locked && (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: '#8A97AD' }}>
+                                  <Icon d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2zM7 11V7a5 5 0 0 1 10 0v4" size={13} color="#8A97AD" />
+                                  {r.placement && r.placement.label === 'قيد اعتماد التوزيع' ? 'بانتظار قرار فريق عمل المسار' : 'مقفل بعد الاعتماد'}
+                                </span>
+                              )}
                               {/* coordinator: swap the نشاط to another دفعة, or take it out */}
-                              {bt.canArrange && (
+                              {bt.canArrange && !r.locked && (
                                 <>
                                   <select
                                     value={r.batch}
@@ -873,29 +898,30 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                               {r.canSubmit && (
                                 <button
                                   onClick={r.onSubmit}
-                                  title="إرسال هذا المدخل لاعتماد فريق عمل المسار"
+                                  title="إرسال هذا التوزيع لاعتماد فريق عمل المسار"
                                   style={{ background: '#EAF1FE', border: '1px solid #C9DBFB', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#1D4ED8', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
                                 >
                                   إرسال
                                 </button>
                               )}
-                              {/* stream head/deputy: decide on the entry from here */}
+                              {/* فريق عمل المسار: قرار على التوزيع المعلّق */}
                               {r.canReview && (
                                 <>
                                   <button
                                     onClick={r.onApprove}
+                                    title="اعتماد التوزيع — يُقفل بعدها"
                                     style={{ background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 11.5, color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
                                   >
                                     اعتماد
                                   </button>
                                   <button
-                                    onClick={r.onReturn}
+                                    onClick={() => setPlaceNote({ kind: 'info', onOk: r.onReturn })}
                                     style={{ background: '#FFF3DE', border: '1px solid #F1DCBA', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#B45309', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
                                   >
                                     إعادة للتعديل
                                   </button>
                                   <button
-                                    onClick={r.onReject}
+                                    onClick={() => setPlaceNote({ kind: 'reject', onOk: r.onReject })}
                                     style={{ background: '#FDECEE', border: '1px solid #F3D4D7', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#C0303B', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
                                   >
                                     رفض
@@ -921,6 +947,45 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
           </div>
         );
       })}
+
+      {/* نافذة سبب الإعادة/الرفض على التوزيع */}
+      {placeNote && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 120, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={() => { setPlaceNote(null); setPlaceNoteTxt(''); }} style={{ position: 'absolute', inset: 0, background: 'rgba(8,17,35,.55)', backdropFilter: 'blur(3px)' }} />
+          <div style={{ position: 'relative', width: '100%', maxWidth: 460, background: '#fff', borderRadius: 20, boxShadow: '0 30px 70px -24px rgba(2,12,35,.5)', padding: 22 }}>
+            <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C', marginBottom: 6 }}>
+              {placeNote.kind === 'reject' ? 'رفض التوزيع' : 'إعادة التوزيع للتعديل'}
+            </div>
+            <div style={{ fontSize: 12.5, color: '#6B7A93', marginBottom: 12, lineHeight: 1.8 }}>
+              {placeNote.kind === 'reject'
+                ? 'يُذكر سبب رفض التوزيع ويظهر للمنسق على السطر نفسه.'
+                : 'وضّح المطلوب تعديله في التوزيع حتى يعيد المنسق ترتيبه.'}
+            </div>
+            <textarea
+              value={placeNoteTxt}
+              onChange={(e) => setPlaceNoteTxt(e.target.value)}
+              placeholder={placeNote.kind === 'reject' ? 'سبب الرفض…' : 'الملاحظات المطلوبة…'}
+              style={{ width: '100%', minHeight: 100, border: '1px solid #DCE3EE', borderRadius: 11, padding: '11px 13px', fontSize: 13, fontFamily: 'inherit', color: '#13213C', outline: 'none', resize: 'vertical', marginBottom: 14 }}
+            />
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => { setPlaceNote(null); setPlaceNoteTxt(''); }} style={{ background: '#EEF1F7', color: '#54627B', border: 'none', borderRadius: 12, padding: '12px 20px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                إلغاء
+              </button>
+              <button
+                onClick={() => {
+                  if (!placeNoteTxt.trim()) return;
+                  placeNote.onOk(placeNoteTxt.trim());
+                  setPlaceNote(null);
+                  setPlaceNoteTxt('');
+                }}
+                style={{ background: placeNote.kind === 'reject' ? 'linear-gradient(180deg,#D6454F,#C0303B)' : 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 22px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                {placeNote.kind === 'reject' ? 'تأكيد الرفض' : 'إعادة للتعديل'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* add-entry popup — existing stream entries with their priority, so the
           placement decision is made with the priority in view */}
