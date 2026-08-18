@@ -2254,7 +2254,7 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
     const k = NK[kind] || NK.info;
     // main workflow notifications (approval, return, pending, batch moves) are
     // also emailed automatically — flagged so the UI shows the mail badge
-    const mail = /^(ent1|x|r|sm)-/.test(id);
+    const mail = /^(ent1|x|r|sm|pl)/.test(id);
     rows.push({ id, kind, iconBg: k.bg, iconColor: k.c, icon: NIC[icon], title, sub, act, mail, onOpen: () => (itemId ? s.openNotifItem(itemId) : s.toggleNotifs()) });
   };
   const dleft = daysLeft(s.phase.deadline);
@@ -2269,34 +2269,41 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
     const w = wfOf(i);
     const tl = typeLabelFor(i.type, i.path);
     if (rawRole === 'path') {
-      // stream head / deputy: entries submitted by coordinators awaiting approval
+      // فريق عمل المسار: مدخلات بانتظار اعتماد المحتوى — بأزرار قرار مباشرة
       if (w === 'ent1') push('ent1-' + i.id, 'info', 'inbox', typeLabelDefFor(i.type, i.path) + ' بانتظار اعتمادك', tl + ' · ' + i.title + ' · ' + ent(i), i.id, true);
-      if (i.stageMove)
-        push(
-          'sm-' + i.id,
-          'info',
-          'rotate',
-          i.stageMove.from
-            ? 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to
-            : 'توزيع بانتظار اعتمادك على ' + i.stageMove.to,
-          tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by,
-          i.id
-        );
+      // توزيعات معلّقة بانتظار قراره — صف لكل توزيع، يزول فور البتّ فيه
+      itemActivities(i).forEach((a, ai) => {
+        if (placementState(i, a) === 'pending')
+          push(
+            'pl-' + i.id + '-' + ai,
+            'info',
+            'rotate',
+            'توزيع بانتظار اعتمادك على ' + batchDafaaLabel(activityBatch(i, a)),
+            tl + ' · ' + (a.name || i.title) + ' · ' + ent(i),
+            i.id
+          );
+      });
+      if (i.stageMove && i.stageMove.from)
+        push('sm-' + i.id, 'info', 'rotate', 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to, tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by, i.id);
     } else if (rawRole === 'coord') {
       // coordinator: returns / info requests from the stream head, and approvals
       if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تم الرفض من ') + (i.ret.from || 'فريق عمل المسار في المشروع'), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
       if (w === 'exec' || w === 'launch') push('x-' + i.id, 'ok', 'check', 'اعتمد فريق عمل المسار ' + typeLabelDefFor(i.type, i.path), tl + ' · ' + i.title, i.id);
-      if (i.stageMove)
-        push(
-          'sm-' + i.id,
-          'info',
-          'rotate',
-          i.stageMove.from
-            ? 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to
-            : 'توزيع بانتظار اعتمادك على ' + i.stageMove.to,
-          tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by,
-          i.id
-        );
+      // قرارات فريق العمل على توزيعات الدفعات
+      itemActivities(i).forEach((a, ai) => {
+        const st = placementState(i, a);
+        if (st === 'approved')
+          push('pla-' + i.id + '-' + ai, 'ok', 'check', 'تم اعتماد التوزيع على ' + batchDafaaLabel(activityBatch(i, a)), tl + ' · ' + (a.name || i.title), i.id);
+        else if (st === 'draft' && a.batchRet)
+          push(
+            'plr-' + i.id + '-' + ai,
+            'alert',
+            'rotate',
+            (a.batchRet === 'reject' ? 'تم رفض التوزيع على ' : 'أُعيد التوزيع للتعديل — ') + batchDafaaLabel(activityBatch(i, a)),
+            tl + ' · ' + (a.name || i.title) + (a.batchNote ? ' · ' + a.batchNote : ''),
+            i.id
+          );
+      });
     } else if (rawRole === 'ai') {
       // committee chair + secretariat (view-only): newly approved entries
       if (w === 'exec' || w === 'launch') push('x-' + i.id, 'info', 'send', typeLabelDefFor(i.type, i.path) + ' معتمد من فريق عمل المسار', tl + ' · ' + i.title + ' · ' + ent(i), i.id);

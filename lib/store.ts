@@ -1219,7 +1219,6 @@ export const useStore = create<Store>((set, get) => {
       const st = get();
       const pick = keys && keys.length ? new Set(keys) : null;
       let count = 0;
-      const s0 = get();
       set((s2) => ({
         items: s2.items.map((it) => {
           if (it.path !== path || entOf(it, st.entityName) !== st.entityName) return it;
@@ -1234,11 +1233,8 @@ export const useStore = create<Store>((set, get) => {
             return { ...a, batchWf: 'pending' as const, batchRet: undefined, batchNote: undefined };
           });
           if (!touched) return it;
-          return {
-            ...(mirrorActivities({ ...it, activities: next }) as Item),
-            // stamp so فريق عمل المسار is notified of the pending توزيع
-            stageMove: { from: '', to: activityBatch(it, next.find((a) => a.batchWf === 'pending') || next[0]), at: Date.now(), by: actorName(s0) },
-          };
+          // الإشعار يُشتق من حالة التوزيع المعلّقة نفسها — لا حاجة لختم إضافي
+          return mirrorActivities({ ...it, activities: next }) as Item;
         }),
       }));
       if (count) persist();
