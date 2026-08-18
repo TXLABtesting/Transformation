@@ -92,10 +92,10 @@ const roleLabel: Record<string, string> = {
   system_admin: 'مدير النظام',
   program_admin: 'مدير البرنامج',
   entity_admin: 'مسؤول الجهة',
-  entity_coordinator: 'منسق المسار في الجهة',
+  entity_coordinator: 'منسق المسار في الجهة الاتحادية',
   entity_representative: 'ممثل الجهة',
-  stream_owner: 'رئيس المسار',
-  ai_committee: 'اللجنة الوطنية',
+  stream_owner: 'فريق عمل المسار في المشروع',
+  ai_committee: 'اللجنة الوطنية للذكاء الاصطناعي المساعد',
   viewer: 'مستعرض',
   auditor: 'مدقق',
 };
@@ -767,7 +767,7 @@ export function AdminPanel({ onClose, fullPage = false }: { onClose: () => void;
                           <th style={th}>#</th>
                           <th style={th}>اسم المسار</th>
                           <th style={th}>الوصف</th>
-                          <th style={th}>رئيس المسار</th>
+                          <th style={th}>فريق عمل المسار</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -847,7 +847,7 @@ export function AdminPanel({ onClose, fullPage = false }: { onClose: () => void;
                             <option value="entity_admin">مسؤول الجهة</option>
                             <option value="entity_coordinator">منسق المسار في الجهة</option>
                             <option value="entity_representative">ممثل الجهة</option>
-                            <option value="stream_owner">رئيس المسار</option>
+                            <option value="stream_owner">فريق عمل المسار في المشروع</option>
                             <option value="ai_committee">اللجنة الوطنية</option>
                             <option value="program_admin">مدير البرنامج</option>
                             <option value="system_admin">مدير النظام</option>

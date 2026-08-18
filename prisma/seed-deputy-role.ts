@@ -24,7 +24,7 @@ const prisma = new PrismaClient();
 
 const HEAD_ROLE_CODE = 'stream_owner';
 const DEPUTY_ROLE_CODE = 'stream_deputy';
-const DEPUTY_ROLE_NAME_AR = 'نائب رئيس المسار';
+const DEPUTY_ROLE_NAME_AR = 'فريق عمل المسار في المشروع (نائب)';
 
 async function main() {
   const head = await prisma.role.findUnique({

@@ -407,18 +407,17 @@ const API_MODE = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
 const BACKEND_AUTH = (process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'mock') !== 'mock';
 // Backend RBAC role codes → the UI role keys (adapted: system_admin maps to
 // our dedicated 'admin' UI role instead of 'ai' as in the reference).
- const roleFromBackend = (roles: string[] = []): RoleKey =>
+const roleFromBackend = (roles: string[] = []): RoleKey =>
   roles.includes('system_admin')
     ? 'admin'
     : roles.includes('ai_committee') || roles.includes('program_admin')
       ? 'ai'
-      : roles.includes('stream_owner')
+      : // stream_deputy يُدمج في دور فريق عمل المسار وفق البنية المعتمدة
+        roles.includes('stream_owner') || roles.includes('stream_deputy')
         ? 'path'
-        : roles.includes('stream_deputy')
-          ? 'deputy'
-          : roles.includes('entity_coordinator')
-            ? 'coord'
-            : 'entity';
+        : roles.includes('entity_coordinator')
+          ? 'coord'
+          : 'entity';
 
 // Fire-and-forget sync of the persisted blob to Postgres (server mode only).
 function apiPut(data: unknown) {
@@ -928,8 +927,10 @@ export const useStore = create<Store>((set, get) => {
         const res = await fetch('/api/admin/users', { credentials: 'include' });
         if (!res.ok) return;
         const data = await res.json();
-        const knownRoles: RoleKey[] = ['entity', 'path', 'deputy', 'coord', 'ai', 'secretariat', 'admin'];
-        const toRoleKey = (r: string): RoleKey => (knownRoles as string[]).includes(r) ? (r as RoleKey) : 'entity';
+        const knownRoles: RoleKey[] = ['entity', 'path', 'coord', 'ai', 'admin'];
+        // المسميات القديمة (deputy/secretariat) تُرحَّل إلى أدوار البنية المعتمدة
+        const toRoleKey = (r: string): RoleKey =>
+          (knownRoles as string[]).includes(r) ? (r as RoleKey) : migrateRole(r) !== r ? migrateRole(r) : 'entity';
         const mapped: UserRec[] = (data.users || []).map((u: any) => ({
           id: u.id,
           role: toRoleKey(u.role),
