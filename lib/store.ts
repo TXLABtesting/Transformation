@@ -1106,6 +1106,9 @@ export const useStore = create<Store>((set, get) => {
       // التوزيع المعتمد أو قيد الاعتماد مقفل — لا نقل ولا إزالة
       if (from && (a.batchWf === 'approved' || a.batchWf === 'pending'))
         return toast(a.batchWf === 'approved' ? 'التوزيع معتمد ولا يمكن تغييره' : 'التوزيع قيد الاعتماد — لا يمكن تغييره الآن');
+      // لا يوزَّع على دفعات الإطلاق إلا المدخل المعتمد
+      if (batch && !['exec', 'launch', 'done'].includes(wfOf(it)))
+        return toast('يُوزَّع على دفعات الإطلاق المدخل المعتمد فقط');
       const removing = !batch;
       // moving between دفعات clears dates that fall outside the new window
       const ph = execMilestones(it.path).find((b) => b.name === batch);

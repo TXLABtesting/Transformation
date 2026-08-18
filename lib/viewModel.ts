@@ -1427,7 +1427,7 @@ function build(s: Store) {
           submitLabel: 'إرسال للاعتماد',
           // توزيعات مسودة بانتظار الإرسال — أياً كانت حالة مدخلاتها
           draftCount: roleBase
-            .filter((i) => i.path === bPath)
+            .filter((i) => i.path === bPath && ['exec', 'launch', 'done'].includes(wfOf(i)))
             .reduce((n, i) => n + itemActivities(i).filter((a) => placementState(i, a) === 'draft').length, 0),
           pendingCount: roleBase
             .filter((i) => i.path === bPath)
@@ -1496,7 +1496,9 @@ function build(s: Store) {
               })),
               // أنشطة of this stream NOT in this دفعة — the per-batch picker
               // shows each نشاط with its own priority so placement is informed
+              // لا يُعرض في منتقي الإضافة إلا أنشطة المدخلات المعتمدة
               addable: pairs
+                .filter(({ i }) => ['exec', 'launch', 'done'].includes(wfOf(i)))
                 .filter(({ i, a }) => activityBatch(i, a) !== b.name)
                 .map(({ i, a, ai }) => ({
                   id: i.id + '::' + ai,
