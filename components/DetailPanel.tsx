@@ -616,7 +616,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
         </div>
 
         {/* ---------- FOOTER ACTION BAR ---------- */}
-        {(d.canApproveGateView || d.canEdit) && (
+        {(d.canApproveGateView || d.canEdit || d.canDelete) && (
           <div
             style={{
               background: '#fff',
@@ -681,6 +681,17 @@ export function DetailPanel({ vm }: { vm: VM }) {
               >
                 <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" size={16} color="#fff" />
                 {d.editLabel}
+              </button>
+            )}
+            {/* إزالة المدخل — متاحة ما دام غير معتمد (مسودة، مُعاد للتعديل، مرفوض، أو قيد الاعتماد) */}
+            {d.canDelete && (
+              <button
+                onClick={d.onDelete}
+                title="إزالة المدخل"
+                style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 7, background: '#FDF6F6', color: '#C0303B', border: '1px solid #F3D4D7', borderRadius: 12, padding: '13px 18px', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                <Icon d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" size={15} color="#C0303B" />
+                إزالة
               </button>
             )}
           </div>

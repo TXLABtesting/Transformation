@@ -43,6 +43,7 @@ import {
   DEFAULT_ABOUT_HERO,
 } from './domain';
 import type { LibraryDoc, ContactInquiry } from './domain';
+import { migrateRole } from './domain';
 import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
@@ -56,7 +57,7 @@ const plainVerdict = (r: BulkRow): BulkRow => {
   if (!(r.title || '').trim()) return { ...r, _v: 'يوجد خطأ', _note: 'اسم المدخل مفقود — لن يُستورد هذا الصف' };
   const miss = r.missing || [];
   if (miss.length) return { ...r, _v: 'بيانات ناقصة', _note: 'الحقول الناقصة: ' + miss.join('، ') };
-  return { ...r, _v: 'جاهز', _note: 'مكتمل — سيُرسل لاعتماد رئيس المسار بعد التأكيد' };
+  return { ...r, _v: 'جاهز', _note: 'مكتمل — سيُرسل لاعتماد فريق عمل المسار بعد التأكيد' };
 };
 
 export type MStep = 'path' | 'type' | 'method' | 'form' | 'review' | 'bulk' | 'bulkReview' | 'done';
@@ -282,7 +283,10 @@ type Actions = {
   // per-نشاط دفعة الإطلاق + dates (the batches page works at نشاط level)
   setActivityDate: (id: string, actIdx: number, k: 'startDate' | 'endDate', v: string) => void;
   assignActivityBatch: (id: string, actIdx: number, batch: string) => void;
-  submitBatchDrafts: (path: string, ids?: string[]) => void;
+  /** يرسل توزيعات الدفعات (مسودة) لاعتماد فريق عمل المسار — keys: itemId::actIdx */
+  submitPlacements: (path: string, keys?: string[]) => void;
+  /** قرار فريق عمل المسار على توزيع واحد */
+  reviewPlacement: (id: string, actIdx: number, decision: 'approve' | 'info' | 'reject', note?: string) => void;
   setContactEmail: (k: string, v: string) => void;
   setAboutHero: (v: string) => void;
   setAbout: (patch: Partial<AboutContent>) => void;
@@ -574,28 +578,23 @@ function recalcPlanBudgets(items: Item[], plans: LaunchPlan[]): LaunchPlan[] {
   });
 }
 
-// deputy shares the stream-head logic; the secretariat shares the committee's
-export const logicRole = (r: RoleKey): RoleKey =>
-  r === 'coord' || r === 'deputy' ? 'path' : r === 'secretariat' ? 'ai' : r;
+// المنسق يشترك مع فريق عمل المسار في منطق العرض
+export const logicRole = (r: RoleKey): RoleKey => (r === 'coord' ? 'path' : r);
 
 export const actorName = (s: State): string => {
   if (s.role === 'entity') return s.setup.rep.name || 'ممثل الجهة';
-  if (s.role === 'ai') return 'رئيس اللجنة الوطنية';
-  if (s.role === 'secretariat') return 'الأمانة العامة للجنة الوطنية';
-  // رئيس المسار: the real stream head, per stream
-  if (s.role === 'path') return PATH_REPS[s.myPath] || 'رئيس المسار';
-  if (s.role === 'deputy') return 'نائب رئيس مسار ' + (PATHS.find((p) => p.id === s.myPath)?.name || '');
+  if (s.role === 'ai') return 'اللجنة الوطنية للذكاء الاصطناعي المساعد';
+  // فريق عمل المسار: يُعرَّف بالدور لا بالاسم الشخصي
+  if (s.role === 'path') return PATH_REPS[s.myPath] || 'فريق عمل المسار في المشروع';
   const owner = s.setup.owners[s.myPath];
   if (owner?.name) return owner.name;
-  return 'منسق المسار';
+  return 'منسق المسار في الجهة الاتحادية';
 };
 export const actorRole = (s: State): string => {
   if (s.role === 'entity') return 'ممثل الجهة';
-  if (s.role === 'ai') return 'رئيس اللجنة الوطنية';
-  if (s.role === 'secretariat') return 'الأمانة العامة للجنة الوطنية';
-  if (s.role === 'coord') return 'منسق المسار';
-  if (s.role === 'deputy') return 'نائب رئيس المسار';
-  return 'رئيس المسار';
+  if (s.role === 'ai') return 'اللجنة الوطنية للذكاء الاصطناعي المساعد';
+  if (s.role === 'coord') return 'منسق المسار في الجهة الاتحادية';
+  return 'فريق عمل المسار في المشروع';
 };
 
 function withLog(s: State, it: Item, action: string, note?: string): LogEntry[] {
@@ -712,13 +711,18 @@ export const useStore = create<Store>((set, get) => {
           view: (saved!.view as State['view']) || 'login',
           lang: (saved!.lang as State['lang']) || 'ar',
           entityName: (saved!.entityName as string) || DEFAULT_ENTITY,
-          role: fresh
-            ? ((process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'coord')
-            : ((saved!.role as RoleKey) || (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'coord'),
+          // الأدوار الملغاة (نائب رئيس المسار / الأمانة العامة) تُرحَّل تلقائياً
+          role: migrateRole(
+            fresh
+              ? (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey)
+              : (saved!.role as RoleKey) || (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey)
+          ),
           myPath: (saved!.myPath as string) || 'ops',
           myPaths: Array.isArray(saved!.myPaths) && (saved!.myPaths as string[]).length ? (saved!.myPaths as string[]) : s.myPaths,
           setupDone: !!saved!.setupDone,
-          users: !fresh && Array.isArray(saved!.users) ? (saved!.users as UserRec[]) : seedUsers(DEFAULT_ENTITY),
+          users: !fresh && Array.isArray(saved!.users)
+            ? (saved!.users as UserRec[]).map((u) => ({ ...u, role: migrateRole(u.role) }))
+            : seedUsers(DEFAULT_ENTITY),
           items,
           phase: (saved!.phase as State['phase']) || s.phase,
           setup: (saved!.setup as Setup) || s.setup,
@@ -1140,6 +1144,9 @@ export const useStore = create<Store>((set, get) => {
       const acts = materializeActs(it);
       const a = acts[actIdx];
       if (!a) return;
+      // التوزيع المُرسل أو المعتمد مقفل — لا تعديل على تواريخه
+      if (activityBatch(it, a) && (a.batchWf === 'approved' || a.batchWf === 'pending'))
+        return toast(a.batchWf === 'approved' ? 'التوزيع معتمد ولا يمكن تعديله' : 'التوزيع قيد الاعتماد — لا يمكن تعديله الآن');
       // keep the نشاط's dates inside ITS OWN دفعة window
       const ph = execMilestones(it.path).find((b) => b.name === activityBatch(it, a));
       let val = v;
@@ -1160,6 +1167,12 @@ export const useStore = create<Store>((set, get) => {
       if (!a) return;
       const from = activityBatch(it, a);
       if (from === batch) return;
+      // التوزيع المعتمد أو قيد الاعتماد مقفل — لا نقل ولا إزالة
+      if (from && (a.batchWf === 'approved' || a.batchWf === 'pending'))
+        return toast(a.batchWf === 'approved' ? 'التوزيع معتمد ولا يمكن تغييره' : 'التوزيع قيد الاعتماد — لا يمكن تغييره الآن');
+      // لا يوزَّع على دفعات الإطلاق إلا المدخل المعتمد
+      if (batch && !['exec', 'launch', 'done'].includes(wfOf(it)))
+        return toast('يُوزَّع على دفعات الإطلاق المدخل المعتمد فقط');
       const removing = !batch;
       // moving between دفعات clears dates that fall outside the new window
       const ph = execMilestones(it.path).find((b) => b.name === batch);
@@ -1170,16 +1183,20 @@ export const useStore = create<Store>((set, get) => {
         return d;
       };
       const next = acts.map((x, j) =>
-        j === actIdx ? { ...x, execBatch: batch, startDate: clamp(x.startDate), endDate: clamp(x.endDate) } : x
+        j === actIdx
+          ? {
+              ...x,
+              execBatch: batch,
+              startDate: clamp(x.startDate),
+              endDate: clamp(x.endDate),
+              // كل وضع أو نقل جديد يبدأ توزيعاً مسودةً بانتظار «إرسال للاعتماد»
+              batchWf: removing ? undefined : ('draft' as const),
+              batchRet: undefined,
+              batchNote: undefined,
+            }
+          : x
       );
-      const s0 = get();
-      patchItem(id, (cur) => ({
-        ...(mirrorActivities({ ...cur, activities: next }) as Partial<Item>),
-        // stamp the move so رئيس المسار is notified (same trigger as entries)
-        ...(from && batch
-          ? { stageMove: { from, to: batch, at: Date.now(), by: actorName(s0) } }
-          : {}),
-      }));
+      patchItem(id, (cur) => mirrorActivities({ ...cur, activities: next }) as Partial<Item>);
       toast(
         removing
           ? 'تمت إزالة النشاط من ' + from.replace(/^إطلاق /, '')
@@ -1255,39 +1272,65 @@ export const useStore = create<Store>((set, get) => {
         persist();
       }
       setUi({ draftSel: [] });
-      toast(ok.length ? 'تم إرسال ' + ok.length + (ok.length === 1 ? ' مدخل' : ' مدخلات') + ' لاعتماد رئيس المسار' : 'لم يُرسل أي مدخل — نرجو استكمال الحقول الناقصة أولاً');
+      toast(ok.length ? 'تم إرسال ' + ok.length + (ok.length === 1 ? ' مدخل' : ' مدخلات') + ' لاعتماد فريق عمل المسار' : 'لم يُرسل أي مدخل — نرجو استكمال الحقول الناقصة أولاً');
     },
 
     // batches page: send every draft of this stream that has أنشطة placed in a
     // دفعة for approval — placements stay drafts until this is pressed
-    submitBatchDrafts: (path, ids) => {
+    // إرسال توزيعات الدفعات لاعتماد فريق عمل المسار — مستقل تماماً عن اعتماد
+    // محتوى المدخلات: يشمل كل نشاط موزَّع توزيعه مسودة أياً كانت حالة مدخله.
+    submitPlacements: (path, keys) => {
       const st = get();
-      const pick = ids && ids.length ? new Set(ids) : null;
-      const mine = st.items.filter(
-        (i) =>
-          i.path === path &&
-          entOf(i, st.entityName) === st.entityName &&
-          wfOf(i) === 'draft' &&
-          (!pick || pick.has(i.id))
-      );
-      const placed = mine.filter((i) => itemActivities(i).some((a) => !!activityBatch(i, a)));
-      const ok = placed.filter((i) => !missingFieldsOf(i as unknown as Record<string, unknown>).length);
-      if (ok.length) {
-        const ids = ok.map((i) => i.id);
-        set((s2) => ({
-          items: s2.items.map((it) =>
-            ids.includes(it.id) ? { ...it, wf: 'ent1' as WfState, approval: 'تم الإرسال', ret: null, log: withLog(s2, it, 'submit') } : it
-          ),
-        }));
-        persist();
-      }
-      const short = placed.length - ok.length;
+      const pick = keys && keys.length ? new Set(keys) : null;
+      let count = 0;
+      set((s2) => ({
+        items: s2.items.map((it) => {
+          if (it.path !== path || entOf(it, st.entityName) !== st.entityName) return it;
+          const acts = materializeActs(it);
+          let touched = false;
+          const next = acts.map((a, j) => {
+            if (!activityBatch(it, a)) return a;
+            if ((a.batchWf || 'draft') !== 'draft') return a;
+            if (pick && !pick.has(it.id + '::' + j)) return a;
+            touched = true;
+            count += 1;
+            return { ...a, batchWf: 'pending' as const, batchRet: undefined, batchNote: undefined };
+          });
+          if (!touched) return it;
+          // الإشعار يُشتق من حالة التوزيع المعلّقة نفسها — لا حاجة لختم إضافي
+          return mirrorActivities({ ...it, activities: next }) as Item;
+        }),
+      }));
+      if (count) persist();
       toast(
-        ok.length
-          ? 'تم إرسال ' + ok.length + (ok.length === 1 ? ' مدخل' : ' مدخلات') + ' لاعتماد رئيس المسار' + (short ? ' — و' + short + ' بحاجة إلى استكمال الحقول الناقصة' : '')
-          : placed.length
-            ? 'لم يُرسل أي مدخل — نرجو استكمال الحقول الناقصة أولاً'
-            : 'لا توجد مسودات موزّعة على الدفعات لإرسالها'
+        count
+          ? 'تم إرسال ' + count + (count === 1 ? ' توزيع' : ' توزيعات') + ' لاعتماد فريق عمل المسار'
+          : 'لا توجد توزيعات مسودة لإرسالها'
+      );
+    },
+
+    // قرار فريق عمل المسار على توزيع واحد: اعتماد يقفل التوزيع؛ الإعادة أو
+    // الرفض يعيدانه مسودةً للمنسق مع السبب.
+    reviewPlacement: (id, actIdx, decision, note) => {
+      const it = findItem(id);
+      if (!it) return;
+      const acts = materializeActs(it);
+      const a = acts[actIdx];
+      if (!a || (a.batchWf || 'draft') !== 'pending') return;
+      const next = acts.map((x, j) =>
+        j === actIdx
+          ? decision === 'approve'
+            ? { ...x, batchWf: 'approved' as const, batchRet: undefined, batchNote: undefined }
+            : { ...x, batchWf: 'draft' as const, batchRet: decision, batchNote: (note || '').trim() }
+          : x
+      );
+      patchItem(id, (cur) => mirrorActivities({ ...cur, activities: next }) as Partial<Item>);
+      toast(
+        decision === 'approve'
+          ? 'تم اعتماد التوزيع'
+          : decision === 'reject'
+            ? 'تم رفض التوزيع وإعادته للمنسق'
+            : 'تمت إعادة التوزيع للمنسق للتعديل'
       );
     },
 
@@ -1600,19 +1643,20 @@ export const useStore = create<Store>((set, get) => {
       const it = get().items.find((x) => x.id === id);
       if (!it) return;
       const w = wfOf(it);
-      const deletable = (w === 'draft' && !it.ret) || w === 'ent1';
-      if (!deletable)
-        return toast('يمكن حذف المسودات أو ما أُرسل ولم يُعتمد بعد فقط');
+      // الإزالة متاحة لكل مدخل لم يُعتمد بعد: مسودة، أو مُعاد للتعديل/مرفوض،
+      // أو مُرسل وقيد الاعتماد (يُسحب ثم يُزال). المعتمد لا يُزال.
+      const deletable = w === 'draft' || w === 'ent1';
+      if (!deletable) return toast('لا يمكن إزالة مدخل معتمد');
       if (!force) {
         setUi({
           confirmModal: {
             kind: 'deleteItem',
-            title: w === 'ent1' ? 'سحب المدخل وحذفه' : 'حذف المسودة',
+            title: w === 'ent1' ? 'سحب المدخل وإزالته' : 'إزالة المدخل',
             body:
               w === 'ent1'
-                ? '«' + it.title + '» مُرسل لرئيس المسار ولم يُعتمد بعد — سيُسحب ويُحذف نهائياً.'
-                : 'سيتم حذف «' + it.title + '» نهائياً.',
-            okLabel: w === 'ent1' ? 'سحب المدخل وحذفه' : 'حذف نهائياً',
+                ? '«' + it.title + '» مُرسل لفريق عمل المسار ولم يُعتمد بعد — سيُسحب ويُزال نهائياً.'
+                : 'سيتم إزالة «' + it.title + '» نهائياً.',
+            okLabel: w === 'ent1' ? 'سحب المدخل وإزالته' : 'إزالة نهائياً',
             cancelLabel: 'إلغاء',
             payload: { id },
           },
@@ -1626,7 +1670,7 @@ export const useStore = create<Store>((set, get) => {
       }));
       set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
       persist();
-      toast(w === 'ent1' ? 'تم سحب المدخل وحذفه: ' + typeLabelDefFor(it.type, it.path) : 'تم حذف المسودة');
+      toast(w === 'ent1' ? 'تم سحب المدخل وإزالته: ' + typeLabelDefFor(it.type, it.path) : 'تمت إزالة المدخل');
     },
     // withdraw a submitted (ent1) المدخل back to the coordinator's DRAFT state
     // — this does NOT delete it (true deletion is deleteItem on a draft).
@@ -2016,7 +2060,7 @@ export const useStore = create<Store>((set, get) => {
         setUi({ reqModal: null });
         return toast('المدخل معتمد — لا يمكن إعادته بعد الاعتماد');
       }
-      const from = w === 'ent1' ? 'رئيس المسار' : 'اللجنة الوطنية';
+      const from = w === 'ent1' ? 'فريق عمل المسار في المشروع' : 'اللجنة الوطنية للذكاء الاصطناعي المساعد';
       const info = rm.mode === 'info';
       patchItem(rm.id, (i) => ({
         wf: 'draft',

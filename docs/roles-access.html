@@ -41,7 +41,7 @@ sources in code are <code>prisma/seed.ts</code> (permission matrix), <code>lib/s
 <hr />
 <h2>1. How access works (two layers)</h2>
 <ol>
-<li><strong>UI role</strong> (<code>users.role</code>, one of <code>coord / path / deputy / ai / admin</code>) —
+<li><strong>UI role</strong> (<code>users.role</code>, one of <code>coord / path / ai / admin</code>) —
    decides which <strong>screens, menus, cards and buttons</strong> the user sees.</li>
 <li><strong>Backend RBAC</strong> (<code>user_roles</code> → <code>role_permissions</code> + entity/stream scopes) —
    every API call re-checks: valid session → permission code → entity/stream
@@ -75,21 +75,14 @@ setup.</p>
 </tr>
 <tr>
 <td><code>path</code></td>
-<td>رئيس المسار</td>
+<td>فريق عمل المسار في المشروع</td>
 <td><code>stream_owner</code></td>
 <td><strong>own stream</strong>, all entities</td>
-<td><strong>The ent1 approver</strong> — اعتماد / إعادة للتعديل / طلب تفاصيل</td>
-</tr>
-<tr>
-<td><code>deputy</code></td>
-<td>نائب رئيس المسار</td>
-<td><code>stream_owner</code></td>
-<td><strong>own stream</strong>, all entities</td>
-<td>Same review powers as the stream head</td>
+<td><strong>The ent1 approver</strong> — اعتماد / إعادة للتعديل / رفض / طلب تفاصيل</td>
 </tr>
 <tr>
 <td><code>ai</code></td>
-<td>اللجنة الوطنية (الرئيس + الأمانة العامة)</td>
+<td>اللجنة الوطنية للذكاء الاصطناعي المساعد</td>
 <td><code>ai_committee</code></td>
 <td><strong>everything</strong>, approved entries only</td>
 <td>National read-only oversight</td>
@@ -135,8 +128,8 @@ as «بيانات ناقصة» drafts); select drafts → «إكمال وإرس�
 and set their dates; export reports.</p>
 <p><strong>Cannot:</strong> approve or reject; edit an approved (معتمد) entry; place an
 entry on another stream's batches; see other entities.</p>
-<h3>3.2 رئيس المسار ونائبه — <code>path</code> + <code>deputy</code> / <code>stream_owner</code></h3>
-<p><strong>Who:</strong> the national head (and deputy) of ONE stream, seeing that stream
+<h3>3.2 فريق عمل المسار في المشروع — <code>path</code> / <code>stream_owner</code></h3>
+<p><strong>Who:</strong> the project work team of ONE stream, seeing that stream
 across <strong>all</strong> entities. Assigned by the system admin with the stream scope.</p>
 <p><strong>Pages (sidebar):</strong>
 - <strong>قائمة حصر المسار</strong> — all entities' entries of the stream with الجهة /
@@ -164,7 +157,7 @@ server-side; every action is still audit-logged.</p>
 <p><strong>Pages:</strong> the admin console instead of the dashboards — plus «لوحات
 المتابعة» to open the monitoring dashboards —
 - <strong>المستخدمون</strong> — create/edit/enable/disable users for <strong>all entities</strong>;
-  الدور (رئيس المسار / نائب رئيس المسار / منسق المسار في الجهة require
+  الدور (فريق عمل المسار في المشروع / منسق المسار في الجهة الاتحادية require
   المسار; the coordinator also requires الجهة); bulk upload from the Excel
   template
 - <strong>رؤساء المسارات واللجنة</strong> — assign the three stream heads and committee
@@ -189,12 +182,12 @@ server-side; every action is still audit-logged.</p>
 </code></pre>
 <ul>
 <li>Drafts (<code>wf = draft</code>): visible to the coordinator only.</li>
-<li>قيد الاعتماد (<code>ent1</code>): coordinator + stream head/deputy.</li>
+<li>قيد الاعتماد (<code>ent1</code>): coordinator + stream work team.</li>
 <li>معتمد (<code>exec</code> onwards): locked; visible to the committee's national view.</li>
 <li>Every server-side action lands in <code>log_entries</code> (business trail shown in
   السجل) <strong>and</strong> <code>audit_logs</code> (security trail with actor/IP/user-agent).</li>
 <li>Mandatory automatic emails (wired by IT via <code>POST /api/notify</code>):
-  submission → stream head + deputy; approval/return/info request →
+  submission → stream work team; approval/return/reject/info request →
   coordinator; batch move → stream head.</li>
 </ul>
 <hr />
@@ -204,7 +197,7 @@ server-side; every action is still audit-logged.</p>
 <tr>
 <th>Permission</th>
 <th style="text-align: center;">coord</th>
-<th style="text-align: center;">stream head/deputy</th>
+<th style="text-align: center;">stream work team</th>
 <th style="text-align: center;">committee</th>
 <th style="text-align: center;">admin</th>
 </tr>
@@ -263,7 +256,7 @@ server-side; every action is still audit-logged.</p>
 </table>
 <p>¹ Committee approval permissions exist for future gates; in the current flow
 the committee is read-only and the ent1 approval is performed by the stream
-head or deputy.</p>
+stream work team.</p>
 <p><strong>Extra backend-only roles</strong> (no dedicated UI — they land on the closest
 read-only view): <code>program_admin</code> (مدير البرنامج) — everything except
 <code>settings:*</code> · <code>viewer</code> (مستعرض) — read-only within scopes · <code>auditor</code>

@@ -251,14 +251,14 @@
     <text x="380" y="42" text-anchor="middle" font-size="11" font-weight="700" fill="#B45309">مشرف النظام</text>
     <text x="380" y="60" text-anchor="middle" font-size="9" fill="#54627B">admin · admin console</text>
     <rect x="60" y="120" width="200" height="60" rx="10" fill="#DEF4F6" stroke="#0E7C86"/>
-    <text x="160" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0E7C86">رؤساء المسارات ×3</text>
+    <text x="160" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0E7C86">فرق عمل المسارات ×3</text>
     <text x="160" y="161" text-anchor="middle" font-size="9" fill="#54627B">role=path · one per stream</text>
     <rect x="500" y="120" width="200" height="60" rx="10" fill="#EFEAFE" stroke="#6D28D9"/>
     <text x="600" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#6D28D9">اللجنة الوطنية</text>
     <text x="600" y="161" text-anchor="middle" font-size="9" fill="#54627B">role=ai · committee members</text>
     <rect x="300" y="120" width="160" height="60" rx="10" fill="#E5EEFF" stroke="#2563EB"/>
-    <text x="380" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#2563EB">نائب رئيس المسار</text>
-    <text x="380" y="161" text-anchor="middle" font-size="9" fill="#54627B">role=deputy · per stream</text>
+    <text x="380" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#2563EB">فريق عمل المسار</text>
+    <text x="380" y="161" text-anchor="middle" font-size="9" fill="#54627B">role=path · per stream</text>
     <rect x="300" y="220" width="160" height="58" rx="10" fill="#DCF3F5" stroke="#0E7C86"/>
     <text x="380" y="243" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0E7C86">منسقو المسارات</text>
     <text x="380" y="261" text-anchor="middle" font-size="9" fill="#54627B">role=coord · entity+stream</text>
@@ -277,10 +277,9 @@
   <table>
     <tr><th>role</th><th class="ar">الدور</th><th>scope</th><th>Key capabilities</th></tr>
     <tr><td><b>admin</b></td><td class="ar">مشرف النظام</td><td>system</td><td>users.manage · roles.view · streamhead.assign · committee.assign</td></tr>
-    <tr><td><b>ai</b></td><td class="ar">اللجنة الوطنية</td><td>national</td><td>item.view.all (approved only) · phase.edit · ai_review.run</td></tr>
-    <tr><td><b>path</b></td><td class="ar">رئيس المسار</td><td>stream</td><td>item.view.stream · item.approve · item.return</td></tr>
-    <tr><td><b>deputy</b></td><td class="ar">نائب رئيس المسار</td><td>stream</td><td>item.view.stream · item.approve · item.return</td></tr>
-    <tr><td><b>coord</b></td><td class="ar">منسق المسار في الجهة</td><td>entity+stream</td><td>item.create · item.update · item.submit · plan.edit</td></tr>
+    <tr><td><b>ai</b></td><td class="ar">اللجنة الوطنية للذكاء الاصطناعي المساعد</td><td>national</td><td>item.view.all (approved only) · phase.edit · ai_review.run</td></tr>
+    <tr><td><b>path</b></td><td class="ar">فريق عمل المسار في المشروع</td><td>stream</td><td>item.view.stream · item.approve · item.reject · item.return</td></tr>
+    <tr><td><b>coord</b></td><td class="ar">منسق المسار في الجهة الاتحادية</td><td>entity+stream</td><td>item.create · item.update · item.submit · plan.edit</td></tr>
   </table>
   <p class="muted" style="margin-top:8px;">Provisioning rules enforced by the app: <b>coord</b> and <b>entity</b> require <code>entity_id</code>;
   <b>coord</b> and <b>path</b> require <code>stream_id</code>; <b>ai</b> and <b>admin</b> require neither. Deactivate

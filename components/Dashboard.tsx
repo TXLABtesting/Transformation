@@ -28,14 +28,23 @@ const TOUR_STEPS: TourStep[] = [
 
 // Coordinator (منسق المسار في الجهة) onboarding — the coordinator lands on
 // قوائم الحصر directly: fills the stream inventory and manages دفعات الإطلاق.
-const COORD_TOUR_STEPS: TourStep[] = [
+// خطوة «إضافة المدخلات» تتغير بحسب المسار المعروض: مسار الخدمات يختار من
+// دليل خدمات الجهة، وبقية المسارات تفتح نموذج الإدخال الذاتي.
+const coordTourSteps = (stream: string): TourStep[] => [
   { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك كمنسق للمسار في جهتك.' },
   { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'المسارات المسندة إليك تظهر هنا. اختر المسار لاستعراض قائمة الحصر الخاصة به — جدول المدخلات مع اختيار المعايير (التصنيف أو المحور أو الخدمة، والأولوية) ومعيار الحالة والبحث بالاسم.' },
   { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات إجمالي المدخلات والأنشطة والقابلة للتحول والمستهدف تحويلها، وتضاف بطاقات الأولويات المحسوبة تلقائياً وفق المصفوفة في مساري العمل الاستراتيجي والخدمات الحكومية.' },
-  { sel: '[data-tour="add"]', title: 'إضافة المدخلات', desc: 'اختر الخدمات الرئيسية والفرعية المطلوبة من دليل خدمات الجهة، ثم أضفها إلى المسار.' },
+  {
+    sel: '[data-tour="add"]',
+    title: 'إضافة المدخلات',
+    desc:
+      stream === 'services'
+        ? 'اختر الخدمات الرئيسية والفرعية المطلوبة من دليل خدمات الجهة، ثم أضفها إلى المسار.'
+        : '«إضافة المدخلات» تفتح نموذج الإدخال الذاتي بحقول المسار.',
+  },
   { sel: '[data-tour="bulk"]', title: 'رفع ملف Excel', desc: 'حمّل قالب المسار، وأكمل البيانات المطلوبة، ثم ارفع الملف. ستظهر أي بيانات غير مكتملة لتتمكن من استكمالها قبل إرسال المسار للاعتماد.' },
   { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية. من زر «إضافة نشاط» توزَّع أنشطة المسار على دفعاته وفق أولوية الاختيار — كل نشاط في دفعته وبتواريخ بدء وانتهاء ضمن الفترة الزمنية للدفعة.' },
-  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'تصلك هنا ملاحظات رئيس المسار: طلبات التفاصيل الإضافية، والمدخلات المُعادة للتعديل، وقرارات الاعتماد.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'تصلك هنا ملاحظات فريق عمل المسار: طلبات التفاصيل الإضافية، والمدخلات المُعادة للتعديل، وقرارات الاعتماد.' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن تعبئة قوائم الحصر لمساراتك وتوزيع المدخلات على دفعات الإطلاق، والتأكد من تحديث البيانات بشكل دوري.' },
 ];
 
@@ -47,14 +56,14 @@ const AI_TOUR_STEPS: TourStep[] = [
   { sel: '[data-tour="nav-inv"]', title: 'قوائم الحصر', desc: 'قوائم حصر المسارات الثلاثة — اختر المسار لاستعراض مدخلاته المعتمدة (اطلاع فقط) مع مؤشراته وفلاتره.' },
   { sel: '[data-tour="nav-launch"]', title: 'دفعات الإطلاق', desc: 'لكل مسار صفحة دفعات مستقلة من القائمة الجانبية، تعرض أنشطة كل دفعة مع أولوية الاختيار والتواريخ والحالة (اطلاع فقط).' },
   { sel: '[data-tour="nav-entities"]', title: 'الجهات المشاركة', desc: 'يعرض هذا القسم قائمة الجهات المشاركة وعدد المدخلات المقدمة من كل جهة، لمتابعة مستوى المشاركة والالتزام.' },
-  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يصلك هنا إشعار بكل مدخل جديد يعتمده رئيس المسار.' },
+  { sel: '[data-tour="notifs"]', title: 'الإشعارات', desc: 'يصلك هنا إشعار بكل مدخل جديد يعتمده فريق عمل المسار.' },
   { sel: '', title: 'تم الانتهاء من الجولة', desc: 'يمكنك الآن متابعة المدخلات المعتمدة على المستوى الوطني عبر المسارات الثلاثة، والاطلاع على دفعات الإطلاق وجاهزية الجهات.' },
 ];
 
-// Stream head + deputy (رئيس المسار ونائبه) onboarding — review coordinators'
+// فريق عمل المسار في المشروع onboarding — review coordinators'
 // submissions within the stream and approve / return them.
 const PATH_TOUR_STEPS: TourStep[] = [
-  { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك كرئيس للمسار أو نائبٍ له.' },
+  { sel: '[data-tour="profile"]', title: 'الملف الشخصي', desc: 'من هنا يمكنك الوصول إلى ملفك الشخصي ومراجعة دورك وصلاحياتك ضمن فريق عمل المسار في المشروع.' },
   { sel: '[data-tour="kpis"]', title: 'مؤشرات المسار', desc: 'تعرض هذه البطاقات أعداد مدخلات المسار من جميع الجهات، القابلة للتحول والمستهدف تحويلها، وتوزيع الأولويات المحسوبة وفق مصفوفة المسار.' },
   { sel: '[data-tour="nav-inv"]', title: 'قائمة حصر المسار', desc: 'قائمة موحّدة لمدخلات جميع الجهات ضمن المسار، مع فلاتر الجهة والقطاع والأولوية والحالة. افتح أي مدخل لاستعراض تفاصيله واعتماده أو إعادته أو طلب معلومات إضافية.' },
   { sel: '[data-tour="notifs"]', title: 'الإشعارات وطلبات الاعتماد', desc: 'المدخلات الجديدة بانتظار اعتمادك تصلك هنا، ويمكنك اعتمادها أو رفضها أو طلب معلومات إضافية مباشرة من الإشعار.' },
@@ -693,9 +702,9 @@ function BatchPrioPill({ v }: { v: string }) {
 function BatchesTablesPage({ vm }: { vm: VM }) {
   const s = vm.store;
   const bt = vm.batchTables!;
-  // مدخلات مختارة للإرسال — الإرسال يتم على مستوى المدخل: واحد أو مجموعة أو الكل
-  const [sel, setSel] = useState<string[]>([]);
-  const toggleSel = (id: string) => setSel((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  // نافذة سبب الإعادة/الرفض لتوزيعٍ يراجعه فريق عمل المسار
+  const [placeNote, setPlaceNote] = useState<{ kind: 'info' | 'reject'; onOk: (note: string) => void } | null>(null);
+  const [placeNoteTxt, setPlaceNoteTxt] = useState('');
   const [addOpen, setAddOpen] = useState<string | null>(null); // rawName of the batch whose picker is open
   const [addQ, setAddQ] = useState('');
   const [addSector, setAddSector] = useState('all');
@@ -707,35 +716,25 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>دفعات الإطلاق لمسار {bt.streamName}</div>
+        {bt.canReview && bt.pendingCount > 0 && (
+          <span style={{ fontSize: 12, fontWeight: 800, color: '#B45309', background: '#FFF7EB', borderRadius: 999, padding: '6px 14px' }}>
+            {bt.pendingCount} {bt.pendingCount === 1 ? 'توزيع بانتظار اعتمادك' : 'توزيعات بانتظار اعتمادك'}
+          </span>
+        )}
         {bt.canArrange && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 600 }}>
-              {sel.length > 0
-                ? sel.length + (sel.length === 1 ? ' مدخل محدد' : ' مدخلات محددة')
-                : bt.draftCount > 0
-                  ? bt.draftCount + ' مسودة موزّعة على الدفعات'
-                  : 'التوزيع يُحفظ كمسودة حتى الإرسال'}
+              {bt.draftCount > 0
+                ? bt.draftCount + (bt.draftCount === 1 ? ' توزيع مسودة بانتظار الإرسال' : ' توزيعات مسودة بانتظار الإرسال')
+                : 'التوزيع يُحفظ كمسودة حتى الإرسال — والمعتمد يُقفل'}
             </span>
-            {sel.length > 0 && (
-              <button
-                onClick={() => {
-                  bt.onSubmitIds(sel);
-                  setSel([]);
-                }}
-                style={{ background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, padding: '10px 20px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
-              >
-                إرسال المحدد ({sel.length})
-              </button>
-            )}
+            {/* الإرسال: الكل دفعة واحدة، أو توزيعاً توزيعاً من زر «إرسال» في الصف */}
             <button
-              onClick={() => {
-                bt.onSubmitAll();
-                setSel([]);
-              }}
+              onClick={bt.onSubmitAll}
               disabled={bt.draftCount === 0}
-              style={{ background: bt.draftCount ? (sel.length ? '#EAF1FE' : 'linear-gradient(180deg,#2E74EE,#1F5FE0)') : '#C7D2E4', color: bt.draftCount && sel.length ? '#1D4ED8' : '#fff', border: bt.draftCount && sel.length ? '1px solid #C9DBFB' : 'none', borderRadius: 11, padding: '10px 20px', fontSize: 12.5, fontWeight: 800, cursor: bt.draftCount ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}
+              style={{ background: bt.draftCount ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', border: 'none', borderRadius: 11, padding: '10px 20px', fontSize: 12.5, fontWeight: 800, cursor: bt.draftCount ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}
             >
-              {sel.length > 0 ? 'إرسال الكل (' + bt.draftCount + ')' : bt.submitLabel}
+              {'إرسال الكل للاعتماد' + (bt.draftCount ? ' (' + bt.draftCount + ')' : '')}
             </button>
           </div>
         )}
@@ -777,17 +776,17 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
               <div style={{ padding: '22px 16px', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد {bt.unitLabel} ضمن هذه الدفعة بعد</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: bt.canEditDates ? 1080 : 940 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: bt.canEditDates ? 1150 : 1010 }}>
                   <thead>
                     <tr>
-                      {bt.canArrange && <th style={{ ...th, width: 34 }} />}
                       {bt.cols.map((c) => (
                         <th key={c} style={th}>{c}</th>
                       ))}
                       <th style={th}>تاريخ البدء</th>
                       <th style={th}>تاريخ الانتهاء</th>
                       <th style={th}>أولوية الاختيار</th>
-                      <th style={th}>الحالة</th>
+                      <th style={th}>حالة المدخل</th>
+                      <th style={th}>حالة التوزيع</th>
                       <th style={th}>ملاحظات</th>
                       {(bt.canEditDates || bt.canReview) && <th style={th}>الإجراءات</th>}
                     </tr>
@@ -795,33 +794,20 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                   <tbody>
                     {b.rows.map((r) => (
                       <tr key={r.id}>
-                        {bt.canArrange && (
-                          <td style={{ ...td, width: 34 }}>
-                            {r.canSubmit ? (
-                              <input
-                                type="checkbox"
-                                checked={sel.includes(r.itemId)}
-                                onChange={() => toggleSel(r.itemId)}
-                                title="تحديد المدخل للإرسال"
-                                style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#2563EB' }}
-                              />
-                            ) : null}
-                          </td>
-                        )}
                         {r.lead.map((v, ci) => (
                           <td key={ci} style={{ ...td, cursor: 'pointer', fontWeight: ci === 0 ? 800 : 400, color: ci === 0 ? '#13213C' : '#33415C', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={r.onOpen} title={v}>
                           {v}
                           </td>
                         ))}
                         <td style={td}>
-                          {bt.canEditDates ? (
+                          {bt.canEditDates && !r.locked ? (
                             <input type="date" min={b.minDate || undefined} max={r.end || b.maxDate || undefined} value={r.start} onChange={(e) => s.setActivityDate(r.itemId, r.actIdx, 'startDate', e.target.value)} style={dateIn} />
                           ) : (
                             r.start || '—'
                           )}
                         </td>
                         <td style={td}>
-                          {bt.canEditDates ? (
+                          {bt.canEditDates && !r.locked ? (
                             <input type="date" min={r.start || b.minDate || undefined} max={b.maxDate || undefined} value={r.end} onChange={(e) => s.setActivityDate(r.itemId, r.actIdx, 'endDate', e.target.value)} style={dateIn} />
                           ) : (
                             r.end || '—'
@@ -830,15 +816,28 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                         <td style={td}>
                           <BatchPrioPill v={r.prio} />
                         </td>
+                        {/* عمودان مستقلان: اعتماد المدخل ثم اعتماد التوزيع */}
                         <td style={td}>
                           <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.status}</span>
+                        </td>
+                        <td style={td}>
+                          {r.placement ? (
+                            <span
+                              title={r.placement.note ? 'السبب: ' + r.placement.note : undefined}
+                              style={{ fontSize: 11, fontWeight: 800, color: r.placement.color, background: r.placement.bg, borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}
+                            >
+                              {r.placement.label.replace(/^توزيع /, '').replace('قيد اعتماد التوزيع', 'قيد الاعتماد')}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
                         </td>
                         <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.notes}>{r.notes}</td>
                         {(bt.canEditDates || bt.canReview) && (
                           <td style={{ ...td, whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                               {/* coordinator: swap the نشاط to another دفعة, or take it out */}
-                              {bt.canArrange && (
+                              {bt.canArrange && !r.locked && (
                                 <>
                                   <select
                                     value={r.batch}
@@ -864,29 +863,30 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                               {r.canSubmit && (
                                 <button
                                   onClick={r.onSubmit}
-                                  title="إرسال هذا المدخل لاعتماد رئيس المسار"
-                                  style={{ background: '#EAF1FE', border: '1px solid #C9DBFB', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#1D4ED8', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                                  title="إرسال هذا التوزيع لاعتماد فريق عمل المسار"
+                                  style={{ background: '#EAF1FE', border: '1px solid #C9DBFB', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#1D4ED8', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
                                 >
-                                  إرسال
+                                  إرسال للاعتماد
                                 </button>
                               )}
-                              {/* stream head/deputy: decide on the entry from here */}
+                              {/* فريق عمل المسار: قرار على التوزيع المعلّق */}
                               {r.canReview && (
                                 <>
                                   <button
                                     onClick={r.onApprove}
+                                    title="اعتماد التوزيع — يُقفل بعدها"
                                     style={{ background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 11.5, color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
                                   >
                                     اعتماد
                                   </button>
                                   <button
-                                    onClick={r.onReturn}
+                                    onClick={() => setPlaceNote({ kind: 'info', onOk: r.onReturn })}
                                     style={{ background: '#FFF3DE', border: '1px solid #F1DCBA', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#B45309', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
                                   >
                                     إعادة للتعديل
                                   </button>
                                   <button
-                                    onClick={r.onReject}
+                                    onClick={() => setPlaceNote({ kind: 'reject', onOk: r.onReject })}
                                     style={{ background: '#FDECEE', border: '1px solid #F3D4D7', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#C0303B', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
                                   >
                                     رفض
@@ -912,6 +912,45 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
           </div>
         );
       })}
+
+      {/* نافذة سبب الإعادة/الرفض على التوزيع */}
+      {placeNote && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 120, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={() => { setPlaceNote(null); setPlaceNoteTxt(''); }} style={{ position: 'absolute', inset: 0, background: 'rgba(8,17,35,.55)', backdropFilter: 'blur(3px)' }} />
+          <div style={{ position: 'relative', width: '100%', maxWidth: 460, background: '#fff', borderRadius: 20, boxShadow: '0 30px 70px -24px rgba(2,12,35,.5)', padding: 22 }}>
+            <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C', marginBottom: 6 }}>
+              {placeNote.kind === 'reject' ? 'رفض التوزيع' : 'إعادة التوزيع للتعديل'}
+            </div>
+            <div style={{ fontSize: 12.5, color: '#6B7A93', marginBottom: 12, lineHeight: 1.8 }}>
+              {placeNote.kind === 'reject'
+                ? 'يُذكر سبب رفض التوزيع ويظهر للمنسق على السطر نفسه.'
+                : 'وضّح المطلوب تعديله في التوزيع حتى يعيد المنسق ترتيبه.'}
+            </div>
+            <textarea
+              value={placeNoteTxt}
+              onChange={(e) => setPlaceNoteTxt(e.target.value)}
+              placeholder={placeNote.kind === 'reject' ? 'سبب الرفض…' : 'الملاحظات المطلوبة…'}
+              style={{ width: '100%', minHeight: 100, border: '1px solid #DCE3EE', borderRadius: 11, padding: '11px 13px', fontSize: 13, fontFamily: 'inherit', color: '#13213C', outline: 'none', resize: 'vertical', marginBottom: 14 }}
+            />
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => { setPlaceNote(null); setPlaceNoteTxt(''); }} style={{ background: '#EEF1F7', color: '#54627B', border: 'none', borderRadius: 12, padding: '12px 20px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                إلغاء
+              </button>
+              <button
+                onClick={() => {
+                  if (!placeNoteTxt.trim()) return;
+                  placeNote.onOk(placeNoteTxt.trim());
+                  setPlaceNote(null);
+                  setPlaceNoteTxt('');
+                }}
+                style={{ background: placeNote.kind === 'reject' ? 'linear-gradient(180deg,#D6454F,#C0303B)' : 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 22px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                {placeNote.kind === 'reject' ? 'تأكيد الرفض' : 'إعادة للتعديل'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* add-entry popup — existing stream entries with their priority, so the
           placement decision is made with the priority in view */}
@@ -2969,7 +3008,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                       {/* approved for funding + approved cost — label right, value left */}
                       <div style={{ borderTop: '1px solid #EEF1F7', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>بانتظار اعتماد رئيس المسار</div>
+                          <div style={{ fontSize: 12.5, color: '#6B7A93', fontWeight: 400 }}>بانتظار اعتماد فريق عمل المسار</div>
                           <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C', flex: 'none' }}>{e2.pendingApproval}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
@@ -3272,7 +3311,7 @@ export function Dashboard({ vm }: { vm: VM }) {
       </div>
 
       {/* First-login onboarding walkthrough */}
-      <Tour steps={vm.role === 'coord' ? COORD_TOUR_STEPS : vm.role === 'ai' ? AI_TOUR_STEPS : vm.role === 'path' ? PATH_TOUR_STEPS : TOUR_STEPS} />
+      <Tour steps={vm.role === 'coord' ? coordTourSteps(s.myPath) : vm.role === 'ai' ? AI_TOUR_STEPS : vm.role === 'path' ? PATH_TOUR_STEPS : TOUR_STEPS} />
     </div>
   );
 }
@@ -3665,7 +3704,9 @@ function ListView({ cards, stream }: { cards: CardVM[]; stream?: string | null }
                   </span>
                 )}
               </td>
-              <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
+              <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                {/* صف إجراءات ثابت الاتجاه: يبدأ من يمين العمود في كل الصفوف */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
                 {c.canApprove ? (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <button
@@ -3770,12 +3811,67 @@ function ListView({ cards, stream }: { cards: CardVM[]; stream?: string | null }
                     عرض التفاصيل
                   </button>
                 )}
+                {/* إزالة المدخل — متاحة ما لم يكن معتمداً */}
+                {c.canDelete && (
+                  <button
+                    onClick={(e) => {
+                      stop(e);
+                      c.onDelete();
+                    }}
+                    title="إزالة المدخل"
+                    style={{
+                      background: '#FDF6F6',
+                      color: '#C0303B',
+                      border: '1px solid #F3D4D7',
+                      borderRadius: 9,
+                      padding: '7px 12px',
+                      fontWeight: 800,
+                      fontSize: 11.5,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    إزالة
+                  </button>
+                )}
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+  );
+}
+
+// زر إزالة المدخل — يظهر بجانب الإجراء الأساسي لكل مدخل غير معتمد
+function RemoveEntryBtn({ onDelete }: { onDelete: () => void }) {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onDelete();
+      }}
+      title="إزالة المدخل"
+      style={{
+        flex: 'none',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        background: '#FDF6F6',
+        color: '#C0303B',
+        border: '1px solid #F3D4D7',
+        borderRadius: 10,
+        padding: '9px 14px',
+        fontWeight: 800,
+        fontSize: 12.5,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+      }}
+    >
+      <Icon d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" size={13} color="#C0303B" />
+      إزالة
+    </button>
   );
 }
 
@@ -4137,7 +4233,7 @@ function CardItem({ c }: { c: CardVM }) {
                   size={14}
                   color="#C0392B"
                 />
-                حذف المدخل
+                إزالة المدخل
               </button>
             </div>
           )}
@@ -4145,39 +4241,48 @@ function CardItem({ c }: { c: CardVM }) {
       )}
 
       {c.cardAction === 'withdraw' && (
-        <button
-          onClick={(e) => {
-            stop(e);
-            c.onWithdrawToDraft();
-          }}
-          style={{ ...BTN_NEUTRAL, width: '100%' }}
-        >
-          سحب المدخل
-        </button>
+        <div style={{ display: 'flex', gap: 7 }}>
+          <button
+            onClick={(e) => {
+              stop(e);
+              c.onWithdrawToDraft();
+            }}
+            style={{ ...BTN_NEUTRAL, flex: 1 }}
+          >
+            سحب المدخل
+          </button>
+          {c.canDelete && <RemoveEntryBtn onDelete={c.onDelete} />}
+        </div>
       )}
 
       {c.cardAction === 'editResubmit' && (
-        <button
-          onClick={(e) => {
-            stop(e);
-            c.onPathCta();
-          }}
-          style={{ ...BTN_PRIMARY, width: '100%' }}
-        >
-          تعديل المدخل وإعادة إرساله
-        </button>
+        <div style={{ display: 'flex', gap: 7 }}>
+          <button
+            onClick={(e) => {
+              stop(e);
+              c.onPathCta();
+            }}
+            style={{ ...BTN_PRIMARY, flex: 1 }}
+          >
+            تعديل المدخل وإعادة إرساله
+          </button>
+          {c.canDelete && <RemoveEntryBtn onDelete={c.onDelete} />}
+        </div>
       )}
 
       {c.cardAction === 'viewDetails' && (
-        <button
-          onClick={(e) => {
-            stop(e);
-            c.onOpen();
-          }}
-          style={{ ...BTN_NEUTRAL, width: '100%' }}
-        >
-          عرض التفاصيل
-        </button>
+        <div style={{ display: 'flex', gap: 7 }}>
+          <button
+            onClick={(e) => {
+              stop(e);
+              c.onOpen();
+            }}
+            style={{ ...BTN_NEUTRAL, flex: 1 }}
+          >
+            عرض التفاصيل
+          </button>
+          {c.canDelete && <RemoveEntryBtn onDelete={c.onDelete} />}
+        </div>
       )}
 
       {c.cardAction === 'approveInfoReject' && (

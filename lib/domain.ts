@@ -4,7 +4,7 @@
 // numbers, colors and formulas are verbatim from the Claude Design prototype.
 // ============================================================================
 
-export type RoleKey = 'entity' | 'path' | 'deputy' | 'coord' | 'ai' | 'secretariat' | 'admin';
+export type RoleKey = 'entity' | 'path' | 'coord' | 'ai' | 'admin';
 export type ItemType = 'project' | 'initiative' | 'operation' | 'service';
 export type WfState =
   | 'draft'
@@ -140,7 +140,7 @@ export const DEFAULT_ABOUT: AboutContent = {
     { title: 'المهام الاستراتيجية', desc: 'الإجراءات والأنشطة الاستراتيجية على المستوى الوطني ومستوى الجهات الاتحادية المرتبطة بالاستراتيجيات والأجندات والسياسات والمشاريع وإدارة الأداء والهياكل التنظيمية وغيرها' },
   ],
   outOfScope:
-    'العمليات والمهام والإجراءات والخدمات التي سيتم تحديدها واعتمادها بأنها غير قابلة/غير مجدية لتبني الذكاء الاصطناعي المساعد من قبل اللجنة الوطنية للذكاء الاصطناعي المساعد أو رئيس المسار المعني على مستوى الحكومة.',
+    'العمليات والمهام والإجراءات والخدمات التي سيتم تحديدها واعتمادها بأنها غير قابلة/غير مجدية لتبني الذكاء الاصطناعي المساعد من قبل اللجنة الوطنية للذكاء الاصطناعي المساعد أو فريق عمل المسار المعني على مستوى الحكومة.',
   principles: [
     { title: 'التكنولوجيا لا تستبدل الإنسان', desc: 'تعزيز قدرات الموظف الحكومي وتمكينه من التركيز على المهام ذات القيمة المضافة والأثر الأكبر' },
     { title: 'الإشراف والمساءلة البشرية', desc: 'مسؤولية جودة ودقة المخرجات والنتائج لنماذج وأنظمة الذكاء الاصطناعي المساعد تقع على الإنسان' },
@@ -626,31 +626,19 @@ export const ROLE: Record<
     bg: '#EAF1FE',
   },
   path: {
-    label: 'رئيس المسار',
-    sub: 'مراجعة واعتماد مدخلات المسار من جميع الجهات',
-    badge: '#1D4ED8',
-    bg: '#EAF1FE',
-  },
-  deputy: {
-    label: 'نائب رئيس المسار',
+    label: 'فريق عمل المسار في المشروع',
     sub: 'مراجعة واعتماد مدخلات المسار من جميع الجهات',
     badge: '#1D4ED8',
     bg: '#EAF1FE',
   },
   coord: {
-    label: 'منسق المسار في الجهة',
+    label: 'منسق المسار في الجهة الاتحادية',
     sub: 'تنسيق ومتابعة بيانات المسار في الجهة',
     badge: '#1D4ED8',
     bg: '#EAF1FE',
   },
   ai: {
-    label: 'رئيس اللجنة الوطنية للذكاء الاصطناعي المساعد',
-    sub: 'اطلاع وطني على المدخلات المعتمدة عبر كل المسارات والجهات',
-    badge: '#1D4ED8',
-    bg: '#EAF1FE',
-  },
-  secretariat: {
-    label: 'الأمانة العامة للجنة الوطنية للذكاء الاصطناعي المساعد',
+    label: 'اللجنة الوطنية للذكاء الاصطناعي المساعد',
     sub: 'اطلاع وطني على المدخلات المعتمدة عبر كل المسارات والجهات',
     badge: '#1D4ED8',
     bg: '#EAF1FE',
@@ -671,28 +659,38 @@ export const ROLE_INFO: {
   scope: string;
   permissions: string[];
 }[] = [
-  { key: 'admin', nameAr: 'مشرف النظام', descAr: 'يدير المستخدمين والأدوار، ويعيّن رؤساء المسارات وأعضاء اللجنة الوطنية.', scope: 'النظام بالكامل', permissions: ['users.manage', 'roles.view', 'streamhead.assign', 'committee.assign'] },
-  { key: 'ai', nameAr: 'رئيس اللجنة الوطنية للذكاء الاصطناعي المساعد', descAr: 'اطلاع وطني على جميع المدخلات المعتمدة من رؤساء المسارات عبر كل المسارات والجهات.', scope: 'وطني', permissions: ['item.view.approved.all'] },
-  { key: 'secretariat', nameAr: 'الأمانة العامة للجنة الوطنية للذكاء الاصطناعي المساعد', descAr: 'اطلاع وطني على جميع المدخلات المعتمدة من رؤساء المسارات عبر كل المسارات والجهات.', scope: 'وطني', permissions: ['item.view.approved.all'] },
-  { key: 'path', nameAr: 'رئيس المسار', descAr: 'يراجع مدخلات كل الجهات ضمن مساره ويعتمدها أو يطلب معلومات إضافية.', scope: 'مسار واحد أو أكثر', permissions: ['item.view.stream', 'item.approve', 'item.info.request', 'plan.view'] },
-  { key: 'deputy', nameAr: 'نائب رئيس المسار', descAr: 'يراجع مدخلات كل الجهات ضمن مساره ويعتمدها أو يطلب معلومات إضافية.', scope: 'مسار واحد أو أكثر', permissions: ['item.view.stream', 'item.approve', 'item.info.request', 'plan.view'] },
-  { key: 'coord', nameAr: 'منسق المسار في الجهة', descAr: 'يعبّئ جميع بيانات مسارات جهته ويرسلها للاعتماد.', scope: 'مسار واحد أو أكثر داخل جهته', permissions: ['item.create', 'item.update', 'item.submit', 'plan.edit'] },
+  { key: 'admin', nameAr: 'مشرف النظام', descAr: 'يدير المستخدمين والأدوار، ويعيّن فرق عمل المسارات وأعضاء اللجنة الوطنية.', scope: 'النظام بالكامل', permissions: ['users.manage', 'roles.view', 'streamhead.assign', 'committee.assign'] },
+  { key: 'ai', nameAr: 'اللجنة الوطنية للذكاء الاصطناعي المساعد', descAr: 'اطلاع وطني على جميع المدخلات المعتمدة من فرق عمل المسارات عبر كل المسارات والجهات.', scope: 'وطني', permissions: ['item.view.approved.all'] },
+  { key: 'path', nameAr: 'فريق عمل المسار في المشروع', descAr: 'يراجع مدخلات كل الجهات ضمن مساره ويعتمدها أو يطلب معلومات إضافية.', scope: 'مسار واحد أو أكثر', permissions: ['item.view.stream', 'item.approve', 'item.info.request', 'plan.view'] },
+  { key: 'coord', nameAr: 'منسق المسار في الجهة الاتحادية', descAr: 'يعبّئ جميع بيانات مسارات جهته ويرسلها للاعتماد.', scope: 'مسار واحد أو أكثر داخل جهته', permissions: ['item.create', 'item.update', 'item.submit', 'plan.edit'] },
 ];
 
-// Real stream representatives (رئيس المسار) — one per transformation stream
+// Real stream representatives (فريق عمل المسار) — one per transformation stream
 // Stream heads are identified by their ROLE across the platform — the
 // officials' personal names are deliberately not shown anywhere.
 export const PATH_REPS: Record<string, string> = {};
 
 // Role-switcher pill labels (display order in the header)
 export const ROLE_PILLS: { key: RoleKey; label: string }[] = [
-  { key: 'coord', label: 'منسق المسار' },
-  { key: 'path', label: 'رئيس المسار' },
-  { key: 'deputy', label: 'نائب رئيس المسار' },
-  { key: 'ai', label: 'رئيس اللجنة الوطنية' },
-  { key: 'secretariat', label: 'الأمانة العامة للجنة الوطنية' },
+  { key: 'coord', label: 'منسق المسار في الجهة الاتحادية' },
+  { key: 'path', label: 'فريق عمل المسار في المشروع' },
+  { key: 'ai', label: 'اللجنة الوطنية للذكاء الاصطناعي المساعد' },
   { key: 'admin', label: 'مشرف النظام' },
 ];
+
+/**
+ * أدوار أُلغيت بدمجها في أدوار البنية المعتمدة (أربعة أدوار):
+ * نائب رئيس المسار ← فريق عمل المسار في المشروع
+ * الأمانة العامة للجنة الوطنية ← اللجنة الوطنية للذكاء الاصطناعي المساعد
+ * تُستخدم لترحيل الحسابات والجلسات المحفوظة بالأدوار القديمة.
+ */
+export const LEGACY_ROLE_MAP: Record<string, RoleKey> = {
+  deputy: 'path',
+  secretariat: 'ai',
+};
+
+export const migrateRole = (r: string | undefined | null): RoleKey =>
+  (LEGACY_ROLE_MAP[String(r || '')] || r || 'coord') as RoleKey;
 
 // A managed user account (المستخدمون) as shown/edited in the admin console and,
 // in production, stored in the `users` table.
@@ -724,7 +722,7 @@ export function seedUsers(entityName = DEFAULT_ENTITY): UserRec[] {
     { id: 'u-committee', role: 'ai', name: 'اللجنة الوطنية للذكاء الاصطناعي', title: 'عضو اللجنة الوطنية', email: 'committee@aigp.gov.ae', phone: '', active: true, system: true },
   ];
   for (const p of PATHS) {
-    u.push({ id: `u-head-${p.id}`, role: 'path', name: PATH_REPS[p.id] || `رئيس مسار ${p.name}`, title: `رئيس مسار ${p.name}`, email: `head.${p.id}@aigp.gov.ae`, phone: '', streamId: p.id, active: true, system: true });
+    u.push({ id: `u-head-${p.id}`, role: 'path', name: PATH_REPS[p.id] || `فريق عمل مسار ${p.name}`, title: `فريق عمل مسار ${p.name}`, email: `head.${p.id}@aigp.gov.ae`, phone: '', streamId: p.id, active: true, system: true });
   }
   for (const p of PATHS) {
     u.push({ id: `u-coord-${p.id}`, role: 'coord', name: `منسق ${p.name}`, title: `منسق مسار ${p.name}`, email: `coord.${p.id}@aigp.gov.ae`, phone: '', entityName, streamId: p.id, active: true });
@@ -878,7 +876,44 @@ export type ActivityDetail = {
   execBatch?: string;
   startDate?: string;
   endDate?: string;
+  // اعتماد التوزيع — دورة مستقلة عن اعتماد محتوى المدخل نفسه:
+  // مسودة ← إرسال للاعتماد ← قيد اعتماد فريق عمل المسار ← معتمد (يُقفل التوزيع)
+  // الإعادة/الرفض تُرجعه مسودةً مع سبب يظهر للمنسق.
+  batchWf?: 'draft' | 'pending' | 'approved';
+  batchRet?: 'info' | 'reject';
+  batchNote?: string;
 };
+
+/** حالة توزيع نشاط على دفعته — undefined على نشاط موزَّع قديم تعني مسودة */
+export type PlacementState = 'none' | 'draft' | 'pending' | 'approved';
+export function placementState(i: Item, a: ActivityDetail): PlacementState {
+  if (!activityBatch(i, a)) return 'none';
+  return a.batchWf || 'draft';
+}
+
+/** التوزيع المعتمد مقفل — لا نقل ولا إزالة ولا تعديل تواريخ */
+export const placementLocked = (i: Item, a: ActivityDetail): boolean => {
+  const st = placementState(i, a);
+  return st === 'approved' || st === 'pending';
+};
+
+export const PLACEMENT_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  draft: { label: 'توزيع مسودة', color: '#5A6B86', bg: '#EEF2F8' },
+  pending: { label: 'قيد اعتماد التوزيع', color: '#B45309', bg: '#FFF7EB' },
+  approved: { label: 'توزيع معتمد', color: '#0B8A4B', bg: '#EAF7F0' },
+  returned: { label: 'توزيع مُعاد للتعديل', color: '#B45309', bg: '#FFF3DE' },
+  rejected: { label: 'توزيع مرفوض', color: '#C0303B', bg: '#FDECEE' },
+};
+
+export function placementChip(i: Item, a: ActivityDetail): { label: string; color: string; bg: string; note?: string } | null {
+  const st = placementState(i, a);
+  if (st === 'none') return null;
+  if (st === 'draft' && a.batchRet) {
+    const c = PLACEMENT_STATUS[a.batchRet === 'reject' ? 'rejected' : 'returned'];
+    return { ...c, note: a.batchNote };
+  }
+  return { ...PLACEMENT_STATUS[st] };
+}
 
 /** effective دفعة of one نشاط — its own, else the parent entry's */
 export function activityBatch(i: Item, a: ActivityDetail): string {
