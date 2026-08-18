@@ -35,7 +35,7 @@ export type AuthUser = {
 const GLOBAL_ROLES = new Set(['system_admin', 'program_admin', 'ai_committee']);
 
 // Roles that are stream-scoped across ALL entities (no entity filter)
-const STREAM_GLOBAL_ROLES = new Set(['stream_owner']);
+const STREAM_GLOBAL_ROLES = new Set(['stream_owner', 'stream_deputy']);
 
 // Roles that are entity-scoped across ALL streams (no stream filter)
 const ENTITY_GLOBAL_ROLES = new Set(['entity_representative', 'entity_admin']);

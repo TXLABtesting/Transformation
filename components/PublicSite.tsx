@@ -299,6 +299,9 @@ export function AboutPage() {
             <div style={{ fontSize: 14, fontWeight: 400, color: '#DBE8FC', lineHeight: 2, marginTop: 14 }}>{TG.text2}</div>
           </div>
         </div>
+        <div style={{ marginTop: 18, background: '#EAF1FE', border: '1px solid #C9DBF8', borderRadius: 14, padding: '16px 22px', fontSize: 13, fontWeight: 400, color: '#1F3D77', lineHeight: 2, textAlign: 'center' }}>
+          {TG.note}
+        </div>
       </div>
 
       {/* tracks */}

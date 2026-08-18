@@ -74,12 +74,15 @@ export const CONTACT_STREAMS: { key: string; label: string }[] = [
   { key: 'general', label: 'الاستفسارات العامة' },
 ];
 export const DEFAULT_CONTACT_EMAILS: Record<string, string> = {
-  services: 'services@aigp.gov.ae',
-  strategy: 'strategy@aigp.gov.ae',
-  ops: 'operations@aigp.gov.ae',
-  capacity: 'capacity@aigp.gov.ae',
-  tech: 'technology@aigp.gov.ae',
-  general: 'secretariat@aigp.gov.ae',
+  // منسقو المسارات المعتمدون (2026-08-12)
+  services: 'Abdulla.AlHammadi@pmo.gov.ae', // عبدالله الحمادي
+  strategy: 'Mohamed.AlBanna@pmo.gov.ae', // محمد البنا
+  // العمليات والدعم المؤسسي — منسقان: صالحة الزعابي (عمليات الدعم المؤسسي)
+  // ود. راشد المنصوري (العمليات التخصصية) — يستلمان معاً
+  ops: 'Salha.alzaabi@gsoc.gov.ae,Rashid.Almansoori@gsoc.gov.ae',
+  capacity: 'SAlhashmi@fahr.gov.ae', // شذى حامد الهاشمي
+  tech: 'Marwan.AlSerkal@pmo.gov.ae', // مروان السركال
+  general: 'Agentic.AI@moca.gov.ae', // الاستفسارات العامة
 };
 
 // ---- public-site content managed from the admin backoffice ----
@@ -100,7 +103,7 @@ export const DEFAULT_ABOUT_HERO =
 // full About-page content — every section editable from the admin backoffice
 export type AboutContent = {
   timeline: { year: string; title: string; sub: string; major: boolean; img?: string }[];
-  targets: { label1: string; value1: string; text1: string; label2: string; value2: string; text2: string };
+  targets: { label1: string; value1: string; text1: string; label2: string; value2: string; text2: string; note: string };
   tracks: { title: string; desc: string }[];
   scope: { title: string; desc: string }[];
   outOfScope: string;
@@ -121,6 +124,7 @@ export const DEFAULT_ABOUT: AboutContent = {
     label2: 'تدريب وتأهيل',
     value2: '100%',
     text2: 'من موظفي الجهة الاتحادية على الذكاء الاصطناعي المساعد',
+    note: 'سيتم تحديد النتائج والأثر المتوقع من تحويل العمليات والخدمات والمهام لتطبيق نماذج وأنظمة الذكاء الاصطناعي المساعد على مستوى الجهة، على أن تكون هذه النتائج كمية وواضحة وقابلة للقياس بالأرقام وتعكس مستوى التحسّن المتوقع',
   },
   tracks: [
     { title: 'مسار العمليات والدعم المؤسسي', desc: 'تحويل العمليات التخصصية وعمليات الدعم المؤسسي لتطبيق نماذج وأنظمة الذكاء الاصطناعي المساعد، بما يعزز الإنتاجية والأداء الحكومي' },
@@ -703,6 +707,12 @@ export type UserRec = {
   streamId?: string; // coord / path
   active: boolean;
   system?: boolean; // seeded reference account (kept out of the demo delete path)
+  // Present only when hydrated from the real backend (see store.ts
+  // adminLoadUsers): the real Entity id and RBAC role code, needed to edit
+  // the account correctly against /api/admin/* (the fields above are
+  // display-only legacy labels and don't round-trip to the database).
+  entityId?: string;
+  roleCode?: string;
 };
 
 // Starter accounts for the admin console (mirrors prisma/seed.ts): the national

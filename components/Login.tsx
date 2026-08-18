@@ -186,7 +186,7 @@ export function Login({ vm }: { vm: VM }) {
   const onLogin = () => {
     if (process.env.NEXT_PUBLIC_UAEPASS_MODE === 'live') {
       const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      window.location.href = `${base}/api/auth/uaepass/login`;
+      window.location.href = `${base}/api/auth/login`;
       return;
     }
     loginUaePass();

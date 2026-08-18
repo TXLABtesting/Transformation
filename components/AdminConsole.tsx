@@ -5,7 +5,7 @@
 // committee (اللجنة الوطنية). Coordinators are provisioned by the entity rep
 // in team setup, so they appear here read-only for oversight.
 // ---------------------------------------------------------------------------
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { DOC_CATS, type DocCat, CONTACT_STREAMS } from '@/lib/domain';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
@@ -32,8 +32,46 @@ const inputSt: CSSProperties = {
 
 type Tab = 'users' | 'assign' | 'roles' | 'site' | 'contact';
 
-const blankUser = (): UserRec => ({
-  id: '', role: 'coord', name: '', title: '', email: '', phone: '', active: true,
+// Only the server deployment (NEXT_PUBLIC_DATA_MODE=api) has a database and
+// /api/admin/* routes behind it. The static-export/local-demo build has
+// neither, so every DB-backed fetch below is gated on this flag and falls
+// back to leaving local/demo state as-is.
+const DB_BACKED = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
+
+// Real reference rows fetched from Postgres (see /api/admin/{entities,streams,roles}).
+type DbEntity = { id: string; nameAr: string };
+type DbStream = { id: string; nameAr: string };
+type DbRole = { id: string; code: string; nameAr: string };
+
+// The account being created/edited in UserEditor. Uses real DB ids
+// (entityId/streamId/roleCode) instead of the free-text/legacy fields on
+// UserRec, since those don't round-trip to /api/admin/users.
+type UserDraft = {
+  id: string; // '' = new account
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  entityId: string;
+  streamId: string;
+  roleCode: string; // '' = no role assigned yet
+  active: boolean;
+};
+
+const blankDraft = (seed?: Partial<UserDraft>): UserDraft => ({
+  id: '', name: '', title: '', email: '', phone: '', entityId: '', streamId: '', roleCode: '', active: true, ...seed,
+});
+
+const draftFromUser = (u: UserRec): UserDraft => ({
+  id: u.id,
+  name: u.name,
+  title: u.title,
+  email: u.email,
+  phone: u.phone,
+  entityId: u.entityId || '',
+  streamId: u.streamId || '',
+  roleCode: u.roleCode || '',
+  active: u.active,
 });
 
 export function AdminConsole({ vm }: { vm: VM }) {
@@ -41,13 +79,89 @@ export function AdminConsole({ vm }: { vm: VM }) {
   const a = vm.admin;
   const [tab, setTab] = useState<Tab>('users');
   const [roleFilter, setRoleFilter] = useState<RoleKey | 'all'>('all');
-  const [editing, setEditing] = useState<UserRec | null>(null);
+  const [editing, setEditing] = useState<UserDraft | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
+
+  // Real entities/streams/roles from the database, for the create/edit/bulk
+  // forms below — the old local lists (a.entities, a.streams, a.roleInfo)
+  // are display-only demo data and don't match the real tables' ids.
+  const [dbEntities, setDbEntities] = useState<DbEntity[]>([]);
+  const [dbStreams, setDbStreams] = useState<DbStream[]>([]);
+  const [dbRoles, setDbRoles] = useState<DbRole[]>([]);
+
+  // Pull the real user list + reference data from the database the moment
+  // this console opens, instead of showing whatever demo/local rows happen
+  // to be sitting in browser storage. No-ops in the static/local demo build.
+  useEffect(() => {
+    s.adminLoadUsers();
+    if (!DB_BACKED) return;
+    (async () => {
+      try {
+        const [eRes, sRes, rRes] = await Promise.all([
+          fetch('/api/admin/entities', { credentials: 'include' }),
+          fetch('/api/admin/streams', { credentials: 'include' }),
+          fetch('/api/admin/roles', { credentials: 'include' }),
+        ]);
+        if (eRes.ok) setDbEntities((await eRes.json()).entities || []);
+        if (sRes.ok) setDbStreams((await sRes.json()).streams || []);
+        if (rRes.ok) setDbRoles((await rRes.json()).roles || []);
+      } catch {
+        // reference data unavailable — the forms below just show empty lists
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = useMemo(
     () => (roleFilter === 'all' ? a.users : a.users.filter((u) => u.role === roleFilter)),
     [a.users, roleFilter]
   );
+
+  // Creates or updates the account against the real API: create/update the
+  // row, assign the RBAC role (grants actual permissions — the legacy
+  // `role` string alone does not), then sync enable/disable to match the
+  // "active" checkbox. Returns an error message, or null on success.
+  const saveDraft = async (d: UserDraft): Promise<string | null> => {
+    if (!DB_BACKED) return 'غير متاح في نسخة العرض المحلية — استخدم النسخة المتصلة بالخادم.';
+    try {
+      let id = d.id;
+      if (!id) {
+        const res = await fetch('/api/admin/users', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ name: d.name, email: d.email, entityId: d.entityId || undefined, streamId: d.streamId || undefined }),
+        });
+        const body = await res.json().catch(() => ({} as any));
+        if (!res.ok) return body.message || body.error || 'فشل إنشاء المستخدم';
+        id = body.user.id;
+      } else {
+        const res = await fetch(`/api/admin/users/${id}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ name: d.name, title: d.title, phone: d.phone, entityId: d.entityId || undefined, streamId: d.streamId || undefined }),
+        });
+        const body = await res.json().catch(() => ({} as any));
+        if (!res.ok) return body.message || body.error || 'فشل حفظ المستخدم';
+      }
+      if (d.roleCode) {
+        const res = await fetch(`/api/admin/users/${id}/roles`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ roleCode: d.roleCode }),
+        });
+        if (!res.ok) { const body = await res.json().catch(() => ({} as any)); return body.message || body.error || 'فشل تعيين الدور'; }
+      }
+      // New accounts are created disabled (status: pending) — only call
+      // enable if the checkbox is on. Edits only call enable/disable when
+      // the checkbox actually changed the stored state.
+      const currentlyActive = d.id ? a.users.find((u) => u.id === d.id)?.active : false;
+      if (d.active !== currentlyActive) {
+        const res = await fetch(`/api/admin/users/${id}/${d.active ? 'enable' : 'disable'}`, { method: 'POST', credentials: 'include' });
+        if (!res.ok) return 'تم الحفظ، لكن تعذّر تحديث حالة التفعيل';
+      }
+      await s.adminLoadUsers();
+      return null;
+    } catch {
+      return 'تعذّر الاتصال بالخادم';
+    }
+  };
 
   const kpis = [
     { label: 'إجمالي المستخدمين', value: a.counts.total, icon: IC_USERS, c: '#2563EB', bg: '#EAF0FE' },
@@ -127,9 +241,9 @@ export function AdminConsole({ vm }: { vm: VM }) {
         </div>
 
         {tab === 'users' && (
-          <UsersTab a={a} filtered={filtered} roleFilter={roleFilter} setRoleFilter={setRoleFilter} onAdd={() => setEditing(blankUser())} onBulk={() => setBulkOpen(true)} onEdit={setEditing} onToggle={a.toggleUser} onRemove={a.removeUser} />
+          <UsersTab a={a} filtered={filtered} roleFilter={roleFilter} setRoleFilter={setRoleFilter} onAdd={() => setEditing(blankDraft())} onBulk={() => setBulkOpen(true)} onEdit={(u) => setEditing(draftFromUser(u))} onToggle={a.toggleUser} onRemove={a.removeUser} />
         )}
-        {tab === 'assign' && <AssignTab a={a} onEdit={setEditing} onAdd={(u) => setEditing(u)} />}
+        {tab === 'assign' && <AssignTab a={a} streams={dbStreams} onEdit={(u) => setEditing(draftFromUser(u))} onAdd={(seed) => setEditing(blankDraft(seed))} />}
         {tab === 'roles' && <RolesTab a={a} />}
         {tab === 'site' && <SiteTab />}
         {tab === 'contact' && <ContactTab a={a} />}
@@ -137,17 +251,24 @@ export function AdminConsole({ vm }: { vm: VM }) {
 
       {editing && (
         <UserEditor
-          a={a}
-          user={editing}
+          draft={editing}
+          entities={dbEntities}
+          streams={dbStreams}
+          roles={dbRoles}
           onClose={() => setEditing(null)}
-          onSave={(u) => {
-            a.saveUser(u.id ? u : { ...u, id: 'u-' + Math.abs(hashStr(u.email + u.name + u.role)).toString(36) });
-            setEditing(null);
-          }}
+          onSave={saveDraft}
         />
       )}
 
-      {bulkOpen && <BulkUsers a={a} onClose={() => setBulkOpen(false)} />}
+      {bulkOpen && (
+        <BulkUsers
+          entities={dbEntities}
+          streams={dbStreams}
+          roles={dbRoles}
+          onClose={() => setBulkOpen(false)}
+          onImported={() => s.adminLoadUsers()}
+        />
+      )}
     </div>
   );
 }
@@ -366,6 +487,7 @@ function SiteTab() {
             {inp(ab.targets.value2, (v) => s.setAbout({ targets: { ...ab.targets, value2: v } }), 'الرقم', '0 0 90px')}
             {inp(ab.targets.text2, (v) => s.setAbout({ targets: { ...ab.targets, text2: v } }), 'النص')}
           </div>
+          <textarea value={ab.targets.note} onChange={(e) => s.setAbout({ targets: { ...ab.targets, note: e.target.value } })} rows={3} placeholder="ملاحظة النتائج والأثر المتوقع" style={siteTa} />
         </div>
       </SiteSection>
 
@@ -529,12 +651,6 @@ function SiteTab() {
   );
 }
 
-function hashStr(x: string): number {
-  let h = 0;
-  for (let i = 0; i < x.length; i++) h = (h << 5) - h + x.charCodeAt(i) | 0;
-  return h || x.length + 1;
-}
-
 // ---- Users table ----------------------------------------------------------
 function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onBulk, onEdit, onToggle, onRemove }: {
   a: VM['admin'];
@@ -630,9 +746,12 @@ function IconBtn({ d, title, onClick, danger }: { d: string; title: string; onCl
 }
 
 // ---- Assign stream heads + committee --------------------------------------
-function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) => void; onAdd: (seed: UserRec) => void }) {
-  const heads = a.users.filter((u) => (u.role === 'path' || u.role === 'deputy'));
-  const committee = a.users.filter((u) => (u.role === 'ai' || u.role === 'secretariat'));
+function AssignTab({ a, streams, onEdit, onAdd }: { a: VM['admin']; streams: DbStream[]; onEdit: (u: UserRec) => void; onAdd: (seed: Partial<UserDraft>) => void }) {
+  // Matched against the real RBAC role code (see store.ts adminLoadUsers),
+  // not the legacy `role` field, since that field can't distinguish head vs
+  // deputy and the backend doesn't model that distinction either.
+  const heads = a.users.filter((u) => u.roleCode === 'stream_owner' || u.roleCode === 'stream_deputy');
+  const committee = a.users.filter((u) => u.roleCode === 'ai_committee');
   const headByStream = (id: string) => heads.find((h) => h.streamId === id);
   return (
     <div style={{ display: 'grid', gap: 18 }}>
@@ -641,23 +760,24 @@ function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) 
           <Icon d={IC_STAR} size={16} color="#1D4ED8" /> رؤساء المسارات
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 12, padding: 16 }}>
-          {a.streams.map((st) => {
+          {streams.map((st) => {
             const h = headByStream(st.id);
             return (
               <div key={st.id} style={{ border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 13, padding: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 700 }}>{st.name}</div>
+                  <div style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 700 }}>{st.nameAr}</div>
                   <div style={{ fontWeight: 800, fontSize: 13.5, marginTop: 3 }}>{h?.name || 'لم يُعيّن بعد'}</div>
                   {h?.email && <div style={{ fontSize: 11, color: '#9AA6BC', direction: 'ltr', textAlign: 'right' }}>{h.email}</div>}
                 </div>
                 <button
-                  onClick={() => (h ? onEdit(h) : onAdd({ id: '', role: 'path', name: '', title: `رئيس مسار ${st.name}`, email: '', phone: '', streamId: st.id, active: true }))}
+                  onClick={() => (h ? onEdit(h) : onAdd({ roleCode: 'stream_owner', streamId: st.id, title: `رئيس مسار ${st.nameAr}` }))}
                   style={{ border: '1px solid #D8E3F5', background: '#F1F5FB', color: '#1D4ED8', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flex: 'none' }}>
                   {h ? 'تعديل' : 'تعيين'}
                 </button>
               </div>
             );
           })}
+          {streams.length === 0 && <div style={{ padding: 14, textAlign: 'center', color: '#9AA6BC', fontSize: 13 }}>تعذّر تحميل المسارات من الخادم.</div>}
         </div>
       </div>
 
@@ -666,7 +786,7 @@ function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) 
           <div style={{ fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
             <Icon d={IC_SHIELD} size={16} color="#1D4ED8" /> اللجنة الوطنية
           </div>
-          <button onClick={() => onAdd({ id: '', role: 'ai', name: '', title: 'عضو اللجنة الوطنية', email: '', phone: '', active: true })} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #D8E3F5', background: '#F1F5FB', color: '#1D4ED8', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={() => onAdd({ roleCode: 'ai_committee', title: 'عضو اللجنة الوطنية' })} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #D8E3F5', background: '#F1F5FB', color: '#1D4ED8', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
             <Icon d={IC_PLUS} size={14} color="#1D4ED8" /> إضافة عضو
           </button>
         </div>
@@ -688,42 +808,115 @@ function AssignTab({ a, onEdit, onAdd }: { a: VM['admin']; onEdit: (u: UserRec) 
 }
 
 // ---- Roles reference ------------------------------------------------------
+// Reads live roles + permissions from the database (the same source /admin
+// uses) so a role added via prisma/seed.ts — or later via /admin — shows up
+// here immediately. Falls back to the static reference cards if the API
+// can't be reached (e.g. a local-only demo build).
 function RolesTab({ a }: { a: VM['admin'] }) {
+  const [dbRoles, setDbRoles] = useState<{ id: string; code: string; nameAr: string; permissions: string[] }[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    // Only the server deployment has /api/admin/* routes backed by Postgres;
+    // the static-export/local-demo build has no server to call.
+    if (process.env.NEXT_PUBLIC_DATA_MODE !== 'api') return;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/roles', { credentials: 'include' });
+        if (!res.ok) throw new Error('failed');
+        const data = await res.json();
+        setDbRoles(data.roles || []);
+      } catch {
+        setLoadError(true);
+      }
+    })();
+  }, []);
+
+  if (dbRoles) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 14 }}>
+        {dbRoles.map((r) => (
+          <div key={r.id} style={{ ...card, padding: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ fontWeight: 800, fontSize: 14 }}>{r.nameAr}</div>
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: '#54627B', background: '#EEF2F8', borderRadius: 999, padding: '3px 9px', direction: 'ltr' }}>{r.code}</span>
+            </div>
+            <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {r.permissions.length ? (
+                r.permissions.map((p) => (
+                  <span key={p} style={{ fontSize: 10.5, fontFamily: 'ui-monospace,monospace', direction: 'ltr', color: '#1D4ED8', background: '#EAF1FE', borderRadius: 7, padding: '3px 7px' }}>{p}</span>
+                ))
+              ) : (
+                <span style={{ fontSize: 11.5, color: '#9AA6BC' }}>لا توجد صلاحيات مرتبطة بعد</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Static fallback — shown only until the fetch resolves, or if it fails.
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 14 }}>
-      {a.roleInfo.map((r) => (
-        <div key={r.key} style={{ ...card, padding: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <div style={{ fontWeight: 800, fontSize: 14 }}>{r.nameAr}</div>
-            <span style={{ fontSize: 10.5, fontWeight: 800, color: '#54627B', background: '#EEF2F8', borderRadius: 999, padding: '3px 9px' }}>{r.scope}</span>
-          </div>
-          <div style={{ fontSize: 12, color: '#54627B', lineHeight: 1.8, marginTop: 8 }}>{r.descAr}</div>
-          <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {r.permissions.map((p) => (
-              <span key={p} style={{ fontSize: 10.5, fontFamily: 'ui-monospace,monospace', direction: 'ltr', color: '#1D4ED8', background: '#EAF1FE', borderRadius: 7, padding: '3px 7px' }}>{p}</span>
-            ))}
-          </div>
+    <div style={{ display: 'grid', gap: 14 }}>
+      {loadError && (
+        <div style={{ fontSize: 12, color: '#C0392B', background: '#FEF3F3', border: '1px solid #F6D6D9', borderRadius: 10, padding: '10px 14px' }}>
+          تعذّر تحميل الأدوار من الخادم — المعروض أدناه مرجع ثابت قد لا يطابق قاعدة البيانات الفعلية.
         </div>
-      ))}
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 14 }}>
+        {a.roleInfo.map((r) => (
+          <div key={r.key} style={{ ...card, padding: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ fontWeight: 800, fontSize: 14 }}>{r.nameAr}</div>
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: '#54627B', background: '#EEF2F8', borderRadius: 999, padding: '3px 9px' }}>{r.scope}</span>
+            </div>
+            <div style={{ fontSize: 12, color: '#54627B', lineHeight: 1.8, marginTop: 8 }}>{r.descAr}</div>
+            <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {r.permissions.map((p) => (
+                <span key={p} style={{ fontSize: 10.5, fontFamily: 'ui-monospace,monospace', direction: 'ltr', color: '#1D4ED8', background: '#EAF1FE', borderRadius: 7, padding: '3px 7px' }}>{p}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
 // ---- User editor modal ----------------------------------------------------
-function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRec; onClose: () => void; onSave: (u: UserRec) => void }) {
-  const [f, setF] = useState<UserRec>(user);
-  const set = (patch: Partial<UserRec>) => setF((x) => ({ ...x, ...patch }));
-  const needsEntity = f.role === 'coord';
-  const needsStream = f.role === 'coord' || f.role === 'path' || f.role === 'deputy';
+function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
+  draft: UserDraft;
+  entities: DbEntity[];
+  streams: DbStream[];
+  roles: DbRole[];
+  onClose: () => void;
+  onSave: (d: UserDraft) => Promise<string | null>;
+}) {
+  const [f, setF] = useState<UserDraft>(draft);
+  const set = (patch: Partial<UserDraft>) => setF((x) => ({ ...x, ...patch }));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
   const emailOk = /^\S+@\S+\.\S+$/.test(f.email.trim());
-  const valid = f.name.trim() && emailOk && (!needsEntity || f.entityName) && (!needsStream || f.streamId);
+  const valid = !!f.name.trim() && emailOk;
+
+  const handleSave = async () => {
+    if (!valid) return;
+    setSaving(true);
+    setError('');
+    const err = await onSave({ ...f, name: f.name.trim(), email: f.email.trim() });
+    setSaving(false);
+    if (err) setError(err);
+    else onClose();
+  };
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
       <div style={{ position: 'relative', width: 'min(520px,calc(100vw-32px))', maxHeight: '90vh', overflowY: 'auto', background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>{user.id ? 'تعديل مستخدم' : 'إضافة مستخدم'}</div>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>{draft.id ? 'تعديل مستخدم' : 'إضافة مستخدم'}</div>
           <button onClick={onClose} style={{ border: 'none', background: '#F1F5FB', borderRadius: 9, width: 32, height: 32, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
             <Icon d={IC_X} size={16} color="#54627B" />
           </button>
@@ -740,53 +933,50 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
               <input style={inputSt} value={f.title} onChange={(e) => set({ title: e.target.value })} />
             </div>
             <div>
-              <label style={labelSt}>الدور *</label>
-              <select style={{ ...inputSt, cursor: 'pointer' }} value={f.role} onChange={(e) => set({ role: e.target.value as RoleKey })}>
-                {a.roleInfo.map((r) => <option key={r.key} value={r.key}>{r.nameAr}</option>)}
+              <label style={labelSt}>الدور</label>
+              <select style={{ ...inputSt, cursor: 'pointer' }} value={f.roleCode} onChange={(e) => set({ roleCode: e.target.value })}>
+                <option value="">— بدون دور (يُعيَّن لاحقًا) —</option>
+                {roles.map((r) => <option key={r.code} value={r.code}>{r.nameAr} ({r.code})</option>)}
               </select>
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={labelSt}>البريد الإلكتروني *</label>
-              <input style={{ ...inputSt, direction: 'ltr', textAlign: 'right' }} value={f.email} onChange={(e) => set({ email: e.target.value })} placeholder="name@aigp.gov.ae" />
+              <input style={{ ...inputSt, direction: 'ltr', textAlign: 'right' }} value={f.email} onChange={(e) => set({ email: e.target.value })} placeholder="name@aigp.gov.ae" disabled={!!draft.id} />
             </div>
             <div>
               <label style={labelSt}>رقم الهاتف المتحرك</label>
               <input style={{ ...inputSt, direction: 'ltr', textAlign: 'right' }} value={f.phone} onChange={(e) => set({ phone: e.target.value })} placeholder="+971 5x xxx xxxx" />
             </div>
           </div>
-          {(needsEntity || needsStream) && (
-            <div style={{ display: 'grid', gridTemplateColumns: needsEntity && needsStream ? '1fr 1fr' : '1fr', gap: 12 }}>
-              {needsEntity && (
-                <div>
-                  <label style={labelSt}>الجهة *</label>
-                  <select style={{ ...inputSt, cursor: 'pointer' }} value={f.entityName || ''} onChange={(e) => set({ entityName: e.target.value })}>
-                    <option value="">اختر الجهة…</option>
-                    {a.entities.map((en) => <option key={en} value={en}>{en}</option>)}
-                  </select>
-                </div>
-              )}
-              {needsStream && (
-                <div>
-                  <label style={labelSt}>المسار *</label>
-                  <select style={{ ...inputSt, cursor: 'pointer' }} value={f.streamId || ''} onChange={(e) => set({ streamId: e.target.value })}>
-                    <option value="">اختر المسار…</option>
-                    {a.streams.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
-                  </select>
-                </div>
-              )}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelSt}>الجهة</label>
+              <select style={{ ...inputSt, cursor: 'pointer' }} value={f.entityId} onChange={(e) => set({ entityId: e.target.value })}>
+                <option value="">— بدون جهة —</option>
+                {entities.map((en) => <option key={en.id} value={en.id}>{en.nameAr}</option>)}
+              </select>
             </div>
-          )}
+            <div>
+              <label style={labelSt}>المسار</label>
+              <select style={{ ...inputSt, cursor: 'pointer' }} value={f.streamId} onChange={(e) => set({ streamId: e.target.value })}>
+                <option value="">— بدون مسار —</option>
+                {streams.map((st) => <option key={st.id} value={st.id}>{st.nameAr}</option>)}
+              </select>
+            </div>
+          </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#33405A' }}>
             <input type="checkbox" checked={f.active} onChange={(e) => set({ active: e.target.checked })} />
             الحساب نشط
           </label>
         </div>
 
+        {error && <div style={{ color: '#DC2626', fontSize: 12, fontWeight: 600, marginTop: 14 }}>{error}</div>}
+
         <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, marginTop: 20 }}>
-          <button disabled={!valid} onClick={() => valid && onSave({ ...f, name: f.name.trim(), email: f.email.trim(), entityName: needsEntity ? f.entityName : undefined, streamId: needsStream ? f.streamId : undefined })} style={{ border: 'none', background: valid ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', borderRadius: 11, padding: '11px 22px', fontWeight: 800, fontSize: 13, cursor: valid ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
-            حفظ
+          <button disabled={!valid || saving} onClick={handleSave} style={{ border: 'none', background: valid && !saving ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', borderRadius: 11, padding: '11px 22px', fontWeight: 800, fontSize: 13, cursor: valid && !saving ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+            {saving ? 'جارٍ الحفظ...' : 'حفظ'}
           </button>
           <button onClick={onClose} style={{ border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', background: '#fff', color: '#54627B', borderRadius: 11, padding: '11px 20px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
             إلغاء
@@ -798,31 +988,39 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
 }
 
 // ---- Bulk user upload (2 steps: download template → upload it) -------------
-function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
-  const [parsed, setParsed] = useState<{ valid: boolean; rec: UserRec }[] | null>(null);
+type BulkRow = { name: string; email: string; roleCode: string; entityId: string; streamId: string };
+
+function BulkUsers({ entities, streams, roles, onClose, onImported }: {
+  entities: DbEntity[];
+  streams: DbStream[];
+  roles: DbRole[];
+  onClose: () => void;
+  onImported: () => void;
+}) {
+  const [parsed, setParsed] = useState<BulkRow[] | null>(null);
   const [fileName, setFileName] = useState('');
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<{ added: number; skipped: number } | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [done, setDone] = useState<{ added: number; failed: number } | null>(null);
 
-  const roleLabels = a.roleInfo.map((r) => r.nameAr);
-  const roleFromToken = (t: string): RoleKey | null => {
+  const roleFromToken = (t: string): string => {
     const s = t.trim();
-    return a.roleInfo.find((r) => r.key === s)?.key || a.roleInfo.find((r) => r.nameAr === s)?.key || null;
+    return roles.find((r) => r.code === s)?.code || roles.find((r) => r.nameAr === s)?.code || '';
   };
-  const streamFromToken = (t: string): string | undefined => {
+  const streamFromToken = (t: string): string => {
     const s = t.trim();
-    return s ? (a.streams.find((x) => x.id === s)?.id || a.streams.find((x) => x.name === s)?.id) : undefined;
+    return s ? (streams.find((x) => x.id === s)?.id || streams.find((x) => x.nameAr === s)?.id || '') : '';
   };
-  const entityFromToken = (t: string): string | undefined => {
+  const entityFromToken = (t: string): string => {
     const s = t.trim();
-    return s ? (a.entities.find((e) => e === s) || s) : undefined;
+    return s ? (entities.find((x) => x.id === s)?.id || entities.find((x) => x.nameAr === s)?.id || '') : '';
   };
   const SAMPLE_EMAILS = new Set(['m.alameri@aigp.gov.ae', 'm.ahmed@aigp.gov.ae', 's.khaled@aigp.gov.ae']);
 
   const download = async () => {
     setBusy(true);
     try {
-      await downloadUsersTemplate(roleLabels, a.entities, a.streams.map((x) => x.name));
+      await downloadUsersTemplate(roles.map((r) => r.nameAr), entities.map((e) => e.nameAr), streams.map((s) => s.nameAr));
     } finally {
       setBusy(false);
     }
@@ -835,32 +1033,56 @@ function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
       const rows = await readSheetRows(file);
       // a data row = has a name (col0) and an email (col1); skip the template
       // title/note/header/example rows
-      const recs = rows
+      const recs: BulkRow[] = rows
         .filter((c) => (c[0] || '').trim() && /^\S+@\S+\.\S+$/.test((c[1] || '').trim()) && !SAMPLE_EMAILS.has((c[1] || '').trim()))
-        .map((c) => {
-          const role = roleFromToken(c[2] || '') || 'coord';
-          const needsEntity = role === 'entity' || role === 'coord';
-          const needsStream = role === 'coord' || role === 'path' || role === 'deputy';
-          return {
-            valid: true,
-            rec: {
-              id: '', role, name: (c[0] || '').trim(), title: '', email: (c[1] || '').trim(), phone: '',
-              entityName: needsEntity ? entityFromToken(c[3] || '') : undefined,
-              streamId: needsStream ? streamFromToken(c[4] || '') : undefined,
-              active: true,
-            } as UserRec,
-          };
-        });
+        .map((c) => ({
+          name: (c[0] || '').trim(),
+          email: (c[1] || '').trim(),
+          roleCode: roleFromToken(c[2] || ''),
+          entityId: entityFromToken(c[3] || ''),
+          streamId: streamFromToken(c[4] || ''),
+        }));
       setParsed(recs);
     } finally {
       setBusy(false);
     }
   };
 
-  const doImport = () => {
-    if (!parsed) return;
-    parsed.forEach((p, i) => a.saveUser({ ...p.rec, id: 'u-b' + Math.abs(hashStr(p.rec.email + p.rec.name + i)).toString(36) }));
-    setDone({ added: parsed.length, skipped: 0 });
+  const doImport = async () => {
+    if (!parsed || !DB_BACKED) return;
+    setBusy(true);
+    setProgress(0);
+    let added = 0;
+    let failed = 0;
+    // Sequential on purpose — each row needs the create call's returned id
+    // before it can assign the role, and this keeps the "n / total" progress
+    // readout accurate rather than racing several rows at once.
+    for (const row of parsed) {
+      try {
+        const res = await fetch('/api/admin/users', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ name: row.name, email: row.email, entityId: row.entityId || undefined, streamId: row.streamId || undefined }),
+        });
+        const body = await res.json().catch(() => ({} as any));
+        if (!res.ok) { failed++; continue; }
+        const id = body.user.id;
+        if (row.roleCode) {
+          await fetch(`/api/admin/users/${id}/roles`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+            body: JSON.stringify({ roleCode: row.roleCode }),
+          });
+        }
+        await fetch(`/api/admin/users/${id}/enable`, { method: 'POST', credentials: 'include' });
+        added++;
+      } catch {
+        failed++;
+      } finally {
+        setProgress((p) => p + 1);
+      }
+    }
+    onImported();
+    setBusy(false);
+    setDone({ added, failed });
   };
 
   const stepNum = (n: number, active: boolean) => (
@@ -883,7 +1105,7 @@ function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
             <span style={{ width: 54, height: 54, borderRadius: 16, background: '#E7F6EE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icon d={IC_CHECK} size={26} color="#0B8A4B" strokeWidth={2.6} />
             </span>
-            <div style={{ fontSize: 15, fontWeight: 800, marginTop: 12 }}>تمت إضافة {done.added} مستخدمًا</div>
+            <div style={{ fontSize: 15, fontWeight: 800, marginTop: 12 }}>تمت إضافة {done.added} مستخدمًا{done.failed ? ` — تعذّرت إضافة ${done.failed}` : ''}</div>
             <button onClick={onClose} style={{ marginTop: 18, border: 'none', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', borderRadius: 11, padding: '11px 26px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>تم</button>
           </div>
         ) : (
@@ -917,6 +1139,10 @@ function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
                 )}
               </div>
             </div>
+
+            {busy && parsed && (
+              <div style={{ fontSize: 12, color: '#54627B', fontWeight: 700 }}>جارٍ الإضافة… {progress} / {parsed.length}</div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, marginTop: 4 }}>
               <button disabled={!parsed || !parsed.length || busy} onClick={doImport} style={{ border: 'none', background: parsed && parsed.length ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', borderRadius: 11, padding: '11px 24px', fontWeight: 800, fontSize: 13, cursor: parsed && parsed.length ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>استيراد</button>

@@ -22,6 +22,8 @@ function legacyRoleFromCode(roleCode: string): string {
       return 'ai';
     case 'stream_owner':
       return 'path';
+    case 'stream_deputy':
+      return 'deputy';
     case 'entity_coordinator':
       return 'coord';
     case 'entity_admin':

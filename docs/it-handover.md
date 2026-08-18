@@ -18,7 +18,7 @@ managed by Prisma.
 ```bash
 cp .env.example .env         # then fill in the (REQUIRED) values — see §2
 npm ci
-npm run db:setup             # migrate deploy (0001 → 0011) + generate + seed
+npm run db:setup             # migrate deploy (0001 → 0010) + generate + seed
 npm run build && npm start   # serves on PORT (default 3000)
 ```
 
@@ -67,7 +67,7 @@ Secrets belong in the host's secret manager — never in the repository.
 ## 3. Database structure (Prisma → Postgres)
 
 Schema: `prisma/schema.prisma` (tables/columns are snake_case via `@map`;
-the client uses camelCase). Migrations: `prisma/migrations/0001…0011`.
+the client uses camelCase). Migrations: `prisma/migrations/0001…0010`.
 
 **Reference data**
 - `streams` — the three transformation streams (ids: `ops`, `strategy`,
@@ -95,15 +95,12 @@ the client uses camelCase). Migrations: `prisma/migrations/0001…0011`.
 **Portfolio**
 - `items` — every عملية / مهمة / خدمة (types `operation` and `service`;
   `project`/`initiative` remain in the enum for legacy data only). Carries
-  the header fields (ops: التصنيف/نوع عملية الدعم المؤسسي؛ strategy:
-  المحور؛ services: الخدمة), the **per-نشاط details in `activities`
-  (JSONB, migration `0011`)** — each نشاط/خدمة فرعية with its own
-  sector/dept/section, automation, matrix and أولوية التحول, mirrored onto
-  the legacy flat columns (first entry) for compatibility — the دفعة
-  assignment (`exec_batch` — a دفعة name or «للتحديد بعد الدراسة»), the
+  the per-stream form fields (ops: التصنيف/نوع عملية الدعم المؤسسي/
+  الأنشطة/الأتمتة؛ strategy: المحور/مصفوفة الأولوية/الأتمتة؛ services:
+  الخدمة/الخدمة الفرعية/مصفوفة أولوية الاختيار), the دفعة assignment
+  (`exec_batch` — a دفعة name or «للتحديد بعد الدراسة»), the
   returned-with-notes state (`ret_*`), and the batch-move marker
   (`stage_move_*` — drives the رئيس المسار notification).
-  See `docs/CHANGES-2026-08-11.md` for the full model and rules.
   `wf` is the workflow enum; the current flow uses
   `draft → ent1 → exec` and the UI presents exactly four statuses:
   مسودة / قيد الاعتماد / للتعديل (returned) / معتمد. Approved entries are
@@ -151,7 +148,7 @@ the client uses camelCase). Migrations: `prisma/migrations/0001…0011`.
   persistence. Harmless in production; can stay empty.
 
 The full table list (with columns) lives in `prisma/schema.prisma`; the
-versioned DDL is in `prisma/migrations/0001…0011`.
+versioned DDL is in `prisma/migrations/0001…0010`.
 
 ## 4. Role management
 

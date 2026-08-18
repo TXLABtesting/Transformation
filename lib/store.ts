@@ -228,7 +228,8 @@ type Actions = {
   setRole: (r: RoleKey) => void;
   // الجهة الاتحادية للمستخدم — مصدر تقييد دليل الخدمات (تجريبي فقط)
   setEntityName: (name: string) => void;
-  // admin — user & role management
+  // admin — user & role management (backed by /api/admin/* — see AdminConsole)
+  adminLoadUsers: () => Promise<void>;
   adminSaveUser: (u: UserRec) => void;
   adminToggleUser: (id: string) => void;
   adminRemoveUser: (id: string) => void;
@@ -402,16 +403,18 @@ const API_MODE = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
 const BACKEND_AUTH = (process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'mock') !== 'mock';
 // Backend RBAC role codes → the UI role keys (adapted: system_admin maps to
 // our dedicated 'admin' UI role instead of 'ai' as in the reference).
-const roleFromBackend = (roles: string[] = []): RoleKey =>
+ const roleFromBackend = (roles: string[] = []): RoleKey =>
   roles.includes('system_admin')
     ? 'admin'
     : roles.includes('ai_committee') || roles.includes('program_admin')
       ? 'ai'
       : roles.includes('stream_owner')
         ? 'path'
-        : roles.includes('entity_coordinator')
-          ? 'coord'
-          : 'entity';
+        : roles.includes('stream_deputy')
+          ? 'deputy'
+          : roles.includes('entity_coordinator')
+            ? 'coord'
+            : 'entity';
 
 // Fire-and-forget sync of the persisted blob to Postgres (server mode only).
 function apiPut(data: unknown) {
@@ -908,6 +911,40 @@ export const useStore = create<Store>((set, get) => {
     },
 
     // ---- admin: user & role management ----
+    // Backed by the real /api/admin/* endpoints (Postgres via Prisma). Falls
+    // back to leaving local/demo state untouched if the API is unreachable
+    // (e.g. NEXT_PUBLIC_DATA_MODE=local demo deployments) so the console
+    // still renders something rather than crashing.
+    adminLoadUsers: async () => {
+      // Only the server deployment (NEXT_PUBLIC_DATA_MODE=api) has a
+      // database behind it — the static-export/local-demo build has no
+      // /api/admin/* routes to call, so skip and keep the local rows.
+      if (!API_MODE) return;
+      try {
+        const res = await fetch('/api/admin/users', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const knownRoles: RoleKey[] = ['entity', 'path', 'deputy', 'coord', 'ai', 'secretariat', 'admin'];
+        const toRoleKey = (r: string): RoleKey => (knownRoles as string[]).includes(r) ? (r as RoleKey) : 'entity';
+        const mapped: UserRec[] = (data.users || []).map((u: any) => ({
+          id: u.id,
+          role: toRoleKey(u.role),
+          name: u.name || '',
+          title: u.title || '',
+          email: u.email || '',
+          phone: u.phone || '',
+          entityName: u.entity || undefined,
+          streamId: u.streamId || undefined,
+          active: !!u.accessEnabled,
+          entityId: u.entityId || undefined,
+          roleCode: u.roles?.[0]?.code || undefined,
+        }));
+        set({ users: mapped });
+        persist();
+      } catch {
+        // API unreachable — keep whatever is already in local state.
+      }
+    },
     adminSaveUser: (u) => {
       set((s) => {
         const exists = s.users.some((x) => x.id === u.id);
@@ -918,13 +955,40 @@ export const useStore = create<Store>((set, get) => {
       toast(get().users.some((x) => x.id === u.id) ? 'تم حفظ المستخدم' : 'تمت الإضافة');
     },
     adminToggleUser: (id) => {
+      const wasActive = !!get().users.find((x) => x.id === id)?.active;
       set((s) => ({ users: s.users.map((x) => (x.id === id ? { ...x, active: !x.active } : x)) }));
       persist();
+      if (!API_MODE) return; // local-demo build: no server to reconcile with
+      // Reconcile with the server. Reverts the optimistic flip on failure so
+      // the UI never claims a change that didn't actually persist.
+      (async () => {
+        try {
+          const res = await fetch(`/api/admin/users/${id}/${wasActive ? 'disable' : 'enable'}`, {
+            method: 'POST',
+            credentials: 'include',
+          });
+          if (!res.ok) throw new Error('request-failed');
+        } catch {
+          set((s) => ({ users: s.users.map((x) => (x.id === id ? { ...x, active: wasActive } : x)) }));
+          persist();
+          toast('تعذّر تحديث حالة المستخدم على الخادم');
+        }
+      })();
     },
     adminRemoveUser: (id) => {
-      set((s) => ({ users: s.users.filter((x) => x.id !== id) }));
+      // The backend has no hard-delete for users (accounts stay for the
+      // audit trail — see audit_logs FK). "Remove" here means disable.
+      set((s) => ({ users: s.users.map((x) => (x.id === id ? { ...x, active: false } : x)) }));
       persist();
-      toast('تم حذف المستخدم');
+      toast('تم تعطيل المستخدم');
+      if (!API_MODE) return;
+      (async () => {
+        try {
+          await fetch(`/api/admin/users/${id}/disable`, { method: 'POST', credentials: 'include' });
+        } catch {
+          /* best-effort */
+        }
+      })();
     },
 
     // ---- dropdowns / panels ----

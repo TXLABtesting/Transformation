@@ -57,6 +57,7 @@ export function useSvcCatalog(entityName: string): EntityCatalog | null {
   const [remote, setRemote] = useState<EntityCatalog | null | undefined>(undefined);
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === '1') return;
+    if (process.env.NEXT_PUBLIC_DATA_MODE !== 'api') return;
     let dead = false;
     fetch('/api/svc-catalog', { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : null))
