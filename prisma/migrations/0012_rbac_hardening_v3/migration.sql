@@ -41,7 +41,9 @@ CREATE TABLE IF NOT EXISTS "user_roles" (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "user_roles_user_id_role_id_key" ON "user_roles"("user_id", "role_id");
 CREATE INDEX IF NOT EXISTS "user_roles_role_id_idx" ON "user_roles"("role_id");
+ALTER TABLE "user_roles" DROP CONSTRAINT IF EXISTS "user_roles_user_id_fkey";
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_roles" DROP CONSTRAINT IF EXISTS "user_roles_role_id_fkey";
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 CREATE TABLE IF NOT EXISTS "role_permissions" (
@@ -49,7 +51,9 @@ CREATE TABLE IF NOT EXISTS "role_permissions" (
   "permission_id" TEXT NOT NULL,
   CONSTRAINT "role_permissions_pkey" PRIMARY KEY ("role_id", "permission_id")
 );
+ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "role_permissions_role_id_fkey";
 ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "role_permissions_permission_id_fkey";
 ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permission_id_fkey" FOREIGN KEY ("permission_id") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 CREATE TABLE IF NOT EXISTS "user_entity_scopes" (
@@ -61,7 +65,9 @@ CREATE TABLE IF NOT EXISTS "user_entity_scopes" (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "user_entity_scopes_user_id_entity_id_key" ON "user_entity_scopes"("user_id", "entity_id");
 CREATE INDEX IF NOT EXISTS "user_entity_scopes_entity_id_idx" ON "user_entity_scopes"("entity_id");
+ALTER TABLE "user_entity_scopes" DROP CONSTRAINT IF EXISTS "user_entity_scopes_user_id_fkey";
 ALTER TABLE "user_entity_scopes" ADD CONSTRAINT "user_entity_scopes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_entity_scopes" DROP CONSTRAINT IF EXISTS "user_entity_scopes_entity_id_fkey";
 ALTER TABLE "user_entity_scopes" ADD CONSTRAINT "user_entity_scopes_entity_id_fkey" FOREIGN KEY ("entity_id") REFERENCES "entities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 CREATE TABLE IF NOT EXISTS "user_stream_scopes" (
@@ -73,7 +79,9 @@ CREATE TABLE IF NOT EXISTS "user_stream_scopes" (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "user_stream_scopes_user_id_stream_id_key" ON "user_stream_scopes"("user_id", "stream_id");
 CREATE INDEX IF NOT EXISTS "user_stream_scopes_stream_id_idx" ON "user_stream_scopes"("stream_id");
+ALTER TABLE "user_stream_scopes" DROP CONSTRAINT IF EXISTS "user_stream_scopes_user_id_fkey";
 ALTER TABLE "user_stream_scopes" ADD CONSTRAINT "user_stream_scopes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_stream_scopes" DROP CONSTRAINT IF EXISTS "user_stream_scopes_stream_id_fkey";
 ALTER TABLE "user_stream_scopes" ADD CONSTRAINT "user_stream_scopes_stream_id_fkey" FOREIGN KEY ("stream_id") REFERENCES "streams"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 CREATE TABLE IF NOT EXISTS "audit_logs" (
@@ -95,4 +103,5 @@ CREATE INDEX IF NOT EXISTS "audit_logs_entity_id_idx" ON "audit_logs"("entity_id
 CREATE INDEX IF NOT EXISTS "audit_logs_stream_id_idx" ON "audit_logs"("stream_id");
 CREATE INDEX IF NOT EXISTS "audit_logs_resource_type_resource_id_idx" ON "audit_logs"("resource_type", "resource_id");
 CREATE INDEX IF NOT EXISTS "audit_logs_created_at_idx" ON "audit_logs"("created_at");
+ALTER TABLE "audit_logs" DROP CONSTRAINT IF EXISTS "audit_logs_actor_user_id_fkey";
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actor_user_id_fkey" FOREIGN KEY ("actor_user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
