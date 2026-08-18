@@ -836,13 +836,6 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                         {(bt.canEditDates || bt.canReview) && (
                           <td style={{ ...td, whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                              {/* التوزيع المعتمد مقفل — شارة بدل عناصر التحكم */}
-                              {bt.canArrange && r.locked && (
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: '#8A97AD' }}>
-                                  <Icon d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2zM7 11V7a5 5 0 0 1 10 0v4" size={13} color="#8A97AD" />
-                                  {r.placement && r.placement.label === 'قيد اعتماد التوزيع' ? 'بانتظار قرار فريق عمل المسار' : 'مقفل بعد الاعتماد'}
-                                </span>
-                              )}
                               {/* coordinator: swap the نشاط to another دفعة, or take it out */}
                               {bt.canArrange && !r.locked && (
                                 <>
