@@ -871,9 +871,9 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                                 <button
                                   onClick={r.onSubmit}
                                   title="إرسال هذا التوزيع لاعتماد فريق عمل المسار"
-                                  style={{ background: '#EAF1FE', border: '1px solid #C9DBFB', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#1D4ED8', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                                  style={{ background: '#EAF1FE', border: '1px solid #C9DBFB', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#1D4ED8', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
                                 >
-                                  إرسال
+                                  إرسال للاعتماد
                                 </button>
                               )}
                               {/* فريق عمل المسار: قرار على التوزيع المعلّق */}
