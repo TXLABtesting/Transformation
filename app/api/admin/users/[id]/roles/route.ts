@@ -53,7 +53,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         entity_coordinator: 'coord',
         entity_representative: 'entity',
         stream_owner: 'path',
-        stream_deputy: 'path',
         ai_committee: 'ai',
         system_admin: 'ai',
         program_admin: 'ai',

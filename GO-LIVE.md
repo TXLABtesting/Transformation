@@ -29,8 +29,22 @@
 ```bash
 npx prisma migrate deploy              # 0001 → 0013
 npm run db:seed                        # مرجعية — idempotent
-npx tsx prisma/seed-deputy-role.ts     # دور stream_deputy (اختياري — يُدمج في فريق العمل بالواجهة)
 ```
+
+> **لا يوجد دور نائب.** أُزيل ما أضافته نسخة v4 من دور `stream_deputy`
+> (السكربت والربط في الكود). إن كان الدور قد أُنشئ على قاعدة staging،
+> يُنظَّف هكذا — تُنقل حساباته إن وُجدت إلى `stream_owner` ثم يُحذف:
+>
+> ```sql
+> UPDATE user_roles SET role_id = (SELECT id FROM roles WHERE code='stream_owner')
+>  WHERE role_id = (SELECT id FROM roles WHERE code='stream_deputy')
+>    AND NOT EXISTS (SELECT 1 FROM user_roles ur2
+>                     WHERE ur2.user_id = user_roles.user_id
+>                       AND ur2.role_id = (SELECT id FROM roles WHERE code='stream_owner'));
+> DELETE FROM user_roles       WHERE role_id = (SELECT id FROM roles WHERE code='stream_deputy');
+> DELETE FROM role_permissions WHERE role_id = (SELECT id FROM roles WHERE code='stream_deputy');
+> DELETE FROM roles            WHERE code = 'stream_deputy';
+> ```
 
 الحقول التي أُضيفت بعد `0011` كلها داخل العمود القائم `items.activities`
 (jsonb) ولا تحتاج ترحيلاً:
@@ -60,8 +74,8 @@ npx tsx prisma/seed-deputy-role.ts     # دور stream_deputy (اختياري �
 الأمني (V3)، لوحة الإدارة المتصلة بـ `/api/admin/*`، تشغيل الترحيلات
 عند الإقلاع (Docker/K8s)، بريد المنسقين المعتمد، ومسار الدخول
 `/api/auth/login`. التعديل الوحيد على عملهم: إعادة ترقيم الترحيلين
-أعلاه، وربط دور `stream_deputy` الخلفي بدور «فريق عمل المسار في
-المشروع» في الواجهة وفق البنية المعتمدة (أربعة أدوار).
+أعلاه، وإزالة دور `stream_deputy` الذي كانت النسخة قد أضافته — لا وجود
+لدور نائب في البنية المعتمدة (أربعة أدوار).
 
 ## 2. الأدوار — البنية المعتمدة (أربعة أدوار)
 

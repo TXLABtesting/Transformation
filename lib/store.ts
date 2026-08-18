@@ -412,8 +412,7 @@ const roleFromBackend = (roles: string[] = []): RoleKey =>
     ? 'admin'
     : roles.includes('ai_committee') || roles.includes('program_admin')
       ? 'ai'
-      : // stream_deputy يُدمج في دور فريق عمل المسار وفق البنية المعتمدة
-        roles.includes('stream_owner') || roles.includes('stream_deputy')
+      : roles.includes('stream_owner')
         ? 'path'
         : roles.includes('entity_coordinator')
           ? 'coord'

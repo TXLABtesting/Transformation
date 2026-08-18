@@ -750,7 +750,7 @@ function AssignTab({ a, streams, onEdit, onAdd }: { a: VM['admin']; streams: DbS
   // Matched against the real RBAC role code (see store.ts adminLoadUsers),
   // not the legacy `role` field, since that field can't distinguish head vs
   // deputy and the backend doesn't model that distinction either.
-  const heads = a.users.filter((u) => u.roleCode === 'stream_owner' || u.roleCode === 'stream_deputy');
+  const heads = a.users.filter((u) => u.roleCode === 'stream_owner');
   const committee = a.users.filter((u) => u.roleCode === 'ai_committee');
   const headByStream = (id: string) => heads.find((h) => h.streamId === id);
   return (
