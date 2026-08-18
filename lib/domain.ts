@@ -866,7 +866,44 @@ export type ActivityDetail = {
   execBatch?: string;
   startDate?: string;
   endDate?: string;
+  // اعتماد التوزيع — دورة مستقلة عن اعتماد محتوى المدخل نفسه:
+  // مسودة ← إرسال للاعتماد ← قيد اعتماد فريق عمل المسار ← معتمد (يُقفل التوزيع)
+  // الإعادة/الرفض تُرجعه مسودةً مع سبب يظهر للمنسق.
+  batchWf?: 'draft' | 'pending' | 'approved';
+  batchRet?: 'info' | 'reject';
+  batchNote?: string;
 };
+
+/** حالة توزيع نشاط على دفعته — undefined على نشاط موزَّع قديم تعني مسودة */
+export type PlacementState = 'none' | 'draft' | 'pending' | 'approved';
+export function placementState(i: Item, a: ActivityDetail): PlacementState {
+  if (!activityBatch(i, a)) return 'none';
+  return a.batchWf || 'draft';
+}
+
+/** التوزيع المعتمد مقفل — لا نقل ولا إزالة ولا تعديل تواريخ */
+export const placementLocked = (i: Item, a: ActivityDetail): boolean => {
+  const st = placementState(i, a);
+  return st === 'approved' || st === 'pending';
+};
+
+export const PLACEMENT_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  draft: { label: 'توزيع مسودة', color: '#5A6B86', bg: '#EEF2F8' },
+  pending: { label: 'قيد اعتماد التوزيع', color: '#B45309', bg: '#FFF7EB' },
+  approved: { label: 'توزيع معتمد', color: '#0B8A4B', bg: '#EAF7F0' },
+  returned: { label: 'توزيع مُعاد للتعديل', color: '#B45309', bg: '#FFF3DE' },
+  rejected: { label: 'توزيع مرفوض', color: '#C0303B', bg: '#FDECEE' },
+};
+
+export function placementChip(i: Item, a: ActivityDetail): { label: string; color: string; bg: string; note?: string } | null {
+  const st = placementState(i, a);
+  if (st === 'none') return null;
+  if (st === 'draft' && a.batchRet) {
+    const c = PLACEMENT_STATUS[a.batchRet === 'reject' ? 'rejected' : 'returned'];
+    return { ...c, note: a.batchNote };
+  }
+  return { ...PLACEMENT_STATUS[st] };
+}
 
 /** effective دفعة of one نشاط — its own, else the parent entry's */
 export function activityBatch(i: Item, a: ActivityDetail): string {
