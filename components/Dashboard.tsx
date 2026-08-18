@@ -702,12 +702,9 @@ function BatchPrioPill({ v }: { v: string }) {
 function BatchesTablesPage({ vm }: { vm: VM }) {
   const s = vm.store;
   const bt = vm.batchTables!;
-  // توزيعات مختارة للإرسال — الإرسال يتم على مستوى التوزيع: واحد أو مجموعة أو الكل
-  const [sel, setSel] = useState<string[]>([]);
   // نافذة سبب الإعادة/الرفض لتوزيعٍ يراجعه فريق عمل المسار
   const [placeNote, setPlaceNote] = useState<{ kind: 'info' | 'reject'; onOk: (note: string) => void } | null>(null);
   const [placeNoteTxt, setPlaceNoteTxt] = useState('');
-  const toggleSel = (id: string) => setSel((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const [addOpen, setAddOpen] = useState<string | null>(null); // rawName of the batch whose picker is open
   const [addQ, setAddQ] = useState('');
   const [addSector, setAddSector] = useState('all');
@@ -727,32 +724,17 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
         {bt.canArrange && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 12, color: '#6B7A93', fontWeight: 600 }}>
-              {sel.length > 0
-                ? sel.length + (sel.length === 1 ? ' توزيع محدد' : ' توزيعات محددة')
-                : bt.draftCount > 0
-                  ? bt.draftCount + (bt.draftCount === 1 ? ' توزيع مسودة بانتظار الإرسال' : ' توزيعات مسودة بانتظار الإرسال')
-                  : 'التوزيع يُحفظ كمسودة حتى الإرسال — والمعتمد يُقفل'}
+              {bt.draftCount > 0
+                ? bt.draftCount + (bt.draftCount === 1 ? ' توزيع مسودة بانتظار الإرسال' : ' توزيعات مسودة بانتظار الإرسال')
+                : 'التوزيع يُحفظ كمسودة حتى الإرسال — والمعتمد يُقفل'}
             </span>
-            {sel.length > 0 && (
-              <button
-                onClick={() => {
-                  bt.onSubmitIds(sel);
-                  setSel([]);
-                }}
-                style={{ background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, padding: '10px 20px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
-              >
-                إرسال المحدد ({sel.length})
-              </button>
-            )}
+            {/* الإرسال: الكل دفعة واحدة، أو توزيعاً توزيعاً من زر «إرسال» في الصف */}
             <button
-              onClick={() => {
-                bt.onSubmitAll();
-                setSel([]);
-              }}
+              onClick={bt.onSubmitAll}
               disabled={bt.draftCount === 0}
-              style={{ background: bt.draftCount ? (sel.length ? '#EAF1FE' : 'linear-gradient(180deg,#2E74EE,#1F5FE0)') : '#C7D2E4', color: bt.draftCount && sel.length ? '#1D4ED8' : '#fff', border: bt.draftCount && sel.length ? '1px solid #C9DBFB' : 'none', borderRadius: 11, padding: '10px 20px', fontSize: 12.5, fontWeight: 800, cursor: bt.draftCount ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}
+              style={{ background: bt.draftCount ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', border: 'none', borderRadius: 11, padding: '10px 20px', fontSize: 12.5, fontWeight: 800, cursor: bt.draftCount ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}
             >
-              {sel.length > 0 ? 'إرسال الكل (' + bt.draftCount + ')' : bt.submitLabel}
+              {'إرسال الكل للاعتماد' + (bt.draftCount ? ' (' + bt.draftCount + ')' : '')}
             </button>
           </div>
         )}
@@ -794,17 +776,17 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
               <div style={{ padding: '22px 16px', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا توجد {bt.unitLabel} ضمن هذه الدفعة بعد</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: bt.canEditDates ? 1080 : 940 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: bt.canEditDates ? 1150 : 1010 }}>
                   <thead>
                     <tr>
-                      {bt.canArrange && <th style={{ ...th, width: 34 }} />}
                       {bt.cols.map((c) => (
                         <th key={c} style={th}>{c}</th>
                       ))}
                       <th style={th}>تاريخ البدء</th>
                       <th style={th}>تاريخ الانتهاء</th>
                       <th style={th}>أولوية الاختيار</th>
-                      <th style={th}>الحالة</th>
+                      <th style={th}>حالة المدخل</th>
+                      <th style={th}>حالة التوزيع</th>
                       <th style={th}>ملاحظات</th>
                       {(bt.canEditDates || bt.canReview) && <th style={th}>الإجراءات</th>}
                     </tr>
@@ -812,19 +794,6 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                   <tbody>
                     {b.rows.map((r) => (
                       <tr key={r.id}>
-                        {bt.canArrange && (
-                          <td style={{ ...td, width: 34 }}>
-                            {r.canSubmit ? (
-                              <input
-                                type="checkbox"
-                                checked={sel.includes(r.id)}
-                                onChange={() => toggleSel(r.id)}
-                                title="تحديد التوزيع للإرسال"
-                                style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#2563EB' }}
-                              />
-                            ) : null}
-                          </td>
-                        )}
                         {r.lead.map((v, ci) => (
                           <td key={ci} style={{ ...td, cursor: 'pointer', fontWeight: ci === 0 ? 800 : 400, color: ci === 0 ? '#13213C' : '#33415C', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={r.onOpen} title={v}>
                           {v}
@@ -847,18 +816,21 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                         <td style={td}>
                           <BatchPrioPill v={r.prio} />
                         </td>
+                        {/* عمودان مستقلان: اعتماد المدخل ثم اعتماد التوزيع */}
                         <td style={td}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
-                            <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.status}</span>
-                            {r.placement && (
-                              <span
-                                title={r.placement.note ? 'السبب: ' + r.placement.note : undefined}
-                                style={{ fontSize: 11, fontWeight: 800, color: r.placement.color, background: r.placement.bg, borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}
-                              >
-                                {r.placement.label}
-                              </span>
-                            )}
-                          </div>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.status}</span>
+                        </td>
+                        <td style={td}>
+                          {r.placement ? (
+                            <span
+                              title={r.placement.note ? 'السبب: ' + r.placement.note : undefined}
+                              style={{ fontSize: 11, fontWeight: 800, color: r.placement.color, background: r.placement.bg, borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}
+                            >
+                              {r.placement.label.replace(/^توزيع /, '').replace('قيد اعتماد التوزيع', 'قيد الاعتماد')}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
                         </td>
                         <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.notes}>{r.notes}</td>
                         {(bt.canEditDates || bt.canReview) && (
