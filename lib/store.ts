@@ -44,7 +44,7 @@ import {
 } from './domain';
 import type { LibraryDoc, ContactInquiry } from './domain';
 import { migrateRole } from './domain';
-import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
+import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
@@ -1285,8 +1285,8 @@ export const useStore = create<Store>((set, get) => {
         const filledO = (v: unknown) => !!stripHtml(String(v ?? '')).trim();
         const dO = d as unknown as Record<string, unknown>;
         const actsO = (d.activities || []).filter((a) => Object.values(a).some((v) => stripHtml(String(v ?? '')).trim()));
+        // نوع عملية الدعم المؤسسي حقل اختياري — ليس ضمن نموذج حصر العمليات المعتمد
         const reqO = ['opType', 'title'];
-        if (String(dO.opType ?? '') === SUPPORT_OPTYPE) reqO.push('supportFn');
         // every نشاط carries its own full details — each section must be complete
         const actsBadO = actsO.length ? actsO.some((a) => activityMissing('ops', a).length > 0) : true;
         if (reqO.some((k) => !filledO(dO[k])) || actsBadO) {
@@ -1584,9 +1584,16 @@ export const useStore = create<Store>((set, get) => {
         const wb = new ExcelJS.Workbook();
         await wb.xlsx.load(buf);
         const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
-        // find the header row: the row matching most spec labels on any sheet
-        let best: { ws: import('exceljs').Worksheet; row: number; map: Record<number, string> } | null = null;
+        // find the header row: the row matching most spec labels on any sheet.
+        // نموذج حصر العمليات المعتمد ورقتان («العمليات الرئيسية» و«عمليات
+        // الدعم المؤسسي») — في مسار العمليات تُقرأ كل الأوراق المطابقة معاً
+        // والتصنيف يُستمد من اسم الورقة عند غياب عموده.
+        type SheetMatch = { ws: import('exceljs').Worksheet; row: number; map: Record<number, string>; opType?: string };
+        const matches: SheetMatch[] = [];
         wb.eachSheet((ws) => {
+          // أوراق القوائم المرجعية ليست بيانات
+          if (/المعادلات|قوائم/.test(ws.name)) return;
+          let bestRow: { row: number; map: Record<number, string> } | null = null;
           for (let r = 1; r <= Math.min(ws.rowCount, 12); r++) {
             const map: Record<number, string> = {};
             let hits = 0;
@@ -1600,28 +1607,50 @@ export const useStore = create<Store>((set, get) => {
                 hits++;
               }
             });
-            if (hits >= Math.min(3, spec.length) && (!best || hits > Object.keys(best.map).length)) best = { ws, row: r, map };
+            if (hits >= Math.min(3, spec.length) && (!bestRow || hits > Object.keys(bestRow.map).length)) bestRow = { row: r, map };
+          }
+          if (bestRow) {
+            matches.push({
+              ws,
+              ...bestRow,
+              opType:
+                path === 'ops'
+                  ? /الدعم/.test(ws.name)
+                    ? SUPPORT_OPTYPE
+                    : /الرئيسية|التخصصية/.test(ws.name)
+                      ? OPS_SPECIAL_OPTYPE
+                      : undefined
+                  : undefined,
+            });
           }
         });
-        if (!best) {
+        if (!matches.length) {
           setUi({ mStep: 'bulk', bulkLoading: false });
           return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام نموذج المسار');
         }
-        const b = best as { ws: import('exceljs').Worksheet; row: number; map: Record<number, string> };
+        // مسار العمليات: كل الأوراق المطابقة؛ بقية المسارات: الورقة الأفضل فقط
+        const used =
+          path === 'ops'
+            ? matches
+            : [matches.reduce((x, y) => (Object.keys(y.map).length > Object.keys(x.map).length ? y : x))];
         // one Excel row = one نشاط/خدمة فرعية; consecutive rows that share
         // the same header identity fold into ONE entry with activities[]
         const rawRows: Record<string, string>[] = [];
-        for (let r = b.row + 1; r <= b.ws.rowCount; r++) {
-          const fields: Record<string, string> = {};
-          b.ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
-            const key = b.map[col];
-            if (key) fields[key] = norm(cell.text ?? cell.value);
-          });
-          if (Object.values(fields).some((v) => v)) rawRows.push(fields);
+        for (const b of used) {
+          for (let r = b.row + 1; r <= b.ws.rowCount; r++) {
+            const fields: Record<string, string> = {};
+            b.ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
+              const key = b.map[col];
+              if (key) fields[key] = norm(cell.text ?? cell.value);
+            });
+            if (!Object.values(fields).some((v) => v)) continue;
+            if (path === 'ops' && !fields.opType && b.opType) fields.opType = b.opType;
+            rawRows.push(fields);
+          }
         }
         const keyOf = (f: Record<string, string>) =>
           path === 'ops'
-            ? [f.title, f.opType, f.supportFn].join('|')
+            ? [f.title, f.opType].join('|')
             : path === 'strategy'
               ? [f.axis, f.title].join('|')
               : f.title || '';
@@ -1637,11 +1666,18 @@ export const useStore = create<Store>((set, get) => {
           };
           if (path === 'ops') {
             a.isAutomated = f.isAutomated;
-            if (f.isAutomated === 'نعم') {
+            if (f.isAutomated === 'نعم' || f.isAutomated === 'جزئياً') {
               a.automationSystem = f.automationSystem;
               a.automationPct = pctOf(f.automationPct, 100);
             }
-            a.transformYes = f.transformYes;
+            a.usageIntensity = f.usageIntensity;
+            a.readinessLevel = f.readinessLevel;
+            a.impactScore = f.impactScore;
+            a.complexity = f.complexity;
+            a.transformScore = f.transformScore;
+            a.transformPeriod = f.transformPeriod;
+            a.transformPriority = f.transformPriority;
+            a.riskLevel = f.riskLevel;
           } else if (path === 'strategy') {
             a.automationLevel = f.automationLevel;
             if (f.automationLevel === 'مؤتمتة كلياً') {
@@ -1675,7 +1711,6 @@ export const useStore = create<Store>((set, get) => {
           if (path === 'ops') {
             base.title = head.title;
             base.opType = head.opType;
-            if (head.opType === SUPPORT_OPTYPE) base.supportFn = head.supportFn;
           } else if (path === 'strategy') {
             base.title = head.title;
             base.axis = head.axis;

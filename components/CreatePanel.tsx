@@ -3,9 +3,9 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail } from '@/lib/domain';
+import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
-import { downloadItemsTemplate } from '@/lib/export';
+import { downloadItemsTemplate, downloadOpsTemplate } from '@/lib/export';
 import { useSvcCatalog, svcCatalogFor, svcCatalogEntities } from '@/lib/svcCatalog';
 
 
@@ -1404,9 +1404,10 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
 
           {stream === 'ops' && (
             <>
+              {/* حقول نموذج حصر العمليات المعتمد — قوائم منسدلة، والنسبة شريط تمرير */}
               <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49', margin: '4px 0 12px' }}>الأتمتة</div>
-              {yesNoA(i, a, 'هل النشاط مؤتمت؟', 'isAutomated')}
-              {a.isAutomated === 'نعم' && (
+              {selA(i, a, 'هل النشاط/ العملية مؤتمتة؟', 'isAutomated', OPS_AUTOMATED_OPTIONS)}
+              {(a.isAutomated === 'نعم' || a.isAutomated === 'جزئياً') && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   {field('ما هو نظام الأتمتة؟', <input value={a.automationSystem || ''} onChange={(e) => upd(i, { automationSystem: e.target.value })} style={inputStyle} />)}
                   {field(
@@ -1418,9 +1419,28 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
                   )}
                 </div>
               )}
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49', margin: '4px 0 12px' }}>أولوية التحول</div>
-              {yesNoA(i, a, 'أولوية التحول', 'transformYes')}
-              {field('الملاحظات', <textarea value={a.notes || ''} onChange={(e) => upd(i, { notes: arabicOnly(e.target.value) })} rows={3} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.8 }} />, false)}
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49', margin: '4px 0 12px' }}>التقييم</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+                {selA(i, a, 'كثافة النشاط/ العملية', 'usageIntensity', OPS_INTENSITY_OPTIONS)}
+                {selA(i, a, 'الجاهزية للتحول للذكاء الاصطناعي المساعد', 'readinessLevel', OPS_READINESS_OPTIONS)}
+                {selA(i, a, 'مستوى الأثر المتوقع من التحول', 'impactScore', OPS_LEVEL_OPTIONS)}
+                {selA(i, a, 'مستوى التعقيد', 'complexity', OPS_LEVEL_OPTIONS)}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49', margin: '4px 0 12px' }}>التحول للذكاء الاصطناعي المساعد</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+                {selA(i, a, 'القابلية للتحول للذكاء الاصطناعي المساعد', 'transformScore', OPS_TRANSFORM_OPTIONS)}
+                {a.transformScore === OPS_NOT_TRANSFORMABLE
+                  ? field(
+                      'فترة التحويل للذكاء الاصطناعي المساعد',
+                      <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px', minHeight: 44, display: 'flex', alignItems: 'center' }}>
+                        لا ينطبق — غير قابل للتحول
+                      </div>,
+                      false
+                    )
+                  : txtA(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', 'مثال: الربع الأول 2027')}
+                {selA(i, a, 'أولوية التحول للذكاء الاصطناعي المساعد', 'transformPriority', OPS_PRIORITY_OPTIONS)}
+                {selA(i, a, 'مخاطر التحول للذكاء الاصطناعي المساعد', 'riskLevel', OPS_RISK_OPTIONS)}
+              </div>
             </>
           )}
 
@@ -1589,9 +1609,9 @@ function FOps({
   setField: (k: string, v: unknown) => void;
   gv: (k: string) => string;
 }) {
-  const sel = (label: string, key: string, opts: string[]) => (
+  const sel = (label: string, key: string, opts: string[], req = true) => (
     <div style={{ marginBottom: 14 }}>
-      <label style={labelStyle}>{label} <span style={{ color: '#D23B45' }}>*</span></label>
+      <label style={labelStyle}>{label} {req && <span style={{ color: '#D23B45' }}>*</span>}</label>
       <select value={gv(key)} onChange={(e) => setField(key, e.target.value)} style={inputStyle}>
         <option value="">اختر…</option>
         {opts.map((o) => (
@@ -1603,8 +1623,8 @@ function FOps({
   return (
     <div>
       <div style={cardStyle}>
-        {sel('التصنيف', 'opType', ['العمليات التخصصية', SUPPORT_OPTYPE])}
-        {gv('opType') === SUPPORT_OPTYPE && sel('نوع عملية الدعم المؤسسي', 'supportFn', SUPPORT_FUNCTIONS)}
+        {sel('التصنيف', 'opType', [OPS_SPECIAL_OPTYPE, SUPPORT_OPTYPE])}
+        {gv('opType') === SUPPORT_OPTYPE && sel('نوع عملية الدعم المؤسسي (اختياري)', 'supportFn', SUPPORT_FUNCTIONS, false)}
         <div style={{ marginBottom: 0 }}>
           <label style={labelStyle}>العملية الرئيسية <span style={{ color: '#D23B45' }}>*</span></label>
           <input value={gv('title')} onChange={(e) => setField('title', arabicOnly(e.target.value))} placeholder="اسم العملية الرئيسية" style={inputStyle} />
@@ -1820,6 +1840,14 @@ function BulkStep({ vm }: { vm: VM }) {
           onClick={() => {
             const path = vm.store.ui.draft?.path || vm.store.myPath;
             const opts: Record<string, string[]> = { ...(STREAM_FIELD_OPTIONS[path] || {}) };
+            // مسار العمليات: نموذج حصر العمليات المعتمد بورقتيه — التصنيف تحدده الورقة
+            if (path === 'ops') {
+              return downloadOpsTemplate(
+                vm.entityName,
+                (STREAM_FIELDS.ops || []).filter((f) => f.key !== 'opType'),
+                opts
+              );
+            }
             // services: الخدمة/الخدمة الفرعية dropdowns from the entity's catalog
             if (path === 'services') {
               const cat = svcCatalogFor(vm.entityName);
