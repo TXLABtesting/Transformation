@@ -732,13 +732,15 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>دفعات الإطلاق لمسار {bt.streamName}</div>
-        {bt.showEntity && (
-          <FilterSelect value={entF} options={entOptions} minWidth={170} onChange={setEntF} />
-        )}
+        <div style={{ flex: 1 }} />
+        {/* فلتر الجهة وعدّاد التوزيعات المعلّقة — على يسار الترويسة */}
         {bt.canReview && pendingShown > 0 && (
           <span style={{ fontSize: 12, fontWeight: 800, color: '#B45309', background: '#FFF7EB', borderRadius: 999, padding: '6px 14px' }}>
             {pendingShown} {pendingShown === 1 ? 'توزيع بانتظار اعتمادك' : 'توزيعات بانتظار اعتمادك'}
           </span>
+        )}
+        {bt.showEntity && (
+          <FilterSelect value={entF} options={entOptions} minWidth={170} onChange={setEntF} />
         )}
         {bt.canArrange && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -2528,47 +2530,6 @@ export function Dashboard({ vm }: { vm: VM }) {
               </button>
             </div>
           )}
-          {/* bottom: onboarding guide */}
-          <div data-r="railhelp" data-tour="guide" style={{ padding: 12 }}>
-            <div style={{ background: '#EAF1FE', border: '1px solid #DCE7FA', borderRadius: 16, padding: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div className="hd" style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>إرشادات استخدام المنصة</div>
-                <span
-                  style={{
-                    flex: 'none',
-                    width: 38,
-                    height: 38,
-                    borderRadius: 11,
-                    background: '#fff',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 10px -5px rgba(29,78,216,.4)',
-                  }}
-                >
-                  <Icon d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" size={18} color="#2563EB" />
-                </span>
-              </div>
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent(TOUR_EVENT))}
-                style={{
-                  marginTop: 12,
-                  width: '100%',
-                  background: BLUE_GRAD,
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 12,
-                  padding: '11px 0',
-                  fontWeight: 800,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                {vm.role === 'ai' ? 'عرض الدليل' : 'فتح الدليل'}
-              </button>
-            </div>
-          </div>
         </aside>
 
         {/* Main column */}
