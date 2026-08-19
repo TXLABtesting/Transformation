@@ -1201,7 +1201,7 @@ function BatchesView() {
   return (
     <>
       <div style={PANEL}>
-        <div style={{ padding: '15px 18px', borderBottom: '1px solid #EEF1F7', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ padding: '15px 18px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div className="hd" style={{ fontWeight: 800, fontSize: 15, color: '#13213C', minWidth: 180 }}>
             {isCoord ? 'دفعات الإطلاق — ' + mocaScopeLabel(s.unitId, s.unitSector) : 'دفعات الإطلاق — توزيعات جهات الوزارة'}
           </div>
@@ -1222,20 +1222,6 @@ function BatchesView() {
               options={[{ v: 'all', label: 'الجهة أو المكتب: الكل' }, ...MOCA_UNITS.map((u) => ({ v: u.id, label: u.name }))]}
             />
           )}
-        </div>
-        <div style={{ padding: 18, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
-          {MOCA_BATCHES.map((b) => {
-            const n = placed.filter((e) => e.execBatch === b.name).length;
-            return (
-              <div key={b.name} style={{ background: '#FAFBFE', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', flex: 1 }}>{b.name}</span>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: n ? '#1D4ED8' : '#8A97AD', background: n ? '#EAF1FE' : '#F1F4F9', borderRadius: 999, padding: '1px 8px' }}>{n}</span>
-                </div>
-                <div style={{ fontSize: 11, color: '#8A97AD', fontWeight: 700, marginTop: 4 }}>{b.period}</div>
-              </div>
-            );
-          })}
         </div>
       </div>
 
