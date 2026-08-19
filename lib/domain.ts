@@ -187,6 +187,23 @@ export const SUPPORT_FUNCTIONS = [
   'الإعلام والاتصال الحكومي',
 ];
 export const SUPPORT_OPTYPE = 'عمليات الدعم المؤسسي';
+export const OPS_SPECIAL_OPTYPE = 'العمليات التخصصية';
+
+// خيارات حقول مسار العمليات — من نموذج حصر العمليات المعتمد (ورقة «المعادلات»)
+export const OPS_AUTOMATED_OPTIONS = ['نعم', 'جزئياً', 'لا'];
+export const OPS_INTENSITY_OPTIONS = ['عالية التكرار', 'متوسطة التكرار', 'منخفضة التكرار'];
+export const OPS_READINESS_OPTIONS = [
+  'جاهزة للتحول بنسبة 80% فأكثر',
+  'جاهزة للتحول بنسبة بين 50% إلى 80%',
+  'جاهزة للتحول بنسبة بين 30% إلى 50%',
+  'جاهزة للتحول بنسبة 30% فأقل',
+];
+export const OPS_LEVEL_OPTIONS = ['عالي', 'متوسط', 'منخفض']; // مستوى الأثر ومستوى التعقيد
+export const OPS_TRANSFORM_OPTIONS = ['قابل كلياً', 'قابل جزئياً', 'غير قابل للتحول'];
+export const OPS_NOT_TRANSFORMABLE = 'غير قابل للتحول';
+// أولوية التحول: قائمة يدوية مؤقتاً — إلى حين اعتماد الاحتساب الآلي
+export const OPS_PRIORITY_OPTIONS = ['أولوية 1', 'أولوية 2', 'أولوية 3', 'أولوية 4', 'غير قابل للتحول'];
+export const OPS_RISK_OPTIONS = ['عالية', 'متوسطة', 'منخفضة'];
 
 export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
   services: [
@@ -220,20 +237,27 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'riskLevel', label: 'مستوى المخاطر' },
     // أولوية الاختيار وأولوية التحول تُشتقان من المصفوفة — ليستا عمودَي إدخال
   ],
+  // مسار العمليات — الأعمدة نفسها في نموذج حصر العمليات المعتمد (ورقتا
+  // «العمليات الرئيسية» و«عمليات الدعم المؤسسي»)؛ «التصنيف» تحدده الورقة
   ops: [
     { key: 'opType', label: 'التصنيف' },
-    { key: 'supportFn', label: 'نوع عملية الدعم المؤسسي' },
     { key: 'title', label: 'العملية الرئيسية' },
     // one Excel row per نشاط — repeat the العملية الرئيسية cell for each
-    { key: 'subActivities', label: 'اسم النشاط الفرعي' },
+    { key: 'subActivities', label: 'الأنشطة الفرعية للعملية الرئيسية' },
     { key: 'sector', label: 'القطاع المعني' },
     { key: 'dept', label: 'الإدارة المعنية' },
     { key: 'section', label: 'القسم المعني' },
-    { key: 'isAutomated', label: 'هل العملية مؤتمتة؟' },
-    { key: 'automationSystem', label: 'نظام الأتمتة' },
-    { key: 'automationPct', label: 'نسبة الأتمتة (%)' },
-    { key: 'transformYes', label: 'أولوية التحول' },
-    { key: 'notes', label: 'الملاحظات' },
+    { key: 'isAutomated', label: 'هل النشاط\\ العملية مؤتمتة؟' },
+    { key: 'automationSystem', label: 'ما هو نظام الأتمتة؟' },
+    { key: 'automationPct', label: 'ما هي نسبة الأتمتة؟' },
+    { key: 'usageIntensity', label: 'كثافة النشاط/ العملية' },
+    { key: 'readinessLevel', label: 'الجاهزية للتحول للذكاء الاصطناعي المساعد' },
+    { key: 'impactScore', label: 'مستوى الأثر المتوقع من التحول' },
+    { key: 'complexity', label: 'مستوى التعقيد' },
+    { key: 'transformScore', label: 'القابلية للتحول للذكاء الاصطناعي المساعد' },
+    { key: 'transformPeriod', label: 'فترة تحويل العمليات للذكاء الإصطناعي المساعد' },
+    { key: 'transformPriority', label: 'أولويات التحول للذكاء الاصطناعي المساعد' },
+    { key: 'riskLevel', label: 'مخاطر التحول للذكاء الاصطناعي المساعد' },
   ],
 };
 // select-field options per stream — mirrors the entry forms exactly (used for
@@ -260,10 +284,15 @@ export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
     riskLevel: ['منخفض', 'متوسط', 'عالي'],
   },
   ops: {
-    opType: ['العمليات التخصصية', 'عمليات الدعم المؤسسي'],
-    supportFn: SUPPORT_FUNCTIONS,
-    isAutomated: ['نعم', 'لا'],
-    transformYes: ['نعم', 'لا'],
+    opType: [OPS_SPECIAL_OPTYPE, SUPPORT_OPTYPE],
+    isAutomated: OPS_AUTOMATED_OPTIONS,
+    usageIntensity: OPS_INTENSITY_OPTIONS,
+    readinessLevel: OPS_READINESS_OPTIONS,
+    impactScore: OPS_LEVEL_OPTIONS,
+    complexity: OPS_LEVEL_OPTIONS,
+    transformScore: OPS_TRANSFORM_OPTIONS,
+    transformPriority: OPS_PRIORITY_OPTIONS,
+    riskLevel: OPS_RISK_OPTIONS,
   },
 };
 // sample row shown (in gray italics) under the header to guide filling
@@ -298,15 +327,22 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
   },
   ops: {
     opType: 'عمليات الدعم المؤسسي',
-    supportFn: 'الموارد البشرية',
     title: 'تدقيق طلبات الموارد البشرية',
-    subActivities: 'استلام الطلبات، التحقق، إصدار القرار',
+    subActivities: 'استلام الطلبات والتحقق منها',
     sector: 'قطاع الخدمات المساندة',
     dept: 'إدارة الموارد البشرية',
     section: 'قسم شؤون الموظفين',
-    isAutomated: 'لا',
-    transformYes: 'نعم',
-    notes: '',
+    isAutomated: 'جزئياً',
+    automationSystem: 'نظام بياناتي',
+    automationPct: '60',
+    usageIntensity: 'عالية التكرار',
+    readinessLevel: 'جاهزة للتحول بنسبة بين 50% إلى 80%',
+    impactScore: 'عالي',
+    complexity: 'متوسط',
+    transformScore: 'قابل جزئياً',
+    transformPeriod: 'الربع الأول 2027',
+    transformPriority: 'أولوية 2',
+    riskLevel: 'متوسطة',
   },
 };
 
@@ -320,7 +356,6 @@ export function missingFieldsOf(i: Record<string, unknown> & { path?: string }):
     const out: string[] = [];
     if (path === 'ops') {
       if (!plainOf(i.opType)) out.push('التصنيف');
-      if (plainOf(i.opType) === SUPPORT_OPTYPE && !plainOf(i.supportFn)) out.push('نوع عملية الدعم المؤسسي');
       if (!plainOf(i.title)) out.push('العملية الرئيسية');
     } else if (path === 'strategy') {
       if (!plainOf(i.axis)) out.push('المحور');
@@ -340,10 +375,10 @@ export function missingFieldsOf(i: Record<string, unknown> & { path?: string }):
   return spec
     // الملاحظات حقل اختياري
     .filter((f) => f.key !== 'notes')
-    // نوع عملية الدعم المؤسسي مطلوب فقط عند اختيار «عمليات الدعم المؤسسي»
-    .filter((f) => (f.key === 'supportFn' ? plainOf(i.opType) === SUPPORT_OPTYPE : true))
-    // نظام/نسبة الأتمتة مطلوبان فقط للعمليات المؤتمتة
-    .filter((f) => (automationKey(f.key) && i.path === 'ops' ? plainOf(i.isAutomated) === 'نعم' : true))
+    // فترة التحويل غير مطلوبة لعملية غير قابلة للتحول
+    .filter((f) => (f.key === 'transformPeriod' && i.path === 'ops' ? plainOf(i.transformScore) !== OPS_NOT_TRANSFORMABLE : true))
+    // نظام/نسبة الأتمتة مطلوبان فقط للعمليات المؤتمتة (كلياً أو جزئياً)
+    .filter((f) => (automationKey(f.key) && i.path === 'ops' ? ['نعم', 'جزئياً'].includes(plainOf(i.isAutomated)) : true))
     .filter((f) => (automationKey(f.key) && i.path === 'strategy' ? plainOf(i.automationLevel) !== 'غير مؤتمتة' : true))
     .filter((f) => !plainOf(i[f.key]))
     .map((f) => f.label);
@@ -360,12 +395,21 @@ export function activityMissing(path: string, a: ActivityDetail): string[] {
   need(a.dept, 'الإدارة المعنية');
   need(a.section, 'القسم المعني');
   if (path === 'ops') {
-    need(a.isAutomated, 'هل النشاط مؤتمت؟');
-    if (plainOf(a.isAutomated) === 'نعم') {
+    // حقول نموذج حصر العمليات المعتمد — عمودٌ لكل حقل
+    need(a.isAutomated, 'هل النشاط/ العملية مؤتمتة؟');
+    if (['نعم', 'جزئياً'].includes(plainOf(a.isAutomated))) {
       need(a.automationSystem, 'نظام الأتمتة');
       need(a.automationPct, 'نسبة الأتمتة');
     }
-    need(a.transformYes, 'أولوية التحول');
+    need(a.usageIntensity, 'كثافة النشاط/ العملية');
+    need(a.readinessLevel, 'الجاهزية للتحول للذكاء الاصطناعي المساعد');
+    need(a.impactScore, 'مستوى الأثر المتوقع من التحول');
+    need(a.complexity, 'مستوى التعقيد');
+    need(a.transformScore, 'القابلية للتحول للذكاء الاصطناعي المساعد');
+    // فترة التحويل غير مطلوبة لعملية غير قابلة للتحول
+    if (plainOf(a.transformScore) !== OPS_NOT_TRANSFORMABLE) need(a.transformPeriod, 'فترة التحويل للذكاء الاصطناعي المساعد');
+    need(a.transformPriority, 'أولوية التحول للذكاء الاصطناعي المساعد');
+    need(a.riskLevel, 'مخاطر التحول للذكاء الاصطناعي المساعد');
   } else if (path === 'strategy') {
     need(a.automationLevel, 'مستوى الأتمتة');
     if (plainOf(a.automationLevel) && plainOf(a.automationLevel) !== 'غير مؤتمتة') {
@@ -400,6 +444,9 @@ export function activityTransformYes(path: string, a: ActivityDetail): string {
     const p = svcPriority(a.usageIntensity, a.complexity, a.readinessLevel);
     return p ? (p === 4 ? 'لا' : 'نعم') : '';
   }
+  // ops: مشتقة من قائمة «أولويات التحول» — أولوية 1-3 نعم، أولوية 4/غير قابل لا
+  const pr = plainOf(a.transformPriority);
+  if (pr) return pr === 'أولوية 4' || pr === OPS_NOT_TRANSFORMABLE ? 'لا' : 'نعم';
   return plainOf(a.transformYes);
 }
 
@@ -434,6 +481,8 @@ export function itemActivities(i: Item): ActivityDetail[] {
     riskLevel: i.riskLevel,
     complexity: i.complexity,
     transformYes: i.transformYes,
+    transformPeriod: i.transformPeriod,
+    transformPriority: i.transformPriority,
     notes: idx === 0 ? i.notes : undefined,
   }));
 }
@@ -464,6 +513,8 @@ export function mirrorActivities<T extends Partial<Item> & { path?: string }>(d:
   out.outputClarity = first.outputClarity;
   out.riskLevel = first.riskLevel;
   out.complexity = first.complexity;
+  out.transformPeriod = first.transformPeriod;
+  out.transformPriority = first.transformPriority ?? d.transformPriority;
   out.transformYes = withDerived.some((a) => a.transformYes === 'نعم') ? 'نعم' : first.transformYes;
   out.notes = first.notes ?? d.notes;
   // the entry's own دفعة/dates mirror the first نشاط when it carries them,
@@ -869,6 +920,9 @@ export type ActivityDetail = {
   complexity?: string;
   // أولوية التحول — manual yes/no in ops, derived from the matrix in stg/svc
   transformYes?: string;
+  // نموذج حصر العمليات: فترة التحويل، أولويات التحول (قائمة يدوية مؤقتاً)
+  transformPeriod?: string;
+  transformPriority?: string;
   notes?: string;
   // دفعة الإطلاق of THIS نشاط + its own window-bounded dates. Activities of
   // one entry may sit in different دفعات; the item's own execBatch mirrors
@@ -942,6 +996,7 @@ export type Item = {
   readiness?: string | number;
   usageIntensity?: string;
   transformPriority?: string;
+  transformPeriod?: string;
   automationPct?: number;
   automationLevel?: string;
   automationSystem?: string;

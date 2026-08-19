@@ -37,7 +37,7 @@ function actPriorityOf(path: string, type: string, a: ActivityDetail): string {
 }
 // one report row per نشاط/خدمة فرعية — the entry's header cells repeat on
 // every row of its activities (same shape as the upload template)
-const ACT_KEYS = new Set(['subActivities', 'subService', 'sector', 'dept', 'section', 'isAutomated', 'automationLevel', 'automationSystem', 'automationPct', 'importance', 'usageIntensity', 'readinessLevel', 'impactScore', 'transformScore', 'outputClarity', 'riskLevel', 'complexity', 'transformYes', 'notes']);
+const ACT_KEYS = new Set(['subActivities', 'subService', 'sector', 'dept', 'section', 'isAutomated', 'automationLevel', 'automationSystem', 'automationPct', 'importance', 'usageIntensity', 'readinessLevel', 'impactScore', 'transformScore', 'outputClarity', 'riskLevel', 'complexity', 'transformYes', 'transformPeriod', 'transformPriority', 'notes']);
 function rowsOf(i: Item, entityName: string): Record<string, string>[] {
   const spec = STREAM_FIELDS[i.path] || [];
   const base: Record<string, string> = {
@@ -580,6 +580,91 @@ export async function downloadItemsTemplate(
 
   const buf = await wb.xlsx.writeBuffer();
   downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'نموذج-مدخلات-' + streamName + '.xlsx');
+}
+
+// نموذج حصر العمليات المعتمد لمسار العمليات — ورقتان بنفس بنية النموذج
+// الرسمي («العمليات الرئيسية» و«عمليات الدعم المؤسسي»): ترويسة الجهة
+// والمنسق، ثم عمود «م» و16 عمود بيانات، مع قوائم منسدلة من ورقة «المعادلات»
+export async function downloadOpsTemplate(
+  entityName: string,
+  fields: { key: string; label: string }[],
+  options: Record<string, string[]>
+) {
+  const mod = await import('exceljs');
+  const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'منصة التحول للذكاء الاصطناعي المساعد';
+  const cols = fields.length + 1; // + عمود «م»
+  const firstDataRow = 5;
+  const lastDataRow = 34;
+  for (const sheetName of ['العمليات الرئيسية', 'عمليات الدعم المؤسسي']) {
+    const ws = wb.addWorksheet(sheetName, { views: [{ rightToLeft: true, showGridLines: false }] });
+    // ترويسة النموذج الرسمي: الجهة، المسار، بيانات المنسق
+    ws.mergeCells(1, 1, 1, 4);
+    const ent = ws.getCell(1, 1);
+    ent.value = 'الجهة: ' + (entityName || '');
+    ent.font = { bold: true, size: 12, color: { argb: 'FF13213C' } };
+    ent.alignment = { horizontal: 'right', vertical: 'middle' };
+    ws.mergeCells(2, 1, 2, cols);
+    const t = ws.getCell(2, 1);
+    t.value = 'مسار العمليات والدعم المؤسسي';
+    t.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+    t.alignment = { horizontal: 'center', vertical: 'middle' };
+    t.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_DARK } as XLColor };
+    ws.getRow(2).height = 26;
+    const coordLabels: [number, string][] = [
+      [1, 'اسم المنسق الرئيسي:'],
+      [5, 'المسمى الوظيفي:'],
+      [8, 'رقم التواصل المباشر:'],
+      [11, 'البريد الالكتروني:'],
+    ];
+    coordLabels.forEach(([c, label]) => {
+      const cell = ws.getCell(3, c);
+      cell.value = label;
+      cell.font = { bold: true, size: 10.5, color: { argb: 'FF54627B' } };
+      cell.alignment = { horizontal: 'right', vertical: 'middle' };
+    });
+    ws.getRow(3).height = 20;
+    // رأس الجدول: م + أعمدة النموذج
+    const headRow = 4;
+    const mCell = ws.getCell(headRow, 1);
+    mCell.value = 'م';
+    mCell.font = { bold: true, color: { argb: HEAD_TXT }, size: 11 };
+    mCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } as XLColor };
+    mCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getColumn(1).width = 5;
+    fields.forEach((f, ci) => {
+      const cell = ws.getCell(headRow, ci + 2);
+      cell.value = f.label;
+      cell.font = { bold: true, color: { argb: HEAD_TXT }, size: 10.5 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } as XLColor };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      ws.getColumn(ci + 2).width = f.key === 'title' || f.key === 'subActivities' ? 32 : Math.max(18, Math.min(28, f.label.length + 4));
+    });
+    ws.getRow(headRow).height = 42;
+    // صفوف مرقمة + قوائم منسدلة على أعمدة الخيارات
+    for (let r = firstDataRow; r <= lastDataRow; r++) {
+      ws.getCell(r, 1).value = r - firstDataRow + 1;
+      ws.getCell(r, 1).alignment = { horizontal: 'center', vertical: 'middle' };
+      ws.getCell(r, 1).font = { size: 10.5, color: { argb: 'FF8A97AD' } };
+      ws.getRow(r).height = 20;
+    }
+    fields.forEach((f, ci) => {
+      const opts = options[f.key];
+      if (!opts || !opts.length) return;
+      const list = '"' + opts.join(',') + '"';
+      for (let r = firstDataRow; r <= lastDataRow; r++) {
+        ws.getCell(r, ci + 2).dataValidation = { type: 'list', allowBlank: true, formulae: [list] };
+      }
+    });
+    boxAll(ws, headRow, lastDataRow, cols);
+    ws.views = [{ rightToLeft: true, showGridLines: false, state: 'frozen', ySplit: headRow }];
+  }
+  const buf = await wb.xlsx.writeBuffer();
+  downloadBlob(
+    new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    'نموذج-حصر-العمليات.xlsx'
+  );
 }
 
 export async function downloadUsersTemplate(roleLabels: string[], entities: string[], streamNames: string[]) {

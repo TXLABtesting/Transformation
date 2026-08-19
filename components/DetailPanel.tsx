@@ -381,23 +381,28 @@ export function DetailPanel({ vm }: { vm: VM }) {
                       <DetailCell label="الإدارة المعنية">{a.dept}</DetailCell>
                       <DetailCell label="القسم المعني">{a.section}</DetailCell>
                     </DetailGrid>
-                    {a.isAutomated === 'نعم' ? (
+                    {/* حقول نموذج حصر العمليات المعتمد */}
+                    {a.isAutomated === 'نعم' || a.isAutomated === 'جزئياً' ? (
                       <DetailGrid cols={3}>
-                        <DetailCell label="هل النشاط مؤتمت؟">{a.isAutomated}</DetailCell>
+                        <DetailCell label="هل النشاط/ العملية مؤتمتة؟">{a.isAutomated}</DetailCell>
                         <DetailCell label="نظام الأتمتة">{a.automationSystem}</DetailCell>
                         <DetailCell label="نسبة الأتمتة">{a.automationPct != null ? a.automationPct + '%' : '—'}</DetailCell>
                       </DetailGrid>
                     ) : (
-                      <DetailGrid cols={2}>
-                        <DetailCell label="هل النشاط مؤتمت؟">{a.isAutomated || '—'}</DetailCell>
-                        <DetailCell label="أولوية التحول">{a.transformYes || '—'}</DetailCell>
+                      <DetailGrid cols={1}>
+                        <DetailCell label="هل النشاط/ العملية مؤتمتة؟">{a.isAutomated || '—'}</DetailCell>
                       </DetailGrid>
                     )}
-                    {a.isAutomated === 'نعم' ? (
-                      <DetailGrid cols={1}>
-                        <DetailCell label="أولوية التحول">{a.transformYes || '—'}</DetailCell>
-                      </DetailGrid>
-                    ) : null}
+                    <DetailGrid cols={2}>
+                      <DetailCell label="كثافة النشاط/ العملية">{a.usageIntensity || '—'}</DetailCell>
+                      <DetailCell label="الجاهزية للتحول للذكاء الاصطناعي المساعد">{a.readinessLevel || '—'}</DetailCell>
+                      <DetailCell label="مستوى الأثر المتوقع من التحول">{a.impactScore || '—'}</DetailCell>
+                      <DetailCell label="مستوى التعقيد">{a.complexity || '—'}</DetailCell>
+                      <DetailCell label="القابلية للتحول للذكاء الاصطناعي المساعد">{a.transformScore || '—'}</DetailCell>
+                      <DetailCell label="فترة التحويل للذكاء الاصطناعي المساعد">{a.transformPeriod || '—'}</DetailCell>
+                      <DetailCell label="أولوية التحول للذكاء الاصطناعي المساعد">{a.transformPriority || '—'}</DetailCell>
+                      <DetailCell label="مخاطر التحول للذكاء الاصطناعي المساعد">{a.riskLevel || '—'}</DetailCell>
+                    </DetailGrid>
                     {a.notes ? (
                       <DetailGrid cols={1}>
                         <DetailCell label="الملاحظات"><RichTextView html={(a.notes || '').replace(/\n/g, '<br/>')} style={valueStyle} /></DetailCell>
