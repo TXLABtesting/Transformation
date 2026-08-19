@@ -1424,6 +1424,8 @@ function build(s: Store) {
           moveOptions: streamLaunchBatches(bPath).map((b) => ({ v: b.name, label: batchDafaaLabel(b.name) })),
           // فريق عمل المسار reviews pending توزيعات from here
           canReview: rawRole === 'path',
+          // الأدوار ذات الاطلاع على كل الجهات ترى عمود الجهة وفلترها
+          showEntity: rawRole === 'path' || rawRole === 'ai',
           submitLabel: 'إرسال للاعتماد',
           // توزيعات مسودة بانتظار الإرسال — أياً كانت حالة مدخلاتها
           draftCount: roleBase
@@ -1470,6 +1472,7 @@ function build(s: Store) {
                     : bPath === 'strategy'
                       ? [i.axis || '—', i.title || '—', a.name || '—']
                       : [i.opType || '—', i.title || '—', a.name || '—'],
+                entity: ent(i),
                 start: a.startDate ?? i.startDate ?? '',
                 end: a.endDate ?? i.endDate ?? '',
                 prio: actPrioCellOf(i, a),
@@ -1502,6 +1505,7 @@ function build(s: Store) {
                 .filter(({ i, a }) => activityBatch(i, a) !== b.name)
                 .map(({ i, a, ai }) => ({
                   id: i.id + '::' + ai,
+                  entity: ent(i),
                   title: a.name || '—',
                   sub: [i.title || '', bPath === 'services' ? '' : bPath === 'strategy' ? i.axis || '' : i.opType || ''].filter(Boolean).join(' · '),
                   sector: a.sector || i.sector || '',

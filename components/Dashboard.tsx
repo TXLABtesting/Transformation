@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type CSSProperties, type ReactNode, useMemo } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { InlineCreateForm } from './CreatePanel';
 import { Icon } from './Icon';
@@ -705,6 +705,22 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
   // نافذة سبب الإعادة/الرفض لتوزيعٍ يراجعه فريق عمل المسار
   const [placeNote, setPlaceNote] = useState<{ kind: 'info' | 'reject'; onOk: (note: string) => void } | null>(null);
   const [placeNoteTxt, setPlaceNoteTxt] = useState('');
+  // فلتر الجهة — للأدوار ذات الاطلاع على كل الجهات؛ يسري على الجداول والمنتقي
+  const [entF, setEntF] = useState('all');
+  const entMatch = (e?: string) => entF === 'all' || e === entF;
+  const entOptions = useMemo(() => {
+    const set = new Set<string>();
+    bt.batches.forEach((b) => {
+      b.rows.forEach((r) => r.entity && set.add(r.entity));
+      b.addable.forEach((a) => a.entity && set.add(a.entity));
+    });
+    return [{ v: 'all', label: 'الجهة: الكل' }, ...Array.from(set).sort((a, b) => a.localeCompare(b, 'ar')).map((e) => ({ v: e, label: e }))];
+  }, [bt]);
+  // عدّاد التوزيعات المعلّقة يتبع فلتر الجهة
+  const pendingShown = bt.batches.reduce(
+    (n, b) => n + b.rows.filter((r) => entMatch(r.entity) && r.placement && r.placement.label === 'قيد اعتماد التوزيع').length,
+    0
+  );
   const [addOpen, setAddOpen] = useState<string | null>(null); // rawName of the batch whose picker is open
   const [addQ, setAddQ] = useState('');
   const [addSector, setAddSector] = useState('all');
@@ -716,9 +732,12 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>دفعات الإطلاق لمسار {bt.streamName}</div>
-        {bt.canReview && bt.pendingCount > 0 && (
+        {bt.showEntity && (
+          <FilterSelect value={entF} options={entOptions} minWidth={170} onChange={setEntF} />
+        )}
+        {bt.canReview && pendingShown > 0 && (
           <span style={{ fontSize: 12, fontWeight: 800, color: '#B45309', background: '#FFF7EB', borderRadius: 999, padding: '6px 14px' }}>
-            {bt.pendingCount} {bt.pendingCount === 1 ? 'توزيع بانتظار اعتمادك' : 'توزيعات بانتظار اعتمادك'}
+            {pendingShown} {pendingShown === 1 ? 'توزيع بانتظار اعتمادك' : 'توزيعات بانتظار اعتمادك'}
           </span>
         )}
         {bt.canArrange && (
@@ -782,6 +801,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                       {bt.cols.map((c) => (
                         <th key={c} style={th}>{c}</th>
                       ))}
+                      {bt.showEntity && <th style={th}>الجهة</th>}
                       <th style={th}>تاريخ البدء</th>
                       <th style={th}>تاريخ الانتهاء</th>
                       <th style={th}>أولوية الاختيار</th>
@@ -792,13 +812,18 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {b.rows.map((r) => (
+                    {b.rows.filter((r) => entMatch(r.entity)).map((r) => (
                       <tr key={r.id}>
                         {r.lead.map((v, ci) => (
                           <td key={ci} style={{ ...td, cursor: 'pointer', fontWeight: ci === 0 ? 800 : 400, color: ci === 0 ? '#13213C' : '#33415C', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={r.onOpen} title={v}>
                           {v}
                           </td>
                         ))}
+                        {bt.showEntity && (
+                          <td style={{ ...td, whiteSpace: 'nowrap', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }} title={r.entity}>
+                            {r.entity || '—'}
+                          </td>
+                        )}
                         <td style={td}>
                           {bt.canEditDates && !r.locked ? (
                             <input type="date" min={b.minDate || undefined} max={r.end || b.maxDate || undefined} value={r.start} onChange={(e) => s.setActivityDate(r.itemId, r.actIdx, 'startDate', e.target.value)} style={dateIn} />
@@ -962,6 +987,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
         const prios = Array.from(new Set(b.addable.map((a) => a.prio).filter((v) => v && v !== '—')));
         const addList = b.addable.filter(
           (a) =>
+            entMatch(a.entity) &&
             (!q || a.title.includes(q) || a.sub.includes(q)) &&
             (addSector === 'all' || a.sector === addSector) &&
             (addPrio === 'all' || a.prio === addPrio)
@@ -2951,7 +2977,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                 </div>
               ) : (
-                <ListView cards={vm.sectionCards} stream={vm.listStream} />
+                <ListView cards={vm.sectionCards} stream={vm.listStream} showEntity={vm.showEntFilter} />
               )}
 
               {/* inline add-manually form — under the table, not a popup */}
@@ -3583,7 +3609,7 @@ function PrioText({ v }: { v: string }) {
   return <span style={{ color: c, fontWeight: 800 }}>{v}</span>;
 }
 
-function ListView({ cards, stream }: { cards: CardVM[]; stream?: string | null }) {
+function ListView({ cards, stream, showEntity }: { cards: CardVM[]; stream?: string | null; showEntity?: boolean }) {
   const th: CSSProperties = {
     textAlign: 'right',
     padding: '10px 14px',
@@ -3613,6 +3639,7 @@ function ListView({ cards, stream }: { cards: CardVM[]; stream?: string | null }
         <thead>
           <tr>
             <th style={th}>{stream === 'strategy' ? 'المهمة' : stream === 'services' ? 'الخدمة' : 'العنوان'}</th>
+            {showEntity && <th style={th}>الجهة</th>}
             {stream === 'ops' ? (
               <>
                 <th style={th}>التصنيف</th>
@@ -3659,6 +3686,7 @@ function ListView({ cards, stream }: { cards: CardVM[]; stream?: string | null }
                   {c.title}
                 </span>
               </td>
+              {showEntity && <td style={{ ...td, whiteSpace: 'nowrap', maxWidth: 190, overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.entityName}>{c.entityName || '—'}</td>}
               {stream === 'ops' ? (
                 <>
                   <td style={{ ...td, whiteSpace: 'nowrap' }}>{c.catLabel}</td>
