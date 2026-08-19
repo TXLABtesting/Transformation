@@ -7,8 +7,11 @@ import { create } from 'zustand';
 import {
   MOCA_UNITS,
   MOCA_FIELDS,
+  MOCA_BATCHES,
   mocaMissing,
   mocaUnitById,
+  mocaPlacementLocked,
+  mocaPlacementState,
   type MocaEntry,
   type MocaRole,
   type MocaWf,
@@ -37,7 +40,7 @@ export type MocaState = {
   entries: MocaEntry[];
   toast: string;
   // واجهة
-  view: 'list' | 'form' | 'bulk';
+  view: 'list' | 'form' | 'bulk' | 'batches';
   editingId: string | null;
   draft: Partial<MocaEntry>;
   reqHighlight: number;
@@ -47,6 +50,7 @@ export type MocaState = {
   bulkError: string;
   confirm: MocaConfirm;
   returnTarget: { id: string; kind: 'info' | 'reject' } | null;
+  placeReturnTarget: { id: string; kind: 'info' | 'reject' } | null;
   // فلاتر
   fUnit: string;
   fStatus: string;
@@ -68,6 +72,15 @@ export type MocaState = {
   /** يفتح نافذة الملاحظة قبل الإعادة أو الرفض */
   openReturn: (id: string, kind: 'info' | 'reject') => void;
   closeReturn: () => void;
+  // دفعات الإطلاق
+  openBatches: () => void;
+  closeBatches: () => void;
+  assignBatch: (id: string, batch: string) => void;
+  setBatchDate: (id: string, k: 'startDate' | 'endDate', v: string) => void;
+  submitPlacements: (ids?: string[]) => void;
+  approvePlacement: (id: string) => void;
+  openPlaceReturn: (id: string, kind: 'info' | 'reject') => void;
+  closePlaceReturn: () => void;
   openBulk: () => void;
   closeBulk: () => void;
   setBulkRows: (rows: MocaBulkRow[], err?: string) => void;
@@ -126,6 +139,7 @@ export const useMoca = create<MocaState>((set, get) => {
     bulkError: '',
     confirm: null,
     returnTarget: null,
+    placeReturnTarget: null,
     fUnit: 'all',
     fStatus: 'all',
     fTransform: 'all',
@@ -277,6 +291,98 @@ export const useMoca = create<MocaState>((set, get) => {
     openReturn: (id, kind) => set({ returnTarget: { id, kind } }),
     closeReturn: () => set({ returnTarget: null }),
 
+    // ---- دفعات الإطلاق: توزيع المدخلات المعتمدة ودورة اعتماد التوزيع ----
+    openBatches: () => set({ view: 'batches', detailId: null, editingId: null, draft: {} }),
+    closeBatches: () => set({ view: 'list' }),
+
+    assignBatch: (id, batch) => {
+      const e = get().entries.find((x) => x.id === id);
+      if (!e) return;
+      if (mocaPlacementLocked(e)) return toast('التوزيع قيد الاعتماد أو معتمد — لا يمكن تغييره');
+      if (batch && e.wf !== 'approved') return toast('يُوزَّع على دفعات الإطلاق المدخل المعتمد فقط');
+      set((st) => ({
+        entries: st.entries.map((x) => {
+          if (x.id !== id) return x;
+          if (!batch) {
+            return {
+              ...x,
+              execBatch: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              batchWf: undefined,
+              batchRet: undefined,
+              batchNote: undefined,
+            };
+          }
+          const b = MOCA_BATCHES.find((bb) => bb.name === batch);
+          const clamp = (v?: string) => {
+            if (!b || !v) return b ? b.start : v;
+            return v < b.start ? b.start : v > b.end ? b.end : v;
+          };
+          return {
+            ...x,
+            execBatch: batch,
+            startDate: clamp(x.startDate) || b?.start,
+            endDate: x.endDate && b && x.endDate >= b.start && x.endDate <= b.end ? x.endDate : b?.end,
+            batchWf: 'draft' as const,
+            batchRet: undefined,
+            batchNote: undefined,
+          };
+        }),
+      }));
+      persist();
+    },
+
+    setBatchDate: (id, k, v) => {
+      const e = get().entries.find((x) => x.id === id);
+      if (!e) return;
+      if (mocaPlacementLocked(e)) return toast('التوزيع قيد الاعتماد أو معتمد — لا يمكن تغييره');
+      const b = MOCA_BATCHES.find((bb) => bb.name === e.execBatch);
+      let val = v;
+      if (b && val) {
+        if (val < b.start || val > b.end) {
+          val = val < b.start ? b.start : b.end;
+          toast('التاريخ خارج نافذة الدفعة (' + b.period + ') — تم ضبطه على حدودها');
+        }
+      }
+      set((st) => ({ entries: st.entries.map((x) => (x.id === id ? { ...x, [k]: val } : x)) }));
+      persist();
+    },
+
+    submitPlacements: (ids) => {
+      const st = get();
+      const scope = st.entries.filter(
+        (e) =>
+          mocaPlacementState(e) === 'draft' &&
+          (!ids || ids.includes(e.id)) &&
+          (st.role !== 'coord' || (e.unitId === st.unitId && (!st.unitSector || e.unitSector === st.unitSector)))
+      );
+      if (!scope.length) return toast('لا توجد توزيعات مسودة لإرسالها');
+      const ok = scope.map((e) => e.id);
+      set((s2) => ({
+        entries: s2.entries.map((x) =>
+          ok.includes(x.id) ? { ...x, batchWf: 'pending' as const, batchRet: undefined } : x
+        ),
+      }));
+      persist();
+      toast(ok.length === 1 ? 'تم إرسال التوزيع لاعتماد اللجنة الوطنية' : 'تم إرسال ' + ok.length + ' توزيعات لاعتماد اللجنة الوطنية');
+    },
+
+    approvePlacement: (id) => {
+      const e = get().entries.find((x) => x.id === id);
+      if (!e || mocaPlacementState(e) !== 'pending') return;
+      set((st) => ({
+        entries: st.entries.map((x) =>
+          x.id === id ? { ...x, batchWf: 'approved' as const, batchRet: undefined, batchNote: undefined } : x
+        ),
+      }));
+      persist();
+      toast('تم اعتماد التوزيع — أصبح مقفلاً');
+    },
+
+    openPlaceReturn: (id, kind) => set({ placeReturnTarget: { id, kind } }),
+    closePlaceReturn: () => set({ placeReturnTarget: null }),
+
     openBulk: () => set({ view: 'bulk', bulkRows: [], bulkLoaded: false, bulkError: '' }),
     closeBulk: () => set({ view: 'list', bulkRows: [], bulkLoaded: false, bulkError: '' }),
     setBulkRows: (rows, err) => set({ bulkRows: rows, bulkLoaded: true, bulkError: err || '' }),
@@ -349,4 +455,25 @@ export function mocaApplyReturn(id: string, kind: 'info' | 'reject', note: strin
     /* ignore */
   }
   useMoca.getState().showToast(kind === 'reject' ? 'تم رفض المدخل وإعادته للمنسق' : 'تمت إعادة المدخل للتعديل');
+}
+
+/** إعادة/رفض توزيع على دفعة مع ملاحظة إلزامية — يعود التوزيع مسودة قابلة للتعديل */
+export function mocaApplyPlaceReturn(id: string, kind: 'info' | 'reject', note: string) {
+  const st = useMoca.getState();
+  useMoca.setState({
+    entries: st.entries.map((e) =>
+      e.id === id ? { ...e, batchWf: 'draft' as const, batchRet: kind, batchNote: note.trim() } : e
+    ),
+    placeReturnTarget: null,
+  });
+  try {
+    const s = useMoca.getState();
+    window.localStorage.setItem(
+      KEY,
+      JSON.stringify({ role: s.role, unitId: s.unitId, unitSector: s.unitSector, entries: s.entries })
+    );
+  } catch {
+    /* ignore */
+  }
+  useMoca.getState().showToast(kind === 'reject' ? 'تم رفض التوزيع وإعادته للمنسق' : 'تمت إعادة التوزيع للتعديل');
 }

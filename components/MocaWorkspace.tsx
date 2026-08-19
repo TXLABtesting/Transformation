@@ -14,16 +14,20 @@ import {
   MOCA_MINISTRY,
   MOCA_TRANSFORMABILITY,
   MOCA_BAND_STYLE,
+  MOCA_BATCHES,
   mocaUnitById,
   mocaScopeLabel,
   mocaStatusOf,
   mocaMissing,
   mocaPriorityScore,
+  mocaPlacementState,
+  mocaPlacementLocked,
+  mocaPlacementChip,
   blockedByTransformability,
   type MocaEntry,
   type MocaField,
 } from '@/lib/moca';
-import { useMoca, mocaVisibleEntries, mocaApplyReturn } from '@/lib/mocaStore';
+import { useMoca, mocaVisibleEntries, mocaApplyReturn, mocaApplyPlaceReturn } from '@/lib/mocaStore';
 import { mocaDownloadTemplate, mocaParseWorkbook } from '@/lib/mocaExcel';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -132,6 +136,7 @@ const IC = {
   building: 'M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5M9 10h.01M15 10h.01M9 13h.01M15 13h.01',
   rotate: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5',
   close: 'M18 6 6 18M6 6l12 12',
+  cal: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
 };
 
 // زر إجراء مضغوط بأيقونة — يبقي عمود الإجراء ضمن عرض الجدول
@@ -198,16 +203,23 @@ export function MocaWorkspace() {
       <div style={{ display: 'flex', gap: 16, padding: '16px 24px 44px', alignItems: 'flex-start' }}>
         <Rail list={list} />
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Kpis list={list} />
-          <Filters />
-          <EntriesTable list={list} />
-          {s.view === 'form' && <InlineFormSection />}
+          {s.view === 'batches' ? (
+            <BatchesView />
+          ) : (
+            <>
+              <Kpis list={list} />
+              <Filters />
+              <EntriesTable list={list} />
+              {s.view === 'form' && <InlineFormSection />}
+            </>
+          )}
         </div>
       </div>
 
       {s.view === 'bulk' && <SidePanel />}
       {s.detailId && <DetailDrawer id={s.detailId} />}
       {s.returnTarget && <ReturnDialog />}
+      {s.placeReturnTarget && <PlaceReturnDialog />}
       {s.confirm && <ConfirmDialog />}
       {s.toast && (
         <div
@@ -440,7 +452,21 @@ function Rail({ list }: { list: MocaEntry[] }) {
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD' }}>قوائم الحصر</div>
-        {item('حصر المهام والعمليات', IC.list, true, list.length)}
+        {item('حصر المهام والعمليات', IC.list, s.view !== 'batches', list.length, () => s.closeBatches())}
+        <div style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD' }}>التوزيع</div>
+        {item(
+          'دفعات الإطلاق',
+          IC.cal,
+          s.view === 'batches',
+          s.entries.filter(
+            (e) =>
+              String(e.execBatch || '').trim() &&
+              (isCoord
+                ? e.unitId === s.unitId && (!s.unitSector || e.unitSector === s.unitSector)
+                : e.batchWf === 'pending' || e.batchWf === 'approved')
+          ).length,
+          () => s.openBatches()
+        )}
       </div>
       <div style={{ padding: 12, borderTop: '1px solid #F0F3F8' }}>
         <div style={{ fontSize: 10.5, color: '#93A1B8', fontWeight: 700, textAlign: 'center', lineHeight: 1.8 }}>
@@ -1134,6 +1160,263 @@ function DetailDrawer({ id }: { id: string }) {
         )}
       </div>
     </div>
+  );
+}
+
+// ---- دفعات الإطلاق: توزيع المدخلات المعتمدة على الدفعات المعتمدة ------------
+const dateInput: CSSProperties = {
+  border: '1px solid #DCE3EE',
+  backgroundColor: '#fff',
+  borderRadius: 9,
+  padding: '6px 8px',
+  fontSize: 11.5,
+  fontFamily: 'inherit',
+  color: '#13213C',
+  width: 128,
+};
+
+function BatchesView() {
+  const s = useMoca();
+  const isCoord = s.role === 'coord';
+  const [fUnitB, setFUnitB] = useState('all');
+
+  const inScope = (e: MocaEntry) =>
+    isCoord
+      ? e.unitId === s.unitId && (!s.unitSector || e.unitSector === s.unitSector)
+      : e.batchWf === 'pending' || e.batchWf === 'approved';
+  const placedAll = s.entries.filter((e) => String(e.execBatch || '').trim() && inScope(e));
+  const placed = placedAll.filter((e) => isCoord || fUnitB === 'all' || e.unitId === fUnitB);
+  const addable = isCoord
+    ? s.entries.filter(
+        (e) =>
+          e.wf === 'approved' &&
+          !String(e.execBatch || '').trim() &&
+          e.unitId === s.unitId &&
+          (!s.unitSector || e.unitSector === s.unitSector)
+      )
+    : [];
+  const draftIds = placed.filter((e) => mocaPlacementState(e) === 'draft').map((e) => e.id);
+  const pendingCount = placed.filter((e) => mocaPlacementState(e) === 'pending').length;
+
+  return (
+    <>
+      <div style={PANEL}>
+        <div style={{ padding: '15px 18px', borderBottom: '1px solid #EEF1F7', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div className="hd" style={{ fontWeight: 800, fontSize: 15, color: '#13213C', minWidth: 180 }}>
+            {isCoord ? 'دفعات الإطلاق — ' + mocaScopeLabel(s.unitId, s.unitSector) : 'دفعات الإطلاق — توزيعات جهات الوزارة'}
+          </div>
+          <div style={{ flex: 1 }} />
+          {!isCoord && pendingCount > 0 && (
+            <Chip t={pendingCount + (pendingCount === 1 ? ' توزيع بانتظار اعتمادك' : ' توزيعات بانتظار اعتمادك')} c="#B45309" bg="#FFF7EB" />
+          )}
+          {isCoord && draftIds.length > 0 && (
+            <button onClick={() => s.submitPlacements(draftIds)} style={BTN_PRIMARY}>
+              <Icon d={IC.send} size={15} color="#fff" /> إرسال الكل للاعتماد ({draftIds.length})
+            </button>
+          )}
+          {!isCoord && (
+            <FilterSelect
+              value={fUnitB}
+              onChange={setFUnitB}
+              minWidth={180}
+              options={[{ v: 'all', label: 'الجهة أو المكتب: الكل' }, ...MOCA_UNITS.map((u) => ({ v: u.id, label: u.name }))]}
+            />
+          )}
+        </div>
+        <div style={{ padding: 18, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
+          {MOCA_BATCHES.map((b) => {
+            const n = placed.filter((e) => e.execBatch === b.name).length;
+            return (
+              <div key={b.name} style={{ background: '#FAFBFE', border: '1px solid #E7ECF4', borderRadius: 14, padding: '13px 15px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C', flex: 1 }}>{b.name}</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: n ? '#1D4ED8' : '#8A97AD', background: n ? '#EAF1FE' : '#F1F4F9', borderRadius: 999, padding: '1px 8px' }}>{n}</span>
+                </div>
+                <div style={{ fontSize: 11, color: '#8A97AD', fontWeight: 700, marginTop: 4 }}>{b.period}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {MOCA_BATCHES.map((b) => {
+        const rows = placed.filter((e) => e.execBatch === b.name);
+        if (!rows.length && !isCoord) return null;
+        return (
+          <div key={b.name} style={PANEL}>
+            <div style={{ padding: '13px 18px', borderBottom: '1px solid #EEF1F7', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <div className="hd" style={{ fontWeight: 800, fontSize: 13.5, color: '#13213C' }}>{b.name}</div>
+              <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 700 }}>{b.period}</span>
+              <div style={{ flex: 1 }} />
+              {isCoord && addable.length > 0 && (
+                <select
+                  value=""
+                  onChange={(e) => e.target.value && s.assignBatch(e.target.value, b.name)}
+                  style={{ ...dateInput, width: 250, cursor: 'pointer', fontWeight: 700 }}
+                >
+                  <option value="">إضافة مدخل معتمد إلى الدفعة…</option>
+                  {addable.map((e) => (
+                    <option key={e.id} value={e.id}>{String(e.subProcess || e.mainProcess || '—')}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            {rows.length === 0 ? (
+              <div style={{ padding: '18px', fontSize: 12, color: '#9AA6BC' }}>
+                لا توزيعات في هذه الدفعة بعد — {addable.length ? 'أضف المدخلات المعتمدة من القائمة أعلاه.' : 'يُوزَّع المدخل المعتمد فقط.'}
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+                  <thead>
+                    <tr>
+                      <th style={th}>العملية والمهمة الرئيسية</th>
+                      <th style={th}>العملية والمهمة الفرعية</th>
+                      {!isCoord && <th style={th}>الجهة أو المكتب</th>}
+                      <th style={th}>تاريخ البدء</th>
+                      <th style={th}>تاريخ الانتهاء</th>
+                      <th style={th}>حالة المدخل</th>
+                      <th style={th}>حالة التوزيع</th>
+                      <th style={th}>الإجراء</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((e) => {
+                      const st = mocaStatusOf(e);
+                      const pc = mocaPlacementChip(e);
+                      const locked = mocaPlacementLocked(e);
+                      const pst = mocaPlacementState(e);
+                      return (
+                        <tr key={e.id}>
+                          <td
+                            style={{ ...td, fontWeight: 800, color: '#13213C', maxWidth: 185, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                            title={String(e.mainProcess || '')}
+                            onClick={() => s.openDetail(e.id)}
+                          >
+                            {String(e.mainProcess || '—')}
+                          </td>
+                          <td
+                            style={{ ...td, maxWidth: 195, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                            title={String(e.subProcess || '')}
+                            onClick={() => s.openDetail(e.id)}
+                          >
+                            {String(e.subProcess || '—')}
+                          </td>
+                          {!isCoord && <td style={td}>{mocaScopeLabel(e.unitId, e.unitSector)}</td>}
+                          <td style={td}>
+                            {isCoord && !locked ? (
+                              <input type="date" value={String(e.startDate || '')} min={b.start} max={b.end} onChange={(ev) => s.setBatchDate(e.id, 'startDate', ev.target.value)} style={dateInput} />
+                            ) : (
+                              String(e.startDate || '—')
+                            )}
+                          </td>
+                          <td style={td}>
+                            {isCoord && !locked ? (
+                              <input type="date" value={String(e.endDate || '')} min={b.start} max={b.end} onChange={(ev) => s.setBatchDate(e.id, 'endDate', ev.target.value)} style={dateInput} />
+                            ) : (
+                              String(e.endDate || '—')
+                            )}
+                          </td>
+                          <td style={td}><Chip t={st.label} c={st.color} bg={st.bg} /></td>
+                          <td style={td}>
+                            {pc ? (
+                              <span title={pc.note ? (e.batchRet === 'reject' ? 'سبب الرفض: ' : 'الملاحظات: ') + pc.note : undefined}>
+                                <Chip t={pc.label} c={pc.color} bg={pc.bg} />
+                              </span>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-start' }}>
+                              {isCoord && !locked && (
+                                <>
+                                  <select
+                                    value={b.name}
+                                    onChange={(ev) => s.assignBatch(e.id, ev.target.value)}
+                                    title="نقل إلى دفعة أخرى"
+                                    style={{ ...dateInput, width: 150, cursor: 'pointer' }}
+                                  >
+                                    {MOCA_BATCHES.map((bb) => (
+                                      <option key={bb.name} value={bb.name}>{bb.name}</option>
+                                    ))}
+                                  </select>
+                                  {pst === 'draft' && (
+                                    <IconBtn d={IC.send} title="إرسال التوزيع للاعتماد" color="#1D4ED8" bg="#EAF1FE" border="#C9DBFB" onClick={() => s.submitPlacements([e.id])} />
+                                  )}
+                                  <IconBtn d={IC.trash} title="إزالة من الدفعة" color="#C0303B" bg="#FDF6F6" border="#F3D4D7" onClick={() => s.assignBatch(e.id, '')} />
+                                </>
+                              )}
+                              {!isCoord && pst === 'pending' && (
+                                <>
+                                  <button
+                                    onClick={() => s.approvePlacement(e.id)}
+                                    style={{ background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 9, padding: '7px 14px', fontWeight: 800, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit' }}
+                                  >
+                                    اعتماد
+                                  </button>
+                                  <IconBtn d={IC.rotate} title="إعادة التوزيع للتعديل" color="#B45309" bg="#FFF3DE" border="#F1DCBA" onClick={() => s.openPlaceReturn(e.id, 'info')} />
+                                  <IconBtn d={IC.close} title="رفض التوزيع" color="#C0303B" bg="#FDF6F6" border="#F3D4D7" onClick={() => s.openPlaceReturn(e.id, 'reject')} />
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {!isCoord && placed.length === 0 && (
+        <div style={{ ...PANEL, padding: '40px 18px', textAlign: 'center' }}>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#54627B', marginBottom: 6 }}>لا توزيعات مرسلة للاعتماد بعد</div>
+          <div style={{ fontSize: 12, color: '#9AA6BC' }}>عندما يرسل المنسقون توزيعاتهم على دفعات الإطلاق ستظهر هنا لاعتمادها.</div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// نافذة إعادة/رفض التوزيع — الملاحظة إلزامية
+function PlaceReturnDialog() {
+  const s = useMoca();
+  const t = s.placeReturnTarget!;
+  const [note, setNote] = useState('');
+  const isReject = t.kind === 'reject';
+  return (
+    <Modal onClose={() => s.closePlaceReturn()}>
+      <div className="hd" style={{ fontSize: 15.5, fontWeight: 800, color: '#13213C', marginBottom: 6 }}>
+        {isReject ? 'رفض التوزيع' : 'إعادة التوزيع للتعديل'}
+      </div>
+      <div style={{ fontSize: 12.5, color: '#6B7A93', marginBottom: 14, lineHeight: 1.8 }}>
+        {isReject
+          ? 'يُذكر سبب رفض التوزيع على الدفعة، ويعود للمنسق مسودة قابلة للتعديل.'
+          : 'وضّح المطلوب تعديله في التوزيع (الدفعة أو التواريخ) ليعالجه المنسق ويعيد الإرسال.'}
+      </div>
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder={isReject ? 'سبب الرفض…' : 'الملاحظات المطلوبة…'}
+        style={{ ...inputStyle, minHeight: 110, resize: 'vertical', marginBottom: 14 }}
+      />
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+        <button onClick={() => s.closePlaceReturn()} style={BTN_NEUTRAL}>إلغاء</button>
+        <button
+          onClick={() => {
+            if (!note.trim()) return s.showToast(isReject ? 'يرجى ذكر سبب الرفض' : 'يرجى كتابة الملاحظات');
+            mocaApplyPlaceReturn(t.id, t.kind, note);
+          }}
+          style={isReject ? { ...BTN_PRIMARY, background: 'linear-gradient(180deg,#D6454F,#C0303B)' } : BTN_PRIMARY}
+        >
+          {isReject ? 'تأكيد الرفض' : 'إعادة للتعديل'}
+        </button>
+      </div>
+    </Modal>
   );
 }
 
