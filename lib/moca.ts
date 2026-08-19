@@ -170,6 +170,13 @@ export type MocaEntry = {
   submittedAt?: string;
   decidedAt?: string;
   createdBy?: string;
+  // التوزيع على دفعات الإطلاق — للمدخل المعتمد فقط
+  execBatch?: string;
+  startDate?: string;
+  endDate?: string;
+  batchWf?: 'draft' | 'pending' | 'approved';
+  batchRet?: 'info' | 'reject';
+  batchNote?: string;
 } & Record<string, unknown>;
 
 export const MOCA_STATUS: Record<string, { label: string; color: string; bg: string }> = {
@@ -239,7 +246,45 @@ export const MOCA_BAND_STYLE: Record<string, { color: string; bg: string }> = {
   'غير قابل للتحول': { color: '#64748B', bg: '#EEF2F7' },
 };
 
-// ---- 6. الأدوار -------------------------------------------------------------
+// ---- 6. دفعات الإطلاق المعتمدة ---------------------------------------------
+export type MocaBatch = { name: string; period: string; start: string; end: string; months: number };
+
+export const MOCA_BATCHES: MocaBatch[] = [
+  { name: 'إطلاق الدفعة الأولى', period: 'أغسطس – نوفمبر 2026', start: '2026-08-01', end: '2026-11-30', months: 4 },
+  { name: 'إطلاق الدفعة الثانية', period: 'ديسمبر 2026 – فبراير 2027', start: '2026-12-01', end: '2027-02-28', months: 3 },
+  { name: 'إطلاق الدفعة الثالثة', period: 'مارس – مايو 2027', start: '2027-03-01', end: '2027-05-31', months: 3 },
+  { name: 'إطلاق الدفعة الرابعة', period: 'يونيو – أغسطس 2027', start: '2027-06-01', end: '2027-08-31', months: 3 },
+  { name: 'إطلاق الدفعة الخامسة', period: 'سبتمبر – نوفمبر 2027', start: '2027-09-01', end: '2027-11-30', months: 3 },
+  { name: 'إطلاق الدفعة السادسة', period: 'ديسمبر 2027 – فبراير 2028', start: '2027-12-01', end: '2028-02-29', months: 3 },
+  { name: 'التوسع في التطبيق', period: 'مارس – مايو 2028', start: '2028-03-01', end: '2028-05-31', months: 3 },
+];
+
+/** حالة توزيع المدخل على دفعته — دورة اعتماد مستقلة عن اعتماد المحتوى */
+export type MocaPlacementState = 'none' | 'draft' | 'pending' | 'approved';
+export function mocaPlacementState(e: MocaEntry): MocaPlacementState {
+  if (!String(e.execBatch || '').trim()) return 'none';
+  return (e.batchWf as MocaPlacementState) || 'draft';
+}
+export const mocaPlacementLocked = (e: MocaEntry): boolean => {
+  const st = mocaPlacementState(e);
+  return st === 'pending' || st === 'approved';
+};
+export const MOCA_PLACEMENT_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  draft: { label: 'مسودة', color: '#5A6B86', bg: '#EEF2F8' },
+  pending: { label: 'قيد الاعتماد', color: '#B45309', bg: '#FFF7EB' },
+  approved: { label: 'معتمد', color: '#0B8A4B', bg: '#EAF7F0' },
+  returned: { label: 'مُعاد للتعديل', color: '#B45309', bg: '#FFF3DE' },
+  rejected: { label: 'مرفوض', color: '#C0303B', bg: '#FDECEE' },
+};
+export function mocaPlacementChip(e: MocaEntry): { label: string; color: string; bg: string; note?: string } | null {
+  const st = mocaPlacementState(e);
+  if (st === 'none') return null;
+  if (st === 'draft' && e.batchRet)
+    return { ...MOCA_PLACEMENT_STATUS[e.batchRet === 'reject' ? 'rejected' : 'returned'], note: (e.batchNote as string) || '' };
+  return { ...MOCA_PLACEMENT_STATUS[st] };
+}
+
+// ---- 7. الأدوار -------------------------------------------------------------
 export type MocaRole = 'coord' | 'committee';
 
 export const MOCA_ROLES: { key: MocaRole; label: string; sub: string }[] = [
