@@ -897,16 +897,35 @@ function FormStep() {
       );
     if (f.type === 'longtext')
       return <textarea value={v} onChange={(e) => s.setDraft(f.key, e.target.value)} style={{ ...st, minHeight: 88, resize: 'vertical' }} />;
-    if (f.type === 'percent')
+    // النِّسب المئوية بشريط تمرير بدل الإدخال النصي
+    if (f.type === 'percent') {
+      const num = Math.max(0, Math.min(100, Number(String(v).replace(/[^\d.]/g, '')) || 0));
       return (
-        <input
-          value={v}
-          onChange={(e) => s.setDraft(f.key, e.target.value.replace(/[^\d.]/g, '').slice(0, 5))}
-          placeholder="0 – 100"
-          inputMode="decimal"
-          style={st}
-        />
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            minHeight: 44,
+            border: '1px solid ' + (bad ? '#D23B45' : '#DCE3EE'),
+            backgroundColor: bad ? '#FFF8F8' : '#fff',
+            borderRadius: 11,
+            padding: '0 13px',
+          }}
+        >
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={num}
+            onChange={(e) => s.setDraft(f.key, e.target.value)}
+            style={{ flex: 1, accentColor: '#2563EB', cursor: 'pointer' }}
+          />
+          <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', minWidth: 44, textAlign: 'left' }}>{num}%</span>
+        </div>
       );
+    }
     return <input value={v} onChange={(e) => s.setDraft(f.key, e.target.value)} style={st} />;
   };
 
