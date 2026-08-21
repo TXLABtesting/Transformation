@@ -12,9 +12,11 @@ import {
   mocaUnitById,
   mocaPlacementLocked,
   mocaPlacementState,
+  MOCA_UC_STATUSES,
   type MocaEntry,
   type MocaRole,
   type MocaWf,
+  type MocaUseCase,
 } from './moca';
 
 const KEY = 'aigp_moca_state';
@@ -38,9 +40,10 @@ export type MocaState = {
   unitId: string;
   unitSector: string;
   entries: MocaEntry[];
+  useCases: MocaUseCase[];
   toast: string;
   // واجهة
-  view: 'list' | 'form' | 'bulk' | 'batches';
+  view: 'list' | 'form' | 'bulk' | 'batches' | 'usecases';
   editingId: string | null;
   draft: Partial<MocaEntry>;
   reqHighlight: number;
@@ -81,6 +84,14 @@ export type MocaState = {
   approvePlacement: (id: string) => void;
   openPlaceReturn: (id: string, kind: 'info' | 'reject') => void;
   closePlaceReturn: () => void;
+  // حالات الاستخدام
+  openUseCases: () => void;
+  closeUseCases: () => void;
+  addUseCase: (entryId: string) => void;
+  setUseCaseStatus: (id: string, status: string) => void;
+  /** التاريخ يُلتقط تلقائياً لحظة الإضافة */
+  addUcUpdate: (id: string, text: string, vendor: string) => void;
+  removeUseCase: (id: string) => void;
   openBulk: () => void;
   closeBulk: () => void;
   setBulkRows: (rows: MocaBulkRow[], err?: string) => void;
@@ -108,7 +119,7 @@ export const useMoca = create<MocaState>((set, get) => {
     try {
       window.localStorage.setItem(
         KEY,
-        JSON.stringify({ role: s.role, unitId: s.unitId, unitSector: s.unitSector, entries: s.entries })
+        JSON.stringify({ role: s.role, unitId: s.unitId, unitSector: s.unitSector, entries: s.entries, useCases: s.useCases })
       );
     } catch {
       /* التخزين ممتلئ — تُتجاهل */
@@ -128,6 +139,7 @@ export const useMoca = create<MocaState>((set, get) => {
     unitId: MOCA_UNITS[0].id,
     unitSector: '',
     entries: [],
+    useCases: [],
     toast: '',
     view: 'list',
     editingId: null,
@@ -160,6 +172,7 @@ export const useMoca = create<MocaState>((set, get) => {
         unitId: (saved?.unitId as string) || MOCA_UNITS[0].id,
         unitSector: (saved?.unitSector as string) || '',
         entries: Array.isArray(saved?.entries) ? (saved!.entries as MocaEntry[]) : [],
+        useCases: Array.isArray(saved?.useCases) ? (saved!.useCases as MocaUseCase[]) : [],
       });
     },
 
@@ -383,6 +396,68 @@ export const useMoca = create<MocaState>((set, get) => {
     openPlaceReturn: (id, kind) => set({ placeReturnTarget: { id, kind } }),
     closePlaceReturn: () => set({ placeReturnTarget: null }),
 
+    // ---- حالات الاستخدام: متابعة ما تعمل عليه الجهات على مهامها المعتمدة ----
+    openUseCases: () => set({ view: 'usecases', detailId: null, editingId: null, draft: {} }),
+    closeUseCases: () => set({ view: 'list' }),
+
+    addUseCase: (entryId) => {
+      const s = get();
+      const e = s.entries.find((x) => x.id === entryId);
+      if (!e) return;
+      if (e.wf !== 'approved') return toast('تُبنى حالات الاستخدام على المدخلات المعتمدة فقط');
+      if (s.useCases.some((u) => u.entryId === entryId)) return toast('لهذه المهمة الفرعية حالة استخدام مسجلة');
+      const uc: MocaUseCase = {
+        id: 'uc-' + Math.random().toString(36).slice(2, 10),
+        unitId: e.unitId,
+        unitSector: e.unitSector,
+        entryId,
+        mainProcess: String(e.mainProcess || ''),
+        subProcess: String(e.subProcess || ''),
+        status: MOCA_UC_STATUSES[0],
+        updates: [],
+        createdAt: now(),
+      };
+      set((st) => ({ useCases: [uc, ...st.useCases] }));
+      persist();
+      toast('تمت إضافة حالة الاستخدام — أضف تحديثاتها');
+    },
+
+    setUseCaseStatus: (id, status) => {
+      set((st) => ({ useCases: st.useCases.map((u) => (u.id === id ? { ...u, status } : u)) }));
+      persist();
+    },
+
+    addUcUpdate: (id, text, vendor) => {
+      const t = text.trim();
+      if (!t) return toast('يرجى كتابة نص التحديث');
+      // تاريخ التحديث يُلتقط تلقائياً لحظة الإضافة
+      set((st) => ({
+        useCases: st.useCases.map((u) =>
+          u.id === id ? { ...u, updates: [...u.updates, { text: t, vendor: vendor.trim(), at: now() }] } : u
+        ),
+      }));
+      persist();
+      toast('تمت إضافة التحديث');
+    },
+
+    removeUseCase: (id) => {
+      const uc = get().useCases.find((u) => u.id === id);
+      if (!uc) return;
+      set({
+        confirm: {
+          title: 'إزالة حالة الاستخدام',
+          body: 'سيتم إزالة حالة الاستخدام «' + (uc.subProcess || uc.mainProcess) + '» وجميع تحديثاتها نهائياً.',
+          okLabel: 'إزالة نهائياً',
+          danger: true,
+          onOk: () => {
+            set((st) => ({ useCases: st.useCases.filter((u) => u.id !== id), confirm: null }));
+            persist();
+            toast('تمت إزالة حالة الاستخدام');
+          },
+        },
+      });
+    },
+
     openBulk: () => set({ view: 'bulk', bulkRows: [], bulkLoaded: false, bulkError: '' }),
     closeBulk: () => set({ view: 'list', bulkRows: [], bulkLoaded: false, bulkError: '' }),
     setBulkRows: (rows, err) => set({ bulkRows: rows, bulkLoaded: true, bulkError: err || '' }),
@@ -431,6 +506,13 @@ export function mocaVisibleEntries(s: MocaState): MocaEntry[] {
     if (q && !((String(e.mainProcess || '') + ' ' + String(e.subProcess || '')).includes(q))) return false;
     return true;
   });
+}
+
+/** حالات الاستخدام المعروضة للدور الحالي — المنسق يرى نطاقه، واللجنة الكل */
+export function mocaVisibleUseCases(s: MocaState): MocaUseCase[] {
+  return s.role === 'coord'
+    ? s.useCases.filter((u) => u.unitId === s.unitId && (!s.unitSector || u.unitSector === s.unitSector))
+    : s.useCases;
 }
 
 /** إعادة/رفض مع ملاحظة — تُستدعى من نافذة الملاحظة في الواجهة */

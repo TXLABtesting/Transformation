@@ -284,6 +284,34 @@ export function mocaPlacementChip(e: MocaEntry): { label: string; color: string;
   return { ...MOCA_PLACEMENT_STATUS[st] };
 }
 
+// ---- 6ب. حالات الاستخدام (Use Cases) ---------------------------------------
+// متابعة حالات الاستخدام المبنية على المهام الفرعية المعتمدة: لكل حالة
+// عمليتها الرئيسية والفرعية وحالتها، وسجل تحديثات (التحديث/المزود/التاريخ
+// يُلتقط تلقائياً عند الإضافة).
+export type MocaUcUpdate = { text: string; vendor: string; at: string };
+
+export type MocaUseCase = {
+  id: string;
+  unitId: string;
+  unitSector?: string;
+  /** معرف المدخل المعتمد الذي بُنيت عليه الحالة */
+  entryId?: string;
+  mainProcess: string;
+  subProcess: string;
+  status: string;
+  updates: MocaUcUpdate[];
+  createdAt: string;
+};
+
+export const MOCA_UC_STATUSES = ['لم تبدأ بعد', 'قيد التنفيذ', 'مكتملة', 'متوقفة مؤقتاً'];
+
+export const MOCA_UC_STATUS_STYLE: Record<string, { color: string; bg: string }> = {
+  'لم تبدأ بعد': { color: '#54627B', bg: '#F1F4F9' },
+  'قيد التنفيذ': { color: '#B45309', bg: '#FFF7EB' },
+  مكتملة: { color: '#0B8A4B', bg: '#EAF7F0' },
+  'متوقفة مؤقتاً': { color: '#C0303B', bg: '#FDECEE' },
+};
+
 // ---- 7. الأدوار -------------------------------------------------------------
 export type MocaRole = 'coord' | 'committee';
 
