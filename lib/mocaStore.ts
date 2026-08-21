@@ -10,6 +10,7 @@ import {
   MOCA_BATCHES,
   mocaMissing,
   mocaUnitById,
+  mocaAutoSector,
   mocaPlacementLocked,
   mocaPlacementState,
   MOCA_UC_STATUSES,
@@ -107,8 +108,8 @@ const uid = () => 'm-' + Math.random().toString(36).slice(2, 10);
 const blankDraft = (unitId: string, unitSector: string): Partial<MocaEntry> => {
   const d: Partial<MocaEntry> = { unitId, unitSector };
   for (const f of MOCA_FIELDS) d[f.key] = '';
-  // القطاع المعني يُعبّأ مسبقاً بقطاع المنسق إن وُجد
-  if (unitSector) d.sector = unitSector;
+  // القطاع المعني يُعبَّأ آلياً من نطاق المنسق — حقل غير قابل للتحرير
+  d.sector = mocaAutoSector(unitId, unitSector);
   return d;
 };
 
@@ -205,7 +206,8 @@ export const useMoca = create<MocaState>((set, get) => {
 
     saveDraft: (send) => {
       const s = get();
-      const d = s.draft;
+      // القطاع المعني يُفرض دائماً من نطاق المستخدم
+      const d = { ...s.draft, sector: mocaAutoSector(s.unitId, s.unitSector) };
       const missing = mocaMissing(d);
       if (send && missing.length) {
         set({ reqHighlight: s.reqHighlight + 1 });
@@ -460,7 +462,16 @@ export const useMoca = create<MocaState>((set, get) => {
 
     openBulk: () => set({ view: 'bulk', bulkRows: [], bulkLoaded: false, bulkError: '' }),
     closeBulk: () => set({ view: 'list', bulkRows: [], bulkLoaded: false, bulkError: '' }),
-    setBulkRows: (rows, err) => set({ bulkRows: rows, bulkLoaded: true, bulkError: err || '' }),
+    // القطاع المعني يُفرض من نطاق المستخدم لا من الملف، ثم يُعاد احتساب النواقص
+    setBulkRows: (rows, err) => {
+      const s = get();
+      const sector = mocaAutoSector(s.unitId, s.unitSector);
+      const fixed = rows.map((r) => {
+        const data = { ...r.data, sector };
+        return { data, missing: mocaMissing(data) };
+      });
+      set({ bulkRows: fixed, bulkLoaded: true, bulkError: err || '' });
+    },
 
     // كل الصفوف تُحفظ مسودات — لا شيء يذهب مباشرة للاعتماد
     saveBulk: () => {
@@ -471,6 +482,8 @@ export const useMoca = create<MocaState>((set, get) => {
         id: uid(),
         unitId: s.unitId,
         unitSector: s.unitSector,
+        // القطاع المعني من نطاق المستخدم لا من الملف
+        sector: mocaAutoSector(s.unitId, s.unitSector),
         wf: 'draft' as MocaWf,
         ret: null,
         createdAt: now(),

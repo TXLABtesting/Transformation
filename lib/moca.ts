@@ -58,6 +58,13 @@ export const mocaScopeLabel = (unitId: string, sector?: string): string => {
   return sector ? `${u.name} — ${sector}` : u.name;
 };
 
+/**
+ * «القطاع المعني» يُعبَّأ آلياً من نطاق المستخدم ولا يُحرَّر:
+ * قطاع المنسق إن كانت لجهته قطاعات، وإلا فاسم الجهة أو المكتب نفسه.
+ */
+export const mocaAutoSector = (unitId: string, sector?: string): string =>
+  String(sector || '').trim() || mocaUnitById(unitId).name;
+
 // ---- 2. خيارات القوائم المنسدلة (ورقة «المعادلات» في الملف) -----------------
 export const MOCA_SPECIALIZATION = ['تخصصية', 'مشتركة'];
 
@@ -102,7 +109,7 @@ export const MOCA_FIELDS: MocaField[] = [
   { key: 'outputs', label: 'المخرجات من العملية الفرعية', group: 'general', type: 'longtext', required: true },
   { key: 'beneficiary', label: 'الفئة المستفيدة من العملية والمهمة الفرعية', group: 'general', type: 'text', required: true },
   { key: 'specialization', label: 'هل تعتبر تخصصية أو مشتركة؟', group: 'general', type: 'select', options: MOCA_SPECIALIZATION, required: true },
-  { key: 'sector', label: 'القطاع المعني', group: 'general', type: 'text', required: true },
+  { key: 'sector', label: 'القطاع المعني', group: 'general', type: 'text', required: true, hint: 'يُعبَّأ آلياً وفق جهة المستخدم وقطاعه' },
   { key: 'dept', label: 'الإدارة المعنية', group: 'general', type: 'text', required: true },
   { key: 'section', label: 'القسم المعني', group: 'general', type: 'text', required: true },
   // بيانات الأتمتة والكثافة والحجم
