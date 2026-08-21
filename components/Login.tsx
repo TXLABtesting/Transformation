@@ -217,7 +217,7 @@ export function Login({ vm }: { vm: VM }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="assets/logo-dark.png"
+              src={(process.env.NEXT_PUBLIC_BASE_PATH || '') + '/assets/logo-dark.png'}
               alt="مشروع الذكاء الاصطناعي المساعد"
               style={{ height: 110 }}
             />
@@ -254,7 +254,7 @@ export function Login({ vm }: { vm: VM }) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="assets/uaepass-finger.png"
+                src={(process.env.NEXT_PUBLIC_BASE_PATH || '') + '/assets/uaepass-finger.png'}
                 alt=""
                 style={{ height: 26, maxHeight: 26, width: 'auto', display: 'block' }}
               />

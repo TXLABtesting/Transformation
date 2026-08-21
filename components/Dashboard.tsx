@@ -2390,7 +2390,7 @@ export function Dashboard({ vm }: { vm: VM }) {
               <Icon d="M18 6 6 18M6 6l12 12" size={18} color="#33405A" strokeWidth={2.2} />
             </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="assets/logo.png" alt="logo" style={{ height: 46, minWidth: 0, objectFit: 'contain' }} />
+            <img src={(process.env.NEXT_PUBLIC_BASE_PATH || '') + '/assets/logo.png'} alt="logo" style={{ height: 46, minWidth: 0, objectFit: 'contain' }} />
           </div>
           {/* navigation */}
           <div data-r="navlist" style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>

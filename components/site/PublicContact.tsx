@@ -34,9 +34,11 @@ function validate(values: Values): Partial<Record<Field, string>> {
   return errors;
 }
 
+// backgroundColor (لا background المختصرة) حتى لا يُمحى سهم القائمة المنسدلة
+// المرسوم عالمياً على select في globals.css
 const controlStyle = (invalid: boolean): CSSProperties => ({
   width: '100%',
-  background: '#F7F9FD',
+  backgroundColor: '#F7F9FD',
   border: `1.5px solid ${invalid ? '#B42318' : '#E1E7F1'}`,
   borderRadius: 12,
   padding: '12px 15px',
@@ -55,6 +57,11 @@ const CheckIcon = () => (
 
 export function PublicContact() {
   const hydrate = useStore((s) => s.hydrate);
+  const hydrated = useStore((s) => s._hydrated);
+  const authed = useStore((s) => s.view !== 'login');
+  const role = useStore((s) => s.role);
+  const myPath = useStore((s) => s.myPath);
+  const setup = useStore((s) => s.setup);
   const addInquiry = useStore((s) => s.addInquiry);
   const contactSub = useStore((s) => s.site.contactSub);
   const [values, setValues] = useState<Values>(EMPTY);
@@ -62,10 +69,39 @@ export function PublicContact() {
   const [state, setState] = useState<'idle' | 'sending' | 'success'>('idle');
   /** فخ للروبوتات: الشخص الحقيقي لا يملأ حقلاً لا يراه */
   const [trap, setTrap] = useState('');
+  const [prefilled, setPrefilled] = useState<Partial<Record<Field, boolean>>>({});
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  // بيانات المستخدم المسجّل تُعبَّأ مسبقاً وتُقفل — المنسق من بيانات منسق
+  // مساره، وإلا فمن بيانات مسؤول الجهة (ما توفر منها)
+  useEffect(() => {
+    if (!hydrated || !authed) return;
+    const owner = setup.owners?.[myPath];
+    const who = role === 'coord' && owner?.name ? owner : setup.rep;
+    if (!who) return;
+    const patch: Partial<Values> = {};
+    const locked: Partial<Record<Field, boolean>> = {};
+    if (who.name?.trim()) {
+      patch.name = who.name.trim();
+      locked.name = true;
+    }
+    if (who.phone?.trim()) {
+      patch.phone = who.phone.trim();
+      locked.phone = true;
+    }
+    if (who.email?.trim()) {
+      patch.email = who.email.trim();
+      locked.email = true;
+    }
+    if (Object.keys(patch).length) {
+      setValues((prev) => ({ ...prev, ...patch }));
+      setPrefilled(locked);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, authed, role, myPath]);
 
   const set = (field: Field) => (value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -127,9 +163,9 @@ export function PublicContact() {
           ) : (
             <form onSubmit={handleSubmit} noValidate>
               <div className="grid grid-cols-2 gap-x-5 gap-y-[18px] max-[700px]:grid-cols-1">
-                <FieldInput id="name" label="الاسم" error={errors.name} placeholder="الاسم الكامل" value={values.name} onChange={set('name')} />
-                <FieldInput id="phone" label="رقم الهاتف" error={errors.phone} placeholder="+971 5x xxx xxxx" value={values.phone} onChange={set('phone')} type="tel" ltr />
-                <FieldInput id="email" label="البريد الإلكتروني" error={errors.email} placeholder="name@entity.gov.ae" value={values.email} onChange={set('email')} type="email" ltr />
+                <FieldInput id="name" label="الاسم" error={errors.name} placeholder="الاسم الكامل" value={values.name} onChange={set('name')} disabled={prefilled.name} />
+                <FieldInput id="phone" label="رقم الهاتف" error={errors.phone} placeholder="+971 5x xxx xxxx" value={values.phone} onChange={set('phone')} type="tel" ltr disabled={prefilled.phone} />
+                <FieldInput id="email" label="البريد الإلكتروني" error={errors.email} placeholder="name@entity.gov.ae" value={values.email} onChange={set('email')} type="email" ltr disabled={prefilled.email} />
 
                 <div>
                   <label htmlFor="streamId" className="mb-[7px] block text-[12.5px] font-extrabold text-[#54627B]">
@@ -213,9 +249,11 @@ interface FieldProps {
   type?: string;
   /** قيمة لاتينية داخل نموذج RTL */
   ltr?: boolean;
+  /** معبّأ من بيانات المستخدم المسجّل — للعرض فقط */
+  disabled?: boolean;
 }
 
-function FieldInput({ id, label, placeholder, value, onChange, error, type = 'text', ltr = false }: FieldProps) {
+function FieldInput({ id, label, placeholder, value, onChange, error, type = 'text', ltr = false, disabled = false }: FieldProps) {
   return (
     <div>
       <label htmlFor={id} className="mb-[7px] block text-[12.5px] font-extrabold text-[#54627B]">
@@ -228,8 +266,13 @@ function FieldInput({ id, label, placeholder, value, onChange, error, type = 'te
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={Boolean(error)}
+        disabled={disabled}
         className="focus:!border-[#2563EB] focus:!bg-white"
-        style={{ ...controlStyle(Boolean(error)), ...(ltr ? { direction: 'ltr', textAlign: 'right' } : null) }}
+        style={{
+          ...controlStyle(Boolean(error)),
+          ...(ltr ? { direction: 'ltr', textAlign: 'right' } : null),
+          ...(disabled ? { backgroundColor: '#EEF2F8', color: '#54627B', cursor: 'not-allowed', fontWeight: 700 } : null),
+        }}
       />
       <FieldError message={error} />
     </div>

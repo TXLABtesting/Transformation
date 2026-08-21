@@ -67,7 +67,7 @@ export function TeamSetup({ vm }: { vm: VM }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="assets/logo.png" alt="مشروع الذكاء الاصطناعي المساعد" style={{ height: 60 }} />
+          <img src={(process.env.NEXT_PUBLIC_BASE_PATH || '') + '/assets/logo.png'} alt="مشروع الذكاء الاصطناعي المساعد" style={{ height: 60 }} />
         </div>
       </div>
 

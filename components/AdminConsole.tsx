@@ -315,6 +315,53 @@ function SiteTab() {
             {inp(site.heroLine1, (v) => s.setSite({ heroLine1: v }), 'السطر الأول (أبيض)')}
             {inp(site.heroLine2, (v) => s.setSite({ heroLine2: v }), 'السطر الثاني (متدرج)')}
           </div>
+          {/* فيديو الواجهة: رابط ملف mp4 (يستضيفه فريق التقنية أو ضمن أصول
+              المنصة) — الرفع المباشر غير ممكن لأن حجم الفيديو يتجاوز سعة
+              التخزين المحلي. فارغ = الفيديو الرسمي المضمّن. */}
+          <div style={rowShell}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#54627B', flex: 'none' }}>فيديو الواجهة</span>
+            {inp(site.heroVideoUrl, (v) => s.setSite({ heroVideoUrl: v.trim() }), 'رابط ملف الفيديو (mp4) — اتركه فارغاً للفيديو الرسمي')}
+            {site.heroVideoUrl ? (
+              <button
+                onClick={() => s.setSite({ heroVideoUrl: '' })}
+                style={{ border: '1px solid #F0D5D5', background: '#fff', color: '#C0303B', borderRadius: 9, padding: '8px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}
+              >
+                استعادة الفيديو الرسمي
+              </button>
+            ) : (
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#0B8A4B', background: '#EAF7F0', borderRadius: 999, padding: '4px 10px', flex: 'none' }}>الفيديو الرسمي</span>
+            )}
+          </div>
+          <div style={rowShell}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#54627B', flex: 'none' }}>غلاف الفيديو</span>
+            {site.heroPosterUrl ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={site.heroPosterUrl} alt="" style={{ height: 40, width: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid #E1E7F1' }} />
+                <button
+                  onClick={() => s.setSite({ heroPosterUrl: '' })}
+                  style={{ border: '1px solid #F0D5D5', background: '#fff', color: '#C0303B', borderRadius: 9, padding: '8px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  استعادة الغلاف الرسمي
+                </button>
+              </span>
+            ) : (
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 12px', background: '#F4F7FC', border: '1px dashed #C7D1E2', borderRadius: 9, fontSize: 11.5, fontWeight: 700, color: '#2563EB', cursor: 'pointer', flex: 'none' }}>
+                <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={13} color="#2563EB" />
+                صورة الغلاف (قبل تشغيل الفيديو)
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) readCoverFile(f, (url) => s.setSite({ heroPosterUrl: url }));
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            )}
+          </div>
           <div style={rowShell}>
             {inp(site.introPre, (v) => s.setSite({ introPre: v }), 'عنوان المقدمة')}
             {inp(site.introHighlight, (v) => s.setSite({ introHighlight: v }), 'الجزء المميز بالتدرج', '0 0 240px')}
