@@ -18,6 +18,7 @@ import {
   MOCA_UC_STATUSES,
   MOCA_UC_STATUS_STYLE,
   mocaUnitById,
+  mocaAutoSector,
   mocaScopeLabel,
   mocaStatusOf,
   mocaMissing,
@@ -876,6 +877,15 @@ function FormStep() {
       ...(blocked ? { backgroundColor: '#F1F4F9', cursor: 'not-allowed', color: '#8A97AD' } : {}),
     };
     if (blocked) return <input value="غير مطلوب — العملية غير قابلة للتحول" disabled style={st} />;
+    // القطاع المعني يُعبَّأ آلياً من نطاق المستخدم — للعرض فقط
+    if (f.key === 'sector')
+      return (
+        <input
+          value={mocaAutoSector(s.unitId, s.unitSector)}
+          disabled
+          style={{ ...inputStyle, backgroundColor: '#F1F4F9', cursor: 'not-allowed', color: '#54627B', fontWeight: 700 }}
+        />
+      );
     if (f.type === 'select')
       return (
         <select value={v} onChange={(e) => s.setDraft(f.key, e.target.value)} style={{ ...st, cursor: 'pointer' }}>
