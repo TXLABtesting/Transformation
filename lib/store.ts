@@ -45,6 +45,7 @@ import {
 import type { LibraryDoc, ContactInquiry } from './domain';
 import { migrateRole } from './domain';
 import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
+import { DEFAULT_SITE, type SiteContent } from './site';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
 import { seedItems, seedLaunchPlans } from './seed';
@@ -197,6 +198,8 @@ type State = {
   contactEmails: Record<string, string>;
   aboutHero: string;
   about: AboutContent;
+  /** محتوى صفحات الموقع العام الجديدة — يحرَّر من «محتوى الموقع» في لوحة المشرف */
+  site: SiteContent;
   libraryDocs: LibraryDoc[];
   inquiries: ContactInquiry[];
   users: UserRec[];
@@ -289,6 +292,7 @@ type Actions = {
   setContactEmail: (k: string, v: string) => void;
   setAboutHero: (v: string) => void;
   setAbout: (patch: Partial<AboutContent>) => void;
+  setSite: (patch: Partial<SiteContent>) => void;
   updLibDoc: (id: string, patch: Partial<LibraryDoc>) => void;
   addLibDoc: () => void;
   removeLibDoc: (id: string) => void;
@@ -517,6 +521,7 @@ function initialState(): State {
     contactEmails: { ...DEFAULT_CONTACT_EMAILS },
     aboutHero: DEFAULT_ABOUT_HERO,
     about: JSON.parse(JSON.stringify(DEFAULT_ABOUT)) as AboutContent,
+    site: JSON.parse(JSON.stringify(DEFAULT_SITE)) as SiteContent,
     libraryDocs: DEFAULT_LIBRARY_DOCS.map((d) => ({ ...d })),
     inquiries: [],
     users: seedUsers(DEFAULT_ENTITY),
@@ -609,6 +614,7 @@ export const useStore = create<Store>((set, get) => {
       contactEmails: s.contactEmails,
       aboutHero: s.aboutHero,
       about: s.about,
+      site: s.site,
       libraryDocs: s.libraryDocs,
       inquiries: s.inquiries,
       users: s.users,
@@ -688,6 +694,10 @@ export const useStore = create<Store>((set, get) => {
             );
             return merged;
           })(),
+          site:
+            !fresh && saved!.site && typeof saved!.site === 'object'
+              ? { ...(JSON.parse(JSON.stringify(DEFAULT_SITE)) as SiteContent), ...(saved!.site as Partial<SiteContent>) }
+              : (JSON.parse(JSON.stringify(DEFAULT_SITE)) as SiteContent),
           libraryDocs: Array.isArray(saved!.libraryDocs) && (saved!.libraryDocs as LibraryDoc[]).length ? (saved!.libraryDocs as LibraryDoc[]) : DEFAULT_LIBRARY_DOCS.map((d) => ({ ...d })),
           inquiries: Array.isArray(saved!.inquiries) ? (saved!.inquiries as ContactInquiry[]) : [],
           view: (saved!.view as State['view']) || 'login',
@@ -1069,6 +1079,10 @@ export const useStore = create<Store>((set, get) => {
     },
     setAbout: (patch) => {
       set((st) => ({ about: { ...st.about, ...patch } }));
+      persist();
+    },
+    setSite: (patch) => {
+      set((st) => ({ site: { ...st.site, ...patch } }));
       persist();
     },
     updLibDoc: (id, patch) => {

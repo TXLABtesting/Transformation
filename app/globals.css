@@ -479,3 +479,86 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .login-ring::before { animation: none; }
 }
+
+/* ===========================================================================
+ * الموقع العام (الرئيسية · من نحن · المنشورات · تواصل معنا)
+ * أنماط منقولة من تسليم تصميم الموقع — تعمل تحت غلاف .pub-site فقط
+ * ======================================================================== */
+.pub-site {
+  --ink: #0f1f3d;
+  --ink-muted: #5e6e8c;
+  --brand: #2563eb;
+  --brand-cyan: #01bdf9;
+  --navy: #002b6b;
+  font-family: var(--font-cairo), 'Cairo', var(--font-base), 'Noto Kufi Arabic', system-ui, sans-serif;
+  line-height: normal;
+  color: var(--ink);
+}
+.pub-site .font-kufi {
+  font-family: var(--font-base), 'Noto Kufi Arabic', 'Cairo', system-ui, sans-serif;
+}
+
+/* أيقونات Material Symbols Rounded (ligatures) */
+.msr {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* كشف العناصر عند التمرير — الرئيسية ومن نحن */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(44px);
+  transition:
+    opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-reveal][data-revealed] {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes omTitle {
+  from {
+    opacity: 0;
+    transform: translateY(34px);
+    filter: blur(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+@keyframes omFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* أزرار وثيقة المنشورات: تظهر باللمس دائماً حيث لا يوجد hover */
+@media (hover: none) {
+  .doc-actions {
+    opacity: 1;
+    background: rgba(8, 24, 58, 0.28);
+  }
+}
