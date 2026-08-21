@@ -461,13 +461,6 @@ function Rail({ list }: { list: MocaEntry[] }) {
         {item('حصر المهام والعمليات', IC.list, s.view !== 'batches' && s.view !== 'usecases', list.length, () => s.closeBatches())}
         <div style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD' }}>المتابعة</div>
         {item(
-          'حالات الاستخدام',
-          IC.bulb,
-          s.view === 'usecases',
-          mocaVisibleUseCases(s).length,
-          () => s.openUseCases()
-        )}
-        {item(
           'دفعات الإطلاق',
           IC.cal,
           s.view === 'batches',
@@ -480,6 +473,7 @@ function Rail({ list }: { list: MocaEntry[] }) {
           ).length,
           () => s.openBatches()
         )}
+        {item('حالات الاستخدام', IC.bulb, s.view === 'usecases', mocaVisibleUseCases(s).length, () => s.openUseCases())}
       </div>
       <div style={{ padding: 12, borderTop: '1px solid #F0F3F8' }}>
         <div style={{ fontSize: 10.5, color: '#93A1B8', fontWeight: 700, textAlign: 'center', lineHeight: 1.8 }}>
@@ -1184,6 +1178,7 @@ function UseCasesView() {
   const [fStatusU, setFStatusU] = useState('all');
   const [adding, setAdding] = useState(false);
   const [pick, setPick] = useState('');
+  const [openId, setOpenId] = useState<string | null>(null);
   const addRef = useRef<HTMLDivElement>(null);
 
   const all = mocaVisibleUseCases(s);
@@ -1205,79 +1200,78 @@ function UseCasesView() {
     if (adding) setTimeout(() => addRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
   }, [adding]);
 
+  const lastAt = (u: MocaUseCase) => (u.updates.length ? u.updates[u.updates.length - 1].at.slice(0, 10) : '—');
+  const lastVendor = (u: MocaUseCase) => {
+    const v = [...u.updates].reverse().find((x) => x.vendor);
+    return v ? v.vendor : '—';
+  };
+
   return (
-    <>
-      <div style={PANEL}>
-        <div style={{ padding: '15px 18px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <div className="hd" style={{ fontWeight: 800, fontSize: 15, color: '#13213C', minWidth: 180 }}>
-            {isCoord ? 'حالات الاستخدام — ' + mocaScopeLabel(s.unitId, s.unitSector) : 'حالات الاستخدام في جهات الوزارة'}
-          </div>
-          <div style={{ flex: 1 }} />
-          {isCoord && (
-            <button onClick={() => setAdding((o) => !o)} style={BTN_PRIMARY}>
-              <Icon d={IC.plus} size={17} strokeWidth={2.2} color="#fff" /> إضافة حالة استخدام لعملية/مهمة أخرى
-            </button>
-          )}
-          <FilterSelect
-            value={fStatusU}
-            onChange={setFStatusU}
-            minWidth={160}
-            options={[{ v: 'all', label: 'الحالة: الكل' }, ...MOCA_UC_STATUSES.map((x) => ({ v: x, label: x }))]}
-          />
-          {!isCoord && (
-            <FilterSelect
-              value={fUnitU}
-              onChange={setFUnitU}
-              minWidth={180}
-              options={[{ v: 'all', label: 'الجهة أو المكتب: الكل' }, ...MOCA_UNITS.map((u) => ({ v: u.id, label: u.name }))]}
-            />
-          )}
+    <div style={PANEL}>
+      <div style={{ padding: '15px 18px', borderBottom: '1px solid #EEF1F7', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div className="hd" style={{ fontWeight: 800, fontSize: 15, color: '#13213C', minWidth: 180 }}>
+          {isCoord ? 'حالات الاستخدام — ' + mocaScopeLabel(s.unitId, s.unitSector) : 'حالات الاستخدام في جهات الوزارة'}
         </div>
-        {isCoord && adding && (
-          <div ref={addRef} style={{ padding: '0 18px 18px' }}>
-            <div style={{ ...cardStyle, marginBottom: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 4, height: 16, borderRadius: 999, background: '#2563EB' }} />
-                إضافة حالة استخدام لعملية/مهمة أخرى
-              </div>
-              {addable.length === 0 ? (
-                <div style={{ fontSize: 12.5, color: '#8A97AD', lineHeight: 1.8 }}>
-                  لا توجد مهام فرعية معتمدة متاحة — تُبنى حالات الاستخدام على المدخلات المعتمدة في حصر المهام والعمليات.
-                </div>
-              ) : (
-                <>
-                  <label style={labelStyle}>العملية والمهمة الفرعية (من المدخلات المعتمدة)</label>
-                  <select value={pick} onChange={(e) => setPick(e.target.value)} style={{ ...inputStyle, cursor: 'pointer', marginBottom: 12 }}>
-                    <option value="">اختر المهمة الفرعية…</option>
-                    {addable.map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {String(e.subProcess || e.mainProcess || '—')} — {String(e.mainProcess || '')}
-                      </option>
-                    ))}
-                  </select>
-                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-start' }}>
-                    <button
-                      onClick={() => {
-                        if (!pick) return s.showToast('يرجى اختيار المهمة الفرعية');
-                        s.addUseCase(pick);
-                        setPick('');
-                        setAdding(false);
-                      }}
-                      style={BTN_PRIMARY}
-                    >
-                      <Icon d={IC.check} size={16} color="#fff" /> إضافة حالة الاستخدام
-                    </button>
-                    <button onClick={() => { setAdding(false); setPick(''); }} style={BTN_NEUTRAL}>إلغاء</button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+        <div style={{ flex: 1 }} />
+        {isCoord && (
+          <button onClick={() => setAdding((o) => !o)} style={BTN_PRIMARY}>
+            <Icon d={IC.plus} size={17} strokeWidth={2.2} color="#fff" /> إضافة حالة استخدام
+          </button>
+        )}
+        <FilterSelect
+          value={fStatusU}
+          onChange={setFStatusU}
+          minWidth={150}
+          options={[{ v: 'all', label: 'الحالة: الكل' }, ...MOCA_UC_STATUSES.map((x) => ({ v: x, label: x }))]}
+        />
+        {!isCoord && (
+          <FilterSelect
+            value={fUnitU}
+            onChange={setFUnitU}
+            minWidth={180}
+            options={[{ v: 'all', label: 'الجهة أو المكتب: الكل' }, ...MOCA_UNITS.map((u) => ({ v: u.id, label: u.name }))]}
+          />
         )}
       </div>
 
+      {isCoord && adding && (
+        <div ref={addRef} style={{ padding: '16px 18px', borderBottom: '1px solid #EEF1F7', background: '#FAFBFE' }}>
+          {addable.length === 0 ? (
+            <div style={{ fontSize: 12.5, color: '#8A97AD', lineHeight: 1.8 }}>
+              لا توجد مهام فرعية معتمدة متاحة — تُبنى حالات الاستخدام على المدخلات المعتمدة في حصر المهام والعمليات.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 320 }}>
+                <label style={labelStyle}>العملية والمهمة الفرعية (من المدخلات المعتمدة)</label>
+                <select value={pick} onChange={(e) => setPick(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                  <option value="">اختر المهمة الفرعية…</option>
+                  {addable.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {String(e.subProcess || e.mainProcess || '—')} — {String(e.mainProcess || '')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={() => {
+                  if (!pick) return s.showToast('يرجى اختيار المهمة الفرعية');
+                  s.addUseCase(pick);
+                  setPick('');
+                  setAdding(false);
+                }}
+                style={BTN_PRIMARY}
+              >
+                <Icon d={IC.check} size={16} color="#fff" /> إضافة
+              </button>
+              <button onClick={() => { setAdding(false); setPick(''); }} style={BTN_NEUTRAL}>إلغاء</button>
+            </div>
+          )}
+        </div>
+      )}
+
       {list.length === 0 ? (
-        <div style={{ ...PANEL, padding: '52px 18px', textAlign: 'center' }}>
+        <div style={{ padding: '52px 18px', textAlign: 'center' }}>
           <div style={{ fontSize: 13.5, fontWeight: 800, color: '#54627B', marginBottom: 6 }}>لا توجد حالات استخدام للعرض</div>
           <div style={{ fontSize: 12, color: '#9AA6BC' }}>
             {isCoord
@@ -1286,125 +1280,175 @@ function UseCasesView() {
           </div>
         </div>
       ) : (
-        list.map((u) => <UseCaseCard key={u.id} uc={u} isCoord={isCoord} />)
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 960 }}>
+            <thead>
+              <tr>
+                <th style={{ ...th, width: 34 }} />
+                <th style={th}>العملية والمهمة الرئيسية</th>
+                <th style={th}>العملية والمهمة الفرعية</th>
+                {!isCoord && <th style={th}>الجهة أو المكتب</th>}
+                <th style={{ ...th, width: 170 }}>الحالة</th>
+                <th style={{ ...th, width: 180 }}>المزود (vendor)</th>
+                <th style={{ ...th, width: 130 }}>تاريخ التحديث</th>
+                <th style={{ ...th, width: 110 }}>التحديثات</th>
+                <th style={{ ...th, width: 120 }}>الإجراء</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((u) => {
+                const open = openId === u.id;
+                const stl = MOCA_UC_STATUS_STYLE[u.status] || MOCA_UC_STATUS_STYLE['لم تبدأ بعد'];
+                const cols = isCoord ? 8 : 9;
+                return (
+                  <React.Fragment key={u.id}>
+                    <tr>
+                      <td style={{ ...td, width: 34 }}>
+                        <button
+                          onClick={() => setOpenId(open ? null : u.id)}
+                          title={open ? 'إخفاء التحديثات' : 'عرض التحديثات'}
+                          aria-label={open ? 'إخفاء التحديثات' : 'عرض التحديثات'}
+                          style={{ width: 26, height: 26, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: open ? '#EAF1FE' : '#fff', border: '1px solid ' + (open ? '#C9DBFB' : '#E7ECF4'), borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+                        >
+                          <span style={{ display: 'inline-flex', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
+                            <Icon d="M6 9l6 6 6-6" size={13} color={open ? '#1D4ED8' : '#8A97AD'} />
+                          </span>
+                        </button>
+                      </td>
+                      <td
+                        style={{ ...td, fontWeight: 800, color: '#13213C', maxWidth: 230, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                        title={u.mainProcess}
+                        onClick={() => setOpenId(open ? null : u.id)}
+                      >
+                        {u.mainProcess || '—'}
+                      </td>
+                      <td
+                        style={{ ...td, maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                        title={u.subProcess}
+                        onClick={() => setOpenId(open ? null : u.id)}
+                      >
+                        {u.subProcess || '—'}
+                      </td>
+                      {!isCoord && <td style={td}>{mocaScopeLabel(u.unitId, u.unitSector)}</td>}
+                      <td style={td}>
+                        {isCoord ? (
+                          <select
+                            value={u.status}
+                            onChange={(e) => s.setUseCaseStatus(u.id, e.target.value)}
+                            style={{ ...inputStyle, width: 158, cursor: 'pointer', padding: '7px 10px', fontSize: 12, fontWeight: 700 }}
+                          >
+                            {MOCA_UC_STATUSES.map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <Chip t={u.status} c={stl.color} bg={stl.bg} />
+                        )}
+                      </td>
+                      <td style={{ ...td, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lastVendor(u)}</td>
+                      <td style={{ ...td, whiteSpace: 'nowrap' }}>{lastAt(u)}</td>
+                      <td style={td}>{u.updates.length}</td>
+                      <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-start' }}>
+                          {isCoord && (
+                            <>
+                              <IconBtn d={IC.plus} title="إضافة تحديث" color="#1D4ED8" bg="#EAF1FE" border="#C9DBFB" onClick={() => setOpenId(u.id)} />
+                              <IconBtn d={IC.trash} title="إزالة حالة الاستخدام" color="#C0303B" bg="#FDF6F6" border="#F3D4D7" onClick={() => s.removeUseCase(u.id)} />
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {open && (
+                      <tr>
+                        <td colSpan={cols} style={{ padding: 0, borderBottom: '1px solid #F4F6FA', background: '#FAFBFE' }}>
+                          <UcUpdates uc={u} isCoord={isCoord} />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
-    </>
+    </div>
   );
 }
 
-function UseCaseCard({ uc, isCoord }: { uc: MocaUseCase; isCoord: boolean }) {
+// سجل تحديثات حالة استخدام واحدة — يظهر داخل صف الجدول عند التوسيع
+function UcUpdates({ uc, isCoord }: { uc: MocaUseCase; isCoord: boolean }) {
   const s = useMoca();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [vendor, setVendor] = useState('');
-  const st = MOCA_UC_STATUS_STYLE[uc.status] || MOCA_UC_STATUS_STYLE['لم تبدأ بعد'];
-  const fmt = (iso: string) => String(iso || '').slice(0, 10);
   return (
-    <div style={PANEL}>
-      {/* ترويسة الحالة: العملية الرئيسية والفرعية والحالة */}
-      <div style={{ padding: '15px 18px', borderBottom: '1px solid #EEF1F7', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 260, flex: 1 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: '#1E3A8A', borderRadius: 8, padding: '5px 10px', whiteSpace: 'nowrap' }}>
-            العملية والمهمة الرئيسية
-          </span>
-          <span className="hd" style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>{uc.mainProcess || '—'}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 260, flex: 1 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: '#1E3A8A', borderRadius: 8, padding: '5px 10px', whiteSpace: 'nowrap' }}>
-            العملية والمهمة الفرعية
-          </span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#33415C' }}>{uc.subProcess || '—'}</span>
-        </div>
-        {!isCoord && <Chip t={mocaScopeLabel(uc.unitId, uc.unitSector)} c="#54627B" bg="#F1F4F9" />}
-        {isCoord ? (
-          <select
-            value={uc.status}
-            onChange={(e) => s.setUseCaseStatus(uc.id, e.target.value)}
-            style={{ ...inputStyle, width: 170, cursor: 'pointer', padding: '8px 11px', fontSize: 12.5, fontWeight: 800 }}
-          >
-            {MOCA_UC_STATUSES.map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
-        ) : (
-          <Chip t={uc.status} c={st.color} bg={st.bg} />
-        )}
-        {isCoord && (
-          <IconBtn d={IC.trash} title="إزالة حالة الاستخدام" color="#C0303B" bg="#FDF6F6" border="#F3D4D7" onClick={() => s.removeUseCase(uc.id)} />
-        )}
-      </div>
-
-      {/* جدول التحديثات */}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
-          <thead>
+    <div style={{ padding: '14px 18px' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            <th style={{ ...th, borderBottom: '1px solid #E7ECF4' }}>التحديث</th>
+            <th style={{ ...th, width: 200, borderBottom: '1px solid #E7ECF4' }}>المزود (vendor)</th>
+            <th style={{ ...th, width: 140, borderBottom: '1px solid #E7ECF4' }}>تاريخ التحديث</th>
+          </tr>
+        </thead>
+        <tbody>
+          {uc.updates.length === 0 ? (
             <tr>
-              <th style={th}>التحديث</th>
-              <th style={{ ...th, width: 220 }}>المزود (vendor)</th>
-              <th style={{ ...th, width: 150 }}>تاريخ التحديث</th>
+              <td colSpan={3} style={{ ...td, color: '#9AA6BC', textAlign: 'center', padding: '16px 9px' }}>
+                لا توجد تحديثات بعد على حالة الاستخدام هذه.
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {uc.updates.length === 0 ? (
-              <tr>
-                <td colSpan={3} style={{ ...td, color: '#9AA6BC', textAlign: 'center', padding: '18px 9px' }}>
-                  لا توجد تحديثات بعد على حالة الاستخدام هذه.
-                </td>
+          ) : (
+            uc.updates.map((up, ui) => (
+              <tr key={ui}>
+                <td style={{ ...td, lineHeight: 1.8 }}>{up.text}</td>
+                <td style={td}>{up.vendor || '—'}</td>
+                <td style={{ ...td, whiteSpace: 'nowrap' }}>{String(up.at || '').slice(0, 10)}</td>
               </tr>
-            ) : (
-              uc.updates.map((up, ui) => (
-                <tr key={ui}>
-                  <td style={{ ...td, lineHeight: 1.8 }}>{up.text}</td>
-                  <td style={td}>{up.vendor || '—'}</td>
-                  <td style={{ ...td, whiteSpace: 'nowrap' }}>{fmt(up.at)}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+            ))
+          )}
+        </tbody>
+      </table>
 
-      {/* إضافة تحديث على هذه الحالة تحديداً */}
       {isCoord && (
-        <div style={{ padding: '13px 18px', borderTop: '1px solid #EEF1F7' }}>
+        <div style={{ paddingTop: 12 }}>
           {!open ? (
             <button
               onClick={() => setOpen(true)}
-              title="إضافة تحديث على حالة الاستخدام"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 14px', background: '#EAF1FE', color: '#1D4ED8', border: '1px solid #C9DBFB', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 34, padding: '0 13px', background: '#EAF1FE', color: '#1D4ED8', border: '1px solid #C9DBFB', borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              <Icon d={IC.plus} size={15} strokeWidth={2.4} color="#1D4ED8" /> إضافة تحديث
+              <Icon d={IC.plus} size={14} strokeWidth={2.4} color="#1D4ED8" /> إضافة تحديث
             </button>
           ) : (
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 260 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 280 }}>
                 <label style={labelStyle}>التحديث</label>
-                <textarea
+                <input
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="آخر ما تم إنجازه على حالة الاستخدام…"
-                  style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }}
+                  style={inputStyle}
                 />
               </div>
-              <div style={{ width: 220 }}>
+              <div style={{ width: 200 }}>
                 <label style={labelStyle}>المزود (vendor)</label>
                 <input value={vendor} onChange={(e) => setVendor(e.target.value)} placeholder="اسم المزود" style={inputStyle} />
               </div>
-              <div style={{ display: 'flex', gap: 8, paddingTop: 22 }}>
-                <button
-                  onClick={() => {
-                    if (!text.trim()) return s.showToast('يرجى كتابة نص التحديث');
-                    s.addUcUpdate(uc.id, text, vendor);
-                    setText('');
-                    setVendor('');
-                    setOpen(false);
-                  }}
-                  style={BTN_PRIMARY}
-                >
-                  <Icon d={IC.check} size={16} color="#fff" /> حفظ التحديث
-                </button>
-                <button onClick={() => { setOpen(false); setText(''); setVendor(''); }} style={BTN_NEUTRAL}>إلغاء</button>
-              </div>
+              <button
+                onClick={() => {
+                  if (!text.trim()) return s.showToast('يرجى كتابة نص التحديث');
+                  s.addUcUpdate(uc.id, text, vendor);
+                  setText('');
+                  setVendor('');
+                  setOpen(false);
+                }}
+                style={BTN_PRIMARY}
+              >
+                <Icon d={IC.check} size={16} color="#fff" /> حفظ التحديث
+              </button>
+              <button onClick={() => { setOpen(false); setText(''); setVendor(''); }} style={BTN_NEUTRAL}>إلغاء</button>
               <div style={{ width: '100%', fontSize: 11.5, color: '#8E9AB0' }}>يُسجَّل تاريخ التحديث تلقائياً عند الحفظ.</div>
             </div>
           )}
@@ -1413,6 +1457,7 @@ function UseCaseCard({ uc, isCoord }: { uc: MocaUseCase; isCoord: boolean }) {
     </div>
   );
 }
+
 
 // ---- دفعات الإطلاق: توزيع المدخلات المعتمدة على الدفعات المعتمدة ------------
 const dateInput: CSSProperties = {
