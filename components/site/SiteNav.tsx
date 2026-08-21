@@ -222,12 +222,6 @@ export function SiteNav({ overHero = false }: SiteNavProps) {
                     <div className="text-[13.5px] font-black text-[#0F1F3D]">{userName}</div>
                     <div className="mt-1 text-[11.5px] font-bold text-[#7C8AA3]">{userSub}</div>
                   </div>
-                  <a
-                    href={inputHref}
-                    className="cursor-pointer rounded-[10px] border-none bg-transparent px-3 py-[11px] text-right text-[13px] font-extrabold text-[#0F1F3D] transition-colors hover:bg-[#F4F7FC]"
-                  >
-                    الملف الشخصي
-                  </a>
                   <button
                     type="button"
                     onClick={signOut}
@@ -289,12 +283,6 @@ export function SiteNav({ overHero = false }: SiteNavProps) {
                         <div className="text-[13.5px] font-black text-[#0F1F3D]">{userName}</div>
                         <div className="mt-[3px] text-[11.5px] font-bold text-[#7C8AA3]">{userSub}</div>
                       </div>
-                      <a
-                        href={inputHref}
-                        className="cursor-pointer rounded-xl border-none bg-transparent px-[14px] py-3 text-right text-sm font-extrabold text-[#0F1F3D] transition-colors hover:bg-[#F4F7FC]"
-                      >
-                        الملف الشخصي
-                      </a>
                       <button
                         type="button"
                         onClick={signOut}

@@ -49,15 +49,18 @@ function Hero({ site }: { site: SiteContent }) {
       className="relative overflow-hidden"
       style={{ height: '100svh', minHeight: 'min(760px,100svh)', background: HERO_BACKDROP }}
     >
+      {/* الفيديو من محتوى الموقع إن حدده المشرف، وإلا الفيديو الرسمي المضمّن.
+          key يعيد تحميل المصدر عند تغييره من الـCMS */}
       <video
+        key={site.heroVideoUrl || 'default'}
         autoPlay
         muted
         loop
         playsInline
-        poster={asset(SITE_MEDIA.heroPoster)}
+        poster={site.heroPosterUrl ? asset(site.heroPosterUrl) : asset(SITE_MEDIA.heroPoster)}
         className="pointer-events-none absolute inset-0 block h-full w-full object-cover"
       >
-        <source src={asset(SITE_MEDIA.heroVideo)} type="video/mp4" />
+        <source src={site.heroVideoUrl ? asset(site.heroVideoUrl) : asset(SITE_MEDIA.heroVideo)} type="video/mp4" />
       </video>
       <div
         className="pointer-events-none absolute inset-0 z-[1]"
