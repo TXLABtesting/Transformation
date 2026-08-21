@@ -165,20 +165,12 @@ function InteractiveNumberBackground() {
   );
 }
 
-// Landing navigation — الصفحة الرئيسية is the login itself (blue, platform
-// design); the other tabs are the public site pages from the design handoff.
-const NAV_ITEMS: { key: PublicTab; label: string }[] = [
-  { key: 'home', label: 'الصفحة الرئيسية' },
-  { key: 'about', label: 'من نحن' },
-  { key: 'library', label: 'المنشورات' },
-  { key: 'contact', label: 'تواصل معنا' },
-];
-
 export function Login({ vm }: { vm: VM }) {
   const loginUaePass = useStore((s) => s.loginUaePass);
   const [hover, setHover] = useState(false);
+  // صفحات الموقع العام (من نحن · المنشورات · تواصل معنا) تبقى متاحة عبر
+  // شريط التنقل الخاص بها؛ صفحة تسجيل الدخول نفسها بلا شريط علوي.
   const [tab, setTab] = useState<PublicTab>('home');
-  const [navHov, setNavHov] = useState<PublicTab | null>(null);
   void vm;
 
   // Presentation default is a MOCK login that jumps straight into the flow.
@@ -223,53 +215,7 @@ export function Login({ vm }: { vm: VM }) {
     >
       <InteractiveNumberBackground />
 
-      {/* ===== top navigation ===== */}
-      <nav
-        data-r="landing-nav"
-        style={{
-          position: 'relative',
-          zIndex: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 6,
-          flexWrap: 'wrap',
-          padding: '16px 20px',
-          background: 'rgba(4,14,36,.35)',
-          borderBottom: '1px solid rgba(159,196,242,.16)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-        }}
-      >
-        {NAV_ITEMS.map((n) => {
-          const active = tab === n.key;
-          const hov = navHov === n.key;
-          return (
-            <button
-              key={n.key}
-              onClick={() => setTab(n.key)}
-              onMouseEnter={() => setNavHov(n.key)}
-              onMouseLeave={() => setNavHov(null)}
-              style={{
-                position: 'relative',
-                background: active ? 'rgba(39,194,240,.14)' : hov ? 'rgba(255,255,255,.07)' : 'transparent',
-                border: 'none',
-                boxShadow: active ? 'inset 0 0 0 1px rgba(120,216,255,.45)' : 'none',
-                borderRadius: 999,
-                padding: '10px 22px',
-                fontSize: 14.5,
-                fontWeight: 800,
-                color: active ? '#fff' : '#9FC4F2',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                transition: 'background .15s,color .15s',
-              }}
-            >
-              {n.label}
-            </button>
-          );
-        })}
-      </nav>
+      {/* صفحة تسجيل الدخول بلا شريط تنقل علوي — الشعار وبطاقة الدخول فقط */}
 
       {/* ===== page body ===== */}
       <div
