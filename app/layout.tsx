@@ -44,11 +44,16 @@ export default function RootLayout({
       </head>
       <body>
         {/* Set the responsive density zoom before first paint (no flash);
-            ResponsiveZoom then keeps it in sync on resize. */}
+            ResponsiveZoom then keeps it in sync on resize. Density zoom is a
+            platform-dashboard affordance only — the public site pages
+            (الرئيسية/من نحن/المنشورات/تواصل معنا/تسجيل الدخول) render at
+            natural scale, and their scroll-driven sections depend on it. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){var w=window.innerWidth;document.body.style.zoom=w>=1101?'1.15':'1';})();",
+              "(function(){var b='" +
+              base +
+              "';var p=location.pathname;if(b&&p.indexOf(b)===0)p=p.slice(b.length);var plat=p.indexOf('/dashboard')===0||p.indexOf('/moca')===0;var w=window.innerWidth;document.body.style.zoom=plat&&w>=1101?'1.15':'1';})();",
           }}
         />
         {children}

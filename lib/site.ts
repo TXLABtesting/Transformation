@@ -74,6 +74,10 @@ export type SiteHistoryMilestone = {
 export type SiteContent = {
   heroLine1: string;
   heroLine2: string;
+  /** رابط فيديو الواجهة — فارغ = الفيديو الرسمي المضمّن */
+  heroVideoUrl: string;
+  /** صورة الغلاف قبل تشغيل الفيديو — فارغ = الصورة المضمّنة */
+  heroPosterUrl: string;
   introPre: string;
   introHighlight: string;
   introText: string;
@@ -95,6 +99,8 @@ export type SiteContent = {
 export const DEFAULT_SITE: SiteContent = {
   heroLine1: 'الذكاء الاصطناعي',
   heroLine2: 'المساعد',
+  heroVideoUrl: '',
+  heroPosterUrl: '',
   introPre: 'مشروع وطني استراتيجي لبناء',
   introHighlight: 'أفضل حكومة في العالم',
   introText:
