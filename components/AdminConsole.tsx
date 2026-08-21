@@ -403,9 +403,12 @@ function SiteSection({ title, sub, onAdd, children }: { title: string; sub: stri
 
 function SiteTab() {
   const s = useStore();
-  const ab = s.about;
+  const site = s.site;
   const inp = (v: string, on: (x: string) => void, ph = '', flex = '1 1 180px'): React.ReactNode => (
     <input value={v} onChange={(e) => on(e.target.value)} placeholder={ph} style={{ ...inputSt, flex }} />
+  );
+  const num = (v: number, on: (x: number) => void, ph = '', flex = '0 0 90px'): React.ReactNode => (
+    <input value={String(v)} onChange={(e) => on(Math.max(0, Math.min(100, Number(e.target.value.replace(/[^\d]/g, '')) || 0)))} placeholder={ph} inputMode="numeric" style={{ ...inputSt, flex }} />
   );
   const rowShell: CSSProperties = { border: '1px solid #E7ECF4', borderRadius: 12, padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' };
   const delBtn = (onDel: () => void) => (
@@ -413,120 +416,151 @@ function SiteTab() {
       <Icon d={IC_TRASH} size={14} color="#C0303B" />
     </button>
   );
-  const updList = <K extends 'timeline' | 'tracks' | 'scope' | 'principles'>(key: K, idx: number, patch: Partial<(typeof ab)[K][number]>) => {
-    const list = ab[key].map((x, i) => (i === idx ? { ...x, ...patch } : x));
-    s.setAbout({ [key]: list } as Partial<typeof ab>);
+  // تعديل صف داخل قائمة من قوائم محتوى الموقع
+  const updList = <K extends 'targets' | 'news' | 'streams' | 'phases' | 'principles'>(
+    key: K,
+    idx: number,
+    patch: Partial<(typeof site)[K][number]>
+  ) => {
+    const list = site[key].map((x, i) => (i === idx ? { ...x, ...patch } : x)) as (typeof site)[K];
+    s.setSite({ [key]: list } as Partial<typeof site>);
   };
-  const delFrom = (key: 'timeline' | 'tracks' | 'scope' | 'principles', idx: number) =>
-    s.setAbout({ [key]: ab[key].filter((_, i) => i !== idx) } as Partial<typeof ab>);
+  const delFrom = (key: 'news' | 'streams' | 'phases' | 'principles', idx: number) =>
+    s.setSite({ [key]: site[key].filter((_, i) => i !== idx) } as Partial<typeof site>);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <SiteSection title="محتوى صفحة «من نحن» — النص التعريفي" sub="النص أعلى الصفحة العامة — يُحفظ تلقائياً ويظهر للزوار مباشرة.">
-        <textarea value={s.aboutHero} onChange={(e) => s.setAboutHero(e.target.value)} rows={7} style={siteTa} />
+      <SiteSection title="الصفحة الرئيسية — العناوين" sub="عنوانا الواجهة فوق الفيديو، ثم عنوان المقدمة ونصها، ثم رسالة الدولة — تُحفظ تلقائياً وتظهر للزوار مباشرة.">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={rowShell}>
+            {inp(site.heroLine1, (v) => s.setSite({ heroLine1: v }), 'السطر الأول (أبيض)')}
+            {inp(site.heroLine2, (v) => s.setSite({ heroLine2: v }), 'السطر الثاني (متدرج)')}
+          </div>
+          <div style={rowShell}>
+            {inp(site.introPre, (v) => s.setSite({ introPre: v }), 'عنوان المقدمة')}
+            {inp(site.introHighlight, (v) => s.setSite({ introHighlight: v }), 'الجزء المميز بالتدرج', '0 0 240px')}
+          </div>
+          <textarea value={site.introText} onChange={(e) => s.setSite({ introText: e.target.value })} rows={6} style={siteTa} />
+          <div style={rowShell}>
+            {inp(site.messagePre, (v) => s.setSite({ messagePre: v }), 'نص الرسالة قبل الجزء المميز')}
+            {inp(site.messageHighlight, (v) => s.setSite({ messageHighlight: v }), 'الجزء المميز', '0 0 220px')}
+            {inp(site.messagePost, (v) => s.setSite({ messagePost: v }), 'تكملة الرسالة', '0 0 200px')}
+          </div>
+        </div>
+      </SiteSection>
+
+      <SiteSection title="المستهدفات الرئيسية" sub="عمودا المستهدفات: النسبة المعروضة، ونسبة امتلاء العمود، والنص أسفله.">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {site.targets.map((t, i) => (
+            <div key={i} style={rowShell}>
+              {num(t.value, (v) => updList('targets', i, { value: v }), 'النسبة %')}
+              {num(t.fill, (v) => updList('targets', i, { fill: v }), 'الامتلاء %')}
+              {inp(t.label, (v) => updList('targets', i, { label: v }), 'النص')}
+            </div>
+          ))}
+        </div>
       </SiteSection>
 
       <SiteSection
-        title="مسيرة التحول الحكومي (الخط الزمني)"
-        sub="محطات المسيرة — «رئيسية» تظهر بدائرة صورة على الخط، و«فرعية» أسفل الخط."
-        onAdd={() => s.setAbout({ timeline: [...ab.timeline, { year: '', title: '', sub: '', major: true }] })}
+        title="آخر الأخبار"
+        sub="بطاقات الأخبار في الصفحة الرئيسية — العنوان والنبذة والتاريخ والمصدر ورابط «اقرأ المزيد» وصورة الخبر."
+        onAdd={() => s.setSite({ news: [{ id: 'news-' + Date.now(), image: '', date: '', title: '', desc: '', source: '', link: '' }, ...site.news] })}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {site.news.map((n, i) => (
+            <div key={n.id} style={{ ...rowShell, alignItems: 'flex-start' }}>
+              <div style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {inp(n.title, (v) => updList('news', i, { title: v }), 'عنوان الخبر', '1 1 auto')}
+                <textarea value={n.desc} onChange={(e) => updList('news', i, { desc: e.target.value })} placeholder="نبذة الخبر" rows={3} style={{ ...siteTa, minHeight: 0 }} />
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {inp(n.date, (v) => updList('news', i, { date: v }), 'التاريخ', '0 0 190px')}
+                  {inp(n.source, (v) => updList('news', i, { source: v }), 'المصدر', '0 0 190px')}
+                  {inp(n.link, (v) => updList('news', i, { link: v }), 'رابط اقرأ المزيد')}
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 'none' }}>
+                {n.image ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={n.image.startsWith('data:') || n.image.startsWith('http') ? n.image : (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/' + n.image.replace(/^\//, '')} alt="" style={{ width: 92, height: 64, borderRadius: 9, objectFit: 'cover', border: '1px solid #E1E7F1' }} />
+                    <button onClick={() => updList('news', i, { image: '' })} style={{ border: 'none', background: 'transparent', color: '#C0303B', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>إزالة الصورة</button>
+                  </>
+                ) : (
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 12px', background: '#F4F7FC', border: '1px dashed #C7D1E2', borderRadius: 9, fontSize: 11.5, fontWeight: 700, color: '#2563EB', cursor: 'pointer' }}>
+                    <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={13} color="#2563EB" />
+                    صورة الخبر
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) readCoverFile(f, (url) => updList('news', i, { image: url }));
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+              {delBtn(() => delFrom('news', i))}
+            </div>
+          ))}
+        </div>
+      </SiteSection>
+
+      <SiteSection title="مسارات المشروع" sub="النص التعريفي وبطاقات المسارات الخمسة في الصفحة الرئيسية.">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={rowShell}>{inp(site.streamsSub, (v) => s.setSite({ streamsSub: v }), 'النص أسفل عنوان المسارات')}</div>
+          {site.streams.map((t, i) => (
+            <div key={t.id} style={rowShell}>
+              <span style={{ fontSize: 13, fontWeight: 900, color: '#8FA3C4', flex: 'none', width: 26, textAlign: 'center' }}>{String(i + 1).padStart(2, '0')}</span>
+              {inp(t.title, (v) => updList('streams', i, { title: v }), 'اسم المسار', '0 0 260px')}
+              {inp(t.desc, (v) => updList('streams', i, { desc: v }), 'الوصف')}
+            </div>
+          ))}
+        </div>
+      </SiteSection>
+
+      <SiteSection title="البرنامج الزمني للتنفيذ" sub="المراحل الثماني على الخط الزمني في الصفحة الرئيسية.">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {site.phases.map((ph, i) => (
+            <div key={i} style={rowShell}>
+              {inp(ph.phase, (v) => updList('phases', i, { phase: v }), 'المرحلة', '0 0 120px')}
+              {inp(ph.title, (v) => updList('phases', i, { title: v }), 'العنوان', '0 0 170px')}
+              {inp(ph.range, (v) => updList('phases', i, { range: v }), 'الفترة', '0 0 190px')}
+              {inp(ph.months, (v) => updList('phases', i, { months: v }), 'المدة', '0 0 90px')}
+              {inp(ph.desc, (v) => updList('phases', i, { desc: v }), 'الوصف')}
+            </div>
+          ))}
+        </div>
+      </SiteSection>
+
+      <SiteSection title="من نحن — الاقتباس والمبادئ" sub="اقتباس القيادة والمبادئ العامة في صفحة «من نحن».">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <textarea value={site.quoteText} onChange={(e) => s.setSite({ quoteText: e.target.value })} rows={3} style={siteTa} />
+          <div style={rowShell}>{inp(site.quoteAttribution, (v) => s.setSite({ quoteAttribution: v }), 'نسبة الاقتباس')}</div>
+        </div>
+      </SiteSection>
+
+      <SiteSection
+        title="المبادئ العامة"
+        sub="القائمة الكاملة للمبادئ في «من نحن» (العدد تلقائي)."
+        onAdd={() => s.setSite({ principles: [...site.principles, { n: String(site.principles.length + 1).padStart(2, '0'), title: '', desc: '' }] })}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {ab.timeline.map((t, i) => (
-            <div key={i} style={rowShell}>
-              {inp(t.year, (v) => updList('timeline', i, { year: v }), 'السنة', '0 0 80px')}
-              {inp(t.title, (v) => updList('timeline', i, { title: v }), 'العنوان')}
-              {inp(t.sub, (v) => updList('timeline', i, { sub: v }), 'الوصف')}
-              <select value={t.major ? '1' : '0'} onChange={(e) => updList('timeline', i, { major: e.target.value === '1' })} style={{ ...inputSt, flex: '0 0 110px', paddingLeft: 26, cursor: 'pointer' }}>
-                <option value="1">رئيسية</option>
-                <option value="0">فرعية</option>
-              </select>
-              {t.img ? (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={t.img} alt="" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', border: '1px solid #E1E7F1', flex: 'none' }} />
-                  <button
-                    onClick={() => updList('timeline', i, { img: '' })}
-                    title="إزالة الصورة"
-                    style={{ width: 30, height: 30, borderRadius: 8, background: '#fff', border: '1px solid #F0D5D5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                  >
-                    <Icon d={IC_TRASH} size={12} color="#C0303B" />
-                  </button>
-                </span>
-              ) : (
-                <label title="إرفاق صورة المحطة" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 12px', background: '#F4F7FC', border: '1px dashed #C7D1E2', borderRadius: 9, fontSize: 11.5, fontWeight: 700, color: '#2563EB', cursor: 'pointer', flex: 'none' }}>
-                  <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={13} color="#2563EB" />
-                  صورة
-                  <input
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) readCoverFile(f, (url) => updList('timeline', i, { img: url }));
-                      e.target.value = '';
-                    }}
-                  />
-                </label>
-              )}
-              {delBtn(() => delFrom('timeline', i))}
-            </div>
-          ))}
-        </div>
-      </SiteSection>
-
-      <SiteSection title="المستهدفات الرئيسية" sub="بطاقتا المستهدفات والملاحظة أسفلهما.">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={rowShell}>
-            {inp(ab.targets.label1, (v) => s.setAbout({ targets: { ...ab.targets, label1: v } }), 'عنوان البطاقة الأولى', '0 0 140px')}
-            {inp(ab.targets.value1, (v) => s.setAbout({ targets: { ...ab.targets, value1: v } }), 'الرقم', '0 0 90px')}
-            {inp(ab.targets.text1, (v) => s.setAbout({ targets: { ...ab.targets, text1: v } }), 'النص')}
-          </div>
-          <div style={rowShell}>
-            {inp(ab.targets.label2, (v) => s.setAbout({ targets: { ...ab.targets, label2: v } }), 'عنوان البطاقة الثانية', '0 0 140px')}
-            {inp(ab.targets.value2, (v) => s.setAbout({ targets: { ...ab.targets, value2: v } }), 'الرقم', '0 0 90px')}
-            {inp(ab.targets.text2, (v) => s.setAbout({ targets: { ...ab.targets, text2: v } }), 'النص')}
-          </div>
-          <textarea value={ab.targets.note} onChange={(e) => s.setAbout({ targets: { ...ab.targets, note: e.target.value } })} rows={3} placeholder="ملاحظة النتائج والأثر المتوقع" style={siteTa} />
-        </div>
-      </SiteSection>
-
-      <SiteSection title="المسارات" sub="قائمة المسارات المعروضة للزوار (الترقيم تلقائي)." onAdd={() => s.setAbout({ tracks: [...ab.tracks, { title: '', desc: '' }] })}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {ab.tracks.map((t, i) => (
-            <div key={i} style={rowShell}>
-              <span style={{ fontSize: 13, fontWeight: 900, color: '#8FA3C4', flex: 'none', width: 26, textAlign: 'center' }}>{String(i + 1).padStart(2, '0')}</span>
-              {inp(t.title, (v) => updList('tracks', i, { title: v }), 'اسم المسار', '0 0 220px')}
-              {inp(t.desc, (v) => updList('tracks', i, { desc: v }), 'الوصف')}
-              {delBtn(() => delFrom('tracks', i))}
-            </div>
-          ))}
-        </div>
-      </SiteSection>
-
-      <SiteSection title="نطاق التحويل" sub="بطاقات نطاق التحويل المعروضة للزوار." onAdd={() => s.setAbout({ scope: [...ab.scope, { title: '', desc: '' }] })}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {ab.scope.map((t, i) => (
-            <div key={i} style={rowShell}>
-              {inp(t.title, (v) => updList('scope', i, { title: v }), 'العنوان', '0 0 200px')}
-              {inp(t.desc, (v) => updList('scope', i, { desc: v }), 'الوصف')}
-              {delBtn(() => delFrom('scope', i))}
-            </div>
-          ))}
-        </div>
-      </SiteSection>
-
-      <SiteSection title="المبادئ العامة" sub="القائمة الكاملة للمبادئ (العدد تلقائي)." onAdd={() => s.setAbout({ principles: [...ab.principles, { title: '', desc: '' }] })}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {ab.principles.map((t, i) => (
+          {site.principles.map((t, i) => (
             <div key={i} style={rowShell}>
               <span style={{ fontSize: 12, fontWeight: 900, color: '#8FA3C4', flex: 'none', width: 22, textAlign: 'center' }}>{i + 1}</span>
-              {inp(t.title, (v) => updList('principles', i, { title: v }), 'المبدأ', '0 0 220px')}
+              {inp(t.title, (v) => updList('principles', i, { title: v, n: String(i + 1).padStart(2, '0') }), 'المبدأ', '0 0 220px')}
               {inp(t.desc, (v) => updList('principles', i, { desc: v }), 'الوصف')}
               {delBtn(() => delFrom('principles', i))}
             </div>
           ))}
         </div>
+      </SiteSection>
+
+      <SiteSection title="تواصل معنا" sub="النص التعريفي أعلى نموذج الاستفسارات.">
+        <div style={rowShell}>{inp(site.contactSub, (v) => s.setSite({ contactSub: v }), 'النص أعلى النموذج')}</div>
       </SiteSection>
 
       <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
