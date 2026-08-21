@@ -107,7 +107,8 @@ const uid = () => 'm-' + Math.random().toString(36).slice(2, 10);
 
 const blankDraft = (unitId: string, unitSector: string): Partial<MocaEntry> => {
   const d: Partial<MocaEntry> = { unitId, unitSector };
-  for (const f of MOCA_FIELDS) d[f.key] = '';
+  // النِّسب تبدأ من صفر لأن شريط التمرير يعرض قيمة دائماً
+  for (const f of MOCA_FIELDS) d[f.key] = f.type === 'percent' ? '0' : '';
   // القطاع المعني يُعبَّأ آلياً من نطاق المنسق — حقل غير قابل للتحرير
   d.sector = mocaAutoSector(unitId, unitSector);
   return d;

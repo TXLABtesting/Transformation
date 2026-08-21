@@ -81,6 +81,8 @@ export const MOCA_READINESS = [
 export const MOCA_PRIORITY = ['نعم', 'لا'];
 export const MOCA_IMPACT = ['عالي', 'متوسط', 'منخفض'];
 export const MOCA_COMPLEXITY = ['عالي', 'متوسط', 'منخفض'];
+/** كثافة الاستخدام — قائمة موحّدة (لا يحدد الملف خياراتها) */
+export const MOCA_USAGE_INTENSITY = ['عالية', 'متوسطة', 'منخفضة'];
 
 // ---- 3. الحقول — أعمدة الملف حرفياً وبالترتيب نفسه --------------------------
 export type MocaFieldType = 'text' | 'longtext' | 'select' | 'percent';
@@ -113,9 +115,9 @@ export const MOCA_FIELDS: MocaField[] = [
   { key: 'dept', label: 'الإدارة المعنية', group: 'general', type: 'text', required: true },
   { key: 'section', label: 'القسم المعني', group: 'general', type: 'text', required: true },
   // بيانات الأتمتة والكثافة والحجم
-  { key: 'automationPct', label: 'ما هي نسبة الأتمتة الحالية للعملية والمهمة؟', group: 'automation', type: 'percent', required: true, hint: 'نسبة مئوية من 0 إلى 100' },
+  { key: 'automationPct', label: 'ما هي نسبة الأتمتة الحالية للعملية والمهمة؟', group: 'automation', type: 'percent', required: true, hint: 'حرّك الشريط لتحديد النسبة (0 – 100%)' },
   { key: 'automationSystem', label: 'ما هو نظام الأتمتة؟', group: 'automation', type: 'text' },
-  { key: 'usageIntensity', label: 'كثافة الاستخدام', group: 'automation', type: 'text', required: true },
+  { key: 'usageIntensity', label: 'كثافة الاستخدام', group: 'automation', type: 'select', options: MOCA_USAGE_INTENSITY, required: true },
   { key: 'frequency', label: 'معدل تكرار العملية المنفذة', group: 'automation', type: 'text', required: true, hint: 'شهرياً، سنوياً، كل سنتين… الخ' },
   { key: 'duration', label: 'المدة الزمنية المستغرقة لإنجاز المهمة أو العملية الفرعية', group: 'automation', type: 'text', required: true, hint: 'بالساعات أو بالأيام' },
   // التحول للذكاء الاصطناعي المساعد

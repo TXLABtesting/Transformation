@@ -9,6 +9,7 @@ import {
   MOCA_EXCEL_GROUPS,
   MOCA_FIELDS,
   MOCA_SPECIALIZATION,
+  MOCA_USAGE_INTENSITY,
   MOCA_TRANSFORMABILITY,
   MOCA_READINESS,
   MOCA_PRIORITY,
@@ -50,6 +51,8 @@ export async function mocaDownloadTemplate(unitLabel: string, entries?: MocaEntr
   // ---- ورقة المعادلات: خيارات القوائم ----
   lk.getCell(1, 1).value = 'هل تعتبر تخصصية أو مشتركة؟';
   MOCA_SPECIALIZATION.forEach((v, i) => (lk.getCell(2 + i, 1).value = v));
+  lk.getCell(1, 2).value = 'كثافة الاستخدام';
+  MOCA_USAGE_INTENSITY.forEach((v, i) => (lk.getCell(2 + i, 2).value = v));
   const heads2 = [
     'القابلية للتحول للذكاء الاصطناعي المساعد',
     'الجاهزية للتحول للذكاء الاصطناعي المساعد',
@@ -125,6 +128,7 @@ export async function mocaDownloadTemplate(unitLabel: string, entries?: MocaEntr
   const dvEnd = FIRST_DATA_ROW + Math.max(rows.length, 400);
   const selectCols: { key: string; ref: string }[] = [
     { key: 'specialization', ref: `'${LOOKUP}'!$A$2:$A$3` },
+    { key: 'usageIntensity', ref: `'${LOOKUP}'!$B$2:$B$4` },
     { key: 'transformability', ref: `'${LOOKUP}'!$A$6:$A$8` },
     { key: 'readiness', ref: `'${LOOKUP}'!$B$6:$B$9` },
     { key: 'priority', ref: `'${LOOKUP}'!$C$6:$C$7` },
