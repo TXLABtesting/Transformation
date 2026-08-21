@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Noto_Kufi_Arabic, Alexandria } from 'next/font/google';
+import { Noto_Kufi_Arabic, Alexandria, Cairo } from 'next/font/google';
 import './globals.css';
 
 // Brand type: Noto Kufi Arabic across the whole product; titles (.hd, h1-h3)
@@ -15,6 +15,13 @@ const alexandria = Alexandria({
   weight: ['500', '600', '700', '800', '900'],
   display: 'swap',
   variable: '--font-head',
+});
+// خط الموقع العام (الرئيسية/من نحن/المنشورات/تواصل معنا) وفق تسليم التصميم
+const cairo = Cairo({
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+  display: 'swap',
+  variable: '--font-cairo',
 });
 
 export const metadata: Metadata = {
@@ -32,7 +39,7 @@ export default function RootLayout({
 }) {
   const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
   return (
-    <html lang="ar" dir="rtl" className={noto.variable + ' ' + alexandria.variable}>
+    <html lang="ar" dir="rtl" className={noto.variable + ' ' + alexandria.variable + ' ' + cairo.variable}>
       <head>
       </head>
       <body>

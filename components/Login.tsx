@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
-import { AboutPage, ContactPage, LibraryPage, PublicFooter, PublicNav, type PublicTab } from './PublicSite';
 
 
 
@@ -168,9 +167,8 @@ function InteractiveNumberBackground() {
 export function Login({ vm }: { vm: VM }) {
   const loginUaePass = useStore((s) => s.loginUaePass);
   const [hover, setHover] = useState(false);
-  // صفحات الموقع العام (من نحن · المنشورات · تواصل معنا) تبقى متاحة عبر
-  // شريط التنقل الخاص بها؛ صفحة تسجيل الدخول نفسها بلا شريط علوي.
-  const [tab, setTab] = useState<PublicTab>('home');
+  // صفحات الموقع العام أصبحت مسارات مستقلة (/ و/about و/library و/contact)
+  // بشريط التنقل العائم الخاص بها — هذه الصفحة لتسجيل الدخول فقط.
   void vm;
 
   // Presentation default is a MOCK login that jumps straight into the flow.
@@ -184,22 +182,7 @@ export function Login({ vm }: { vm: VM }) {
     loginUaePass();
   };
 
-  // ---- public site pages (white nav + page + footer, per the handoff) ----
-  if (tab !== 'home') {
-    return (
-      <div data-screen-label="Login" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', direction: 'rtl', background: tab === 'about' ? '#F7F9FD' : tab === 'library' ? '#fff' : '#EEF2F9' }}>
-        <PublicNav tab={tab} onNav={setTab} onLogin={() => setTab('home')} />
-        <div style={{ flex: 1 }}>
-          {tab === 'about' && <AboutPage />}
-          {tab === 'library' && <LibraryPage />}
-          {tab === 'contact' && <ContactPage />}
-        </div>
-        <PublicFooter />
-      </div>
-    );
-  }
-
-  // ---- home: the blue login page (existing platform design) ----
+  // ---- the blue login page (existing platform design) ----
   return (
     <div
       data-screen-label="Login"
