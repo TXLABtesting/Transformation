@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from "react";
-import { SITE_HISTORY_MARKS, asset, type SiteHistoryMilestone } from "@/lib/site";
+import { asset, type SiteHistoryMilestone } from "@/lib/site";
 import { useMediaQuery } from "./hooks";
 
 interface HistoryJourneyProps {
@@ -314,7 +314,8 @@ export function HistoryJourney({ milestones }: HistoryJourneyProps) {
                   : "0 0 10px rgba(255,255,255,.8)",
               }}
             />
-            {SITE_HISTORY_MARKS.map(year => {
+            {/* علامات السنوات على المسطرة تُشتق من المحطات (تتبع تحرير المشرف) */}
+            {milestones.filter(m => m.year).map(m => m.year).map(year => {
               const idx = milestones.findIndex(m => m.year === year);
               const f = fracs.current[idx] ?? 0;
               const on = Math.abs(f - progress) < 0.06;

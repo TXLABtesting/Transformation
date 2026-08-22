@@ -2,7 +2,7 @@
 // من نحن — مسيرة التحول (فيلم أفقي مقاد بالتمرير) + اقتباس القيادة + المبادئ
 import { useEffect, useRef } from 'react';
 import { useStore } from '@/lib/store';
-import { SITE_HISTORY, type SiteContent } from '@/lib/site';
+import { mergedHistory, type SiteContent } from '@/lib/site';
 import { asset, SITE_MEDIA } from '@/lib/site';
 import { SiteNav } from './SiteNav';
 import { SiteFooter } from './SiteFooter';
@@ -23,7 +23,7 @@ export function PublicAbout() {
   return (
     <div ref={root} dir="rtl" className="pub-site min-h-screen bg-[#F7F9FD] font-kufi">
       <SiteNav overHero />
-      <HistoryJourney milestones={SITE_HISTORY} />
+      <HistoryJourney milestones={mergedHistory(site)} />
       <Quote site={site} />
       <Principles site={site} />
       <SiteFooter />
@@ -51,7 +51,7 @@ function Quote({ site }: { site: SiteContent }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={asset(SITE_MEDIA.mgQuote)}
+          src={site.quoteImageUrl ? site.quoteImageUrl : asset(SITE_MEDIA.mgQuote)}
           alt=""
           className="absolute block w-full object-cover"
           style={{ top: -2, bottom: -2, height: 'calc(100% + 4px)', objectPosition: '25% 32%' }}
