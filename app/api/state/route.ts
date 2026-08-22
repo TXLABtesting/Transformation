@@ -25,7 +25,9 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
   const len = Number(req.headers.get('content-length') || 0);
-  if (len > 2_000_000) return NextResponse.json({ error: 'payload-too-large' }, { status: 413 });
+  // 10MB: the state blob now carries the admin-edited public-site content,
+  // including compressed images (news/history/covers) stored as data URLs.
+  if (len > 10_000_000) return NextResponse.json({ error: 'payload-too-large' }, { status: 413 });
 
   let data: unknown;
   try {
