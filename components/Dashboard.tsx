@@ -2946,62 +2946,6 @@ export function Dashboard({ vm }: { vm: VM }) {
             </>
           )}
 
-          {/* ===== صندوق استفسارات «تواصل معنا» (فريق المسار: مساره · اللجنة: الكل) ===== */}
-          {vm.navSection === 'inbox' && vm.contactInbox && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: 220 }}>
-                  <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>استفسارات التواصل</div>
-                  <div style={{ fontSize: 12, color: '#9AA6BC', fontWeight: 400, marginTop: 3 }}>
-                    {vm.contactInbox.showStream
-                      ? 'كل ما ورد عبر صفحة «تواصل معنا» موزعاً على المسارات'
-                      : 'ما ورد عبر صفحة «تواصل معنا» لمساركم'}
-                  </div>
-                </div>
-                {vm.contactInbox.pending > 0 && (
-                  <span style={{ fontSize: 11.5, fontWeight: 800, color: '#B45309', background: '#FFF7EB', borderRadius: 999, padding: '5px 13px' }}>
-                    {vm.contactInbox.pending} بانتظار المعالجة
-                  </span>
-                )}
-              </div>
-              {vm.contactInbox.rows.length === 0 ? (
-                <div style={{ border: '1.5px dashed #D5DEEC', background: '#FAFCFF', borderRadius: 16, padding: '38px 20px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: '#33415C' }}>لا توجد استفسارات واردة بعد</div>
-                  <div style={{ fontSize: 12, color: '#9AA6BC', marginTop: 5 }}>عندما يرسل الزوار استفساراتهم من صفحة «تواصل معنا» ستظهر هنا.</div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {vm.contactInbox.rows.map((q) => (
-                    <div key={q.id} style={{ background: q.done ? '#FAFBFD' : '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 14, padding: '14px 17px', opacity: q.done ? 0.75 : 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>{q.name}</span>
-                        {vm.contactInbox!.showStream && (
-                          <span style={{ fontSize: 11, fontWeight: 800, color: '#1D4ED8', background: '#EAF0FE', border: '1px solid #D9E4FD', borderRadius: 999, padding: '3px 10px' }}>{q.streamLabel}</span>
-                        )}
-                        {q.done && <span style={{ fontSize: 11, fontWeight: 800, color: '#0B8A4B', background: '#E7F6EE', borderRadius: 999, padding: '3px 10px' }}>تمت المعالجة</span>}
-                        <span style={{ flex: 1 }} />
-                        <span style={{ fontSize: 11, color: '#8A97AD', fontWeight: 600 }}>{q.dateLabel}</span>
-                      </div>
-                      <div style={{ fontSize: 11.5, color: '#54627B', fontWeight: 600, marginTop: 6, direction: 'ltr', textAlign: 'right' }}>
-                        {q.email}
-                        {q.phone ? ' · ' + q.phone : ''}
-                      </div>
-                      <div style={{ fontSize: 12.5, color: '#33415C', lineHeight: 1.9, marginTop: 8, whiteSpace: 'pre-wrap' }}>{q.message}</div>
-                      <div style={{ marginTop: 12 }}>
-                        <button
-                          onClick={q.onToggle}
-                          style={{ background: '#fff', border: '1px solid #DCE3EE', borderRadius: 9, padding: '7px 14px', fontSize: 11.5, fontWeight: 800, color: q.done ? '#8A97AD' : '#0B8A4B', cursor: 'pointer', fontFamily: 'inherit' }}
-                        >
-                          {q.done ? 'إعادة فتح' : 'تمت المعالجة'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
           {/* ===== ENTITIES (committee) ===== */}
           {vm.navSection === 'entities' && (
             <>

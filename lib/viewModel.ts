@@ -842,40 +842,6 @@ function build(s: Store) {
   const NAV_ROCKET = 'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2zM9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5';
   const NAV_BUILDING = 'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01';
   const NAV_PEOPLE = 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75';
-  const NAV_MAIL = 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM22 6l-10 7L2 6';
-
-  // ---- صندوق استفسارات «تواصل معنا» ----------------------------------------
-  // فريق المسار يرى استفسارات مساره، واللجنة الوطنية ترى الكل
-  const inboxAll = rawRole === 'ai' || rawRole === 'admin';
-  const inboxRowsRaw =
-    rawRole === 'path'
-      ? s.inquiries.filter((q) => q.stream === myPath)
-      : inboxAll
-        ? s.inquiries
-        : [];
-  const inboxStreamLabel = (k: string) => CONTACT_STREAMS.find((c) => c.key === k)?.label || k;
-  const inboxFmt = (ts: number) =>
-    new Date(ts).toLocaleDateString('ar-AE', { day: 'numeric', month: 'long', year: 'numeric' }) +
-    ' · ' +
-    new Date(ts).toLocaleTimeString('ar-AE', { hour: '2-digit', minute: '2-digit' });
-  const contactInbox =
-    rawRole === 'path' || inboxAll
-      ? {
-          showStream: inboxAll,
-          pending: inboxRowsRaw.filter((q) => !q.done).length,
-          rows: inboxRowsRaw.map((q) => ({
-            id: q.id,
-            name: q.name,
-            phone: q.phone,
-            email: q.email,
-            streamLabel: inboxStreamLabel(q.stream),
-            message: q.message,
-            dateLabel: inboxFmt(q.ts),
-            done: q.done,
-            onToggle: () => s.toggleInquiryDone(q.id),
-          })),
-        }
-      : null;
 
   // «الكل» sub-menu: entity rep + committee drill down by STREAM (full names);
   // coordinator + stream head drill down by input TYPE
@@ -996,7 +962,6 @@ function build(s: Store) {
             streamItem(myPath, roleBase.filter((i) => i.path === myPath).length, navSection === 'all', () => s.setNavSection('all')),
             plainNav('lplan', 'دفعات الإطلاق', NAV_ROCKET),
             plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
-            { ...plainNav('inbox', 'استفسارات التواصل', NAV_MAIL), count: contactInbox?.pending || undefined },
           ]
         : rawRole === 'ai'
           ? [
@@ -1018,8 +983,7 @@ function build(s: Store) {
                 })
               ),
               plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
-              { ...plainNav('inbox', 'استفسارات التواصل', NAV_MAIL), count: contactInbox?.pending || undefined },
-            ]
+              ]
           : navItems;
 
   const typeSections: Record<string, string> = {
@@ -1691,7 +1655,6 @@ function build(s: Store) {
     navItems: navItemsOut,
     navSection,
     navStream,
-    contactInbox,
     kpiBreak,
     sectionTitle:
       navSection === 'all' && ui.navStream
