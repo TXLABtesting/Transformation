@@ -383,6 +383,23 @@ function readCoverFile(file: File, done: (dataUrl: string) => void) {
   fr.readAsDataURL(file);
 }
 
+function readWideImage(file: File, done: (dataUrl: string) => void) {
+  const fr = new FileReader();
+  fr.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1280 / img.width);
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * scale);
+      cv.height = Math.round(img.height * scale);
+      cv.getContext('2d')!.drawImage(img, 0, 0, cv.width, cv.height);
+      done(cv.toDataURL('image/jpeg', 0.78));
+    };
+    img.src = String(fr.result);
+  };
+  fr.readAsDataURL(file);
+}
+
 function SiteSection({ title, sub, onAdd, children }: { title: string; sub: string; onAdd?: () => void; children: React.ReactNode }) {
   return (
     <div style={siteCard}>
@@ -417,7 +434,7 @@ function SiteTab() {
     </button>
   );
   // تعديل صف داخل قائمة من قوائم محتوى الموقع
-  const updList = <K extends 'targets' | 'news' | 'streams' | 'phases' | 'principles'>(
+  const updList = <K extends 'targets' | 'news' | 'streams' | 'phases' | 'principles' | 'history'>(
     key: K,
     idx: number,
     patch: Partial<(typeof site)[K][number]>
@@ -586,6 +603,75 @@ function SiteTab() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <textarea value={site.quoteText} onChange={(e) => s.setSite({ quoteText: e.target.value })} rows={3} style={siteTa} />
           <div style={rowShell}>{inp(site.quoteAttribution, (v) => s.setSite({ quoteAttribution: v }), 'نسبة الاقتباس')}</div>
+          <div style={rowShell}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#54627B', flex: 'none' }}>صورة الاقتباس</span>
+            {site.quoteImageUrl ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={site.quoteImageUrl} alt="" style={{ height: 44, width: 70, objectFit: 'cover', borderRadius: 8, border: '1px solid #E1E7F1' }} />
+                <button
+                  onClick={() => s.setSite({ quoteImageUrl: '' })}
+                  style={{ border: '1px solid #F0D5D5', background: '#fff', color: '#C0303B', borderRadius: 9, padding: '8px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  استعادة الصورة الرسمية
+                </button>
+              </span>
+            ) : (
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 12px', background: '#F4F7FC', border: '1px dashed #C7D1E2', borderRadius: 9, fontSize: 11.5, fontWeight: 700, color: '#2563EB', cursor: 'pointer', flex: 'none' }}>
+                <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={13} color="#2563EB" />
+                تغيير الصورة
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) readWideImage(f, (url) => s.setSite({ quoteImageUrl: url }));
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            )}
+          </div>
+        </div>
+      </SiteSection>
+
+      <SiteSection title="من نحن — مسيرة التحول (المحطات والصور)" sub="السنة والعنوان وصورة كل محطة قابلة للتحرير — التخطيط البصري للمحطات ثابت من التصميم، وصورة فارغة تعني صورة المحطة الرسمية.">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {site.history.map((h, i) => (
+            <div key={i} style={rowShell}>
+              {inp(h.year, (v) => updList('history', i, { year: v }), i === 0 ? 'بلا سنة (المقدمة)' : 'السنة', '0 0 90px')}
+              {i === 0 ? inp(h.eyebrow || '', (v) => updList('history', i, { eyebrow: v }), 'السطر التمهيدي', '0 0 150px') : null}
+              {inp(h.title, (v) => updList('history', i, { title: v }), 'عنوان المحطة')}
+              {h.image ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={h.image} alt="" style={{ height: 40, width: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid #E1E7F1', flex: 'none' }} />
+                  <button
+                    onClick={() => updList('history', i, { image: '' })}
+                    style={{ border: '1px solid #F0D5D5', background: '#fff', color: '#C0303B', borderRadius: 9, padding: '7px 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}
+                  >
+                    الصورة الرسمية
+                  </button>
+                </span>
+              ) : (
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 12px', background: '#F4F7FC', border: '1px dashed #C7D1E2', borderRadius: 9, fontSize: 11.5, fontWeight: 700, color: '#2563EB', cursor: 'pointer', flex: 'none' }}>
+                  <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={13} color="#2563EB" />
+                  تغيير الصورة
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) readWideImage(f, (url) => updList('history', i, { image: url }));
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+          ))}
         </div>
       </SiteSection>
 

@@ -91,6 +91,11 @@ export type SiteContent = {
   phases: SitePhase[];
   quoteText: string;
   quoteAttribution: string;
+  /** صورة اقتباس القيادة — فارغ = الصورة الرسمية المضمّنة */
+  quoteImageUrl: string;
+  /** محطات «مسيرة التحول»: السنة والعنوان والصورة قابلة للتحرير (التخطيط
+      البصري لكل محطة ثابت من التصميم). صورة فارغة = صورة المحطة الرسمية. */
+  history: { year: string; title: string; eyebrow?: string; image: string }[];
   principles: SitePrinciple[];
   contactSub: string;
 };
@@ -200,6 +205,15 @@ export const DEFAULT_SITE: SiteContent = {
   quoteText:
     '“التكنولوجيا في أفضل صورها لا تستبدل الإنسان، بل تمنحه مساحة ليصل إلى إمكاناته الحقيقية“',
   quoteAttribution: 'معالي محمد القرقاوي — رئيس اللجنة الوطنية للذكاء الاصطناعي المساعد',
+  quoteImageUrl: '',
+  history: [
+    { year: '', title: 'مسيرة التحول', eyebrow: '2001 إلى 2026', image: '' },
+    { year: '2001', title: 'الحكومة الإلكترونية', image: '' },
+    { year: '2013', title: 'الحكومة الذكية', image: '' },
+    { year: '2017', title: 'تعيين أول وزير للذكاء الاصطناعي في العالم', image: '' },
+    { year: '2019', title: 'الحكومة الرقمية', image: '' },
+    { year: '2026', title: 'الذكاء الاصطناعي المساعد', image: '' },
+  ],
   principles: [
     { n: '01', title: 'التكنولوجيا لا تستبدل الإنسان', desc: 'تعزيز قدرات الموظف الحكومي وتمكينه من التركيز على المهام ذات القيمة المضافة والأثر الأكبر' },
     { n: '02', title: 'الإشراف والمساءلة البشرية', desc: 'مسؤولية جودة ودقة المخرجات والنتائج لنماذج وأنظمة الذكاء الاصطناعي المساعد تقع على الإنسان' },
@@ -230,6 +244,24 @@ export const SITE_HISTORY: SiteHistoryMilestone[] = [
 ];
 
 export const SITE_HISTORY_MARKS = ['2001', '2013', '2017', '2019', '2026'];
+
+/**
+ * محطات المسيرة بعد دمج تحريرات المشرف (السنة/العنوان/الصورة) فوق التخطيط
+ * البصري الثابت لكل محطة.
+ */
+export function mergedHistory(site: SiteContent): SiteHistoryMilestone[] {
+  return SITE_HISTORY.map((m, i) => {
+    const o = site.history?.[i];
+    if (!o) return m;
+    return {
+      ...m,
+      year: o.year ?? m.year,
+      title: o.title?.trim() ? o.title : m.title,
+      eyebrow: o.eyebrow ?? m.eyebrow,
+      image: o.image?.trim() ? o.image : m.image,
+    };
+  });
+}
 
 /**
  * وجهة زر «منصة الإدخال» حسب جهة المستخدم — مستخدم وزارة شؤون مجلس الوزراء
