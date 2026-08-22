@@ -766,6 +766,16 @@ export const useStore = create<Store>((set, get) => {
           })
           .catch(() => {});
       }
+      // استفسارات «تواصل معنا» للوحات (فريق المسار/اللجنة/المشرف) — تُقرأ من
+      // الاستقبال المركزي حتى تظهر استفسارات الزوار لكل أصحاب الأدوار
+      if (API_MODE) {
+        fetch('/api/contact')
+          .then((r) => (r.ok ? r.json() : null))
+          .then((res) => {
+            if (Array.isArray(res?.inquiries)) set({ inquiries: res.inquiries as ContactInquiry[] });
+          })
+          .catch(() => {});
+      }
       // in API/Postgres mode, prefer server state when present. The state API
       // requires a session (reference behavior): if the first read is
       // unauthenticated, hit /api/auth/login once — with the mock provider
@@ -1279,10 +1289,27 @@ export const useStore = create<Store>((set, get) => {
         ],
       }));
       persist();
+      // نسخة الخادم: الاستقبال المركزي يخزّن الاستفسار في كتلة الحالة
+      // ويرسله بالبريد إلى عنوان المسار المعيّن (متى كان SMTP مهيأً)
+      if (API_MODE && typeof window !== 'undefined') {
+        fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(q),
+        }).catch(() => {});
+      }
     },
     toggleInquiryDone: (id) => {
+      const next = !get().inquiries.find((i) => i.id === id)?.done;
       set((st) => ({ inquiries: st.inquiries.map((i) => (i.id === id ? { ...i, done: !i.done } : i)) }));
       persist();
+      if (API_MODE && typeof window !== 'undefined') {
+        fetch('/api/contact', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, done: next }),
+        }).catch(() => {});
+      }
     },
     toggleStepFilter: (n) => set((s) => ({ ui: { ...s.ui, stepFilter: s.ui.stepFilter === n ? null : n } })),
     toggleDraftSel: (id) =>
