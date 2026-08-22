@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuthUser } from '@/lib/security/auth';
+import { canAccessAllEntities } from '@/lib/security/rbac';
 import { DEFAULT_CONTACT_EMAILS, CONTACT_STREAMS } from '@/lib/domain';
 
 export const runtime = 'nodejs';
@@ -117,7 +119,15 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-export async function GET() {
+// الاطلاع على الاستفسارات (بيانات شخصية) للمشرف/النطاق الشامل فقط —
+// الفرق تستقبلها عبر بريد المسار
+export async function GET(req: NextRequest) {
+  try {
+    const user = await requireAuthUser(req);
+    if (!canAccessAllEntities(user)) return NextResponse.json({ inquiries: [] });
+  } catch {
+    return NextResponse.json({ inquiries: [], error: 'unauthenticated' }, { status: 401 });
+  }
   try {
     const blob = await readBlob();
     const list = Array.isArray(blob.inquiries) ? (blob.inquiries as Inquiry[]) : [];
@@ -128,6 +138,12 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  try {
+    const user = await requireAuthUser(req);
+    if (!canAccessAllEntities(user)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  } catch {
+    return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  }
   let body: { id?: string; done?: boolean };
   try {
     body = (await req.json()) as { id?: string; done?: boolean };
