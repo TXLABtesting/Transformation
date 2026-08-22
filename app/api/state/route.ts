@@ -39,6 +39,20 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'bad-request' }, { status: 400 });
   }
   try {
+    // استفسارات «تواصل معنا» تُضاف من /api/contact مباشرة إلى الكتلة؛ دمجها
+    // بالاتحاد هنا يمنع نسخة المتصفح الأقدم من مسح استفسارات وصلت بعدها
+    // (المعرّف الوارد يغلب لنفس الاستفسار حتى تنحفظ حالة «تمت المعالجة»).
+    try {
+      const row = await prisma.appState.findUnique({ where: { id: 'singleton' } });
+      const prev = (row?.data ?? null) as Record<string, unknown> | null;
+      const d = data as Record<string, unknown>;
+      const incoming = Array.isArray(d.inquiries) ? (d.inquiries as { id: string }[]) : [];
+      const existing = prev && Array.isArray(prev.inquiries) ? (prev.inquiries as { id: string }[]) : [];
+      const seen = new Set(incoming.map((q) => q.id));
+      d.inquiries = [...existing.filter((q) => !seen.has(q.id)), ...incoming];
+    } catch {
+      /* merge best-effort — تبقى الكتابة كما وردت */
+    }
     await prisma.appState.upsert({
       where: { id: 'singleton' },
       update: { data: data as object },
