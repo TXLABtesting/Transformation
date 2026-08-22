@@ -727,6 +727,29 @@ export const useStore = create<Store>((set, get) => {
       } else {
         set({ _hydrated: true });
       }
+      // محتوى الموقع العام (الرئيسية/من نحن/المنشورات) يُقرأ للجميع — بما
+      // فيهم الزوار بلا جلسة — من نقطة القراءة العامة، حتى تصل تعديلات
+      // المشرف في «الموقع العام» إلى كل المتصفحات لا لمتصفح المشرف وحده.
+      if (API_MODE) {
+        fetch('/api/site-content')
+          .then((r) => (r.ok ? r.json() : null))
+          .then((res) => {
+            const d = res?.data;
+            if (!d) return;
+            set((s) => ({
+              site:
+                d.site && typeof d.site === 'object'
+                  ? { ...(JSON.parse(JSON.stringify(DEFAULT_SITE)) as SiteContent), ...(d.site as Partial<SiteContent>) }
+                  : s.site,
+              aboutHero: typeof d.aboutHero === 'string' && d.aboutHero.trim() ? d.aboutHero : s.aboutHero,
+              libraryDocs:
+                Array.isArray(d.libraryDocs) && (d.libraryDocs as LibraryDoc[]).length
+                  ? (d.libraryDocs as LibraryDoc[])
+                  : s.libraryDocs,
+            }));
+          })
+          .catch(() => {});
+      }
       // in API/Postgres mode, prefer server state when present
       if (API_MODE) {
         fetch('/api/state')
