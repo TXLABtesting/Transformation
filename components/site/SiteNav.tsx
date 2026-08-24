@@ -74,7 +74,7 @@ export function SiteNav({ overHero = false }: SiteNavProps) {
   const userName = roleInfo.label || 'مستخدم المنصة';
   const userSub = role === 'coord' || role === 'entity' ? entityName : roleInfo.sub;
   const links = user ? [...PUBLIC_LINKS, ...MEMBER_LINKS] : PUBLIC_LINKS;
-  const inputHref = dashboardHref(entityName);
+  const inputHref = dashboardHref(entityName, role);
 
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < NAV_BREAKPOINT);

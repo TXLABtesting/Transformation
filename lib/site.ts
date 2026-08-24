@@ -264,12 +264,17 @@ export function mergedHistory(site: SiteContent): SiteHistoryMilestone[] {
 }
 
 /**
- * وجهة زر «منصة الإدخال» حسب جهة المستخدم — مستخدم وزارة شؤون مجلس الوزراء
- * يذهب للوحة الوزارة (/moca) وبقية الجهات والأدوار للوحة المنصة (/dashboard).
+ * وجهة زر «منصة الإدخال» حسب دور المستخدم ثم جهته:
+ * - مشرف النظام: لوحة المشرف الموحّدة على /dashboard دائماً — أياً كانت جهته
+ *   (بما فيها وزارة شؤون مجلس الوزراء)؛ لوحة إدارة واحدة للنظام كله.
+ * - بقية الأدوار: مستخدم وزارة شؤون مجلس الوزراء → لوحة الوزارة (/moca)،
+ *   وبقية الجهات → لوحة المنصة (/dashboard).
  * في النسخة التجريبية تبقى الوجهة لوحة المنصة (مبدّل الأدوار والجهات داخلها،
  * ولوحة الوزارة تبقى متاحة على /moca مباشرة).
  */
-export const dashboardHref = (entityName: string): string =>
-  process.env.NEXT_PUBLIC_DEMO_MODE !== '1' && /وزارة شؤون مجلس الوزراء/.test(String(entityName || ''))
+export const dashboardHref = (entityName: string, role?: string): string =>
+  process.env.NEXT_PUBLIC_DEMO_MODE !== '1' &&
+  role !== 'admin' &&
+  /وزارة شؤون مجلس الوزراء/.test(String(entityName || ''))
     ? `${BASE}/moca/`
     : `${BASE}/dashboard/`;
