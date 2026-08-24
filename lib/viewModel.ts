@@ -1576,7 +1576,9 @@ function build(s: Store) {
     role: rawRole,
     roleLabel: ROLE[rawRole].label,
     rolePills,
-    showRoleSwitcher: process.env.NEXT_PUBLIC_DEMO_MODE === '1',
+    // النسخة التجريبية: مبدّل الأدوار للجميع. النسخة الحية: لمشرف النظام
+    // فقط — يتنقل به بين لوحات الأدوار ولوحة الإدارة (جلسة واحدة موحّدة).
+    showRoleSwitcher: process.env.NEXT_PUBLIC_DEMO_MODE === '1' || s.sessionAdmin,
     // coordinator assigned to several streams: header dropdown to switch the
     // ACTIVE stream (everything on screen is scoped to it). In demo mode we list
     // ALL streams so every stream can be exercised from one coordinator login;

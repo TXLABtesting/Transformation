@@ -220,6 +220,9 @@ type State = {
   _hydrated: boolean;
   /** توافقاً مع نسخة الخادم: لا فحص جلسة في النسخة التجريبية — يبقى صحيحاً */
   _authChecked: boolean;
+  /** هل صاحب الجلسة مشرف نظام؟ يُثبّت من الجلسة ولا يتغير بتبديل العرض —
+      به يظهر شريط التنقل بين اللوحات (الأدوار ولوحة الإدارة) للمشرف وحده */
+  sessionAdmin: boolean;
 };
 
 type Actions = {
@@ -552,6 +555,7 @@ function initialState(): State {
     _tick: 0,
     _hydrated: false,
     _authChecked: true,
+    sessionAdmin: false,
   };
 }
 
