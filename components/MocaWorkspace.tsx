@@ -260,6 +260,8 @@ function Header() {
   const unit = mocaUnitById(s.unitId);
   const role = MOCA_ROLES.find((r) => r.key === s.role)!;
   const [prof, setProf] = useState(false);
+  // مبدّل الدور والنطاق للنسخة التجريبية فقط — في النسخة الحية يُشتقان من الجلسة
+  const demo = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
   return (
     <div
       style={{
@@ -276,50 +278,74 @@ function Header() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-        {/* مبدّل الدور — نسخة العرض فقط */}
-        <div
-          style={{
-            display: 'flex',
-            background: '#F4F7FC',
-            border: '1px solid #E7ECF4',
-            boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-            borderRadius: 12,
-            padding: 3,
-            gap: 2,
-          }}
-        >
-          {MOCA_ROLES.map((r) => (
-            <button
-              key={r.key}
-              onClick={() => s.setRole(r.key)}
-              style={{
-                borderRadius: 9,
-                padding: '8px 13px',
-                fontWeight: 700,
-                fontSize: 11.5,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                ...(s.role === r.key
-                  ? { background: '#fff', color: '#1D4ED8', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #D8E3F5' }
-                  : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }),
-              }}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
+        {demo ? (
+          /* مبدّل الدور — نسخة العرض فقط */
+          <div
+            style={{
+              display: 'flex',
+              background: '#F4F7FC',
+              border: '1px solid #E7ECF4',
+              boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
+              borderRadius: 12,
+              padding: 3,
+              gap: 2,
+            }}
+          >
+            {MOCA_ROLES.map((r) => (
+              <button
+                key={r.key}
+                onClick={() => s.setRole(r.key)}
+                style={{
+                  borderRadius: 9,
+                  padding: '8px 13px',
+                  fontWeight: 700,
+                  fontSize: 11.5,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  ...(s.role === r.key
+                    ? { background: '#fff', color: '#1D4ED8', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #D8E3F5' }
+                    : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }),
+                }}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          /* النسخة الحية: هوية الجهة والدور من الجلسة — بلا أي مبدّل */
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{MOCA_MINISTRY}</div>
+            <div style={{ fontSize: 11.5, color: '#8E9AB0' }}>{role.label}</div>
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        {/* نطاق المنسق: الجهة ثم القطاع — بنفس شكل مبدّل المسار في المنصة */}
-        {s.role === 'coord' && (
-          <>
-            <FilterSelect value={s.unitId} onChange={(v) => s.setScope(v, '')} minWidth={190} options={MOCA_UNITS.map((u) => ({ v: u.id, label: u.name }))} />
-            {!!unit.sectors?.length && (
-              <FilterSelect value={s.unitSector} onChange={(v) => s.setScope(s.unitId, v)} minWidth={180} options={unit.sectors.map((x) => ({ v: x, label: x }))} />
-            )}
-          </>
-        )}
+        {/* نطاق المنسق: الجهة ثم القطاع — تبديل في النسخة التجريبية، وعرض
+            ثابت من الجلسة في النسخة الحية */}
+        {s.role === 'coord' &&
+          (demo ? (
+            <>
+              <FilterSelect value={s.unitId} onChange={(v) => s.setScope(v, '')} minWidth={190} options={MOCA_UNITS.map((u) => ({ v: u.id, label: u.name }))} />
+              {!!unit.sectors?.length && (
+                <FilterSelect value={s.unitSector} onChange={(v) => s.setScope(s.unitId, v)} minWidth={180} options={unit.sectors.map((x) => ({ v: x, label: x }))} />
+              )}
+            </>
+          ) : (
+            <div
+              style={{
+                background: '#F4F7FC',
+                border: '1px solid #E7ECF4',
+                borderRadius: 10,
+                padding: '8px 14px',
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#54627B',
+              }}
+            >
+              {mocaScopeLabel(s.unitId, s.unitSector)}
+            </div>
+          ))}
         <div style={{ position: 'relative' }}>
           <div
             onClick={() => setProf((o) => !o)}

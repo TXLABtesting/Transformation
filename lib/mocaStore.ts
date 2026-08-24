@@ -64,6 +64,7 @@ export type MocaState = {
   hydrate: () => void;
   setRole: (r: MocaRole) => void;
   setScope: (unitId: string, sector: string) => void;
+  syncSession: (r: MocaRole) => void;
   openForm: (id?: string) => void;
   closeForm: () => void;
   setDraft: (k: string, v: unknown) => void;
@@ -178,15 +179,26 @@ export const useMoca = create<MocaState>((set, get) => {
       });
     },
 
+    // تبديل الدور/النطاق متاح في النسخة التجريبية فقط — في النسخة الحية
+    // يُشتقان من جلسة الدخول (syncSession) ولا يظهر مبدّل في الواجهة.
     setRole: (r) => {
+      if (process.env.NEXT_PUBLIC_DEMO_MODE !== '1') return;
       set({ role: r, view: 'list', detailId: null });
       persist();
     },
 
     setScope: (unitId, sector) => {
+      if (process.env.NEXT_PUBLIC_DEMO_MODE !== '1') return;
       const u = mocaUnitById(unitId);
       const s = u.sectors?.length ? sector || u.sectors[0] : '';
       set({ unitId, unitSector: s, detailId: null });
+      persist();
+    },
+
+    // النسخة الحية: صفحة /moca تستدعيها بعد قراءة جلسة المنصة لتثبيت الدور
+    syncSession: (r) => {
+      if (get().role === r) return;
+      set({ role: r, view: 'list', detailId: null });
       persist();
     },
 
