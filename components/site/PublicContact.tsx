@@ -62,6 +62,7 @@ export function PublicContact() {
   const role = useStore((s) => s.role);
   const myPath = useStore((s) => s.myPath);
   const setup = useStore((s) => s.setup);
+  const me = useStore((s) => s.me);
   const addInquiry = useStore((s) => s.addInquiry);
   const contactSub = useStore((s) => s.site.contactSub);
   const [values, setValues] = useState<Values>(EMPTY);
@@ -75,12 +76,14 @@ export function PublicContact() {
     hydrate();
   }, [hydrate]);
 
-  // بيانات المستخدم المسجّل تُعبَّأ مسبقاً وتُقفل — المنسق من بيانات منسق
-  // مساره، وإلا فمن بيانات مسؤول الجهة (ما توفر منها)
+  // بيانات المستخدم المسجّل تُعبَّأ مسبقاً وتُقفل. المصدر الأول هو هوية
+  // الجلسة نفسها (الهوية الرقمية) — لا يُستعاض عنها ببيانات إعداد الفريق
+  // إلا حين لا تتوفر هوية جلسة (النسخة التجريبية).
   useEffect(() => {
     if (!hydrated || !authed) return;
     const owner = setup.owners?.[myPath];
-    const who = role === 'coord' && owner?.name ? owner : setup.rep;
+    const fallback = role === 'coord' && owner?.name ? owner : setup.rep;
+    const who = me?.name?.trim() || me?.email?.trim() ? me : fallback;
     if (!who) return;
     const patch: Partial<Values> = {};
     const locked: Partial<Record<Field, boolean>> = {};
@@ -101,7 +104,7 @@ export function PublicContact() {
       setPrefilled(locked);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, authed, role, myPath]);
+  }, [hydrated, authed, role, myPath, me]);
 
   const set = (field: Field) => (value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }));
