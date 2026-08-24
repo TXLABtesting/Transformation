@@ -858,15 +858,20 @@ export const useStore = create<Store>((set, get) => {
               email: String(res.user.email || ''),
               phone: String(res.user.phone || ''),
             };
+            const role = roleFromBackend(roles);
             set((s) => {
               const myPath = res.user.streamId || scopes[0] || s.myPath;
               const myPaths = scopes.length ? scopes : [myPath];
               return {
                 ...s,
+                // المشرف يدخل على «لوحات المتابعة» أولاً — لوحة الإدارة
+                // والأدوار الأخرى عبر شريط التنقل أعلى الصفحة
+                sessionAdmin: role === 'admin',
+                ui: role === 'admin' ? { ...s.ui, adminDash: true } : s.ui,
                 // لا شاشة إعداد ذاتي في نسخة الخادم — الحسابات تُنشأ مركزياً،
                 // فالدخول يقود مباشرة إلى اللوحة (شاشة الإعداد غير مبنية أصلاً)
                 view: 'dashboard',
-                role: roleFromBackend(roles),
+                role,
                 myPath: myPaths.includes(myPath) ? myPath : myPaths[0],
                 myPaths,
                 // جهة المستخدم من سجله — لا جهة افتراضية في الواجهة
