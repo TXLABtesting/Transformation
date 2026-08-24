@@ -218,6 +218,8 @@ type State = {
   ui: UiState;
   _tick: number; // countdown re-render
   _hydrated: boolean;
+  /** توافقاً مع نسخة الخادم: لا فحص جلسة في النسخة التجريبية — يبقى صحيحاً */
+  _authChecked: boolean;
 };
 
 type Actions = {
@@ -549,6 +551,7 @@ function initialState(): State {
     ui: defaultUi(),
     _tick: 0,
     _hydrated: false,
+    _authChecked: true,
   };
 }
 
