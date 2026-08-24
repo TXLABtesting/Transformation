@@ -218,6 +218,8 @@ type State = {
   ui: UiState;
   _tick: number; // countdown re-render
   _hydrated: boolean;
+  /** في نسخة الخادم: هل انتهى فحص الجلسة (/api/auth/me)؟ الحراسة تنتظره */
+  _authChecked: boolean;
 };
 
 type Actions = {
@@ -439,6 +441,13 @@ function apiPut(data: unknown) {
   }).catch(() => {});
 }
 
+// الجهة والحسابات الافتراضية للعرض فقط. في النسخة الحية تأتي جهة المستخدم
+// من جلسته (/api/auth/me) وقائمة المستخدمين من قاعدة البيانات، فلا تُفترض
+// جهة ولا حسابات في الواجهة قبل وصولها.
+const DEMO_BUILD = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
+const INITIAL_ENTITY = DEMO_BUILD ? DEFAULT_ENTITY : '';
+const INITIAL_USERS = (): UserRec[] => (DEMO_BUILD ? seedUsers(DEFAULT_ENTITY) : []);
+
 function defaultSetup(): Setup {
   const owners: Record<string, Owner> = {};
   PATHS.forEach((p) => (owners[p.id] = blankOwner()));
@@ -539,7 +548,7 @@ function initialState(): State {
     // streams this coordinator is assigned to (entity rep can assign several);
     // the header shows a switcher when there is more than one
     myPaths: process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? ['ops', 'services'] : ['ops'],
-    entityName: DEFAULT_ENTITY,
+    entityName: INITIAL_ENTITY,
     setupDone: false,
     items: seedItems(),
     launchPlans: recalcPlanBudgets(seedItems(), seedLaunchPlans()),
@@ -550,7 +559,7 @@ function initialState(): State {
     site: JSON.parse(JSON.stringify(DEFAULT_SITE)) as SiteContent,
     libraryDocs: DEFAULT_LIBRARY_DOCS.map((d) => ({ ...d })),
     inquiries: [],
-    users: seedUsers(DEFAULT_ENTITY),
+    users: INITIAL_USERS(),
     readNotifs: [],
     programStep: 1,
     programPhases: DEFAULT_PROGRAM_PHASES.map((p) => ({ ...p })),
@@ -565,6 +574,7 @@ function initialState(): State {
     ui: defaultUi(),
     _tick: 0,
     _hydrated: false,
+    _authChecked: !BACKEND_AUTH,
   };
 }
 
@@ -729,7 +739,7 @@ export const useStore = create<Store>((set, get) => {
           inquiries: Array.isArray(saved!.inquiries) ? (saved!.inquiries as ContactInquiry[]) : [],
           view: (saved!.view as State['view']) || 'login',
           lang: (saved!.lang as State['lang']) || 'ar',
-          entityName: (saved!.entityName as string) || DEFAULT_ENTITY,
+          entityName: (saved!.entityName as string) || INITIAL_ENTITY,
           // الأدوار الملغاة (نائب رئيس المسار / الأمانة العامة) تُرحَّل تلقائياً
           role: migrateRole(
             fresh
@@ -741,7 +751,7 @@ export const useStore = create<Store>((set, get) => {
           setupDone: !!saved!.setupDone,
           users: !fresh && Array.isArray(saved!.users)
             ? (saved!.users as UserRec[]).map((u) => ({ ...u, role: migrateRole(u.role) }))
-            : seedUsers(DEFAULT_ENTITY),
+            : INITIAL_USERS(),
           items,
           phase: (saved!.phase as State['phase']) || s.phase,
           setup: (saved!.setup as Setup) || s.setup,
@@ -831,7 +841,7 @@ export const useStore = create<Store>((set, get) => {
         fetch('/api/auth/me', { credentials: 'include' })
           .then((r) => (r.ok ? r.json() : null))
           .then((res) => {
-            if (!res?.user) return;
+            if (!res?.user) { set({ _authChecked: true }); return; }
             const roles = Array.isArray(res.roles) ? (res.roles as string[]) : [];
             // stream scopes drive the multi-stream coordinator switcher
             const scopes = Array.isArray(res.user.streamScopes)
@@ -850,15 +860,22 @@ export const useStore = create<Store>((set, get) => {
               const myPaths = scopes.length ? scopes : [myPath];
               return {
                 ...s,
-                view: s.setupDone ? 'dashboard' : 'setup',
+                // لا شاشة إعداد ذاتي في نسخة الخادم — الحسابات تُنشأ مركزياً،
+                // فالدخول يقود مباشرة إلى اللوحة (شاشة الإعداد غير مبنية أصلاً)
+                view: 'dashboard',
                 role: roleFromBackend(roles),
                 myPath: myPaths.includes(myPath) ? myPath : myPaths[0],
                 myPaths,
+                // جهة المستخدم من سجله — لا جهة افتراضية في الواجهة
+                entityName: String(res.user.entityName || '') || s.entityName,
                 me,
+                _authChecked: true,
               };
             });
           })
-          .catch(() => {});
+          .catch(() => {})
+          // انتهى الفحص أياً كانت نتيجته — تُرفع الحراسة عن الصفحات المحمية
+          .finally(() => set({ _authChecked: true }));
       }
       // countdown ticker
       if (!(window as unknown as { _aitpTick?: number })._aitpTick) {

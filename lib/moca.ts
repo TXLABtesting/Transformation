@@ -65,6 +65,26 @@ export const mocaScopeLabel = (unitId: string, sector?: string): string => {
 export const mocaAutoSector = (unitId: string, sector?: string): string =>
   String(sector || '').trim() || mocaUnitById(unitId).name;
 
+/**
+ * نطاق المستخدم في النسخة الحية يُشتق من اسم جهته في الجلسة: يُطابَق اسم
+ * الجهة على وحدات الوزارة (ثم على قطاعاتها)، فلا تُفترض وحدة في الواجهة.
+ * حين لا يطابق الاسم أي وحدة (مستخدم على مستوى الوزارة) تبقى الوحدة كما هي.
+ */
+export const mocaScopeFromEntity = (
+  entityName: string | undefined,
+  current: { unitId: string; unitSector: string }
+): { unitId: string; unitSector: string } => {
+  const name = String(entityName || '').trim();
+  if (!name || name === MOCA_MINISTRY) return current;
+  const norm = (v: string) => v.replace(/\s+/g, ' ').trim();
+  for (const u of MOCA_UNITS) {
+    if (norm(u.name) === norm(name)) return { unitId: u.id, unitSector: '' };
+    const sector = u.sectors?.find((s) => norm(s) === norm(name) || norm(`${u.name} — ${s}`) === norm(name));
+    if (sector) return { unitId: u.id, unitSector: sector };
+  }
+  return current;
+};
+
 // ---- 2. خيارات القوائم المنسدلة (ورقة «المعادلات» في الملف) -----------------
 export const MOCA_SPECIALIZATION = ['تخصصية', 'مشتركة'];
 

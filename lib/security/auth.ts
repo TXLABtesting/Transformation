@@ -13,6 +13,8 @@ export async function loadAuthUser(req: NextRequest): Promise<AuthUser | null> {
       roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
       entityScopes: true,
       streamScopes: true,
+      // اسم الجهة يُشتق من السجل — الواجهة لا تفترض جهة افتراضية
+      entity: true,
     },
   });
   if (!user) return null;
@@ -32,6 +34,7 @@ export async function loadAuthUser(req: NextRequest): Promise<AuthUser | null> {
     status: user.status,
     accessEnabled: user.accessEnabled,
     entityId: user.entityId,
+    entityName: user.entity?.nameAr ?? null,
     streamId: user.streamId,
     roles: roleCodes,
     permissions: permissionCodes,

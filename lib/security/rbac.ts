@@ -27,6 +27,8 @@ export type AuthUser = {
   status: string;
   accessEnabled: boolean;
   entityId: string | null;
+  /** اسم الجهة كما في السجل — تعبئة الواجهة وتوجيه «منصة الإدخال» */
+  entityName: string | null;
   streamId: string | null;
   roles: string[];
   permissions: string[];

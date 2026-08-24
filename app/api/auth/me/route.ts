@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
       status: user.status,
       accessEnabled: user.accessEnabled,
       entityId: user.entityId,
+      entityName: user.entityName,
       streamId: user.streamId,
       entityScopes: user.entityScopes,
       streamScopes: user.streamScopes,
