@@ -20,6 +20,9 @@ export type AuthUser = {
   id: string;
   email: string | null;
   name: string;
+  // بيانات الاتصال من سجل المستخدم — تُستخدم لتعبئة نماذج صاحب الجلسة
+  title: string;
+  phone: string | null;
   role: string;
   status: string;
   accessEnabled: boolean;

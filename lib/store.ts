@@ -836,6 +836,14 @@ export const useStore = create<Store>((set, get) => {
             const scopes = Array.isArray(res.user.streamScopes)
               ? (res.user.streamScopes as string[]).filter(Boolean)
               : [];
+            // هوية صاحب الجلسة — تُعبَّأ بها نماذجه (تواصل معنا) بلا أي
+            // بيانات افتراضية
+            const me: SessionIdentity = {
+              name: String(res.user.displayName || ''),
+              title: String(res.user.title || ''),
+              email: String(res.user.email || ''),
+              phone: String(res.user.phone || ''),
+            };
             set((s) => {
               const myPath = res.user.streamId || scopes[0] || s.myPath;
               const myPaths = scopes.length ? scopes : [myPath];
@@ -845,6 +853,7 @@ export const useStore = create<Store>((set, get) => {
                 role: roleFromBackend(roles),
                 myPath: myPaths.includes(myPath) ? myPath : myPaths[0],
                 myPaths,
+                me,
               };
             });
           })

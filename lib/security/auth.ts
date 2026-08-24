@@ -26,6 +26,8 @@ export async function loadAuthUser(req: NextRequest): Promise<AuthUser | null> {
     id: user.id,
     email: user.email,
     name: user.name,
+    title: user.title,
+    phone: user.phone,
     role: user.role,
     status: user.status,
     accessEnabled: user.accessEnabled,
