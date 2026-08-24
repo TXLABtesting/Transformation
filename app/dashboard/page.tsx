@@ -20,6 +20,9 @@ export default function DashboardPage() {
   const router = useRouter();
   const hydrate = useStore((s) => s.hydrate);
   const hydrated = useStore((s) => s._hydrated);
+  // في نسخة الخادم لا يُحكم بعدم التسجيل قبل انتهاء فحص الجلسة، وإلا قُذف
+  // المستخدم المسجّل خارج اللوحة عند فتحها بتحميل مباشر
+  const authChecked = useStore((s) => s._authChecked);
   const vm = useViewModel();
 
   useEffect(() => {
@@ -28,11 +31,11 @@ export default function DashboardPage() {
 
   // غير المسجّل يذهب لصفحة تسجيل الدخول
   useEffect(() => {
-    if (hydrated && vm.isLogin) router.replace('/login');
-  }, [hydrated, vm.isLogin, router]);
+    if (hydrated && authChecked && vm.isLogin) router.replace('/login');
+  }, [hydrated, authChecked, vm.isLogin, router]);
 
   // لا شيء يُرسم قبل قراءة الجلسة — يمنع اختلاف SSR/CSR
-  if (!hydrated || vm.isLogin) return <div style={{ minHeight: '100vh', background: '#EEF2F9' }} />;
+  if (!hydrated || !authChecked || vm.isLogin) return <div style={{ minHeight: '100vh', background: '#EEF2F9' }} />;
 
   return (
     <>

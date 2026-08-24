@@ -15,8 +15,10 @@ export default function MocaPage() {
   const syncSession = useMoca((s) => s.syncSession);
   const mainHydrate = useStore((s) => s.hydrate);
   const mainHydrated = useStore((s) => s._hydrated);
+  const mainAuthChecked = useStore((s) => s._authChecked);
   const mainView = useStore((s) => s.view);
   const mainRole = useStore((s) => s.role);
+  const mainEntity = useStore((s) => s.entityName);
 
   useEffect(() => {
     hydrate();
@@ -27,16 +29,16 @@ export default function MocaPage() {
   // النسخة الحية: الدخول شرط، والدور يُشتق من جلسة المنصة لا من مبدّل عرض —
   // منسق الجهة يرى مساحة المنسق، وبقية الأدوار (اللجنة/المشرف) مساحة الاعتماد.
   useEffect(() => {
-    if (DEMO || !mainHydrated) return;
+    if (DEMO || !mainHydrated || !mainAuthChecked) return;
     if (mainView === 'login') {
       router.replace('/login');
       return;
     }
-    syncSession(mainRole === 'coord' ? 'coord' : 'committee');
-  }, [mainHydrated, mainView, mainRole, syncSession, router]);
+    syncSession(mainRole === 'coord' ? 'coord' : 'committee', mainEntity);
+  }, [mainHydrated, mainAuthChecked, mainView, mainRole, mainEntity, syncSession, router]);
 
   // لا نرسم شيئاً قبل قراءة التخزين المحلي تفادياً لاختلاف SSR/CSR
-  if (!hydrated || (!DEMO && (!mainHydrated || mainView === 'login')))
+  if (!hydrated || (!DEMO && (!mainHydrated || !mainAuthChecked || mainView === 'login')))
     return <div style={{ minHeight: '100vh', background: '#EEF2F9' }} />;
   return <MocaWorkspace />;
 }
