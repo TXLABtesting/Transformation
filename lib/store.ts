@@ -220,6 +220,9 @@ type State = {
   _hydrated: boolean;
   /** في نسخة الخادم: هل انتهى فحص الجلسة (/api/auth/me)؟ الحراسة تنتظره */
   _authChecked: boolean;
+  /** هل صاحب الجلسة مشرف نظام؟ يُثبّت من الجلسة ولا يتغير بتبديل العرض —
+      به يظهر شريط التنقل بين اللوحات (الأدوار ولوحة الإدارة) للمشرف وحده */
+  sessionAdmin: boolean;
 };
 
 type Actions = {
@@ -574,6 +577,7 @@ function initialState(): State {
     _tick: 0,
     _hydrated: false,
     _authChecked: !BACKEND_AUTH,
+    sessionAdmin: false,
   };
 }
 
