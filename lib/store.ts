@@ -69,6 +69,11 @@ export type Setup = {
   owners: Record<string, Owner>;
 };
 
+// هوية المستخدم من جلسة الدخول نفسها (الهوية الرقمية) — لا تُخزَّن محلياً
+// ولا تُملأ إلا من الخادم؛ تبقى فارغة في النسخة التجريبية.
+export type SessionIdentity = { name: string; title: string; email: string; phone: string };
+export const EMPTY_IDENTITY: SessionIdentity = { name: '', title: '', email: '', phone: '' };
+
 export type BulkRow = {
   type?: string;
   path?: string;
@@ -208,6 +213,8 @@ type State = {
   programPhases: ProgramPhase[];
   phase: { name: string; start: string; deadline: string; setBy: string };
   setup: Setup;
+  /** هوية صاحب الجلسة كما يعيدها الخادم — المصدر الوحيد لتعبئة بياناته */
+  me: SessionIdentity;
   ui: UiState;
   _tick: number; // countdown re-render
   _hydrated: boolean;
@@ -434,15 +441,18 @@ function apiPut(data: unknown) {
 function defaultSetup(): Setup {
   const owners: Record<string, Owner> = {};
   PATHS.forEach((p) => (owners[p.id] = blankOwner()));
-  return {
-    rep: {
-      name: 'أحمد محمد العامري',
-      position: 'مدير إدارة التحول الرقمي',
-      email: 'a.alameri@entity.gov.ae',
-      phone: '+971 50 123 4567',
-    },
-    owners,
-  };
+  // شخصية العرض للنسخة التجريبية فقط — في النسخة الحية تبقى بيانات ممثل
+  // الجهة فارغة حتى تُدخل فعلياً، فلا يظهر أي اسم أو بريد غير حقيقي.
+  const rep =
+    process.env.NEXT_PUBLIC_DEMO_MODE === '1'
+      ? {
+          name: 'أحمد محمد العامري',
+          position: 'مدير إدارة التحول الرقمي',
+          email: 'a.alameri@entity.gov.ae',
+          phone: '+971 50 123 4567',
+        }
+      : { name: '', position: '', email: '', phone: '' };
+  return { rep, owners };
 }
 
 function defaultUi(): UiState {
@@ -550,6 +560,7 @@ function initialState(): State {
       setBy: 'فريق الذكاء الاصطناعي',
     },
     setup: defaultSetup(),
+    me: EMPTY_IDENTITY,
     ui: defaultUi(),
     _tick: 0,
     _hydrated: false,
