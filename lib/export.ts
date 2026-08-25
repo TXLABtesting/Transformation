@@ -582,9 +582,10 @@ export async function downloadItemsTemplate(
   downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'نموذج-مدخلات-' + streamName + '.xlsx');
 }
 
-// نموذج حصر العمليات المعتمد لمسار العمليات — ورقتان بنفس بنية النموذج
-// الرسمي («العمليات الرئيسية» و«عمليات الدعم المؤسسي»): ترويسة الجهة
-// والمنسق، ثم عمود «م» و16 عمود بيانات، مع قوائم منسدلة من ورقة «المعادلات»
+// نموذج حصر العمليات المعتمد لمسار العمليات — طبق بنية النموذج الرسمي:
+// ورقتا «العمليات الرئيسية» و«عمليات الدعم المؤسسي» بترويسة الجهة والمسار
+// وبيانات المنسق (بدمج الخلايا كما في النموذج)، وورقة «المعادلات» تحمل قوائم
+// الخيارات وتتغذى منها القوائم المنسدلة في الورقتين.
 export async function downloadOpsTemplate(
   entityName: string,
   fields: { key: string; label: string }[],
@@ -597,34 +598,54 @@ export async function downloadOpsTemplate(
   const cols = fields.length + 1; // + عمود «م»
   const firstDataRow = 5;
   const lastDataRow = 34;
+
+  // مراجع قوائم «المعادلات» تُحسب أولاً (الورقة نفسها تُنشأ آخر الملف حتى
+  // يُفتح على ورقة البيانات الأولى كما في النموذج الرسمي)
+  const optionFields = fields.filter((f) => options[f.key]?.length);
+  const listRanges: Record<string, string> = {};
+  optionFields.forEach((f, i) => {
+    const letter = String.fromCharCode(65 + i); // قوائم النموذج ≤ 26 عموداً
+    listRanges[f.key] = `'المعادلات'!$${letter}$2:$${letter}$${options[f.key].length + 1}`;
+  });
+
   for (const sheetName of ['العمليات الرئيسية', 'عمليات الدعم المؤسسي']) {
     const ws = wb.addWorksheet(sheetName, { views: [{ rightToLeft: true, showGridLines: false }] });
-    // ترويسة النموذج الرسمي: الجهة، المسار، بيانات المنسق
-    ws.mergeCells(1, 1, 1, 4);
+    // ترويسة النموذج الرسمي بدمج الخلايا نفسه: الجهة (صف كامل)، شريط المسار،
+    // ثم بيانات المنسق في أربع كتل مدموجة
+    ws.mergeCells(1, 1, 1, cols);
     const ent = ws.getCell(1, 1);
     ent.value = 'الجهة: ' + (entityName || '');
-    ent.font = { bold: true, size: 12, color: { argb: 'FF13213C' } };
+    ent.font = { bold: true, size: 13, color: { argb: 'FF13213C' } };
     ent.alignment = { horizontal: 'right', vertical: 'middle' };
+    ent.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5FB' } as XLColor };
+    ws.getRow(1).height = 30;
+
     ws.mergeCells(2, 1, 2, cols);
     const t = ws.getCell(2, 1);
     t.value = 'مسار العمليات والدعم المؤسسي';
     t.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
     t.alignment = { horizontal: 'center', vertical: 'middle' };
     t.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_DARK } as XLColor };
-    ws.getRow(2).height = 26;
-    const coordLabels: [number, string][] = [
-      [1, 'اسم المنسق الرئيسي:'],
-      [5, 'المسمى الوظيفي:'],
-      [8, 'رقم التواصل المباشر:'],
-      [11, 'البريد الالكتروني:'],
+    ws.getRow(2).height = 30;
+
+    // كتل المنسق كما في النموذج: A:D ثم E:G ثم H:J ثم K حتى آخر عمود
+    const blocks: [number, number, string][] = [
+      [1, 4, 'اسم المنسق الرئيسي:'],
+      [5, 7, 'المسمى الوظيفي:'],
+      [8, 10, 'رقم التواصل المباشر:'],
+      [11, cols, 'البريد الالكتروني:'],
     ];
-    coordLabels.forEach(([c, label]) => {
-      const cell = ws.getCell(3, c);
+    blocks.forEach(([c1, c2, label]) => {
+      ws.mergeCells(3, c1, 3, c2);
+      const cell = ws.getCell(3, c1);
       cell.value = label;
-      cell.font = { bold: true, size: 10.5, color: { argb: 'FF54627B' } };
+      cell.font = { bold: true, size: 12, color: { argb: 'FF54627B' } };
       cell.alignment = { horizontal: 'right', vertical: 'middle' };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5FB' } as XLColor };
+      cell.border = { top: { style: 'thin', color: { argb: 'FFD5DEEC' } }, bottom: { style: 'thin', color: { argb: 'FFD5DEEC' } }, right: { style: 'thin', color: { argb: 'FFD5DEEC' } }, left: { style: 'thin', color: { argb: 'FFD5DEEC' } } } as import('exceljs').Borders;
     });
-    ws.getRow(3).height = 20;
+    ws.getRow(3).height = 26;
+
     // رأس الجدول: م + أعمدة النموذج
     const headRow = 4;
     const mCell = ws.getCell(headRow, 1);
@@ -642,7 +663,7 @@ export async function downloadOpsTemplate(
       ws.getColumn(ci + 2).width = f.key === 'title' || f.key === 'subActivities' ? 32 : Math.max(18, Math.min(28, f.label.length + 4));
     });
     ws.getRow(headRow).height = 42;
-    // صفوف مرقمة + قوائم منسدلة على أعمدة الخيارات
+    // صفوف مرقمة + قوائم منسدلة تشير إلى ورقة «المعادلات»
     for (let r = firstDataRow; r <= lastDataRow; r++) {
       ws.getCell(r, 1).value = r - firstDataRow + 1;
       ws.getCell(r, 1).alignment = { horizontal: 'center', vertical: 'middle' };
@@ -650,16 +671,32 @@ export async function downloadOpsTemplate(
       ws.getRow(r).height = 20;
     }
     fields.forEach((f, ci) => {
-      const opts = options[f.key];
-      if (!opts || !opts.length) return;
-      const list = '"' + opts.join(',') + '"';
+      const range = listRanges[f.key];
+      if (!range) return;
       for (let r = firstDataRow; r <= lastDataRow; r++) {
-        ws.getCell(r, ci + 2).dataValidation = { type: 'list', allowBlank: true, formulae: [list] };
+        ws.getCell(r, ci + 2).dataValidation = { type: 'list', allowBlank: true, formulae: [range] };
       }
     });
     boxAll(ws, headRow, lastDataRow, cols);
     ws.views = [{ rightToLeft: true, showGridLines: false, state: 'frozen', ySplit: headRow }];
   }
+  // ورقة «المعادلات» آخر الملف: عمود لكل قائمة خيارات (كما في النموذج الرسمي)
+  const eq = wb.addWorksheet('المعادلات', { views: [{ rightToLeft: true }] });
+  optionFields.forEach((f, i) => {
+    const opts = options[f.key];
+    const head = eq.getCell(1, i + 1);
+    head.value = f.label;
+    head.font = { bold: true, size: 11, color: { argb: 'FF13213C' } };
+    head.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    head.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE7EEF9' } as XLColor };
+    opts.forEach((v, ri) => {
+      eq.getCell(ri + 2, i + 1).value = v;
+      eq.getCell(ri + 2, i + 1).alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+    eq.getColumn(i + 1).width = Math.max(20, Math.min(38, Math.max(...opts.map((o) => o.length), f.label.length) + 4));
+  });
+  eq.getRow(1).height = 34;
+
   const buf = await wb.xlsx.writeBuffer();
   downloadBlob(
     new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
