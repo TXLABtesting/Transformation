@@ -244,6 +244,50 @@ function ContactTab({ a }: { a: VM['admin'] }) {
 const siteCard: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 };
 const siteTa: CSSProperties = { width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 12, padding: '13px 15px', fontSize: 13, fontFamily: 'inherit', color: '#16233F', lineHeight: 2, outline: 'none', resize: 'vertical', background: '#FAFBFE' };
 
+// ---------------------------------------------------------------------------
+// وسائط الموقع العام: في نسخة الخادم تُرفع الملفات كما هي (مرفقات) إلى مخزن
+// الوسائط /api/media فتُعرض بجودتها الكاملة وتُخدم بترويسات تخزين مؤقت دائمة —
+// لا تدخل في كتلة الحالة فلا تُبطئ الموقع. النسخة التجريبية الثابتة تبقى على
+// الضغط إلى data URL (حدود تخزين المتصفح).
+const MEDIA_STORE = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
+const MAX_IMAGE_MB = 15;
+const MAX_VIDEO_MB = 200;
+
+async function uploadSiteMedia(file: File): Promise<string | null> {
+  try {
+    const res = await fetch('/api/media?name=' + encodeURIComponent(file.name), {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      body: file,
+    });
+    if (!res.ok) return null;
+    const d = (await res.json()) as { url?: string };
+    return d.url || null;
+  } catch {
+    return null;
+  }
+}
+
+/** حذف ملف سابق من مخزن الوسائط عند استبداله أو الاستغناء عنه */
+function releaseSiteMedia(url?: string) {
+  if (MEDIA_STORE && url && url.startsWith('/api/media/')) {
+    fetch(url, { method: 'DELETE', credentials: 'include' }).catch(() => {});
+  }
+}
+
+/** صورة مختارة: مرفق أصلي في نسخة الخادم، وضغط data URL في النسخة الثابتة */
+function pickImage(
+  file: File,
+  fallback: (f: File, done: (u: string) => void) => void,
+  done: (url: string) => void,
+  onErr: (msg: string) => void
+) {
+  if (file.size > MAX_IMAGE_MB * 1024 * 1024) return onErr(`حجم الصورة يتجاوز ${MAX_IMAGE_MB}MB`);
+  if (MEDIA_STORE) uploadSiteMedia(file).then((u) => (u ? done(u) : onErr('تعذر رفع الصورة — أعد المحاولة')));
+  else fallback(file, done);
+}
+
 // read a picked cover image, downscale to ≤640px wide and store as data URL
 function readCoverFile(file: File, done: (dataUrl: string) => void) {
   const fr = new FileReader();
@@ -300,6 +344,8 @@ function SiteSection({ title, sub, onAdd, children }: { title: string; sub: stri
 function SiteTab() {
   const s = useStore();
   const site = s.site;
+  const [videoBusy, setVideoBusy] = useState(false);
+  const pickErr = (msg: string) => s.toast(msg);
   const inp = (v: string, on: (x: string) => void, ph = '', flex = '1 1 180px'): React.ReactNode => (
     <input value={v} onChange={(e) => on(e.target.value)} placeholder={ph} style={{ ...inputSt, flex }} />
   );
@@ -332,15 +378,49 @@ function SiteTab() {
             {inp(site.heroLine1, (v) => s.setSite({ heroLine1: v }), 'السطر الأول (أبيض)')}
             {inp(site.heroLine2, (v) => s.setSite({ heroLine2: v }), 'السطر الثاني (متدرج)')}
           </div>
-          {/* فيديو الواجهة: رابط ملف mp4 (يستضيفه فريق التقنية أو ضمن أصول
-              المنصة) — الرفع المباشر غير ممكن لأن حجم الفيديو يتجاوز سعة
-              التخزين المحلي. فارغ = الفيديو الرسمي المضمّن. */}
+          {/* فيديو الواجهة: في نسخة الخادم يُرفع ملف الفيديو نفسه (مرفق) إلى
+              مخزن الوسائط ويُخدم بجودته الكاملة مع تخزين مؤقت دائم؛ النسخة
+              الثابتة تبقى على الرابط (لا خادم يستقبل الملف). فارغ = الرسمي. */}
           <div style={rowShell}>
             <span style={{ fontSize: 12, fontWeight: 800, color: '#54627B', flex: 'none' }}>فيديو الواجهة</span>
-            {inp(site.heroVideoUrl, (v) => s.setSite({ heroVideoUrl: v.trim() }), 'رابط ملف الفيديو (mp4) — اتركه فارغاً للفيديو الرسمي')}
+            {MEDIA_STORE ? (
+              videoBusy ? (
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#B45309', flex: '1 1 auto' }}>جارٍ رفع الفيديو… لا تغلق الصفحة</span>
+              ) : (
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 12px', background: '#F4F7FC', border: '1px dashed #C7D1E2', borderRadius: 9, fontSize: 11.5, fontWeight: 700, color: '#2563EB', cursor: 'pointer', flex: 'none' }}>
+                  <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={13} color="#2563EB" />
+                  {site.heroVideoUrl ? 'استبدال الفيديو (mp4)' : 'رفع ملف الفيديو (mp4)'}
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = '';
+                      if (!f) return;
+                      if (f.size > MAX_VIDEO_MB * 1024 * 1024) return s.toast(`حجم الفيديو يتجاوز ${MAX_VIDEO_MB}MB`);
+                      const prev = site.heroVideoUrl;
+                      setVideoBusy(true);
+                      uploadSiteMedia(f).then((u) => {
+                        setVideoBusy(false);
+                        if (!u) return s.toast('تعذر رفع الفيديو — أعد المحاولة');
+                        releaseSiteMedia(prev);
+                        s.setSite({ heroVideoUrl: u });
+                        s.toast('تم رفع الفيديو وظهر للزوار');
+                      });
+                    }}
+                  />
+                </label>
+              )
+            ) : (
+              inp(site.heroVideoUrl, (v) => s.setSite({ heroVideoUrl: v.trim() }), 'رابط ملف الفيديو (mp4) — اتركه فارغاً للفيديو الرسمي')
+            )}
             {site.heroVideoUrl ? (
               <button
-                onClick={() => s.setSite({ heroVideoUrl: '' })}
+                onClick={() => {
+                  releaseSiteMedia(site.heroVideoUrl);
+                  s.setSite({ heroVideoUrl: '' });
+                }}
                 style={{ border: '1px solid #F0D5D5', background: '#fff', color: '#C0303B', borderRadius: 9, padding: '8px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}
               >
                 استعادة الفيديو الرسمي
@@ -356,7 +436,10 @@ function SiteTab() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={site.heroPosterUrl} alt="" style={{ height: 40, width: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid #E1E7F1' }} />
                 <button
-                  onClick={() => s.setSite({ heroPosterUrl: '' })}
+                  onClick={() => {
+                    releaseSiteMedia(site.heroPosterUrl);
+                    s.setSite({ heroPosterUrl: '' });
+                  }}
                   style={{ border: '1px solid #F0D5D5', background: '#fff', color: '#C0303B', borderRadius: 9, padding: '8px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   استعادة الغلاف الرسمي
@@ -372,7 +455,7 @@ function SiteTab() {
                   style={{ display: 'none' }}
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    if (f) readCoverFile(f, (url) => s.setSite({ heroPosterUrl: url }));
+                    if (f) pickImage(f, readCoverFile, (url) => { releaseSiteMedia(site.heroPosterUrl); s.setSite({ heroPosterUrl: url }); }, pickErr);
                     e.target.value = '';
                   }}
                 />
@@ -438,7 +521,7 @@ function SiteTab() {
                       style={{ display: 'none' }}
                       onChange={(e) => {
                         const f = e.target.files?.[0];
-                        if (f) readCoverFile(f, (url) => updList('news', i, { image: url }));
+                        if (f) pickImage(f, readCoverFile, (url) => { releaseSiteMedia(site.news[i]?.image); updList('news', i, { image: url }); }, pickErr);
                         e.target.value = '';
                       }}
                     />
@@ -505,7 +588,7 @@ function SiteTab() {
                   style={{ display: 'none' }}
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    if (f) readWideImage(f, (url) => s.setSite({ quoteImageUrl: url }));
+                    if (f) pickImage(f, readWideImage, (url) => { releaseSiteMedia(site.quoteImageUrl); s.setSite({ quoteImageUrl: url }); }, pickErr);
                     e.target.value = '';
                   }}
                 />
@@ -543,7 +626,7 @@ function SiteTab() {
                     style={{ display: 'none' }}
                     onChange={(e) => {
                       const f = e.target.files?.[0];
-                      if (f) readWideImage(f, (url) => updList('history', i, { image: url }));
+                      if (f) pickImage(f, readWideImage, (url) => { releaseSiteMedia(site.history[i]?.image); updList('history', i, { image: url }); }, pickErr);
                       e.target.value = '';
                     }}
                   />
@@ -658,7 +741,10 @@ function SiteTab() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={d.coverUrl} alt="" style={{ height: 38, width: 54, objectFit: 'cover', borderRadius: 8, border: '1px solid #E1E7F1' }} />
                     <button
-                      onClick={() => s.updLibDoc(d.id, { coverUrl: '' })}
+                      onClick={() => {
+                        releaseSiteMedia(d.coverUrl);
+                        s.updLibDoc(d.id, { coverUrl: '' });
+                      }}
                       title="إزالة الصورة"
                       style={{ width: 32, height: 32, borderRadius: 9, background: '#fff', border: '1px solid #F0D5D5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                     >
@@ -675,7 +761,7 @@ function SiteTab() {
                       style={{ display: 'none' }}
                       onChange={(e) => {
                         const f = e.target.files?.[0];
-                        if (f) readCoverFile(f, (url) => s.updLibDoc(d.id, { coverUrl: url }));
+                        if (f) pickImage(f, readCoverFile, (url) => { releaseSiteMedia(d.coverUrl); s.updLibDoc(d.id, { coverUrl: url }); }, pickErr);
                         e.target.value = '';
                       }}
                     />

@@ -985,7 +985,9 @@ export const useStore = create<Store>((set, get) => {
     setRole: (r) => {
       set((s) => ({
         role: r,
-        ui: { ...s.ui, activePath: 'all', entFilter: 'all', stepFilter: null, statusFilter: 'all', fundFilter: 'all', search: '', navSection: 'overview', navStream: null, batchFilter: null },
+        // adminDash يُصفَّر مع كل تبديل — بدونه تبقى «لوحات المتابعة» ظاهرة
+        // فيبدو زر «مشرف النظام» معطلاً (لا يُفتح منه شيء وهو على اللوحات)
+        ui: { ...s.ui, adminDash: false, activePath: 'all', entFilter: 'all', stepFilter: null, statusFilter: 'all', fundFilter: 'all', search: '', navSection: 'overview', navStream: null, batchFilter: null },
       }));
       persist();
     },
