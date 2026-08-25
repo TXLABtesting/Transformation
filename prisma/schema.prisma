@@ -417,6 +417,19 @@ model AppState {
   @@map("app_state")
 }
 
+/// وسائط الموقع العام (صور وفيديو لوحة المشرف — تُرفع مرفقات وتُخدم من
+/// /api/media/:id بترويسات تخزين مؤقت دائمة، فلا تدخل كتلة الحالة).
+model SiteMedia {
+  id        String   @id @default(cuid())
+  mime      String
+  name      String   @default("")
+  size      Int
+  bytes     Bytes
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("site_media")
+}
+
 /// Login users. Roles: entity (ممثل الجهة), coord (منسق المسار في الجهة),
 /// path (رئيس المسار), ai (اللجنة الوطنية). The five stream heads are
 /// predefined (official names/titles); their emails and phone numbers are
