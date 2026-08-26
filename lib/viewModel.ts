@@ -62,10 +62,10 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   TWO_STEP_PHASES,
   type Item,
   type RoleKey,
-  itemActivities, activityBatch, activityTransformYes, type ActivityDetail,
-} from './domain';
+  itemActivities, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY } from './domain';
 import { stripHtml } from './richtext';
 import { FEDERAL_ENTITIES } from './entities';
+import { svcCatalogEntities } from './svcCatalog';
 
 export function useViewModel() {
   const s = useStore();
@@ -1301,7 +1301,11 @@ function build(s: Store) {
     // heads can be assigned for all five project streams (not only the three
     // managed inside the platform)
     streams: CONTACT_STREAMS.filter((c) => c.key !== 'general').map((c) => ({ id: c.key, name: c.label })),
-    entities: Array.from(new Set([entityName, ...FEDERAL_ENTITIES])),
+    // القائمة الكاملة: دليل الخدمات (47 جهة) + مجموعة الجهات الأصلية +
+    // وزارة شؤون مجلس الوزراء (بنيتها المستقلة) + جهة الجلسة
+    entities: Array.from(
+      new Set([DEFAULT_ENTITY, ...svcCatalogEntities(), ...FEDERAL_ENTITIES, entityName].filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b, 'ar')),
     counts: {
       total: s.users.length,
       active: s.users.filter((u) => u.active).length,
