@@ -32,6 +32,7 @@ import {
   type MocaUseCase,
 } from '@/lib/moca';
 import { useMoca, mocaVisibleEntries, mocaVisibleUseCases, mocaApplyReturn, mocaApplyPlaceReturn } from '@/lib/mocaStore';
+import { useStore } from '@/lib/store';
 import { mocaDownloadTemplate, mocaParseWorkbook } from '@/lib/mocaExcel';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -260,6 +261,8 @@ function Header() {
   const unit = mocaUnitById(s.unitId);
   const role = MOCA_ROLES.find((r) => r.key === s.role)!;
   const [prof, setProf] = useState(false);
+  // تسجيل الخروج عبر جلسة المنصة نفسها (النسخة الحية تنهي جلسة الخادم أيضاً)
+  const signOut = useStore((st) => st.logout);
   // مبدّل الدور والنطاق للنسخة التجريبية فقط — في النسخة الحية يُشتقان من الجلسة
   const demo = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
   return (
@@ -399,6 +402,17 @@ function Header() {
                   </div>
                 </div>
               </div>
+              <button
+                onClick={() => {
+                  setProf(false);
+                  signOut();
+                  window.location.href = (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/';
+                }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '12px 16px', background: '#fff', border: 'none', borderTop: '1px solid #EEF1F7', color: '#C0303B', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'right' }}
+              >
+                <Icon d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" size={15} color="#C0303B" />
+                تسجيل الخروج
+              </button>
             </div>
           )}
         </div>
