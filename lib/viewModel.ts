@@ -602,6 +602,8 @@ function build(s: Store) {
   const isAiRole = rawRole === 'ai';
   const showRail = rawRole === 'entity';
   const showAddBtn = rawRole === 'coord';
+  // فريق عمل مسار العمليات يرفع ملفات الحصر بالنيابة عن الجهات
+  const showTeamBulk = rawRole === 'path' && myPath === 'ops';
   // nomination/selection UI (basket, fund bar, card checkboxes) removed for the
   // stream heads and the committee — per requirement, they no longer nominate
   // or select in bulk
@@ -1447,7 +1449,7 @@ function build(s: Store) {
               ? ['الخدمة', 'الخدمة الفرعية']
               : bPath === 'strategy'
                 ? ['المحور', 'المهمة', 'النشاط']
-                : ['تصنيف العملية', 'العملية الرئيسية', 'النشاط الفرعي'],
+                : ['تصنيف العملية', 'العملية الرئيسية', 'العملية الفرعية'],
           batches: streamLaunchBatches(bPath).map((b) => {
             // flatten the stream's entries into (entry, نشاط) pairs once
             const pairs = roleBase
@@ -1728,6 +1730,7 @@ function build(s: Store) {
       setStream: (v: string) => s.setExecStream(v),
     },
     showAddBtn,
+    showTeamBulk,
     // committee
     aiStats,
     entityRanking,

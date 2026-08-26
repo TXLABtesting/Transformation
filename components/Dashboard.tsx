@@ -1067,9 +1067,9 @@ function OpsKpiStrip({ k }: { k: NonNullable<VM['opsKpis']> }) {
     <SegKpiStrip
       acts={[
         { label: 'إجمالي عدد العمليات الرئيسية', v: k.ops },
-        { label: 'إجمالي عدد الأنشطة الفرعية', v: k.acts },
-        { label: 'إجمالي عدد الأنشطة الفرعية القابلة للتحول', v: k.transformable },
-        { label: 'إجمالي عدد الأنشطة الفرعية المستهدف تحويلها', v: k.targeted },
+        { label: 'إجمالي عدد العمليات الفرعية', v: k.acts },
+        { label: 'إجمالي عدد العمليات الفرعية القابلة للتحول', v: k.transformable },
+        { label: 'إجمالي عدد العمليات الفرعية المستهدف تحويلها', v: k.targeted },
       ]}
       prios={[]}
       notes={[]}
@@ -2761,6 +2761,18 @@ export function Dashboard({ vm }: { vm: VM }) {
                       style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(11,138,75,.4)', fontFamily: 'inherit' }}
                     >
                       <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={16} strokeWidth={2.2} /> رفع ملف Excel
+                    </button>
+                  </div>
+                )}
+                {/* فريق عمل مسار العمليات: رفع ملف الحصر بالنيابة عن جهة */}
+                {vm.showTeamBulk && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      onClick={s.openTeamBulk}
+                      data-tour="bulk"
+                      style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(11,138,75,.4)', fontFamily: 'inherit' }}
+                    >
+                      <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={16} strokeWidth={2.2} /> رفع ملف Excel عن جهة
                     </button>
                   </div>
                 )}
