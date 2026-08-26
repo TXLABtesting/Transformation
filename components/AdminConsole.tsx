@@ -30,7 +30,7 @@ const inputSt: CSSProperties = {
   fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#16233F', outline: 'none',
 };
 
-type Tab = 'users' | 'assign' | 'roles' | 'site' | 'contact';
+type Tab = 'users' | 'assign' | 'roles' | 'site' | 'contact' | 'changelog';
 
 // Only the server deployment (NEXT_PUBLIC_DATA_MODE=api) has a database and
 // /api/admin/* routes behind it. The static-export/local-demo build has
@@ -176,6 +176,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
     { key: 'roles', label: 'الأدوار والصلاحيات' },
     { key: 'site', label: 'الموقع العام' },
     { key: 'contact', label: 'التواصل والاستفسارات' },
+    { key: 'changelog', label: 'سجل التغييرات' },
   ];
 
   return (
@@ -247,6 +248,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
         {tab === 'roles' && <RolesTab a={a} />}
         {tab === 'site' && <SiteTab />}
         {tab === 'contact' && <ContactTab a={a} />}
+        {tab === 'changelog' && <ChangeLogTab />}
       </div>
 
       {editing && (
@@ -496,6 +498,158 @@ function SiteSection({ title, sub, onAdd, children }: { title: string; sub: stri
       </div>
       <div style={{ fontSize: 12, color: '#8A97AD', lineHeight: 1.7, marginBottom: 14 }}>{sub}</div>
       {children}
+    </div>
+  );
+}
+
+
+// ---------------------------------------------------------------------------
+// سجل التغييرات: كل تغيير في النظام — من قام به، ودوره، والتاريخ والوقت.
+// يجمع السجل الشامل مع سجل كل مدخل؛ وفي نسخة الخادم يعرض أيضاً سجل تدقيق
+// الخادم (audit_logs) لأحداث الواجهات البرمجية.
+const LOG_ACTION_LABELS: Record<string, string> = {
+  create: 'إضافة مدخل',
+  edit: 'تعديل مدخل',
+  submit: 'إرسال للاعتماد',
+  approve: 'اعتماد',
+  info: 'إعادة للتعديل',
+  reject: 'رفض',
+  budget: 'اعتماد الميزانية',
+  nominate: 'ترشيح',
+  fund: 'تمويل',
+  unfund: 'إلغاء تمويل',
+  declineNom: 'رفض ترشيح',
+  cancelFund: 'إلغاء تمويل',
+};
+const ROLE_LOG_LABELS: Record<string, string> = {
+  coord: 'منسق المسار في الجهة الاتحادية',
+  entity: 'قيادة الجهة',
+  path: 'فريق عمل المسار في المشروع',
+  ai: 'اللجنة الوطنية للذكاء الاصطناعي المساعد',
+  admin: 'مشرف النظام',
+};
+type FeedRow = { at: number; by: string; role: string; action: string; target?: string; note?: string };
+// نسخة الخادم فقط تملك سجل تدقيق الواجهات البرمجية
+const AUDIT_API = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
+
+function ChangeLogTab() {
+  const s = useStore();
+  const [q, setQ] = useState('');
+  const [serverLogs, setServerLogs] = useState<{ id: string; action: string; createdAt: string; actorUserId?: string; resourceType?: string; resourceId?: string }[] | null>(null);
+  useEffect(() => {
+    if (!AUDIT_API) return;
+    fetch('/api/admin/audit-logs?limit=200', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setServerLogs(d?.auditLogs || null))
+      .catch(() => {});
+  }, []);
+
+  const feed: FeedRow[] = useMemo(() => {
+    const rows: FeedRow[] = [...s.changeLog];
+    for (const it of s.items) {
+      for (const l of it.log || []) {
+        rows.push({ at: l.at, by: l.by, role: l.role, action: LOG_ACTION_LABELS[l.action] || l.action, target: it.title, note: l.note });
+      }
+    }
+    rows.sort((a, b) => b.at - a.at);
+    const needle = q.trim();
+    return needle
+      ? rows.filter((r) => [r.by, r.action, r.target, r.note, ROLE_LOG_LABELS[r.role] || r.role].join(' ').includes(needle))
+      : rows;
+  }, [s.changeLog, s.items, q]);
+
+  const fmt = (at: number) => {
+    const d = new Date(at);
+    return (
+      d.toLocaleDateString('ar-AE', { year: 'numeric', month: 'long', day: 'numeric' }) +
+      ' — ' +
+      d.toLocaleTimeString('ar-AE', { hour: '2-digit', minute: '2-digit' })
+    );
+  };
+
+  const th: CSSProperties = { textAlign: 'right', fontSize: 11.5, fontWeight: 800, color: '#8A97AD', padding: '10px 12px', borderBottom: '1px solid #E7ECF4', whiteSpace: 'nowrap' };
+  const td: CSSProperties = { fontSize: 12.5, color: '#1F2D49', padding: '11px 12px', borderBottom: '1px solid #F0F3F9', verticalAlign: 'top' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>سجل التغييرات</div>
+            <div style={{ fontSize: 12, color: '#8A97AD', marginTop: 4 }}>
+              كل تغيير في النظام: من قام به، ودوره، والتاريخ والوقت — الأحدث أولاً ({feed.length} سجلاً)
+            </div>
+          </div>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="بحث بالاسم أو الإجراء أو المدخل…"
+            style={{ border: '1px solid #DCE3EE', borderRadius: 10, padding: '9px 13px', fontSize: 12.5, fontFamily: 'inherit', minWidth: 240, outline: 'none' }}
+          />
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+            <thead>
+              <tr>
+                <th style={th}>التاريخ والوقت</th>
+                <th style={th}>المستخدم</th>
+                <th style={th}>الدور</th>
+                <th style={th}>الإجراء</th>
+                <th style={th}>التفاصيل</th>
+              </tr>
+            </thead>
+            <tbody>
+              {feed.slice(0, 300).map((r, i) => (
+                <tr key={i}>
+                  <td style={{ ...td, whiteSpace: 'nowrap', color: '#54627B' }}>{fmt(r.at)}</td>
+                  <td style={{ ...td, fontWeight: 700 }}>{r.by || '—'}</td>
+                  <td style={td}>{ROLE_LOG_LABELS[r.role] || r.role || '—'}</td>
+                  <td style={{ ...td, fontWeight: 700, color: '#1D4ED8' }}>{r.action}</td>
+                  <td style={td}>
+                    {r.target && <span style={{ fontWeight: 700 }}>{r.target}</span>}
+                    {r.target && r.note ? ' — ' : ''}
+                    {r.note && <span style={{ color: '#54627B' }}>{r.note}</span>}
+                  </td>
+                </tr>
+              ))}
+              {!feed.length && (
+                <tr>
+                  <td colSpan={5} style={{ ...td, textAlign: 'center', color: '#8A97AD', padding: 30 }}>لا تغييرات مسجلة بعد</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {AUDIT_API && serverLogs && serverLogs.length > 0 && (
+        <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>سجل تدقيق الخادم</div>
+          <div style={{ fontSize: 12, color: '#8A97AD', marginBottom: 12 }}>
+            أحداث الواجهات البرمجية كما سجلها الخادم (آخر {serverLogs.length})
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
+              <thead>
+                <tr>
+                  <th style={th}>التاريخ والوقت</th>
+                  <th style={th}>الإجراء</th>
+                  <th style={th}>المورد</th>
+                </tr>
+              </thead>
+              <tbody>
+                {serverLogs.map((l) => (
+                  <tr key={l.id}>
+                    <td style={{ ...td, whiteSpace: 'nowrap', color: '#54627B' }}>{fmt(new Date(l.createdAt).getTime())}</td>
+                    <td style={{ ...td, fontWeight: 700, color: '#1D4ED8' }}>{l.action}</td>
+                    <td style={td}>{[l.resourceType, l.resourceId].filter(Boolean).join(' · ') || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
