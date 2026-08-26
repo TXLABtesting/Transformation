@@ -1788,7 +1788,7 @@ function BulkStep({ vm }: { vm: VM }) {
       {teamBulk && (
         <div style={{ marginBottom: 14 }}>
           <label style={{ display: 'block', fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 8 }}>
-            الجهة الاتحادية التي يُرفع الملف بالنيابة عنها <span style={{ color: '#D23B45' }}>*</span>
+            الجهة الاتحادية <span style={{ color: '#D23B45' }}>*</span>
           </label>
           <select
             value={s.ui.bulkEntity || ''}
@@ -1805,22 +1805,6 @@ function BulkStep({ vm }: { vm: VM }) {
           </div>
         </div>
       )}
-      <div
-        style={{
-          background: '#EEF4FF',
-          border: '1px solid #D7E4FB',
-          color: '#28518F',
-          borderRadius: 12,
-          padding: '12px 14px',
-          fontSize: 12.5,
-          fontWeight: 600,
-          lineHeight: 1.7,
-          marginBottom: 18,
-        }}
-      >
-        ارفع ملف Excel معبّأ مباشرةً — ستُقرأ البيانات وتُعرض للمراجعة، وأي نقص سيُبرز على مستوى البطاقة قبل الإرسال للاعتماد.
-      </div>
-
       {/* upload — the primary action; no download step required */}
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 10 }}>
@@ -1945,7 +1929,7 @@ function BulkReviewStep({ vm }: { vm: VM }) {
             }}
           />
           <div style={{ fontSize: 13, color: '#54627B', fontWeight: 700 }}>
-            جارٍ مراجعة {m.bulkRows.length} صفوف بالذكاء الاصطناعي…
+            جارٍ قراءة الملف وتجهيز المراجعة…
           </div>
         </div>
       )}
