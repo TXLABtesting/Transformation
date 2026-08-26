@@ -1414,28 +1414,47 @@ function build(s: Store) {
   const batchTables = btStream
     ? (() => {
         const bPath = btStream;
+        // مسار العمليات: التوزيع آلي من «فترة التحويل» المختارة عند الإدخال —
+        // الصفحة عرض فقط لكل الأدوار ولا دورة اعتماد ثانية (الاعتماد مرة
+        // واحدة على المدخل نفسه)
+        const autoPlaced = bPath === 'ops';
+        // «الدفعة X - شهر» → دفعة الإطلاق المطابقة + الشهر
+        const periodBatchOf = (period?: string): { batch: string; month: string } | null => {
+          const v = String(period || '').trim();
+          if (!v) return null;
+          for (const b of streamLaunchBatches(bPath)) {
+            const short = b.name.replace('إطلاق ', '');
+            if (v.startsWith(short + ' - ')) return { batch: b.name, month: v.slice(short.length + 3).trim() };
+          }
+          return null;
+        };
         return {
           streamName: pathById(bPath).name,
-          canEditDates: rawRole === 'coord',
-          // rows are أنشطة (خدمات فرعية in the services stream)
-          unitLabel: bPath === 'services' ? 'خدمات فرعية' : 'أنشطة',
-          unitSingular: bPath === 'services' ? 'خدمة فرعية' : 'نشاط',
+          autoPlaced,
+          canEditDates: rawRole === 'coord' && !autoPlaced,
+          // rows are أنشطة (خدمات فرعية / عمليات فرعية بحسب المسار)
+          unitLabel: bPath === 'services' ? 'خدمات فرعية' : bPath === 'ops' ? 'عمليات فرعية' : 'أنشطة',
+          unitSingular: bPath === 'services' ? 'خدمة فرعية' : bPath === 'ops' ? 'عملية فرعية' : 'نشاط',
           // coordinator: move/remove DRAFT placements freely, then send the
           // توزيعات for approval — a cycle fully separate from item approval
-          canArrange: rawRole === 'coord',
+          canArrange: rawRole === 'coord' && !autoPlaced,
           moveOptions: streamLaunchBatches(bPath).map((b) => ({ v: b.name, label: batchDafaaLabel(b.name) })),
           // فريق عمل المسار reviews pending توزيعات from here
-          canReview: rawRole === 'path',
+          canReview: rawRole === 'path' && !autoPlaced,
           // الأدوار ذات الاطلاع على كل الجهات ترى عمود الجهة وفلترها
           showEntity: rawRole === 'path' || rawRole === 'ai',
           submitLabel: 'إرسال للاعتماد',
           // توزيعات مسودة بانتظار الإرسال — أياً كانت حالة مدخلاتها
-          draftCount: roleBase
-            .filter((i) => i.path === bPath && ['exec', 'launch', 'done'].includes(wfOf(i)))
-            .reduce((n, i) => n + itemActivities(i).filter((a) => placementState(i, a) === 'draft').length, 0),
-          pendingCount: roleBase
-            .filter((i) => i.path === bPath)
-            .reduce((n, i) => n + itemActivities(i).filter((a) => placementState(i, a) === 'pending').length, 0),
+          draftCount: autoPlaced
+            ? 0
+            : roleBase
+                .filter((i) => i.path === bPath && ['exec', 'launch', 'done'].includes(wfOf(i)))
+                .reduce((n, i) => n + itemActivities(i).filter((a) => placementState(i, a) === 'draft').length, 0),
+          pendingCount: autoPlaced
+            ? 0
+            : roleBase
+                .filter((i) => i.path === bPath)
+                .reduce((n, i) => n + itemActivities(i).filter((a) => placementState(i, a) === 'pending').length, 0),
           onSubmitAll: () => s.submitPlacements(bPath),
           // send a chosen subset of توزيعات (keys itemId::actIdx)
           onSubmitIds: (ids: string[]) => s.submitPlacements(bPath, ids),
@@ -1455,7 +1474,13 @@ function build(s: Store) {
             const pairs = roleBase
               .filter((i) => i.path === bPath)
               .flatMap((i) => itemActivities(i).map((a, ai) => ({ i, a, ai })));
-            const inBatch = pairs.filter(({ i, a }) => activityBatch(i, a) === b.name);
+            // مسار العمليات: العضوية من «فترة التحويل» (مع إبقاء التوزيعات
+            // القديمة المحفوظة قبل التحديث ظاهرة في دفعاتها)
+            const inBatch = pairs.filter(({ i, a }) =>
+              autoPlaced
+                ? (periodBatchOf(a.transformPeriod)?.batch || activityBatch(i, a)) === b.name
+                : activityBatch(i, a) === b.name
+            );
             return {
               name: batchDafaaLabel(b.name),
               rawName: b.name,
@@ -1475,15 +1500,16 @@ function build(s: Store) {
                       ? [i.axis || '—', i.title || '—', a.name || '—']
                       : [i.opType || '—', i.title || '—', a.name || '—'],
                 entity: ent(i),
+                month: autoPlaced ? periodBatchOf(a.transformPeriod)?.month || '' : '',
                 start: a.startDate ?? i.startDate ?? '',
                 end: a.endDate ?? i.endDate ?? '',
                 prio: actPrioCellOf(i, a),
                 // حالة محتوى المدخل نفسه (دورة الاعتماد الأولى)
                 status: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : wfMeta(i).label,
-                // حالة التوزيع (دورة الاعتماد الثانية) — شريحة مستقلة
-                placement: placementChip(i, a),
-                // التوزيع المعتمد أو قيد الاعتماد مقفل للمنسق
-                locked: placementLocked(i, a),
+                // حالة التوزيع (دورة الاعتماد الثانية) — شريحة مستقلة؛
+                // لا وجود لها في مسار العمليات (التوزيع آلي بلا اعتماد ثانٍ)
+                placement: autoPlaced ? null : placementChip(i, a),
+                locked: autoPlaced ? true : placementLocked(i, a),
                 notes: stripHtml(a.notes || i.notes || '') || '—',
                 batch: activityBatch(i, a),
                 onOpen: () => s.openDetail(i.id),
@@ -1491,10 +1517,10 @@ function build(s: Store) {
                 onMove: (to: string) => s.assignActivityBatch(i.id, ai, to),
                 onRemove: () => s.assignActivityBatch(i.id, ai, ''),
                 // إرسال هذا التوزيع وحده للاعتماد
-                canSubmit: rawRole === 'coord' && placementState(i, a) === 'draft',
+                canSubmit: !autoPlaced && rawRole === 'coord' && placementState(i, a) === 'draft',
                 onSubmit: () => s.submitPlacements(bPath, [i.id + '::' + ai]),
                 // فريق عمل المسار: قرار على التوزيع المعلّق نفسه
-                canReview: rawRole === 'path' && placementState(i, a) === 'pending',
+                canReview: !autoPlaced && rawRole === 'path' && placementState(i, a) === 'pending',
                 onApprove: () => s.reviewPlacement(i.id, ai, 'approve'),
                 onReturn: (note: string) => s.reviewPlacement(i.id, ai, 'info', note),
                 onReject: (note: string) => s.reviewPlacement(i.id, ai, 'reject', note),
@@ -1502,7 +1528,7 @@ function build(s: Store) {
               // أنشطة of this stream NOT in this دفعة — the per-batch picker
               // shows each نشاط with its own priority so placement is informed
               // لا يُعرض في منتقي الإضافة إلا أنشطة المدخلات المعتمدة
-              addable: pairs
+              addable: (autoPlaced ? [] : pairs)
                 .filter(({ i }) => ['exec', 'launch', 'done'].includes(wfOf(i)))
                 .filter(({ i, a }) => activityBatch(i, a) !== b.name)
                 .map(({ i, a, ai }) => ({
