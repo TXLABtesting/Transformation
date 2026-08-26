@@ -28,7 +28,7 @@ const prisma = new PrismaClient();
 // Production RBAC roles (code-based, mirrors migration 0009). UI labels stay
 // Arabic while the server APIs enforce the stable permission codes.
 const RBAC_ROLES = [
-  ['system_admin', 'مدير النظام'],
+  ['system_admin', 'مشرف النظام'],
   ['program_admin', 'مدير البرنامج'],
   ['entity_representative', 'ممثل الجهة'],
   ['entity_admin', 'مسؤول الجهة'],
