@@ -22,6 +22,9 @@ import {
 } from './moca';
 
 const KEY = 'aigp_moca_state';
+// نسخة البيانات: رفع الرقم يعيد ضبط بيانات الوزارة المخزنة في المتصفحات
+// (تنظيف بيانات العرض) — الإدخالات الجديدة بعدها تُحفظ طبيعياً
+const MOCA_DATA_V = 2;
 
 export type MocaConfirm = {
   title: string;
@@ -123,7 +126,7 @@ export const useMoca = create<MocaState>((set, get) => {
     try {
       window.localStorage.setItem(
         KEY,
-        JSON.stringify({ role: s.role, unitId: s.unitId, unitSector: s.unitSector, entries: s.entries, useCases: s.useCases })
+        JSON.stringify({ v: MOCA_DATA_V, role: s.role, unitId: s.unitId, unitSector: s.unitSector, entries: s.entries, useCases: s.useCases })
       );
     } catch {
       /* التخزين ممتلئ — تُتجاهل */
@@ -170,13 +173,14 @@ export const useMoca = create<MocaState>((set, get) => {
       } catch {
         saved = null;
       }
+      const freshData = (saved as { v?: number } | null)?.v !== MOCA_DATA_V;
       set({
         _hydrated: true,
         role: (saved?.role as MocaRole) || 'coord',
         unitId: (saved?.unitId as string) || MOCA_UNITS[0].id,
         unitSector: (saved?.unitSector as string) || '',
-        entries: Array.isArray(saved?.entries) ? (saved!.entries as MocaEntry[]) : [],
-        useCases: Array.isArray(saved?.useCases) ? (saved!.useCases as MocaUseCase[]) : [],
+        entries: !freshData && Array.isArray(saved?.entries) ? (saved!.entries as MocaEntry[]) : [],
+        useCases: !freshData && Array.isArray(saved?.useCases) ? (saved!.useCases as MocaUseCase[]) : [],
       });
     },
 

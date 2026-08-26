@@ -753,7 +753,7 @@ export const useStore = create<Store>((set, get) => {
               ? { ...(JSON.parse(JSON.stringify(DEFAULT_SITE)) as SiteContent), ...(saved!.site as Partial<SiteContent>) }
               : (JSON.parse(JSON.stringify(DEFAULT_SITE)) as SiteContent),
           libraryDocs: Array.isArray(saved!.libraryDocs) && (saved!.libraryDocs as LibraryDoc[]).length ? (saved!.libraryDocs as LibraryDoc[]) : DEFAULT_LIBRARY_DOCS.map((d) => ({ ...d })),
-          inquiries: Array.isArray(saved!.inquiries) ? (saved!.inquiries as ContactInquiry[]) : [],
+          inquiries: !fresh && Array.isArray(saved!.inquiries) ? (saved!.inquiries as ContactInquiry[]) : [],
           view: (saved!.view as State['view']) || 'login',
           lang: (saved!.lang as State['lang']) || 'ar',
           entityName: (saved!.entityName as string) || DEFAULT_ENTITY,
@@ -773,7 +773,7 @@ export const useStore = create<Store>((set, get) => {
           phase: (saved!.phase as State['phase']) || s.phase,
           setup: (saved!.setup as Setup) || s.setup,
           readNotifs: (saved!.readNotifs as string[]) || [],
-          changeLog: Array.isArray(saved!.changeLog) ? (saved!.changeLog as ChangeLogEntry[]) : [],
+          changeLog: !fresh && Array.isArray(saved!.changeLog) ? (saved!.changeLog as ChangeLogEntry[]) : [],
           programStep: (saved!.programStep as number) || 1,
           // programPhases config always reloads fresh (labels editable via code)
           programPhases: DEFAULT_PROGRAM_PHASES.map((p) => ({ ...p })),
