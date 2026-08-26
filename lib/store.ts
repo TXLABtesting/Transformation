@@ -1663,10 +1663,32 @@ export const useStore = create<Store>((set, get) => {
         const s0 = get();
         const path = s0.ui.draft?.path || s0.myPath;
         const spec = STREAM_FIELDS[path] || [];
-        const mod = await import('exceljs');
-        const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+        // مكوّن القراءة يُحمَّل عند الطلب — فشل تحميله (نسخة موقع محدثة بعد
+        // فتح الصفحة مثلاً) له رسالة مختلفة عن ملف تالف
+        let ExcelJS: typeof import('exceljs');
+        try {
+          const mod = await import('exceljs');
+          ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+        } catch {
+          setUi({ mStep: 'bulk', bulkLoading: false });
+          return toast('تعذر تحميل أدوات قراءة الملف — حدّث الصفحة (Ctrl+F5) ثم أعد المحاولة');
+        }
         const wb = new ExcelJS.Workbook();
         await wb.xlsx.load(buf);
+        // قراءة آمنة لنص الخلية — بعض القيم (نتائج معادلات/أخطاء #N/A) قد
+        // تكسر القارئ في ملفات محفوظة من Excel، فلا تُسقط الاستيراد كله
+        const cellText = (cell: import('exceljs').Cell): unknown => {
+          try {
+            const v = cell.value;
+            if (v && typeof v === 'object' && 'richText' in (v as object))
+              return (v as { richText: { text: string }[] }).richText.map((t) => t.text).join('');
+            if (v && typeof v === 'object' && 'result' in (v as object)) return (v as { result?: unknown }).result;
+            if (v && typeof v === 'object' && 'error' in (v as object)) return '';
+            return cell.text ?? v;
+          } catch {
+            try { return cell.value; } catch { return ''; }
+          }
+        };
         const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
         // find the header row: the row matching most spec labels on any sheet.
         // نموذج حصر العمليات المعتمد ورقتان («العمليات الرئيسية» و«عمليات
@@ -1682,7 +1704,7 @@ export const useStore = create<Store>((set, get) => {
             const map: Record<number, string> = {};
             let hits = 0;
             ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
-              const h = norm(cell.value && typeof cell.value === 'object' && 'richText' in (cell.value as object) ? (cell.value as { richText: { text: string }[] }).richText.map((t) => t.text).join('') : cell.text ?? cell.value);
+              const h = norm(cellText(cell));
               if (!h) return;
               // exact label first; fuzzy only as fallback, one column per field
               const f = spec.find((sf) => sf.label === h) || (h.length > 3 ? spec.find((sf) => h.includes(sf.label) || sf.label.includes(h)) : undefined);
@@ -1725,7 +1747,7 @@ export const useStore = create<Store>((set, get) => {
             const fields: Record<string, string> = {};
             b.ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
               const key = b.map[col];
-              if (key) fields[key] = norm(cell.text ?? cell.value);
+              if (key) fields[key] = norm(cellText(cell));
             });
             if (!Object.values(fields).some((v) => v)) continue;
             if (path === 'ops' && !fields.opType && b.opType) fields.opType = b.opType;

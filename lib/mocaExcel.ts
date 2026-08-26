@@ -179,7 +179,13 @@ const norm = (s: string) => s.replace(/\s+/g, ' ').replace(/[?؟:]/g, '').trim()
  * وإن اختلف موضع العناوين يبحث عنها في أول 10 صفوف.
  */
 export async function mocaParseWorkbook(buf: ArrayBuffer): Promise<{ rows: { data: Partial<MocaEntry>; missing: string[] }[]; error: string }> {
-  const ExcelJS = (await import('exceljs')).default;
+  let ExcelJS: typeof import('exceljs');
+  try {
+    ExcelJS = (await import('exceljs')).default;
+  } catch {
+    // فشل تحميل مكوّن القراءة (نسخة موقع محدثة بعد فتح الصفحة) — رسالة إرشادية
+    return { rows: [], error: 'تعذر تحميل أدوات قراءة الملف — حدّث الصفحة (Ctrl+F5) ثم أعد المحاولة' };
+  }
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buf);
   const ws = wb.getWorksheet(SHEET) || wb.worksheets.find((w) => w.name !== LOOKUP) || wb.worksheets[0];
