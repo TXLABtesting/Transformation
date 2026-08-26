@@ -1217,7 +1217,10 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
   const [f, setF] = useState<UserRec>(user);
   const set = (patch: Partial<UserRec>) => setF((x) => ({ ...x, ...patch }));
   const needsEntity = f.role === 'coord';
-  const needsStream = f.role === 'coord' || f.role === 'path';
+  // وزارة شؤون مجلس الوزراء بنيتها مختلفة (جهات ومكاتب وقطاعات لا مسارات) —
+  // مستخدموها بلا مسار ويعملون على نسخة الوزارة /moca
+  const isMocaEntity = /وزارة شؤون مجلس الوزراء/.test(String(f.entityName || ''));
+  const needsStream = (f.role === 'coord' || f.role === 'path') && !isMocaEntity;
   const emailOk = /^\S+@\S+\.\S+$/.test(f.email.trim());
   const valid = f.name.trim() && emailOk && (!needsEntity || f.entityName) && (!needsStream || f.streamId);
 
@@ -1277,6 +1280,14 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
                     <option value="">اختر المسار…</option>
                     {a.streams.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
                   </select>
+                </div>
+              )}
+              {isMocaEntity && (
+                <div>
+                  <label style={labelSt}>النطاق</label>
+                  <div style={{ ...inputSt, background: '#F4F7FC', color: '#54627B', display: 'flex', alignItems: 'center', fontSize: 12 }}>
+                    بنية الوزارة: جهات ومكاتب وقطاعات — لا مسارات؛ يعمل على نسخة الوزارة
+                  </div>
                 </div>
               )}
             </div>
