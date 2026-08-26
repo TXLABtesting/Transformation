@@ -1992,7 +1992,32 @@ function BulkReviewStep({ vm }: { vm: VM }) {
                         </span>
                       )}
                     </div>
-                    {b._note && <div style={{ fontSize: 11.5, color: '#9AA6BC', marginTop: 2 }}>{b._note}</div>}
+                    {b._v === 'بيانات ناقصة' && b.missing?.length ? (
+                      /* الحقول الناقصة نقاطاً مجمّعة بحسب العملية/الخدمة الفرعية
+                         بدل فقرة واحدة طويلة يصعب تتبعها */
+                      <div style={{ marginTop: 4 }}>
+                        <div style={{ fontSize: 11.5, fontWeight: 800, color: '#B45309' }}>الحقول الناقصة:</div>
+                        <ul style={{ margin: '4px 0 0', paddingRight: 18, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {(() => {
+                            const groups = new Map<string, string[]>();
+                            for (const m of b.missing || []) {
+                              const match = /^(.*?)\s*\((.+)\)$/.exec(m);
+                              const g = match ? match[2] : 'بيانات العملية';
+                              const f = match ? match[1] : m;
+                              if (!groups.has(g)) groups.set(g, []);
+                              groups.get(g)!.push(f);
+                            }
+                            return Array.from(groups.entries()).map(([g, fields]) => (
+                              <li key={g} style={{ fontSize: 11.5, color: '#54627B', lineHeight: 1.8 }}>
+                                <span style={{ fontWeight: 800, color: '#33415C' }}>{g}:</span> {fields.join('، ')}
+                              </li>
+                            ));
+                          })()}
+                        </ul>
+                      </div>
+                    ) : (
+                      b._note && <div style={{ fontSize: 11.5, color: '#9AA6BC', marginTop: 2 }}>{b._note}</div>
+                    )}
                   </div>
                   <span
                     style={{
