@@ -215,6 +215,10 @@ type State = {
   programPhases: ProgramPhase[];
   phase: { name: string; start: string; deadline: string; setBy: string };
   setup: Setup;
+  /** سجل التغييرات الشامل للوحة المشرف: كل تغيير، مَن قام به ومتى.
+      تغييرات المدخلات نفسها موثقة أيضاً في سجل كل مدخل (log) وتُدمج معه
+      في شاشة العرض */
+  changeLog: ChangeLogEntry[];
   /** هوية صاحب الجلسة كما يعيدها الخادم — المصدر الوحيد لتعبئة بياناته */
   me: SessionIdentity;
   ui: UiState;
@@ -579,6 +583,7 @@ function initialState(): State {
     },
     setup: defaultSetup(),
     me: EMPTY_IDENTITY,
+    changeLog: [],
     ui: defaultUi(),
     _tick: 0,
     _hydrated: false,
@@ -630,6 +635,16 @@ export const actorRole = (s: State): string => {
   return 'فريق عمل المسار في المشروع';
 };
 
+export type ChangeLogEntry = {
+  at: number;
+  by: string;
+  role: string;
+  action: string;
+  target?: string;
+  note?: string;
+};
+const CHANGELOG_CAP = 1000;
+
 function withLog(s: State, it: Item, action: string, note?: string): LogEntry[] {
   const entry: LogEntry = {
     action,
@@ -667,6 +682,7 @@ export const useStore = create<Store>((set, get) => {
       phase: s.phase,
       setup: s.setup,
       readNotifs: s.readNotifs,
+      changeLog: s.changeLog,
       programStep: s.programStep,
       programPhases: s.programPhases,
     };
@@ -691,6 +707,20 @@ export const useStore = create<Store>((set, get) => {
   };
   const findItem = (id: string) => get().items.find((i) => i.id === id);
   const setUi = (patch: Partial<UiState>) => set((s) => ({ ui: { ...s.ui, ...patch } }));
+  // تسجيل تغيير في السجل الشامل — مَن ومتى وماذا (الأحدث أولاً، بسقف ثابت).
+  // الإجراء نفسه على الهدف نفسه من المستخدم نفسه خلال دقيقة يحدَّث بدل أن
+  // يتكرر (تعديلات الحقول المتتابعة في لوحة المشرف مثلاً)
+  const logChange = (action: string, target?: string, note?: string) => {
+    const s = get();
+    const entry: ChangeLogEntry = { at: Date.now(), by: actorName(s), role: actorRole(s), action, target, note };
+    const [head, ...rest] = s.changeLog;
+    if (head && head.action === action && head.target === target && head.by === entry.by && entry.at - head.at < 60_000) {
+      set({ changeLog: [entry, ...rest] });
+    } else {
+      set({ changeLog: [entry, ...s.changeLog].slice(0, CHANGELOG_CAP) });
+    }
+  };
+
   const toast = (m: string) => {
     setUi({ toastMsg: m });
     if (typeof window !== 'undefined') {
@@ -765,6 +795,7 @@ export const useStore = create<Store>((set, get) => {
           phase: (saved!.phase as State['phase']) || s.phase,
           setup: (saved!.setup as Setup) || s.setup,
           readNotifs: (saved!.readNotifs as string[]) || [],
+          changeLog: Array.isArray(saved!.changeLog) ? (saved!.changeLog as ChangeLogEntry[]) : [],
           programStep: (saved!.programStep as number) || 1,
           // programPhases config always reloads fresh (labels editable via code)
           programPhases: DEFAULT_PROGRAM_PHASES.map((p) => ({ ...p })),
@@ -838,6 +869,7 @@ export const useStore = create<Store>((set, get) => {
               phase: d.phase || s.phase,
               setup: d.setup || s.setup,
               readNotifs: d.readNotifs || [],
+              changeLog: Array.isArray(d.changeLog) ? (d.changeLog as ChangeLogEntry[]) : s.changeLog,
               programStep: d.programStep || 1,
             }));
           })
@@ -1015,15 +1047,20 @@ export const useStore = create<Store>((set, get) => {
         const users = exists ? s.users.map((x) => (x.id === u.id ? { ...x, ...u } : x)) : [...s.users, u];
         return { users };
       });
+      logChange('إدارة المستخدمين — حفظ/إضافة حساب', u.name || u.email);
       persist();
       toast(get().users.some((x) => x.id === u.id) ? 'تم حفظ المستخدم' : 'تمت الإضافة');
     },
     adminToggleUser: (id) => {
+      const u = get().users.find((x) => x.id === id);
       set((s) => ({ users: s.users.map((x) => (x.id === id ? { ...x, active: !x.active } : x)) }));
+      logChange('إدارة المستخدمين — تفعيل/تعطيل حساب', u?.name || u?.email || id);
       persist();
     },
     adminRemoveUser: (id) => {
+      const u = get().users.find((x) => x.id === id);
       set((s) => ({ users: s.users.filter((x) => x.id !== id) }));
+      logChange('إدارة المستخدمين — حذف حساب', u?.name || u?.email || id);
       persist();
       toast('تم حذف المستخدم');
     },
@@ -1240,6 +1277,7 @@ export const useStore = create<Store>((set, get) => {
     },
     setContactEmail: (k, v) => {
       set((st) => ({ contactEmails: { ...st.contactEmails, [k]: v } }));
+      logChange('التواصل — تحديث بريد استقبال مسار', k);
       persist();
     },
     setAboutHero: (v) => {
@@ -1252,6 +1290,8 @@ export const useStore = create<Store>((set, get) => {
     },
     setSite: (patch) => {
       set((st) => ({ site: { ...st.site, ...patch } }));
+      // إدخالات الكتابة المتتابعة تُدمج في مدخل سجلٍّ واحد (نافذة الدقيقة)
+      logChange('الموقع العام — تحديث المحتوى', Object.keys(patch).join('، '));
       persist();
     },
     updLibDoc: (id, patch) => {
@@ -1744,6 +1784,7 @@ export const useStore = create<Store>((set, get) => {
         ui: { ...st.ui, detailId: st.ui.detailId === id ? null : st.ui.detailId, menuOpenId: null },
       }));
       set((st) => ({ launchPlans: recalcPlanBudgets(st.items, st.launchPlans) }));
+      logChange('إزالة مدخل', it.title, w === 'ent1' ? 'سُحب من الاعتماد وأُزيل' : undefined);
       persist();
       toast(w === 'ent1' ? 'تم سحب المدخل وإزالته: ' + typeLabelDefFor(it.type, it.path) : 'تمت إزالة المدخل');
     },
@@ -2030,6 +2071,15 @@ export const useStore = create<Store>((set, get) => {
             approval: submitted ? 'تم الإرسال' : 'مسودة',
             wf: (submitted ? 'ent1' : 'draft') as WfState,
             ret: null,
+            log: [
+              {
+                action: 'create',
+                by: actorName(s),
+                role: actorRole(s),
+                at: Date.now(),
+                note: teamUpload ? 'استيراد ملف بالنيابة عن ' + s.ui.bulkEntity : 'استيراد من ملف Excel',
+              },
+            ],
           };
         });
       // launch plans carried by the workplan file → إدارة خطط الإطلاق (deduped)
@@ -2046,6 +2096,11 @@ export const useStore = create<Store>((set, get) => {
           budget: '',
         }));
       set((st) => ({ items: [...toAdd, ...st.items], launchPlans: [...st.launchPlans, ...newPlans] }));
+      logChange(
+        teamUpload ? 'رفع ملف Excel بالنيابة عن جهة' : 'رفع ملف Excel',
+        teamUpload ? s.ui.bulkEntity : undefined,
+        toAdd.length + ' من المدخلات'
+      );
       persist();
       setUi({ mStep: 'done', bulkLaunches: [] });
       if (teamUpload)
@@ -2634,7 +2689,7 @@ function commitDraft(
     wf,
     ret: null,
     fyi,
-    log: logNote ? withLog(s, draft, editing ? 'submit' : 'submit', logNote) : draft.log,
+    log: withLog(s, draft, editing ? 'edit' : 'create', logNote || (asDraft ? 'حفظ كمسودة' : 'أُرسل للاعتماد')),
   };
   set((st) => {
     const others = editing ? st.items.filter((i) => i.id !== editing) : st.items;
