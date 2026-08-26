@@ -197,8 +197,10 @@ export const OPS_READINESS_OPTIONS = [
 export const OPS_LEVEL_OPTIONS = ['عالي', 'متوسط', 'منخفض']; // مستوى الأثر ومستوى التعقيد
 export const OPS_TRANSFORM_OPTIONS = ['قابل كلياً', 'قابل جزئياً', 'غير قابل للتحول'];
 export const OPS_NOT_TRANSFORMABLE = 'غير قابل للتحول';
-// أولوية التحول: قائمة يدوية مؤقتاً — إلى حين اعتماد الاحتساب الآلي
-export const OPS_PRIORITY_OPTIONS = ['أولوية 1', 'أولوية 2', 'أولوية 3', 'أولوية 4', 'غير قابل للتحول'];
+// أولوية التحول: قائمة يدوية مؤقتاً — إلى حين اعتماد الاحتساب الآلي.
+// «ليست ذات أولوية» تعطّل فترة التحويل (لا فترة لما لن يُحوَّل)
+export const OPS_NO_PRIORITY = 'ليست ذات أولوية';
+export const OPS_PRIORITY_OPTIONS = ['منخفضة', 'متوسطة', 'مرتفعة', OPS_NO_PRIORITY];
 export const OPS_RISK_OPTIONS = ['عالية', 'متوسطة', 'منخفضة'];
 
 export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
@@ -251,9 +253,9 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'impactScore', label: 'مستوى الأثر المتوقع من التحول' },
     { key: 'complexity', label: 'مستوى التعقيد' },
     { key: 'transformScore', label: 'القابلية للتحول للذكاء الاصطناعي المساعد' },
-    { key: 'transformPeriod', label: 'فترة تحويل العمليات للذكاء الإصطناعي المساعد' },
-    { key: 'transformPriority', label: 'أولويات التحول للذكاء الاصطناعي المساعد' },
-    { key: 'riskLevel', label: 'مخاطر التحول للذكاء الاصطناعي المساعد' },
+    // النموذج الرسمي (2026-08-26) ينتهي بعمود «ملاحظات» — الأولوية والفترة
+    // والمخاطر تُستكمل داخل المنصة لا في ملف الجهة
+    { key: 'notes', label: 'ملاحظات' },
   ],
 };
 // select-field options per stream — mirrors the entry forms exactly (used for
@@ -287,11 +289,6 @@ export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
     impactScore: OPS_LEVEL_OPTIONS,
     complexity: OPS_LEVEL_OPTIONS,
     transformScore: OPS_TRANSFORM_OPTIONS,
-    get transformPeriod() {
-      return opsPeriodOptions();
-    },
-    transformPriority: OPS_PRIORITY_OPTIONS,
-    riskLevel: OPS_RISK_OPTIONS,
   },
 };
 // sample row shown (in gray italics) under the header to guide filling
@@ -340,7 +337,7 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
     complexity: 'متوسط',
     transformScore: 'قابل جزئياً',
     transformPeriod: 'الربع الأول 2027',
-    transformPriority: 'أولوية 2',
+    transformPriority: 'متوسطة',
     riskLevel: 'متوسطة',
   },
 };
@@ -363,7 +360,7 @@ export function missingFieldsOf(i: Record<string, unknown> & { path?: string }):
       if (!plainOf(i.title)) out.push('الخدمة');
     }
     acts.forEach((a, ai) => {
-      const unit = path === 'services' ? 'الخدمة الفرعية' : 'النشاط';
+      const unit = path === 'services' ? 'الخدمة الفرعية' : path === 'ops' ? 'العملية الفرعية' : 'النشاط';
       const tag = acts.length > 1 ? ` (${unit} ${ai + 1})` : '';
       activityMissing(path, a).forEach((lbl) => out.push(lbl + tag));
     });
@@ -375,7 +372,7 @@ export function missingFieldsOf(i: Record<string, unknown> & { path?: string }):
     // الملاحظات حقل اختياري
     .filter((f) => f.key !== 'notes')
     // فترة التحويل غير مطلوبة لعملية غير قابلة للتحول
-    .filter((f) => (f.key === 'transformPeriod' && i.path === 'ops' ? plainOf(i.transformScore) !== OPS_NOT_TRANSFORMABLE : true))
+    .filter((f) => (f.key === 'transformPeriod' && i.path === 'ops' ? plainOf(i.transformPriority) !== OPS_NO_PRIORITY : true))
     // نظام/نسبة الأتمتة مطلوبان فقط للعمليات المؤتمتة (كلياً أو جزئياً)
     .filter((f) => (automationKey(f.key) && i.path === 'ops' ? ['نعم', 'جزئياً'].includes(plainOf(i.isAutomated)) : true))
     .filter((f) => (automationKey(f.key) && i.path === 'strategy' ? plainOf(i.automationLevel) !== 'غير مؤتمتة' : true))
@@ -405,9 +402,14 @@ export function activityMissing(path: string, a: ActivityDetail): string[] {
     need(a.impactScore, 'مستوى الأثر المتوقع من التحول');
     need(a.complexity, 'مستوى التعقيد');
     need(a.transformScore, 'القابلية للتحول للذكاء الاصطناعي المساعد');
-    // فترة التحويل غير مطلوبة لعملية غير قابلة للتحول
-    if (plainOf(a.transformScore) !== OPS_NOT_TRANSFORMABLE) need(a.transformPeriod, 'فترة التحويل للذكاء الاصطناعي المساعد');
     need(a.transformPriority, 'أولوية التحول للذكاء الاصطناعي المساعد');
+    // فترة التحويل تتبع الأولوية: مطلوبة لمنخفضة/متوسطة/مرتفعة، ومعطّلة
+    // تماماً عند «ليست ذات أولوية» (والقيم القديمة غير القابلة للتحول)
+    {
+      const pr = plainOf(a.transformPriority);
+      if (pr && pr !== OPS_NO_PRIORITY && pr !== OPS_NOT_TRANSFORMABLE && pr !== 'أولوية 4')
+        need(a.transformPeriod, 'فترة التحويل للذكاء الاصطناعي المساعد');
+    }
     need(a.riskLevel, 'مخاطر التحول للذكاء الاصطناعي المساعد');
   } else if (path === 'strategy') {
     need(a.automationLevel, 'مستوى الأتمتة');
@@ -443,9 +445,10 @@ export function activityTransformYes(path: string, a: ActivityDetail): string {
     const p = svcPriority(a.usageIntensity, a.complexity, a.readinessLevel);
     return p ? (p === 4 ? 'لا' : 'نعم') : '';
   }
-  // ops: مشتقة من قائمة «أولويات التحول» — أولوية 1-3 نعم، أولوية 4/غير قابل لا
+  // ops: مشتقة من «أولوية التحول» — منخفضة/متوسطة/مرتفعة نعم،
+  // «ليست ذات أولوية» لا (والقيم القديمة أولوية 4/غير قابل تبقى لا)
   const pr = plainOf(a.transformPriority);
-  if (pr) return pr === 'أولوية 4' || pr === OPS_NOT_TRANSFORMABLE ? 'لا' : 'نعم';
+  if (pr) return pr === OPS_NO_PRIORITY || pr === 'أولوية 4' || pr === OPS_NOT_TRANSFORMABLE ? 'لا' : 'نعم';
   return plainOf(a.transformYes);
 }
 

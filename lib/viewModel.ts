@@ -602,8 +602,8 @@ function build(s: Store) {
   const isAiRole = rawRole === 'ai';
   const showRail = rawRole === 'entity';
   const showAddBtn = rawRole === 'coord';
-  // فريق عمل مسار العمليات يرفع ملفات الحصر بالنيابة عن الجهات
-  const showTeamBulk = rawRole === 'path' && myPath === 'ops';
+  // فريق عمل المسار (أي مسار) يرفع ملفات الحصر بالنيابة عن الجهات
+  const showTeamBulk = rawRole === 'path';
   // nomination/selection UI (basket, fund bar, card checkboxes) removed for the
   // stream heads and the committee — per requirement, they no longer nominate
   // or select in bulk

@@ -3,7 +3,7 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail, opsPeriodOptions } from '@/lib/domain';
+import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail, opsPeriodOptions, OPS_NO_PRIORITY } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate, downloadOpsTemplate } from '@/lib/export';
 import { useSvcCatalog, svcCatalogFor, svcCatalogEntities } from '@/lib/svcCatalog';
@@ -1431,11 +1431,13 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
                 {selA(i, a, 'القابلية للتحول للذكاء الاصطناعي المساعد', 'transformScore', OPS_TRANSFORM_OPTIONS)}
                 {selA(i, a, 'مخاطر التحول للذكاء الاصطناعي المساعد', 'riskLevel', OPS_RISK_OPTIONS)}
                 {selA(i, a, 'أولوية التحول للذكاء الاصطناعي المساعد', 'transformPriority', OPS_PRIORITY_OPTIONS)}
-                {a.transformScore === OPS_NOT_TRANSFORMABLE
+                {/* فترة التحويل تتبع الأولوية: تُفعَّل لمنخفضة/متوسطة/مرتفعة
+                    وتُعطَّل عند «ليست ذات أولوية» أو قبل اختيار الأولوية */}
+                {!a.transformPriority || a.transformPriority === OPS_NO_PRIORITY
                   ? field(
                       'فترة التحويل للذكاء الاصطناعي المساعد',
                       <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px', minHeight: 44, display: 'flex', alignItems: 'center' }}>
-                        لا ينطبق — غير قابل للتحول
+                        {a.transformPriority === OPS_NO_PRIORITY ? 'لا ينطبق — ليست ذات أولوية' : 'تُفعَّل بعد اختيار أولوية التحول'}
                       </div>,
                       false
                     )
@@ -1874,7 +1876,8 @@ function BulkStep({ vm }: { vm: VM }) {
             }
             // services: الخدمة/الخدمة الفرعية dropdowns from the entity's catalog
             if (path === 'services') {
-              const cat = svcCatalogFor(vm.entityName);
+              // رفع الفريق بالنيابة: دليل خدمات الجهة المختارة لا جهة الفريق
+              const cat = svcCatalogFor((teamBulk ? s.ui.bulkEntity : vm.entityName) || '');
               if (cat && Object.keys(cat).length) {
                 opts.title = Object.keys(cat);
                 opts.subService = Array.from(new Set(Object.values(cat).flat()));
