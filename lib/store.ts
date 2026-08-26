@@ -1900,11 +1900,16 @@ export const useStore = create<Store>((set, get) => {
           return a;
         };
         const rows: BulkRow[] = [];
-        let group: { key: string; head: Record<string, string>; acts: ActivityDetail[] } | null = null;
-        const flush = () => {
-          if (!group) return;
-          const head = group.head;
-          const base: Record<string, unknown> = { path, activities: group.acts };
+        // «العملية الرئيسية» بالاسم نفسه = العملية نفسها أينما وردت في الملف:
+        // التجميع بالمفتاح عبر الملف كله لا بالتتابع فقط، وصف بلا اسم للعملية
+        // الرئيسية يُعد استمراراً للعملية السابقة (كتابة الاسم مرة واحدة)
+        type Group = { key: string; head: Record<string, string>; acts: ActivityDetail[] };
+        const groupsByKey = new Map<string, Group>();
+        const order: Group[] = [];
+        let group: Group | null = null;
+        const emit = (g: Group) => {
+          const head = g.head;
+          const base: Record<string, unknown> = { path, activities: g.acts };
           if (path === 'ops') {
             base.title = head.title;
             base.opType = head.opType;
@@ -1924,18 +1929,27 @@ export const useStore = create<Store>((set, get) => {
             extra: mirrored as Partial<Item>,
             missing,
           });
-          group = null;
         };
         for (const f of rawRows) {
+          // استمرارية: صف بلا اسم رئيسي يرث اسم (ومحور) العملية السابقة
+          const prev = group;
+          if (!String(f.title || '').trim() && prev) {
+            f.title = prev.head.title;
+            if (path === 'strategy' && !String(f.axis || '').trim()) f.axis = prev.head.axis;
+            if (path === 'ops' && !String(f.opType || '').trim()) f.opType = prev.head.opType;
+          }
           const k = keyOf(f);
-          // a row with a fresh identity (or a named title change) starts a new entry
-          if (!group || (k && k !== group.key)) {
-            flush();
+          const existing = groupsByKey.get(k);
+          if (existing) {
+            group = existing;
+          } else {
             group = { key: k, head: f, acts: [] };
+            groupsByKey.set(k, group);
+            order.push(group);
           }
           group.acts.push(toActivity(f));
         }
-        flush();
+        for (const g of order) emit(g);
         if (!rows.length) {
           setUi({ mStep: 'bulk', bulkLoading: false });
           return toast('لم يتم العثور على بيانات في الملف — تأكد من استخدام نموذج المسار');
