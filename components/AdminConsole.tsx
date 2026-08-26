@@ -370,7 +370,9 @@ const siteTa: CSSProperties = { width: '100%', boxSizing: 'border-box', border: 
 // الوسائط /api/media فتُعرض بجودتها الكاملة وتُخدم بترويسات تخزين مؤقت دائمة —
 // لا تدخل في كتلة الحالة فلا تُبطئ الموقع. النسخة التجريبية الثابتة تبقى على
 // الضغط إلى data URL (حدود تخزين المتصفح).
-const MEDIA_STORE = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
+// النسخة التجريبية الثابتة لا خادم لها مهما كانت متغيرات البناء — الرفع
+// للمخزن حصراً في نسخة الخادم غير التجريبية
+const MEDIA_STORE = process.env.NEXT_PUBLIC_DATA_MODE === 'api' && process.env.NEXT_PUBLIC_DEMO_MODE !== '1';
 const MAX_IMAGE_MB = 15;
 const MAX_VIDEO_MB = 200;
 
@@ -397,23 +399,57 @@ function releaseSiteMedia(url?: string) {
   }
 }
 
-/** صورة مختارة: مرفق أصلي في نسخة الخادم، وضغط data URL في النسخة الثابتة */
+/** تصغير صورة كبيرة بجودة عالية (2560px · JPEG 0.85) بدل رفض رفعها */
+function downscaleImage(file: File, done: (blob: Blob) => void, onErr: () => void) {
+  const fr = new FileReader();
+  fr.onerror = onErr;
+  fr.onload = () => {
+    const img = new Image();
+    img.onerror = onErr;
+    img.onload = () => {
+      const scale = Math.min(1, 2560 / img.width);
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * scale);
+      cv.height = Math.round(img.height * scale);
+      cv.getContext('2d')!.drawImage(img, 0, 0, cv.width, cv.height);
+      cv.toBlob((b) => (b ? done(b) : onErr()), 'image/jpeg', 0.85);
+    };
+    img.src = String(fr.result);
+  };
+  fr.readAsDataURL(file);
+}
+
+/** صورة مختارة: مرفق أصلي في نسخة الخادم (والأكبر من الحد يُصغَّر بجودة
+    عالية بدل إظهار خطأ)، وضغط data URL في النسخة الثابتة */
 function pickImage(
   file: File,
-  fallback: (f: File, done: (u: string) => void) => void,
+  fallback: (f: File, done: (u: string) => void, onErr?: () => void) => void,
   done: (url: string) => void,
   onErr: (msg: string) => void
 ) {
-  if (file.size > MAX_IMAGE_MB * 1024 * 1024) return onErr(`حجم الصورة يتجاوز ${MAX_IMAGE_MB}MB`);
-  if (MEDIA_STORE) uploadSiteMedia(file).then((u) => (u ? done(u) : onErr('تعذر رفع الصورة — أعد المحاولة')));
-  else fallback(file, done);
+  const decodeFail = () => onErr('تعذر قراءة الصورة — استخدم ملف JPG أو PNG');
+  if (!MEDIA_STORE) return fallback(file, done, decodeFail);
+  const send = (payload: Blob, mime: string) =>
+    fetch('/api/media?name=' + encodeURIComponent(file.name), {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': mime },
+      body: payload,
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { url?: string } | null) => (d?.url ? done(d.url) : onErr('تعذر رفع الصورة — أعد المحاولة')))
+      .catch(() => onErr('تعذر رفع الصورة — أعد المحاولة'));
+  if (file.size <= MAX_IMAGE_MB * 1024 * 1024) send(file, file.type || 'application/octet-stream');
+  else downscaleImage(file, (b) => send(b, 'image/jpeg'), decodeFail);
 }
 
 // read a picked cover image, downscale to ≤640px wide and store as data URL
-function readCoverFile(file: File, done: (dataUrl: string) => void) {
+function readCoverFile(file: File, done: (dataUrl: string) => void, onErr?: () => void) {
   const fr = new FileReader();
+  fr.onerror = () => onErr?.();
   fr.onload = () => {
     const img = new Image();
+    img.onerror = () => onErr?.();
     img.onload = () => {
       const scale = Math.min(1, 640 / img.width);
       const cv = document.createElement('canvas');
@@ -427,10 +463,12 @@ function readCoverFile(file: File, done: (dataUrl: string) => void) {
   fr.readAsDataURL(file);
 }
 
-function readWideImage(file: File, done: (dataUrl: string) => void) {
+function readWideImage(file: File, done: (dataUrl: string) => void, onErr?: () => void) {
   const fr = new FileReader();
+  fr.onerror = () => onErr?.();
   fr.onload = () => {
     const img = new Image();
+    img.onerror = () => onErr?.();
     img.onload = () => {
       const scale = Math.min(1, 1280 / img.width);
       const cv = document.createElement('canvas');
@@ -472,6 +510,39 @@ function SiteTab() {
   );
   const num = (v: number, on: (x: number) => void, ph = '', flex = '0 0 90px'): React.ReactNode => (
     <input value={String(v)} onChange={(e) => on(Math.max(0, Math.min(100, Number(e.target.value.replace(/[^\d]/g, '')) || 0)))} placeholder={ph} inputMode="numeric" style={{ ...inputSt, flex }} />
+  );
+  // صف رفع/استعادة صورة من صور الصفحة الرئيسية الثابتة
+  const imgRow = (label: string, current: string, apply: (url: string) => void, clear: () => void) => (
+    <div style={rowShell}>
+      <span style={{ fontSize: 12, fontWeight: 800, color: '#54627B', flex: 'none' }}>{label}</span>
+      {current ? (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={current} alt="" style={{ height: 40, width: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid #E1E7F1' }} />
+          <button
+            onClick={clear}
+            style={{ border: '1px solid #F0D5D5', background: '#fff', color: '#C0303B', borderRadius: 9, padding: '8px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            استعادة الصورة الرسمية
+          </button>
+        </span>
+      ) : (
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 12px', background: '#F4F7FC', border: '1px dashed #C7D1E2', borderRadius: 9, fontSize: 11.5, fontWeight: 700, color: '#2563EB', cursor: 'pointer', flex: 'none' }}>
+          <Icon d="M12 15V3M7 8l5-5 5 5M5 21h14" size={13} color="#2563EB" />
+          رفع صورة بديلة
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = '';
+              if (f) pickImage(f, readWideImage, apply, pickErr);
+            }}
+          />
+        </label>
+      )}
+    </div>
   );
   const rowShell: CSSProperties = { border: '1px solid #E7ECF4', borderRadius: 12, padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' };
   const delBtn = (onDel: () => void) => (
@@ -588,11 +659,35 @@ function SiteTab() {
             {inp(site.introHighlight, (v) => s.setSite({ introHighlight: v }), 'الجزء المميز بالتدرج', '0 0 240px')}
           </div>
           <textarea value={site.introText} onChange={(e) => s.setSite({ introText: e.target.value })} rows={6} style={siteTa} />
+          {imgRow(
+            'صورة المقدمة',
+            site.introImageUrl,
+            (url) => {
+              releaseSiteMedia(site.introImageUrl);
+              s.setSite({ introImageUrl: url });
+            },
+            () => {
+              releaseSiteMedia(site.introImageUrl);
+              s.setSite({ introImageUrl: '' });
+            }
+          )}
           <div style={rowShell}>
             {inp(site.messagePre, (v) => s.setSite({ messagePre: v }), 'نص الرسالة قبل الجزء المميز')}
             {inp(site.messageHighlight, (v) => s.setSite({ messageHighlight: v }), 'الجزء المميز', '0 0 220px')}
             {inp(site.messagePost, (v) => s.setSite({ messagePost: v }), 'تكملة الرسالة', '0 0 200px')}
           </div>
+          {imgRow(
+            'صورة قسم الرسالة (الإطلاق)',
+            site.launchImageUrl,
+            (url) => {
+              releaseSiteMedia(site.launchImageUrl);
+              s.setSite({ launchImageUrl: url });
+            },
+            () => {
+              releaseSiteMedia(site.launchImageUrl);
+              s.setSite({ launchImageUrl: '' });
+            }
+          )}
         </div>
       </SiteSection>
 

@@ -93,6 +93,10 @@ export type SiteContent = {
   quoteAttribution: string;
   /** صورة اقتباس القيادة — فارغ = الصورة الرسمية المضمّنة */
   quoteImageUrl: string;
+  /** صورتا الصفحة الرئيسية: المقدمة (اجتماع المجلس) وقسم الرسالة (الإطلاق) —
+      فارغ = الصورة الرسمية المضمّنة */
+  introImageUrl: string;
+  launchImageUrl: string;
   /** محطات «مسيرة التحول»: السنة والعنوان والصورة قابلة للتحرير (التخطيط
       البصري لكل محطة ثابت من التصميم). صورة فارغة = صورة المحطة الرسمية. */
   history: { year: string; title: string; eyebrow?: string; image: string }[];
@@ -206,6 +210,8 @@ export const DEFAULT_SITE: SiteContent = {
     '“التكنولوجيا في أفضل صورها لا تستبدل الإنسان، بل تمنحه مساحة ليصل إلى إمكاناته الحقيقية“',
   quoteAttribution: 'معالي محمد القرقاوي — رئيس اللجنة الوطنية للذكاء الاصطناعي المساعد',
   quoteImageUrl: '',
+  introImageUrl: '',
+  launchImageUrl: '',
   history: [
     { year: '', title: 'مسيرة التحول', eyebrow: '2001 إلى 2026', image: '' },
     { year: '2001', title: 'الحكومة الإلكترونية', image: '' },
