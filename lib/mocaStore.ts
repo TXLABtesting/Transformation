@@ -24,7 +24,7 @@ import {
 const KEY = 'aigp_moca_state';
 // نسخة البيانات: رفع الرقم يعيد ضبط بيانات الوزارة المخزنة في المتصفحات
 // (تنظيف بيانات العرض) — الإدخالات الجديدة بعدها تُحفظ طبيعياً
-const MOCA_DATA_V = 2;
+const MOCA_DATA_V = 3;
 
 export type MocaConfirm = {
   title: string;
