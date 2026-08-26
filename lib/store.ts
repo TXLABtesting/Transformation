@@ -1837,6 +1837,15 @@ export const useStore = create<Store>((set, get) => {
     },
     importWorkplan: async (buf: ArrayBuffer) => {
       setUi({ mStep: 'bulkReview', bulkLoading: true, bulkLoaded: false, bulkRows: [], bulkLaunches: [] });
+      // حارس زمني: مهما حدث لا يبقى مؤشر القراءة دائراً بلا نهاية
+      const watchdog = typeof window !== 'undefined'
+        ? window.setTimeout(() => {
+            if (get().ui.bulkLoading) {
+              setUi({ mStep: 'bulk', bulkLoading: false });
+              toast('استغرقت معالجة الملف وقتاً أطول من المتوقع — حدّث الصفحة (Ctrl+F5) وأعد المحاولة');
+            }
+          }, 45000)
+        : 0;
       try {
         const s0 = get();
         const path = s0.ui.draft?.path || s0.myPath;
@@ -2045,6 +2054,8 @@ export const useStore = create<Store>((set, get) => {
       } catch {
         setUi({ mStep: 'bulk', bulkLoading: false });
         toast('تعذّرت قراءة الملف — تأكد أنه بصيغة .xlsx وبالنموذج الصحيح');
+      } finally {
+        if (watchdog) window.clearTimeout(watchdog);
       }
     },
     submitBulk: () => {
