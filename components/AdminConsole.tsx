@@ -1455,18 +1455,36 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={labelSt}>الجهة</label>
-              <select style={{ ...inputSt, cursor: 'pointer' }} value={f.entityId} onChange={(e) => set({ entityId: e.target.value })}>
+              <select
+                style={{ ...inputSt, cursor: 'pointer' }}
+                value={f.entityId}
+                onChange={(e) => {
+                  const entityId = e.target.value;
+                  const moca = /وزارة شؤون مجلس الوزراء/.test(entities.find((en) => en.id === entityId)?.nameAr || '');
+                  // بنية الوزارة جهات ومكاتب لا مسارات — يُمسح المسار تلقائياً
+                  set(moca ? { entityId, streamId: '' } : { entityId });
+                }}
+              >
                 <option value="">— بدون جهة —</option>
                 {entities.map((en) => <option key={en.id} value={en.id}>{en.nameAr}</option>)}
               </select>
             </div>
-            <div>
-              <label style={labelSt}>المسار</label>
-              <select style={{ ...inputSt, cursor: 'pointer' }} value={f.streamId} onChange={(e) => set({ streamId: e.target.value })}>
-                <option value="">— بدون مسار —</option>
-                {streams.map((st) => <option key={st.id} value={st.id}>{st.nameAr}</option>)}
-              </select>
-            </div>
+            {/وزارة شؤون مجلس الوزراء/.test(entities.find((en) => en.id === f.entityId)?.nameAr || '') ? (
+              <div>
+                <label style={labelSt}>النطاق</label>
+                <div style={{ ...inputSt, background: '#F4F7FC', color: '#54627B', display: 'flex', alignItems: 'center', fontSize: 12 }}>
+                  بنية الوزارة: جهات ومكاتب وقطاعات — لا مسارات؛ يعمل على نسخة الوزارة
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label style={labelSt}>المسار</label>
+                <select style={{ ...inputSt, cursor: 'pointer' }} value={f.streamId} onChange={(e) => set({ streamId: e.target.value })}>
+                  <option value="">— بدون مسار —</option>
+                  {streams.map((st) => <option key={st.id} value={st.id}>{st.nameAr}</option>)}
+                </select>
+              </div>
+            )}
           </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#33405A' }}>
             <input type="checkbox" checked={f.active} onChange={(e) => set({ active: e.target.checked })} />
