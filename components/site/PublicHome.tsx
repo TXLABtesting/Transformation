@@ -142,7 +142,7 @@ function Intro({ site }: { site: SiteContent }) {
         <div data-reveal className="relative" style={{ height: 'clamp(280px,34vw,480px)' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={asset(SITE_MEDIA.introCabinet)}
+            src={site.introImageUrl ? asset(site.introImageUrl) : asset(SITE_MEDIA.introCabinet)}
             alt=""
             className="absolute inset-0 block h-full w-full object-cover"
             style={{ objectPosition: 'center 55%' }}
@@ -178,7 +178,7 @@ function Message({ site }: { site: SiteContent }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={asset(SITE_MEDIA.hhLaunch)}
+          src={site.launchImageUrl ? asset(site.launchImageUrl) : asset(SITE_MEDIA.hhLaunch)}
           alt=""
           className="absolute inset-0 block h-full w-full object-cover"
           style={{ objectPosition: 'center 62%' }}
