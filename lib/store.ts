@@ -2048,6 +2048,12 @@ export const useStore = create<Store>((set, get) => {
             if (path === 'strategy' && !String(f.axis || '').trim()) f.axis = prev.head.axis;
             if (path === 'ops' && !String(f.opType || '').trim()) f.opType = prev.head.opType;
           }
+          // عملية بلا عمليات فرعية: بعض الجهات تكتب اسم العملية نفسه في
+          // العمودين أو تترك عمود الفرعية فارغاً — عندها الفرعية هي العملية
+          // نفسها ولا يُعد ذلك نقصاً
+          if (path === 'ops' && !String(f.subActivities || '').trim() && String(f.title || '').trim()) {
+            f.subActivities = f.title;
+          }
           const k = keyOf(f);
           const existing = groupsByKey.get(k);
           if (existing) {
