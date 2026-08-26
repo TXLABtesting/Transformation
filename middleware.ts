@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 /**
  * HSTS على كل استجابة من الخادم — يكمل ترويسات الأمان المعرّفة في next.config.mjs
@@ -7,9 +8,23 @@ import { NextResponse } from 'next/server';
  */
 const HSTS_VALUE = 'max-age=63072000; includeSubDomains; preload';
 
-export function middleware() {
+/**
+ * Cache-Control: كل استجابات API الديناميكية (جلسات، بيانات مستخدمين، لوحات)
+ * تُرسل no-store صراحةً كي لا يخزّنها متصفح أو وسيط. يُستثنى فقط موردان
+ * عامان غير حساسين يضبطان تخزينهما بأنفسهما:
+ *  - /api/media/:id — وسائط الموقع العام، مُهيّأة بمعرّف جديد عند كل استبدال
+ *  - /api/site-content — محتوى الصفحات العامة (تخزين قصير 60 ثانية)
+ */
+const CACHED_PUBLIC_APIS = ['/api/media/', '/api/site-content'];
+
+export function middleware(request: NextRequest) {
   const response = NextResponse.next();
   response.headers.set('Strict-Transport-Security', HSTS_VALUE);
+  const path = request.nextUrl.pathname;
+  if (path.startsWith('/api/') && !CACHED_PUBLIC_APIS.some((p) => path.startsWith(p))) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+  }
   return response;
 }
 
