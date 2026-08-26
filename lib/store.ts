@@ -110,6 +110,8 @@ export type UiState = {
   bulkLoaded: boolean;
   // launch plans parsed from an uploaded workplan (imported on submit)
   bulkLaunches: { batch: string; title: string; ltype: string; date: string; desc: string }[];
+  /** رفع فريق عمل المسار بالنيابة عن جهة: اسم الجهة المختارة قبل الرفع */
+  bulkEntity?: string;
   // expected-results add/edit modal
   resultModal: { id: string | null; text: string; itemIds: string[] } | null;
   // panels / modals
@@ -322,6 +324,9 @@ type Actions = {
   chooseManual: () => void;
   openCreateManual: () => void;
   openCreateBulk: () => void;
+  /** فريق عمل مسار العمليات: رفع ملف بالنيابة عن جهة يختارها */
+  openTeamBulk: () => void;
+  setBulkEntity: (v: string) => void;
   closeInline: () => void;
   confirmInlineAdd: () => void;
   cancelConfirmAdd: () => void;
@@ -484,6 +489,7 @@ function defaultUi(): UiState {
     bulkLoading: false,
     bulkLoaded: false,
     bulkLaunches: [],
+    bulkEntity: '',
     resultModal: null,
     detailId: null,
     teamOpen: false,
@@ -1456,6 +1462,27 @@ export const useStore = create<Store>((set, get) => {
     },
     // bulk goes straight to the template/upload step — the file carries the types
     chooseBulk: () => setUi({ method: 'bulk', mStep: 'bulk' }),
+    // فريق عمل المسار يرفع مباشرة إلى خطوة الملف مع اختيار الجهة أولاً
+    openTeamBulk: () => {
+      const s = get();
+      setUi({
+        modalOpen: true,
+        draft: blankItem('operation', s.myPath),
+        editingId: null,
+        editCtx: null,
+        fStep: 1,
+        aiResult: null,
+        detailId: null,
+        teamOpen: false,
+        profileOpen: false,
+        notifOpen: false,
+        activePath: s.myPath,
+        method: 'bulk',
+        mStep: 'bulk',
+        bulkEntity: '',
+      });
+    },
+    setBulkEntity: (v) => setUi({ bulkEntity: v }),
     mBack: () => {
       // flow: (path) → method → type (manual) → form | bulk
       const s = get();
@@ -1811,18 +1838,32 @@ export const useStore = create<Store>((set, get) => {
           if (/المعادلات|قوائم/.test(ws.name)) return;
           let bestRow: { row: number; map: Record<number, string> } | null = null;
           for (let r = 1; r <= Math.min(ws.rowCount, 12); r++) {
-            const map: Record<number, string> = {};
-            let hits = 0;
+            // تمريرتان: التطابق الحرفي يحجز الحقول أولاً، ثم التقريبي لما تبقى —
+            // أعمدة إضافية أضافتها الجهة لا تسرق حقلاً ولا تكسر الاستيراد؛
+            // ما لا يطابق حقلاً من حقول المسار يُتجاهل ببساطة
+            const headers: { col: number; h: string }[] = [];
             ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
               const h = norm(cellText(cell));
-              if (!h) return;
-              // exact label first; fuzzy only as fallback, one column per field
-              const f = spec.find((sf) => sf.label === h) || (h.length > 3 ? spec.find((sf) => h.includes(sf.label) || sf.label.includes(h)) : undefined);
-              if (f && !Object.values(map).includes(f.key)) {
-                map[col] = f.key;
-                hits++;
-              }
+              if (h) headers.push({ col, h });
             });
+            const map: Record<number, string> = {};
+            const claimed = new Set<string>();
+            for (const { col, h } of headers) {
+              const f = spec.find((sf) => sf.label === h);
+              if (f && !claimed.has(f.key)) {
+                map[col] = f.key;
+                claimed.add(f.key);
+              }
+            }
+            for (const { col, h } of headers) {
+              if (map[col] || h.length <= 3) continue;
+              const f = spec.find((sf) => !claimed.has(sf.key) && (h.includes(sf.label) || sf.label.includes(h)));
+              if (f) {
+                map[col] = f.key;
+                claimed.add(f.key);
+              }
+            }
+            const hits = claimed.size;
             if (hits >= Math.min(3, spec.length) && (!bestRow || hits > Object.keys(bestRow.map).length)) bestRow = { row: r, map };
           }
           if (bestRow) {
@@ -1968,20 +2009,26 @@ export const useStore = create<Store>((set, get) => {
     submitBulk: () => {
       const s = get();
       const path = s.ui.draft?.path || s.myPath;
+      // رفع فريق عمل المسار بالنيابة عن جهة: تُنسب المدخلات للجهة المختارة،
+      // والمكتمل منها يدخل مباشرة قائمة مراجعة الفريق (تم الإرسال) بينما
+      // يبقى الناقص مسودة تستكملها الجهة
+      const teamUpload = s.role === 'path' && !!s.ui.bulkEntity;
       const toAdd = s.ui.bulkRows
         .filter((r) => r._v !== 'يوجد خطأ')
         .map((r, ri) => {
           // every imported row is saved as a DRAFT — including complete ones.
           // Nothing reaches رئيس المسار until the coordinator selects the
           // drafts and confirms «إرسال للاعتماد».
+          const submitted = teamUpload && r._v === 'جاهز';
           return {
             ...blankItem((r.type as ItemType) || 'operation', r.path || path),
             ...(r.extra || {}),
             id: 'n' + Date.now() + ri + Math.floor(Math.random() * 1000),
             title: r.title,
             desc: r.desc,
-            approval: 'مسودة',
-            wf: 'draft' as WfState,
+            ...(teamUpload ? { entity: s.ui.bulkEntity } : {}),
+            approval: submitted ? 'تم الإرسال' : 'مسودة',
+            wf: (submitted ? 'ent1' : 'draft') as WfState,
             ret: null,
           };
         });
@@ -2001,7 +2048,9 @@ export const useStore = create<Store>((set, get) => {
       set((st) => ({ items: [...toAdd, ...st.items], launchPlans: [...st.launchPlans, ...newPlans] }));
       persist();
       setUi({ mStep: 'done', bulkLaunches: [] });
-      toast('تم حفظ ' + toAdd.length + ' من المدخلات كمسودات — راجعها ثم أرسلها للاعتماد');
+      if (teamUpload)
+        toast('تم رفع ' + toAdd.length + ' من المدخلات بالنيابة عن ' + s.ui.bulkEntity + ' — المكتمل منها في قائمة المراجعة والناقص مسودات لدى الجهة');
+      else toast('تم حفظ ' + toAdd.length + ' من المدخلات كمسودات — راجعها ثم أرسلها للاعتماد');
     },
 
     // ---- rank modal ----

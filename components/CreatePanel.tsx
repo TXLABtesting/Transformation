@@ -3,7 +3,7 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail } from '@/lib/domain';
+import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail, opsPeriodOptions } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate, downloadOpsTemplate } from '@/lib/export';
 import { useSvcCatalog, svcCatalogFor, svcCatalogEntities } from '@/lib/svcCatalog';
@@ -1265,7 +1265,7 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
     }
   }, [acts.length]);
   const upd = (idx: number, patch: Partial<ActivityDetail>) => setActs(acts.map((a, i) => (i === idx ? { ...a, ...patch } : a)));
-  const unit = stream === 'services' ? 'الخدمة الفرعية' : 'النشاط';
+  const unit = stream === 'services' ? 'الخدمة الفرعية' : stream === 'ops' ? 'العملية الفرعية' : 'النشاط';
 
   const reqOn = (vm.modal.reqHighlight || 0) > 0;
   const field = (label: string, node: React.ReactNode, req = true, bad = false) => (
@@ -1393,7 +1393,7 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
               txtA(i, a, 'الخدمة الفرعية', 'name', 'اسم الخدمة الفرعية')
             )
           ) : (
-            txtA(i, a, 'اسم ' + unit, 'name', stream === 'ops' ? 'اسم النشاط الفرعي' : 'اسم النشاط')
+            txtA(i, a, 'اسم ' + unit, 'name', stream === 'ops' ? 'اسم العملية الفرعية' : 'اسم النشاط')
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
@@ -1429,6 +1429,8 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
               <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49', margin: '4px 0 12px' }}>التحول للذكاء الاصطناعي المساعد</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
                 {selA(i, a, 'القابلية للتحول للذكاء الاصطناعي المساعد', 'transformScore', OPS_TRANSFORM_OPTIONS)}
+                {selA(i, a, 'مخاطر التحول للذكاء الاصطناعي المساعد', 'riskLevel', OPS_RISK_OPTIONS)}
+                {selA(i, a, 'أولوية التحول للذكاء الاصطناعي المساعد', 'transformPriority', OPS_PRIORITY_OPTIONS)}
                 {a.transformScore === OPS_NOT_TRANSFORMABLE
                   ? field(
                       'فترة التحويل للذكاء الاصطناعي المساعد',
@@ -1437,9 +1439,7 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
                       </div>,
                       false
                     )
-                  : txtA(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', 'مثال: الربع الأول 2027')}
-                {selA(i, a, 'أولوية التحول للذكاء الاصطناعي المساعد', 'transformPriority', OPS_PRIORITY_OPTIONS)}
-                {selA(i, a, 'مخاطر التحول للذكاء الاصطناعي المساعد', 'riskLevel', OPS_RISK_OPTIONS)}
+                  : selA(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', opsPeriodOptions())}
               </div>
             </>
           )}
@@ -1533,7 +1533,7 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
           style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EAF0FE', border: '1px solid #D9E4FD', borderRadius: 11, padding: '10px 18px', fontSize: 13, color: '#2563EB', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
         >
           <Icon d="M12 5v14M5 12h14" size={13} color="#2563EB" />
-          إضافة {unit === 'النشاط' ? 'نشاط' : 'خدمة فرعية'}
+          إضافة {unit === 'النشاط' ? 'نشاط' : unit === 'العملية الفرعية' ? 'عملية فرعية' : 'خدمة فرعية'}
         </button>
       </div>
     </>
@@ -1778,8 +1778,31 @@ function FService({
 // STEP: BULK
 function BulkStep({ vm }: { vm: VM }) {
   const s = vm.store;
+  // فريق عمل المسار يرفع بالنيابة عن جهة — اختيار الجهة شرط قبل الرفع
+  const teamBulk = s.role === 'path';
+  const entityChosen = !teamBulk || !!s.ui.bulkEntity;
   return (
     <div>
+      {teamBulk && (
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 8 }}>
+            الجهة الاتحادية التي يُرفع الملف بالنيابة عنها <span style={{ color: '#D23B45' }}>*</span>
+          </label>
+          <select
+            value={s.ui.bulkEntity || ''}
+            onChange={(e) => s.setBulkEntity(e.target.value)}
+            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 12, padding: '12px 14px', fontSize: 13, fontFamily: 'inherit', color: '#16233F', backgroundColor: '#fff', outline: 'none' }}
+          >
+            <option value="">اختر الجهة…</option>
+            {svcCatalogEntities().map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </select>
+          <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
+            تُنسب كل مدخلات الملف لهذه الجهة — المكتمل منها يدخل قائمة المراجعة مباشرة والناقص يبقى مسودة لدى الجهة
+          </div>
+        </div>
+      )}
       <div
         style={{
           background: '#EEF4FF',
@@ -1819,8 +1842,9 @@ function BulkStep({ vm }: { vm: VM }) {
             onChange={async (e) => {
               const f = e.target.files?.[0];
               if (!f) return;
-              const buf = await f.arrayBuffer();
               e.target.value = '';
+              if (!entityChosen) return s.toast('اختر الجهة أولاً — تُنسب مدخلات الملف إليها');
+              const buf = await f.arrayBuffer();
               s.importWorkplan(buf);
             }}
           />
@@ -1843,7 +1867,7 @@ function BulkStep({ vm }: { vm: VM }) {
             // مسار العمليات: نموذج حصر العمليات المعتمد بورقتيه — التصنيف تحدده الورقة
             if (path === 'ops') {
               return downloadOpsTemplate(
-                vm.entityName,
+                (teamBulk ? s.ui.bulkEntity : vm.entityName) || '',
                 (STREAM_FIELDS.ops || []).filter((f) => f.key !== 'opType'),
                 opts
               );

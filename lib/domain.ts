@@ -287,6 +287,9 @@ export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
     impactScore: OPS_LEVEL_OPTIONS,
     complexity: OPS_LEVEL_OPTIONS,
     transformScore: OPS_TRANSFORM_OPTIONS,
+    get transformPeriod() {
+      return opsPeriodOptions();
+    },
     transformPriority: OPS_PRIORITY_OPTIONS,
     riskLevel: OPS_RISK_OPTIONS,
   },
@@ -386,7 +389,7 @@ export function activityMissing(path: string, a: ActivityDetail): string[] {
   const need = (v: unknown, lbl: string) => {
     if (!plainOf(v)) out.push(lbl);
   };
-  need(a.name, path === 'services' ? 'الخدمة الفرعية' : 'اسم النشاط');
+  need(a.name, path === 'services' ? 'الخدمة الفرعية' : path === 'ops' ? 'اسم العملية الفرعية' : 'اسم النشاط');
   need(a.sector, 'القطاع المعني');
   need(a.dept, 'الإدارة المعنية');
   need(a.section, 'القسم المعني');
@@ -1275,6 +1278,22 @@ export function execMilestones(streamId?: string | null): Phase[] {
 // Launch-eligible batches (الدفعات) — assessment/foundation/expansion excluded
 export function launchBatches(streamId?: string | null): Phase[] {
   return execMilestones(streamId).filter((b) => b.name.startsWith('إطلاق الدفعة'));
+}
+
+// فترة التحويل للذكاء الاصطناعي المساعد (مسار العمليات): قائمة «الدفعة -
+// الشهر» مشتقة من دفعات الإطلاق المعتمدة وحدود كل دفعة الزمنية
+const PERIOD_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+export function opsPeriodOptions(): string[] {
+  const out: string[] = [];
+  for (const b of launchBatches()) {
+    const short = b.name.replace('إطلاق ', '');
+    const from = new Date(b.start + 'T00:00:00');
+    const to = new Date(b.end + 'T00:00:00');
+    for (let d = new Date(from); d <= to; d.setMonth(d.getMonth() + 1)) {
+      out.push(short + ' - ' + PERIOD_MONTHS[d.getMonth()]);
+    }
+  }
+  return out;
 }
 
 // stream-aware alias: مسار الذكاء الاصطناعي خمس دفعات، والبقية ست

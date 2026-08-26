@@ -375,7 +375,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                 </DetailGrid>
                 {itemActivities(d.item).map((a, ai, arr) => (
                   <React.Fragment key={ai}>
-                    <DetailSecHead title={arr.length > 1 ? `النشاط ${ai + 1} — ${a.name}` : `النشاط — ${a.name}`} />
+                    <DetailSecHead title={arr.length > 1 ? `العملية الفرعية ${ai + 1} — ${a.name}` : `العملية الفرعية — ${a.name}`} />
                     <DetailGrid cols={3}>
                       <DetailCell label="القطاع المعني">{a.sector}</DetailCell>
                       <DetailCell label="الإدارة المعنية">{a.dept}</DetailCell>
