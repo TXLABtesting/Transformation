@@ -227,3 +227,10 @@ UPDATE users SET role = 'ai'   WHERE role = 'secretariat';
   `components/site/PublicLibrary.tsx`: أصبح فتح النوافذ بالنمط الموصى به
   (`win.opener = null` قبل أي استخدام)، وأضيف `noopener` لكل روابط
   `target="_blank"` المتبقية.
+- **Cache-Control (ملاحظة متابعة)**: أصبح `middleware.ts` يرسل
+  `Cache-Control: no-store, no-cache, must-revalidate` و`Pragma: no-cache`
+  على **كل** استجابات API الديناميكية (الجلسات وبيانات المستخدمين واللوحات)،
+  فلا يخزّنها متصفح ولا وسيط. التخزين العام يبقى محصوراً بموردين غير
+  حساسين مُهيّأين بإصدارات: `/api/media/:id` (معرّف جديد عند كل استبدال —
+  `immutable` آمن) و`/api/site-content` (محتوى عام، 60 ثانية فقط)، إضافة
+  إلى ملفات `_next/static` المُجزّأة بالأسماء (تتغير أسماؤها مع كل بناء).
