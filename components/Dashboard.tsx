@@ -725,6 +725,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
   const [addQ, setAddQ] = useState('');
   const [addSector, setAddSector] = useState('all');
   const [addPrio, setAddPrio] = useState('all');
+  const auto = !!bt.autoPlaced;
   const th: CSSProperties = { textAlign: 'right', padding: '9px 12px', fontSize: 11.5, fontWeight: 700, color: '#8A97AD', borderBottom: '1px solid #EEF1F7', whiteSpace: 'nowrap' };
   const td: CSSProperties = { padding: '10px 12px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', verticalAlign: 'middle' };
   const dateIn: CSSProperties = { border: '1px solid #DCE3EE', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit', color: '#33415C', background: '#fff' };
@@ -737,6 +738,11 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
         {bt.canReview && pendingShown > 0 && (
           <span style={{ fontSize: 12, fontWeight: 800, color: '#B45309', background: '#FFF7EB', borderRadius: 999, padding: '6px 14px' }}>
             {pendingShown} {pendingShown === 1 ? 'توزيع بانتظار اعتمادك' : 'توزيعات بانتظار اعتمادك'}
+          </span>
+        )}
+        {auto && (
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '6px 14px' }}>
+            التوزيع آلي من «فترة التحويل» المختارة عند الإدخال — صفحة عرض فقط
           </span>
         )}
         {bt.showEntity && (
@@ -804,13 +810,19 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                         <th key={c} style={th}>{c}</th>
                       ))}
                       {bt.showEntity && <th style={th}>الجهة</th>}
-                      <th style={th}>تاريخ البدء</th>
-                      <th style={th}>تاريخ الانتهاء</th>
-                      <th style={th}>أولوية الاختيار</th>
+                      {auto ? (
+                        <th style={th}>الشهر</th>
+                      ) : (
+                        <>
+                          <th style={th}>تاريخ البدء</th>
+                          <th style={th}>تاريخ الانتهاء</th>
+                          <th style={th}>أولوية الاختيار</th>
+                        </>
+                      )}
                       <th style={th}>حالة المدخل</th>
-                      <th style={th}>حالة التوزيع</th>
+                      {!auto && <th style={th}>حالة التوزيع</th>}
                       <th style={th}>ملاحظات</th>
-                      {(bt.canEditDates || bt.canReview) && <th style={th}>الإجراءات</th>}
+                      {(bt.canEditDates || bt.canReview || auto) && <th style={th}>الإجراءات</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -826,41 +838,49 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                             {r.entity || '—'}
                           </td>
                         )}
-                        <td style={td}>
-                          {bt.canEditDates && !r.locked ? (
-                            <input type="date" min={b.minDate || undefined} max={r.end || b.maxDate || undefined} value={r.start} onChange={(e) => s.setActivityDate(r.itemId, r.actIdx, 'startDate', e.target.value)} style={dateIn} />
-                          ) : (
-                            r.start || '—'
-                          )}
-                        </td>
-                        <td style={td}>
-                          {bt.canEditDates && !r.locked ? (
-                            <input type="date" min={r.start || b.minDate || undefined} max={b.maxDate || undefined} value={r.end} onChange={(e) => s.setActivityDate(r.itemId, r.actIdx, 'endDate', e.target.value)} style={dateIn} />
-                          ) : (
-                            r.end || '—'
-                          )}
-                        </td>
-                        <td style={td}>
-                          <BatchPrioPill v={r.prio} />
-                        </td>
+                        {auto ? (
+                          <td style={{ ...td, fontWeight: 800, color: '#1D4ED8', whiteSpace: 'nowrap' }}>{r.month || '—'}</td>
+                        ) : (
+                          <>
+                            <td style={td}>
+                              {bt.canEditDates && !r.locked ? (
+                                <input type="date" min={b.minDate || undefined} max={r.end || b.maxDate || undefined} value={r.start} onChange={(e) => s.setActivityDate(r.itemId, r.actIdx, 'startDate', e.target.value)} style={dateIn} />
+                              ) : (
+                                r.start || '—'
+                              )}
+                            </td>
+                            <td style={td}>
+                              {bt.canEditDates && !r.locked ? (
+                                <input type="date" min={r.start || b.minDate || undefined} max={b.maxDate || undefined} value={r.end} onChange={(e) => s.setActivityDate(r.itemId, r.actIdx, 'endDate', e.target.value)} style={dateIn} />
+                              ) : (
+                                r.end || '—'
+                              )}
+                            </td>
+                            <td style={td}>
+                              <BatchPrioPill v={r.prio} />
+                            </td>
+                          </>
+                        )}
                         {/* عمودان مستقلان: اعتماد المدخل ثم اعتماد التوزيع */}
                         <td style={td}>
                           <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.status}</span>
                         </td>
-                        <td style={td}>
-                          {r.placement ? (
-                            <span
-                              title={r.placement.note ? 'السبب: ' + r.placement.note : undefined}
-                              style={{ fontSize: 11, fontWeight: 800, color: r.placement.color, background: r.placement.bg, borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}
-                            >
-                              {r.placement.label.replace(/^توزيع /, '').replace('قيد اعتماد التوزيع', 'قيد الاعتماد')}
-                            </span>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
+                        {!auto && (
+                          <td style={td}>
+                            {r.placement ? (
+                              <span
+                                title={r.placement.note ? 'السبب: ' + r.placement.note : undefined}
+                                style={{ fontSize: 11, fontWeight: 800, color: r.placement.color, background: r.placement.bg, borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}
+                              >
+                                {r.placement.label.replace(/^توزيع /, '').replace('قيد اعتماد التوزيع', 'قيد الاعتماد')}
+                              </span>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                        )}
                         <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.notes}>{r.notes}</td>
-                        {(bt.canEditDates || bt.canReview) && (
+                        {(bt.canEditDates || bt.canReview || auto) && (
                           <td style={{ ...td, whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                               {/* coordinator: swap the نشاط to another دفعة, or take it out */}
