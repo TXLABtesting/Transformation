@@ -468,7 +468,7 @@ export function LibraryPage() {
                     <a
                       href={d.file}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       title="إطلاع"
                       aria-label="إطلاع"
                       onClick={(e) => {
@@ -496,7 +496,7 @@ function DocCover({ d }: { d: Doc }) {
     <a
       href={d.file}
       target="_blank"
-      rel="noreferrer"
+      rel="noopener noreferrer"
       onMouseEnter={() => setH(true)}
       onMouseLeave={() => setH(false)}
       style={{
