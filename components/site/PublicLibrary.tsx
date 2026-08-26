@@ -46,8 +46,10 @@ const fileOf = (d: LibraryDoc) => d.fileUrl || (BUNDLED[d.id] ? asset(BUNDLED[d.
 function previewDoc(doc: LibraryDoc) {
   const url = fileOf(doc);
   if (!url) return;
-  const win = window.open(url, '_blank', 'noopener');
-  if (!win) window.location.href = url;
+  // فصل النافذة الجديدة عن صفحتها الأم قبل أي استخدام — يمنع تلاعب الصفحة المفتوحة بالأصل
+  const win = window.open(url, '_blank');
+  if (win) win.opener = null;
+  else window.location.href = url;
 }
 
 function downloadDoc(doc: LibraryDoc) {
