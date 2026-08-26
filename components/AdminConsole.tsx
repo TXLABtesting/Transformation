@@ -1436,9 +1436,22 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
             </div>
             <div>
               <label style={labelSt}>الدور</label>
+              {/* البنية المعتمدة أربعة أدوار فقط — الأدوار الخلفية الأخرى
+                  (ممثل الجهة/مدقق/مستعرض…) للتوافق ولا تُسنَد من هنا؛ دور
+                  قديم مسند لحساب قائم يبقى ظاهراً حتى لا يختفي من المحرر.
+                  ولمستخدمي وزارة شؤون مجلس الوزراء يظهر المنسق بمسمى الوزارة */}
               <select style={{ ...inputSt, cursor: 'pointer' }} value={f.roleCode} onChange={(e) => set({ roleCode: e.target.value })}>
                 <option value="">— بدون دور (يُعيَّن لاحقًا) —</option>
-                {roles.map((r) => <option key={r.code} value={r.code}>{r.nameAr} ({r.code})</option>)}
+                {(() => {
+                  const APPROVED = ['entity_coordinator', 'stream_owner', 'ai_committee', 'system_admin'];
+                  const moca = /وزارة شؤون مجلس الوزراء/.test(entities.find((en) => en.id === f.entityId)?.nameAr || '');
+                  const label = (r: DbRole) =>
+                    moca && r.code === 'entity_coordinator' ? 'منسق الجهة أو القطاع' : r.nameAr;
+                  const list = roles
+                    .filter((r) => APPROVED.includes(r.code) || r.code === f.roleCode)
+                    .sort((a, b) => APPROVED.indexOf(a.code) - APPROVED.indexOf(b.code));
+                  return list.map((r) => <option key={r.code} value={r.code}>{label(r)} ({r.code})</option>);
+                })()}
               </select>
             </div>
           </div>
