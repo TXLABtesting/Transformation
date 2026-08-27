@@ -981,7 +981,9 @@ function build(s: Store) {
         : rawRole === 'ai'
           ? [
               // committee chair + secretariat: national dashboard, then the
-              // three streams' inventories (view-only) and the batches
+              // three streams' inventories (view-only) and the batches —
+              // الوزارة تُعرض كجهة ضمن القوائم نفسها (عرض فقط؛ دورة اعتمادها
+              // الداخلية تبقى في نسختها المستقلة)
               plainNav('overview', 'الرئيسية', NAV_HOME),
               invHead,
               ...PATHS.map((p) =>
@@ -990,6 +992,7 @@ function build(s: Store) {
                   s.setNavStream(p.id);
                 })
               ),
+              { key: 'inv-moca', label: 'وزارة شؤون مجلس الوزراء', icon: NAV_BUILDING, sub: true, pin: true, heading: false, count: undefined as number | undefined, active: navSection === 'mocaInv', onClick: () => s.setNavSection('mocaInv') },
               lplanHead,
               ...PATHS.map((p) =>
                 lplanItem(p.id, navSection === 'lplan' && navStream === p.id, () => {
@@ -997,6 +1000,8 @@ function build(s: Store) {
                   s.setNavStream(p.id);
                 })
               ),
+              { key: 'lp-moca', label: 'وزارة شؤون مجلس الوزراء', icon: NAV_BUILDING, sub: true, pin: true, heading: false, count: undefined as number | undefined, active: navSection === 'mocaLplan', onClick: () => s.setNavSection('mocaLplan') },
+              { key: 'uc-moca', label: 'حالات الاستخدام', icon: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10c.6.6 1 1.2 1 2h6c0-.8.4-1.4 1-2a6 6 0 0 0-4-10z', sub: false, pin: false, heading: false, count: undefined as number | undefined, active: navSection === 'mocaUse', onClick: () => s.setNavSection('mocaUse') },
               plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
               // إدارة المشاريع الاستراتيجية واعتماد نماذجها — صفحة اللجنة الخاصة
               plainNav('stratProjects', 'المشاريع الاستراتيجية', NAV_GRID4),
