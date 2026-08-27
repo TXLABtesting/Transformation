@@ -842,6 +842,8 @@ export const NIC: Record<string, string> = {
 
 // Log action map
 export const ALOG: Record<string, { t: string; c: string }> = {
+  create: { t: 'إنشاء المدخل', c: '#64748B' },
+  edit: { t: 'تعديل البيانات', c: '#2563EB' },
   submit: { t: 'أرسل للاعتماد', c: '#2563EB' },
   approve: { t: 'اعتمد', c: '#0B8A4B' },
   pending: { t: 'قيد الاعتماد', c: '#B45309' },

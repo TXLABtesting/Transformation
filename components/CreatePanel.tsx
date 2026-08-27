@@ -247,7 +247,7 @@ export function InlineCreateForm({ vm }: { vm: VM }) {
     return () => clearTimeout(t);
   }, []);
   return (
-    <div ref={rootRef} style={{ marginTop: 18, scrollMarginTop: 90, background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: 20, position: 'relative' }}>
+    <div ref={rootRef} id="inline-create-panel" style={{ marginTop: 18, scrollMarginTop: 90, background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, padding: 20, position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <div
           style={{
@@ -2037,22 +2037,8 @@ function BulkReviewStep({ vm }: { vm: VM }) {
             })}
           </div>
 
-          <div
-            style={{
-              background: '#F4F7FC',
-              border: '1px solid #E1E7F1',
-              borderRadius: 12,
-              padding: '12px 14px',
-              fontSize: 12,
-              color: '#54627B',
-              lineHeight: 1.7,
-              marginBottom: 14,
-            }}
-          >
-            عند الحفظ: تُحفظ جميع الصفوف كمسودات — والصفوف ذات البيانات الناقصة تُميَّز بـ«بيانات ناقصة» لاستكمالها. لا تُرسل أي مدخلات لفريق عمل المسار إلا بعد اختيارها وتأكيد «إرسال للاعتماد». الصفوف التي بها أخطاء لن تُستورد.
-          </div>
-
-          <div style={{ display: 'flex', gap: 10 }}>
+          {/* شريط الحفظ ثابت أسفل الشاشة أثناء مراجعة جدول طويل — لا حاجة للنزول حتى نهايته */}
+          <div style={{ position: 'sticky', bottom: 0, zIndex: 5, display: 'flex', gap: 10, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(4px)', borderTop: '1px solid #EEF1F7', margin: '0 -20px -20px', padding: '14px 20px', borderRadius: '0 0 18px 18px' }}>
             <button
               onClick={() => s.mBack()}
               style={{
