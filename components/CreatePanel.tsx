@@ -2037,8 +2037,9 @@ function BulkReviewStep({ vm }: { vm: VM }) {
             })}
           </div>
 
-          {/* شريط الحفظ ثابت أسفل الشاشة أثناء مراجعة جدول طويل — لا حاجة للنزول حتى نهايته */}
-          <div style={{ position: 'sticky', bottom: 0, zIndex: 5, display: 'flex', gap: 10, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(4px)', borderTop: '1px solid #EEF1F7', margin: '0 -20px -20px', padding: '14px 20px', borderRadius: '0 0 18px 18px' }}>
+          {/* شريط الحفظ ثابت أسفل الشاشة أثناء مراجعة جدول طويل — خلفية مصمتة
+              بعرض اللوحة كاملاً حتى لا يظهر أي نص خلفه */}
+          <div style={{ position: 'sticky', bottom: 0, zIndex: 5, display: 'flex', gap: 10, background: '#fff', borderTop: '1px solid #E7ECF4', boxShadow: '0 -10px 24px -14px rgba(16,36,79,.28)', margin: '0 -20px -20px', padding: '14px 20px' }}>
             <button
               onClick={() => s.mBack()}
               style={{

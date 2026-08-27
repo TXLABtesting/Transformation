@@ -24,6 +24,7 @@ import {
   blankItem,
   blankOwner,
   wfOf,
+  isTeamUpload,
   execAllDone,
   launchAllDone,
   entOf,
@@ -2170,7 +2171,7 @@ export const useStore = create<Store>((set, get) => {
             id: 'n' + Date.now() + ri + Math.floor(Math.random() * 1000),
             title: r.title,
             desc: r.desc,
-            ...(teamUpload ? { entity: s.ui.bulkEntity } : {}),
+            ...(teamUpload ? { entity: s.ui.bulkEntity, teamUp: true } : {}),
             approval: submitted ? 'تم الإرسال' : 'مسودة',
             wf: (submitted ? 'ent1' : 'draft') as WfState,
             ret: null,
@@ -2347,8 +2348,9 @@ export const useStore = create<Store>((set, get) => {
       const it = findItem(id);
       if (!it) return;
       const w = wfOf(it);
-      // فريق عمل المسار يعتمد المُرسَل وكذلك المسودات (المرفوعة بالنيابة ولو ناقصة)
-      if (w === 'ent1' || (w === 'draft' && s.role === 'path')) {
+      // فريق عمل المسار يعتمد المُرسَل، وكذلك مسودات ملفاته المرفوعة بالنيابة
+      // فقط — مسودات المنسق الخاصة لا تُعتمد قبل إرسالها
+      if (w === 'ent1' || (w === 'draft' && s.role === 'path' && isTeamUpload(it))) {
         patchItem(id, (i) => ({ wf: 'exec', approval: 'تم الإرسال', ret: null, log: withLog(s, i, 'approve') }));
         toast('تم اعتماد ' + typeLabelDefFor(it.type, it.path) + ' — إلى مرحلة التنفيذ');
       } else if (w === 'pm1') {
@@ -2374,7 +2376,12 @@ export const useStore = create<Store>((set, get) => {
     approveAll: (ids) => {
       const s = get();
       const idset = new Set(ids);
-      const targets = s.items.filter((i) => idset.has(i.id) && ['draft', 'ent1'].includes(wfOf(i)));
+      const targets = s.items.filter((i) => {
+        if (!idset.has(i.id)) return false;
+        const w = wfOf(i);
+        // المسودات تُعتمد جماعياً فقط إن كانت من رفع الفريق بالنيابة
+        return w === 'ent1' || (w === 'draft' && isTeamUpload(i));
+      });
       if (!targets.length) return;
       const tset = new Set(targets.map((i) => i.id));
       set((st) => ({
@@ -2404,7 +2411,10 @@ export const useStore = create<Store>((set, get) => {
     deleteDrafts: (ids) => {
       const s = get();
       const idset = new Set(ids);
-      const targets = s.items.filter((i) => idset.has(i.id) && wfOf(i) === 'draft');
+      // فريق المسار يحذف مسودات رفعه بالنيابة فقط — مسودات المنسق ملك جهته
+      const targets = s.items.filter(
+        (i) => idset.has(i.id) && wfOf(i) === 'draft' && (s.role !== 'path' || isTeamUpload(i))
+      );
       if (!targets.length) return;
       const tset = new Set(targets.map((i) => i.id));
       set((st) => ({ items: st.items.filter((i) => !tset.has(i.id)), ui: { ...st.ui, draftSel: [] } }));
