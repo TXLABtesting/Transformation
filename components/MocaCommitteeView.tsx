@@ -8,6 +8,7 @@ import { Fragment, useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useMoca, mocaApplyReturn, mocaApplyPlaceReturn } from '@/lib/mocaStore';
 import {
+  MOCA_BATCHES,
   MOCA_FIELDS,
   MOCA_MINISTRY,
   MOCA_UC_STATUS_STYLE,
@@ -172,54 +173,99 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
   }
 
   if (mode === 'batches') {
-    const placed = visible
-      .filter((e) => String(e.execBatch || '').trim())
-      .sort((a, b) => String(a.execBatch).localeCompare(String(b.execBatch), 'ar'));
+    // بطاقة لكل دفعة كصفحة دفعات المسارات: ترويسة الدفعة وفترتها ثم جدول مدخلاتها
+    const placed = visible.filter((e) => String(e.execBatch || '').trim());
     const pendingPlace = placed.filter((e) => e.batchWf === 'pending').length;
+    const known = new Set(MOCA_BATCHES.map((b) => b.name));
+    const groups: { name: string; period: string; rows: MocaEntry[] }[] = [
+      ...MOCA_BATCHES.map((b) => ({ name: b.name, period: b.period, rows: placed.filter((e) => String(e.execBatch).trim() === b.name) })),
+      // أي دفعة خارج القائمة المعتمدة تظهر بعدها بلا فترة
+      ...Array.from(new Set(placed.map((e) => String(e.execBatch).trim()).filter((n) => !known.has(n))))
+        .sort((a, b) => a.localeCompare(b, 'ar'))
+        .map((name) => ({ name, period: '', rows: placed.filter((e) => String(e.execBatch).trim() === name) })),
+    ];
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Header title="دفعات الإطلاق" count={placed.length} pending={pendingPlace} sub="توزيعات جهات الوزارة على دفعات الإطلاق — تعتمدها اللجنة الوطنية أو تعيدها بملاحظات" />
-        <div style={{ ...card, overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
-            <thead>
-              <tr>
-                {['الدفعة', 'العملية والمهمة الرئيسية', 'العملية والمهمة الفرعية', 'الجهة أو المكتب', 'حالة التوزيع', 'الإجراء'].map((h) => <th key={h} style={th}>{h}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {placed.map((e: MocaEntry) => {
-                const bs = e.batchWf === 'approved'
-                  ? { t: 'معتمد', c: '#0B8A4B', bg: '#EAF7F0' }
-                  : e.batchWf === 'pending'
-                    ? { t: 'قيد الاعتماد', c: '#B45309', bg: '#FFF7EB' }
-                    : { t: 'مسودة توزيع', c: '#54627B', bg: '#F1F4F9' };
-                const isPendingPlace = e.batchWf === 'pending';
-                return (
-                  <tr key={e.id}>
-                    <td style={{ ...td, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>{txt(e.execBatch)}</td>
-                    <td style={td}>{txt(e.mainProcess)}</td>
-                    <td style={td}>{txt(e.subProcess)}</td>
-                    <td style={{ ...td, whiteSpace: 'nowrap' }}>{unitLabel(e)}</td>
-                    <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: bs.bg, color: bs.c }}>{bs.t}</span>
-                    </td>
-                    <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                      {isPendingPlace && (
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          <button onClick={() => approvePlacement(e.id)} style={btnApprove}>اعتماد التوزيع</button>
-                          <button onClick={() => setRet({ id: e.id, kind: 'info', place: true })} style={btnAmber}>إعادة بملاحظات</button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {!placed.length && (
-                <tr><td colSpan={6} style={{ padding: 0 }}><Empty msg="لا توزيعات على دفعات الإطلاق بعد" /></td></tr>
-              )}
-            </tbody>
-          </table>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div className="hd" style={{ fontSize: 18, fontWeight: 800, color: '#13213C' }}>دفعات الإطلاق — {MOCA_MINISTRY}</div>
+          {pendingPlace > 0 && (
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#B45309', background: '#FFF7EB', borderRadius: 999, padding: '6px 14px' }}>
+              {pendingPlace} {pendingPlace === 1 ? 'توزيع بانتظار اعتمادك' : 'توزيعات بانتظار اعتمادك'}
+            </span>
+          )}
         </div>
+        {groups.map((g) => (
+          <div key={g.name} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, padding: '18px 22px 14px', borderBottom: '1px solid #EEF1F7' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{g.name}</div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px' }}>{g.rows.length} مدخل</span>
+                </div>
+                {g.period && (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#9AA6BC', fontWeight: 400, marginTop: 5 }}>{g.period}</div>
+                )}
+              </div>
+            </div>
+            {g.rows.length === 0 ? (
+              <div style={{ padding: '22px 16px', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا مدخلات ضمن هذه الدفعة بعد</div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 980 }}>
+                  <thead>
+                    <tr>
+                      {['العملية والمهمة الرئيسية', 'العملية والمهمة الفرعية', 'الجهة أو المكتب', 'حالة المدخل', 'حالة التوزيع', 'الإجراءات'].map((h) => <th key={h} style={th}>{h}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {g.rows.map((e: MocaEntry) => {
+                      const st = mocaStatusOf(e);
+                      const bs = e.batchWf === 'approved'
+                        ? { t: 'معتمد', c: '#0B8A4B', bg: '#EAF7F0' }
+                        : e.batchWf === 'pending'
+                          ? { t: 'قيد الاعتماد', c: '#B45309', bg: '#FFF7EB' }
+                          : { t: 'مسودة', c: '#54627B', bg: '#F1F4F9' };
+                      const open = openId === e.id;
+                      return (
+                        <Fragment key={e.id}>
+                          <tr>
+                            <td style={{ ...td, fontWeight: 800, color: '#13213C', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={txt(e.mainProcess)}>{txt(e.mainProcess)}</td>
+                            <td style={{ ...td, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={txt(e.subProcess)}>{txt(e.subProcess)}</td>
+                            <td style={{ ...td, whiteSpace: 'nowrap' }}>{unitLabel(e)}</td>
+                            <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: st.bg, color: st.color }}>{st.label}</span>
+                            </td>
+                            <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                              <span title={e.ret?.note ? 'السبب: ' + e.ret.note : undefined} style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: bs.bg, color: bs.c }}>{bs.t}</span>
+                            </td>
+                            <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                {e.batchWf === 'pending' && (
+                                  <>
+                                    <button onClick={() => approvePlacement(e.id)} style={btnApprove}>اعتماد</button>
+                                    <button onClick={() => setRet({ id: e.id, kind: 'info', place: true })} style={btnAmber}>إعادة للتعديل</button>
+                                  </>
+                                )}
+                                <button onClick={() => setOpenId(open ? null : e.id)} style={btnView}>{open ? 'إخفاء' : 'عرض'}</button>
+                              </div>
+                            </td>
+                          </tr>
+                          {open && (
+                            <tr>
+                              <td colSpan={6} style={{ padding: '4px 15px 14px', borderBottom: '1px solid #F4F6FA' }}>
+                                <EntryDetail e={e} />
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ))}
         {retModal}
       </div>
     );
