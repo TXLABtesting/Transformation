@@ -34,11 +34,17 @@ export default function MocaPage() {
       router.replace('/login');
       return;
     }
+    // مشرف النظام لا يُحتجز في نسخة الوزارة حتى لو كانت جهته من UAE PASS هي
+    // وزارة شؤون مجلس الوزراء — لوحته الموحدة (اللوحات + لوحة المشرف) على /dashboard
+    if (mainRole === 'admin') {
+      router.replace('/dashboard');
+      return;
+    }
     syncSession(mainRole === 'coord' ? 'coord' : 'committee', mainEntity);
   }, [mainHydrated, mainAuthChecked, mainView, mainRole, mainEntity, syncSession, router]);
 
   // لا نرسم شيئاً قبل قراءة التخزين المحلي تفادياً لاختلاف SSR/CSR
-  if (!hydrated || (!DEMO && (!mainHydrated || !mainAuthChecked || mainView === 'login')))
+  if (!hydrated || (!DEMO && (!mainHydrated || !mainAuthChecked || mainView === 'login' || mainRole === 'admin')))
     return <div style={{ minHeight: '100vh', background: '#EEF2F9' }} />;
   return <MocaWorkspace />;
 }
