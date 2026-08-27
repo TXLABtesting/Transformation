@@ -1265,6 +1265,18 @@ function build(s: Store) {
   const notifUnread = notifs.filter((notif) => !readSet.has(notif.id)).length;
   const unreadLabel = notifUnread > 9 ? '9+' : String(notifUnread);
 
+  // مبدّل الجهة للمنسق — نسخة تجريبية فقط، لتسهيل التنقل بين الجهات
+  const entitySwitch =
+    process.env.NEXT_PUBLIC_DEMO_MODE === '1' && rawRole === 'coord'
+      ? {
+          value: entityName,
+          options: Array.from(
+            new Set([DEFAULT_ENTITY, ...svcCatalogEntities(), ...FEDERAL_ENTITIES, entityName].filter(Boolean))
+          ).sort((a, b) => a.localeCompare(b, 'ar')),
+          onChange: (v: string) => s.setEntityName(v),
+        }
+      : null;
+
   // ---- role pills (active styles) ----
   const rolePills = ROLE_PILLS.map((p) => ({
     key: p.key,
@@ -1647,6 +1659,7 @@ function build(s: Store) {
     role: rawRole,
     roleLabel: ROLE[rawRole].label,
     rolePills,
+    entitySwitch,
     // النسخة التجريبية: مبدّل الأدوار للجميع. النسخة الحية: لمشرف النظام
     // فقط — يتنقل به بين لوحات الأدوار ولوحة الإدارة (جلسة واحدة موحّدة).
     showRoleSwitcher: process.env.NEXT_PUBLIC_DEMO_MODE === '1' || s.sessionAdmin,

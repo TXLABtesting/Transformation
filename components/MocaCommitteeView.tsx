@@ -1,13 +1,14 @@
 'use client';
 // ===========================================================================
-// عرض وزارة شؤون مجلس الوزراء داخل لوحة اللجنة الوطنية — عرض فقط
-// الوزارة تُعامل كجهة ضمن قوائم الحصر ودفعات الإطلاق وحالات الاستخدام،
-// بينما تبقى دورة الاعتماد الداخلية كاملة في نسختها المستقلة /moca
+// وزارة شؤون مجلس الوزراء داخل لوحة اللجنة الوطنية — الوزارة جهة ضمن قوائم
+// الحصر ودفعات الإطلاق وحالات الاستخدام، واعتماد مدخلاتها وتوزيعاتها يتم هنا
+// من اللجنة الوطنية مباشرة (منسقو الوزارة يرسلون، واللجنة تعتمد أو تعيد)
 // ===========================================================================
 import { Fragment, useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { useMoca } from '@/lib/mocaStore';
+import { useMoca, mocaApplyReturn, mocaApplyPlaceReturn } from '@/lib/mocaStore';
 import {
+  MOCA_FIELDS,
   MOCA_MINISTRY,
   MOCA_UC_STATUS_STYLE,
   mocaStatusOf,
@@ -25,17 +26,54 @@ const unitLabel = (e: { unitId: string; unitSector?: string }) =>
 
 const txt = (v: unknown) => String(v ?? '').trim() || '—';
 
-function Header({ title, count }: { title: string; count: number }) {
+function Header({ title, count, pending, sub }: { title: string; count: number; pending?: number; sub: string }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{MOCA_MINISTRY}</div>
         <span style={{ background: '#EAF1FE', color: '#1D4ED8', borderRadius: 999, padding: '4px 12px', fontSize: 11.5, fontWeight: 800 }}>{title} · {count}</span>
-        <span style={{ background: '#F1F4F9', color: '#54627B', borderRadius: 999, padding: '4px 12px', fontSize: 11.5, fontWeight: 800 }}>عرض فقط</span>
+        {!!pending && (
+          <span style={{ background: '#FFF3DE', color: '#B45309', borderRadius: 999, padding: '4px 12px', fontSize: 11.5, fontWeight: 800 }}>بانتظار اعتماد اللجنة: {pending}</span>
+        )}
       </div>
-      <div style={{ fontSize: 12, color: '#9AA6BC', marginTop: 4 }}>
-        دورة الاعتماد الداخلية للوزارة تتم في نسختها المستقلة — وتظهر هنا للاطلاع كبقية الجهات
+      <div style={{ fontSize: 12, color: '#9AA6BC', marginTop: 4 }}>{sub}</div>
+    </div>
+  );
+}
+
+// أزرار الاعتماد والإجراءات — بنمط بقية لوحات المنصة
+const btnApprove: CSSProperties = { background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
+const btnAmber: CSSProperties = { background: '#FFF3DE', color: '#B45309', border: 'none', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
+const btnRed: CSSProperties = { background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
+const btnView: CSSProperties = { background: '#fff', border: '1px solid #DCE3EE', color: '#54627B', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
+
+// نافذة ملاحظات الإعادة/الرفض
+function ReturnModal({ title, onSubmit, onClose }: { title: string; onSubmit: (note: string) => void; onClose: () => void }) {
+  const [note, setNote] = useState('');
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(9,20,45,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, direction: 'rtl' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, background: '#fff', borderRadius: 16, padding: 22 }}>
+        <div style={{ fontSize: 14.5, fontWeight: 800, color: '#13213C', marginBottom: 10 }}>{title}</div>
+        <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4} placeholder="الملاحظات المطلوب معالجتها…" style={{ width: '100%', border: '1px solid #DCE3EE', borderRadius: 11, padding: '11px 13px', fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical' }} />
+        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+          <button onClick={() => note.trim() && onSubmit(note.trim())} style={{ ...btnApprove, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', padding: '11px 20px', fontSize: 12.5 }}>إرسال</button>
+          <button onClick={onClose} style={{ ...btnView, padding: '11px 20px', fontSize: 12.5 }}>إلغاء</button>
+        </div>
       </div>
+    </div>
+  );
+}
+
+// تفاصيل المدخل كاملة — كل حقول نموذج الوزارة المعبأة
+function EntryDetail({ e }: { e: MocaEntry }) {
+  const rows = MOCA_FIELDS.map((f) => ({ label: f.label, v: String((e as Record<string, unknown>)[f.key] ?? '').trim() })).filter((r) => r.v);
+  return (
+    <div style={{ background: '#F7F9FD', borderRadius: 12, padding: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 10 }}>
+      {rows.map((r, i) => (
+        <div key={i} style={{ fontSize: 12.5, color: '#33415C', lineHeight: 1.8 }}>
+          <b style={{ color: '#54627B' }}>{r.label}:</b> {r.v}
+        </div>
+      ))}
     </div>
   );
 }
@@ -48,31 +86,50 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
   const hydrate = useMoca((s) => s.hydrate);
   const entries = useMoca((s) => s.entries);
   const useCases = useMoca((s) => s.useCases);
+  const approveEntry = useMoca((s) => s.approveEntry);
+  const approvePlacement = useMoca((s) => s.approvePlacement);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [ret, setRet] = useState<{ id: string; kind: 'info' | 'reject'; place: boolean } | null>(null);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
+  const retModal = ret && (
+    <ReturnModal
+      title={ret.kind === 'reject' ? 'رفض المدخل — الملاحظات' : 'إعادة للتعديل — الملاحظات'}
+      onClose={() => setRet(null)}
+      onSubmit={(note) => {
+        if (ret.place) mocaApplyPlaceReturn(ret.id, ret.kind, note);
+        else mocaApplyReturn(ret.id, ret.kind, note);
+        setRet(null);
+      }}
+    />
+  );
+
   // مسودات المنسقين داخل الوزارة تبقى خاصة — يظهر المُرسَل وما بعده فقط
   const visible = entries.filter((e) => e.wf !== 'draft');
 
   if (mode === 'inv') {
+    const pending = visible.filter((e) => e.wf === 'pending' && !e.ret).length;
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Header title="حصر المهام والعمليات" count={visible.length} />
+        <Header title="حصر المهام والعمليات" count={visible.length} pending={pending} sub="مدخلات جهات الوزارة تصل هنا لاعتماد اللجنة الوطنية — اعتماد أو إعادة بملاحظات أو رفض" />
         <div style={{ ...card, overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 980 }}>
             <thead>
               <tr>
-                {['العملية والمهمة الرئيسية', 'العملية والمهمة الفرعية', 'الجهة أو المكتب', 'القطاع المعني', 'الحالة'].map((h) => <th key={h} style={th}>{h}</th>)}
+                {['العملية والمهمة الرئيسية', 'العملية والمهمة الفرعية', 'الجهة أو المكتب', 'القطاع المعني', 'الحالة', 'الإجراء'].map((h) => <th key={h} style={th}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {visible.map((e: MocaEntry) => {
                 const st = mocaStatusOf(e);
+                const isPending = e.wf === 'pending' && !e.ret;
+                const open = openId === e.id;
                 return (
-                  <tr key={e.id}>
+                  <Fragment key={e.id}>
+                  <tr>
                     <td style={{ ...td, fontWeight: 800, color: '#13213C' }}>{txt(e.mainProcess)}</td>
                     <td style={td}>{txt(e.subProcess)}</td>
                     <td style={{ ...td, whiteSpace: 'nowrap' }}>{unitLabel(e)}</td>
@@ -80,15 +137,36 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
                     <td style={{ ...td, whiteSpace: 'nowrap' }}>
                       <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: st.bg, color: st.color }}>{st.label}</span>
                     </td>
+                    <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <button onClick={() => setOpenId(open ? null : e.id)} style={btnView}>{open ? 'إخفاء' : 'عرض'}</button>
+                        {isPending && (
+                          <>
+                            <button onClick={() => approveEntry(e.id)} style={btnApprove}>اعتماد</button>
+                            <button onClick={() => setRet({ id: e.id, kind: 'info', place: false })} style={btnAmber}>إعادة بملاحظات</button>
+                            <button onClick={() => setRet({ id: e.id, kind: 'reject', place: false })} style={btnRed}>رفض</button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
+                  {open && (
+                    <tr>
+                      <td colSpan={6} style={{ padding: '4px 15px 14px', borderBottom: '1px solid #F4F6FA' }}>
+                        <EntryDetail e={e} />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
               {!visible.length && (
-                <tr><td colSpan={5} style={{ padding: 0 }}><Empty msg="لا مدخلات مرسلة من جهات الوزارة بعد" /></td></tr>
+                <tr><td colSpan={6} style={{ padding: 0 }}><Empty msg="لا مدخلات مرسلة من جهات الوزارة بعد" /></td></tr>
               )}
             </tbody>
           </table>
         </div>
+        {retModal}
       </div>
     );
   }
@@ -97,14 +175,15 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
     const placed = visible
       .filter((e) => String(e.execBatch || '').trim())
       .sort((a, b) => String(a.execBatch).localeCompare(String(b.execBatch), 'ar'));
+    const pendingPlace = placed.filter((e) => e.batchWf === 'pending').length;
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Header title="دفعات الإطلاق" count={placed.length} />
+        <Header title="دفعات الإطلاق" count={placed.length} pending={pendingPlace} sub="توزيعات جهات الوزارة على دفعات الإطلاق — تعتمدها اللجنة الوطنية أو تعيدها بملاحظات" />
         <div style={{ ...card, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
             <thead>
               <tr>
-                {['الدفعة', 'العملية والمهمة الرئيسية', 'العملية والمهمة الفرعية', 'الجهة أو المكتب', 'حالة التوزيع'].map((h) => <th key={h} style={th}>{h}</th>)}
+                {['الدفعة', 'العملية والمهمة الرئيسية', 'العملية والمهمة الفرعية', 'الجهة أو المكتب', 'حالة التوزيع', 'الإجراء'].map((h) => <th key={h} style={th}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -114,6 +193,7 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
                   : e.batchWf === 'pending'
                     ? { t: 'قيد الاعتماد', c: '#B45309', bg: '#FFF7EB' }
                     : { t: 'مسودة توزيع', c: '#54627B', bg: '#F1F4F9' };
+                const isPendingPlace = e.batchWf === 'pending';
                 return (
                   <tr key={e.id}>
                     <td style={{ ...td, fontWeight: 800, color: '#13213C', whiteSpace: 'nowrap' }}>{txt(e.execBatch)}</td>
@@ -123,15 +203,24 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
                     <td style={{ ...td, whiteSpace: 'nowrap' }}>
                       <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: bs.bg, color: bs.c }}>{bs.t}</span>
                     </td>
+                    <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                      {isPendingPlace && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <button onClick={() => approvePlacement(e.id)} style={btnApprove}>اعتماد التوزيع</button>
+                          <button onClick={() => setRet({ id: e.id, kind: 'info', place: true })} style={btnAmber}>إعادة بملاحظات</button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
               {!placed.length && (
-                <tr><td colSpan={5} style={{ padding: 0 }}><Empty msg="لا توزيعات على دفعات الإطلاق بعد" /></td></tr>
+                <tr><td colSpan={6} style={{ padding: 0 }}><Empty msg="لا توزيعات على دفعات الإطلاق بعد" /></td></tr>
               )}
             </tbody>
           </table>
         </div>
+        {retModal}
       </div>
     );
   }
@@ -140,7 +229,7 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
   const lastUpdate = (u: MocaUseCase) => (u.updates.length ? u.updates[u.updates.length - 1] : null);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Header title="حالات الاستخدام" count={useCases.length} />
+      <Header title="حالات الاستخدام" count={useCases.length} sub="حالات الاستخدام التي تعمل عليها جهات الوزارة وتحديثاتها — للمتابعة" />
       <div style={{ ...card, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
           <thead>
