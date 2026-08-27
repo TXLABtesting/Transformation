@@ -564,9 +564,11 @@ export function mocaApplyReturn(id: string, kind: 'info' | 'reject', note: strin
   });
   try {
     const s = useMoca.getState();
+    // الشكل الكامل نفسه الذي يكتبه persist — إسقاط v/useCases كان يمسح
+    // بيانات الوزارة كلها عند أول تحميل تالٍ (عدم تطابق نسخة البيانات)
     window.localStorage.setItem(
       KEY,
-      JSON.stringify({ role: s.role, unitId: s.unitId, unitSector: s.unitSector, entries: s.entries })
+      JSON.stringify({ v: MOCA_DATA_V, role: s.role, unitId: s.unitId, unitSector: s.unitSector, entries: s.entries, useCases: s.useCases })
     );
   } catch {
     /* ignore */
@@ -585,9 +587,11 @@ export function mocaApplyPlaceReturn(id: string, kind: 'info' | 'reject', note: 
   });
   try {
     const s = useMoca.getState();
+    // الشكل الكامل نفسه الذي يكتبه persist — إسقاط v/useCases كان يمسح
+    // بيانات الوزارة كلها عند أول تحميل تالٍ (عدم تطابق نسخة البيانات)
     window.localStorage.setItem(
       KEY,
-      JSON.stringify({ role: s.role, unitId: s.unitId, unitSector: s.unitSector, entries: s.entries })
+      JSON.stringify({ v: MOCA_DATA_V, role: s.role, unitId: s.unitId, unitSector: s.unitSector, entries: s.entries, useCases: s.useCases })
     );
   } catch {
     /* ignore */
