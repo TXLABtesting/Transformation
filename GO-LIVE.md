@@ -296,3 +296,140 @@ INSERT INTO settings (key, value) VALUES ('moca_unit:<USER_ID>', 'sg');
 منع العضو من اعتماد نموذجه أو تعريف مشاريع، وسلامة الواجهات القائمة
 (`/api/items`، `/api/admin/users`، `/api/launch-plans`، `/api/auth/me`)
 وترويسات الأمان.
+
+---
+
+# ١١) تسليم ٢٧ أغسطس ٢٠٢٦ — الأدوار من قاعدة البيانات والنطاقات المتعددة
+
+## ١١-١ ما الذي تغيّر؟
+
+| # | التغيير | الأثر على قاعدة البيانات |
+|---|---------|---------------------------|
+| ١ | إصلاح خطأ إضافة مستخدم (كان يعيد 500 مبهماً) | لا شيء |
+| ٢ | تصحيح دور مشرف النظام في العمود القديم | صف واحد لكل مشرف قائم (اختياري) |
+| ٣ | قائمة الأدوار من قاعدة البيانات لا من الشيفرة | لا شيء |
+| ٤ | نطاق كل دور (حقول النموذج) | صفوف `settings` اختيارية |
+| ٥ | مسارات متعددة للمستخدم | يستخدم `user_stream_scopes` القائم |
+| ٦ | وحدات وقطاعات متعددة داخل الوزارة | صفوف `settings` بمفتاح `moca_unit:` |
+| ٧ | حذف نهائي للحسابات من لوحة المشرف | لا شيء |
+| ٨ | الحسابات التجريبية لم تعد تُزرع | يتطلب إنشاء المستخدمين الحقيقيين |
+| ٩ | استجابة لوحة المشرف على الجوال | لا شيء |
+
+**لا ترحيل جديد (migration) في هذا التسليم.** آخر ترحيل هو `0015` المسلَّم سابقاً.
+
+## ١١-٢ المطلوب من فريق تقنية المعلومات
+
+### أ) إنشاء المستخدمين (مطلوب)
+
+قاعدة البيانات لم تعد تُنشئ حسابات تجريبية. بعد `prisma migrate deploy` و`npm run db:seed`
+تحتوي القاعدة على البيانات المرجعية فقط: الأدوار، الصلاحيات، المسارات، الجهات، مراحل البرنامج.
+
+يُنشأ المستخدمون بإحدى طريقتين:
+
+1. **من لوحة المشرف** (المفضّل): يُنشأ أول حساب مشرف مباشرة في القاعدة، ثم تُدار البقية من الواجهة.
+2. **مباشرة في القاعدة** لأول مشرف:
+
+```sql
+-- ١) الحساب: البريد نفسه المسجّل في UAE PASS
+INSERT INTO users (id, email, name, title, role, status, access_enabled, is_active, created_at, updated_at)
+VALUES (gen_random_uuid()::text, 'ayoub.bari@moca.gov.ae', 'أيوب باري', 'مشرف النظام',
+        'admin', 'active', true, true, NOW(), NOW());
+
+-- ٢) دور الصلاحيات: مشرف النظام
+INSERT INTO user_roles (id, user_id, role_id, created_at)
+SELECT gen_random_uuid()::text, u.id, r.id, NOW()
+FROM users u, roles r
+WHERE u.email = 'ayoub.bari@moca.gov.ae' AND r.code = 'system_admin';
+```
+
+> **مهم:** عمود `users.role` (القديم) للواجهة فقط. الصلاحيات الفعلية من `user_roles`.
+> يجب أن يكون `access_enabled = true` وإلا رُفض الدخول برسالة «لم يتم تفعيل حسابك».
+
+### ب) تصحيح المشرفين القائمين (إن وُجدوا على staging)
+
+كان دور `system_admin` يُكتب في العمود القديم بقيمة `ai`، فيظهر المشرف في القوائم
+على أنه عضو اللجنة الوطنية. الواجهة صارت تقرأ دور الصلاحيات فتظهر صحيحة،
+ولتنظيف البيانات نفسها:
+
+```sql
+UPDATE users u SET role = 'admin'
+FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+WHERE ur.user_id = u.id AND r.code = 'system_admin' AND u.role <> 'admin';
+```
+
+### ج) إسناد وحدات وزارة شؤون مجلس الوزراء (اختياري)
+
+منسق الوزارة بلا إسناد يعمل على مدخلات الوزارة كاملة. لقصره على وحدة أو أكثر:
+
+```sql
+-- وحدة واحدة
+INSERT INTO settings (key, value) VALUES ('moca_unit:<USER_ID>', 'sg')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+
+-- عدة وحدات: مفصولة بـ | والقطاع بعد ::
+INSERT INTO settings (key, value)
+VALUES ('moca_unit:<USER_ID>', 'sg|pmo::قطاع الخدمات الحكومية')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+```
+
+معرّفات الوحدات: `sg` (الأمانة العامة لمجلس الوزراء)، `pmo` (مكتب رئاسة مجلس الوزراء وقطاعاته).
+ويمكن إسنادها كذلك من لوحة المشرف مباشرة دون SQL.
+
+### د) ضبط نطاق دور (اختياري)
+
+نطاق الدور يحدّد الحقول التي يطلبها نموذج إضافة المستخدم. يُشتق تلقائياً من صلاحيات
+الدور، ويمكن تثبيته صراحةً:
+
+```sql
+INSERT INTO settings (key, value) VALUES ('role_scope:entity_coordinator', 'entity_stream')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+```
+
+القيم المقبولة: `global` | `stream` | `entity` | `entity_stream` | `none`.
+
+| النطاق | الجهة | المسارات | الأدوار عليه حالياً |
+|--------|-------|----------|---------------------|
+| `global` | — | — | system_admin، program_admin، ai_committee |
+| `stream` | اختيارية | مطلوبة | stream_owner |
+| `entity_stream` | مطلوبة | مطلوبة | entity_coordinator، entity_admin |
+| `entity` | مطلوبة | — | entity_representative، viewer، auditor |
+| `none` | — | — | strategic_project_member |
+
+### هـ) متغيّرات البيئة (بلا تغيير عن التسليم السابق)
+
+```
+DATABASE_URL=postgresql://…
+SESSION_SECRET=<سلسلة عشوائية طويلة>
+NEXT_PUBLIC_DATA_MODE=api
+NEXT_PUBLIC_AUTH_PROVIDER=uaepass
+```
+
+`SEED_DEMO_USERS=1` لقاعدة عرض أو اختبار فقط — لا تُستخدم على staging أو الإنتاج.
+
+## ١١-٣ إضافة دور جديد لاحقاً
+
+لا تتطلب أي تعديل في الشيفرة:
+
+```sql
+INSERT INTO roles (id, code, name_ar, is_system, created_at)
+VALUES (gen_random_uuid()::text, 'new_role_code', 'المسمى بالعربية', false, NOW());
+
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM roles r, permissions p
+WHERE r.code = 'new_role_code' AND p.code IN ('items:view','reports:view');
+
+-- اختياري: تثبيت نطاقه
+INSERT INTO settings (key, value) VALUES ('role_scope:new_role_code', 'entity');
+```
+
+يظهر الدور فوراً في نموذج إضافة المستخدم بحقوله الصحيحة.
+
+## ١١-٤ نتائج الفحص على قاعدة بيانات نظيفة
+
+٢١ فحصاً على طبقة الخادم و٢٤ فحصاً للاستجابة — كلها ناجحة:
+
+- رسائل أخطاء إضافة المستخدم (بريد مكرر ٤٠٩، مرجع غير موجود ٤٠٠)
+- الأدوار العشرة تصل من القاعدة بنطاقاتها الصحيحة
+- إسناد مسارين لمستخدم وقراءتهما في جلسته، ورفض مسار غير موجود
+- إسناد وحدتين داخل الوزارة، والكتابة فيهما، **ورفض الكتابة في وحدة ثالثة خارج نطاقه**
+- الاستجابة على ٣٩٠ و٤٣٠ و٧٦٨ و١٠٢٤ و١٢٨٠ و١٦٠٠ بكسل بلا تمرير أفقي
