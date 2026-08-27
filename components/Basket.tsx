@@ -151,17 +151,30 @@ export function DraftBar({ vm }: { vm: VM }) {
           <button onClick={db.onClear} style={{ ...btn, background: 'transparent', border: '1px solid rgba(255,255,255,.28)', color: '#fff' }}>
             تخطي
           </button>
-          {db.onComplete && (
-            <button onClick={db.onComplete} style={{ ...btn, background: 'transparent', border: '1px solid rgba(255,255,255,.45)', color: '#fff' }}>
-              إكمال وإرسال
-            </button>
-          )}
-          <button
-            onClick={() => (db.anyMissing ? setPopup(true) : db.onSend())}
-            style={{ ...btn, background: '#fff', color: '#0F1F3D' }}
-          >
-            إرسال للاعتماد
+          {/* حذف المسودات المحددة دفعة واحدة — مع رسالة تأكيد قبل التنفيذ */}
+          <button onClick={db.onDelete} style={{ ...btn, background: 'transparent', border: '1px solid rgba(252,165,165,.65)', color: '#FCA5A5' }}>
+            حذف المحدد
           </button>
+          {db.pathMode ? (
+            // فريق عمل المسار: اعتماد المحدد مباشرة (بعد تأكيد) بدل دورة الإرسال
+            <button onClick={db.onApproveSel} style={{ ...btn, background: '#fff', color: '#0F1F3D' }}>
+              اعتماد المحدد
+            </button>
+          ) : (
+            <>
+              {db.onComplete && (
+                <button onClick={db.onComplete} style={{ ...btn, background: 'transparent', border: '1px solid rgba(255,255,255,.45)', color: '#fff' }}>
+                  إكمال وإرسال
+                </button>
+              )}
+              <button
+                onClick={() => (db.anyMissing ? setPopup(true) : db.onSend())}
+                style={{ ...btn, background: '#fff', color: '#0F1F3D' }}
+              >
+                إرسال للاعتماد
+              </button>
+            </>
+          )}
         </div>
       </div>
 

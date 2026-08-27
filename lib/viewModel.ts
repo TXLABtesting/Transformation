@@ -115,8 +115,9 @@ function build(s: Store) {
       return w !== 'draft' && w !== 'ent1';
     });
   } else if (rawRole === 'path') {
-    // stream head / deputy review coordinator submissions: everything but drafts
-    roleBase = base.filter((i) => wfOf(i) !== 'draft');
+    // فريق عمل المسار يرى كل مدخلات مساره بما فيها المسودات غير المكتملة —
+    // خصوصاً ملفات Excel المرفوعة بالنيابة عن الجهات — لمتابعتها واعتمادها
+    roleBase = base;
   } else if (rawRole === 'entity') {
     roleBase = base.filter((i) => wfOf(i) !== 'draft');
   }
@@ -678,6 +679,14 @@ function build(s: Store) {
             { v: 'approve', label: 'قيد الاعتماد' },
             { v: 'inprog', label: 'معتمد' },
           ]
+        : rawRole === 'path'
+        ? [
+            { v: 'all', label: 'الحالة' },
+            { v: 'draft', label: 'مسودة' },
+            { v: 'approve', label: 'قيد الاعتماد' },
+            { v: 'review', label: 'للتعديل' },
+            { v: 'inprog', label: 'معتمد' },
+          ]
         : [
             { v: 'all', label: 'الحالة' },
             { v: 'inprog', label: 'معتمد' },
@@ -1133,6 +1142,12 @@ function build(s: Store) {
         }).sort((a, b) => b.total - a.total);
 
   const cards = visible.map((i) => mkCard(i, s, { rawRole, role, myName, ent }));
+  // اعتماد جماعي لفريق عمل المسار: كل الظاهر أمامه القابل للاعتماد —
+  // المُرسَل للاعتماد والمسودات غير المكتملة — ويحترم التصفية الحالية (الجهة…)
+  const approveAllIds =
+    rawRole === 'path'
+      ? visible.filter((i) => ['ent1', 'draft'].includes(wfOf(i))).map((i) => i.id)
+      : [];
 
   // bulk-assign selection state (change vs first assignment)
   const assignSelItems = s.items.filter((i) => ui.assignSel.includes(i.id));
@@ -1761,6 +1776,7 @@ function build(s: Store) {
     },
     showAddBtn,
     showTeamBulk,
+    approveAllIds,
     // committee
     aiStats,
     entityRanking,
@@ -1782,7 +1798,9 @@ function build(s: Store) {
     draftBar: (() => {
       const sel = s.items.filter((i) => ui.draftSel.includes(i.id) && wfOf(i) === 'draft');
       return {
-        show: rawRole === 'coord' && sel.length > 0,
+        show: (rawRole === 'coord' || rawRole === 'path') && sel.length > 0,
+        // فريق المسار: أزرار اعتماد/حذف بدل إرسال المنسق
+        pathMode: rawRole === 'path',
         count: sel.length,
         items: sel.map((i) => ({
           id: i.id,
@@ -1791,6 +1809,8 @@ function build(s: Store) {
         })),
         anyMissing: sel.some((i) => missingFieldsOf(i as unknown as Record<string, unknown>).length > 0),
         onSend: () => s.submitDrafts(sel.map((i) => i.id)),
+        onApproveSel: () => s.openApproveAll(sel.map((i) => i.id)),
+        onDelete: () => s.openDeleteDrafts(sel.map((i) => i.id)),
         // multi-select: opens the first entry that still has missing fields
         onComplete: sel.length
           ? () => s.openDetail((sel.find((i) => missingFieldsOf(i as unknown as Record<string, unknown>).length > 0) || sel[0]).id)
@@ -1988,8 +2008,11 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const w = wfOf(i);
   const score = transformScore(i);
   const step = stepIndexOf(i);
-  // approval is فريق عمل المسار's responsibility
-  const canApprove = (rawRole === 'path' || rawRole === 'entity') && w === 'ent1';
+  // approval is فريق عمل المسار's responsibility — the team can also approve
+  // drafts directly (uploaded on behalf of entities, even when incomplete)
+  const canApprove =
+    ((rawRole === 'path' || rawRole === 'entity') && w === 'ent1') ||
+    (rawRole === 'path' && w === 'draft');
   const isFunded = !!i.funded;
   // status chip mirrors the real lifecycle exactly:
   // مسودة → بحاجة إلى تعديل → بانتظار اعتماد ممثل الجهة → مخطط · المرحلة N → مكتمل
@@ -2103,7 +2126,12 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
       cardAction = 'viewDetails';
     }
   } else if (rawRole === 'path') {
-    if (w === 'ent1') {
+    if (w === 'draft') {
+      // مسودة لدى الجهة (غالباً من رفع بالنيابة) — الفريق يعتمدها أو يعيدها
+      cardStatus = 'draft';
+      cardCaption = 'مسودة لدى الجهة — يمكن اعتمادها أو إعادتها';
+      cardAction = 'approveInfoReject';
+    } else if (w === 'ent1') {
       // pending review: the head/deputy approves or requests more information
       cardStatus = 'pendFund';
       cardCaption = '';
@@ -2229,7 +2257,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     launchLabel,
     // coordinator bulk-assign checkbox
     showAssignCheck: rawRole === 'coord',
-    showDraftCheck: ctx.rawRole === 'coord' && wfOf(i) === 'draft',
+    // الاختيار الجماعي للمسودات: المنسق (للإرسال/الحذف) وفريق المسار (للاعتماد/الحذف)
+    showDraftCheck: (ctx.rawRole === 'coord' || ctx.rawRole === 'path') && wfOf(i) === 'draft',
     draftChecked: s.ui.draftSel.includes(i.id),
     onToggleDraftSel: () => s.toggleDraftSel(i.id),
     missingCount: wfOf(i) === 'draft' ? missingFieldsOf(i as unknown as Record<string, unknown>).length : 0,

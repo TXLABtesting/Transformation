@@ -134,7 +134,7 @@ export type UiState = {
   reqModal: { id: string; mode: 'reject' | 'info'; note: string } | null;
   // in-app confirmation dialog (replaces window.confirm)
   confirmModal: {
-    kind: 'launchAll' | 'deleteItem' | 'deletePlan' | 'crossMove' | 'moveBatch' | 'withdrawDraft';
+    kind: 'launchAll' | 'deleteItem' | 'deletePlan' | 'crossMove' | 'moveBatch' | 'withdrawDraft' | 'approveAll' | 'deleteDrafts';
     title: string;
     body: string;
     okLabel: string;
@@ -318,6 +318,7 @@ type Actions = {
   toggleInquiryDone: (id: string) => void;
   toggleStepFilter: (n: number) => void;
   toggleDraftSel: (id: string) => void;
+  setDraftSel: (ids: string[]) => void;
   clearDraftSel: () => void;
   submitDrafts: (ids: string[]) => void;
   // create wizard
@@ -377,6 +378,10 @@ type Actions = {
   doSubmitScope: (id: string) => void;
   // workflow
   approveItem: (id: string) => void;
+  openApproveAll: (ids: string[]) => void;
+  approveAll: (ids: string[]) => void;
+  openDeleteDrafts: (ids: string[]) => void;
+  deleteDrafts: (ids: string[]) => void;
   rejectItem: (id: string, info?: boolean) => void;
   reqInfoItem: (id: string) => void;
   setReqNote: (v: string) => void;
@@ -1055,6 +1060,8 @@ export const useStore = create<Store>((set, get) => {
       if (!cm) return;
       setUi({ confirmModal: null });
       if (cm.kind === 'deleteItem') get().deleteItem(cm.payload.id, true);
+      else if (cm.kind === 'approveAll') get().approveAll(cm.payload.ids.split(',').filter(Boolean));
+      else if (cm.kind === 'deleteDrafts') get().deleteDrafts(cm.payload.ids.split(',').filter(Boolean));
       else if (cm.kind === 'withdrawDraft') get().withdrawToDraft(cm.payload.id, true);
       else if (cm.kind === 'deletePlan') get().removeLaunchPlan(cm.payload.id, true);
       else if (cm.kind === 'crossMove') get().togglePlanItem(cm.payload.planId, cm.payload.itemId, true);
@@ -1237,6 +1244,7 @@ export const useStore = create<Store>((set, get) => {
         ui: { ...st.ui, draftSel: st.ui.draftSel.includes(id) ? st.ui.draftSel.filter((x) => x !== id) : [...st.ui.draftSel, id] },
       })),
     clearDraftSel: () => setUi({ draftSel: [] }),
+    setDraftSel: (ids) => setUi({ draftSel: ids }),
     // group send-for-approval: only complete drafts move to رئيس المسار
     submitDrafts: (ids) => {
       const st = get();
@@ -2165,14 +2173,70 @@ export const useStore = create<Store>((set, get) => {
       const it = findItem(id);
       if (!it) return;
       const w = wfOf(it);
-      if (w === 'ent1') {
-        patchItem(id, (i) => ({ wf: 'exec', ret: null, log: withLog(s, i, 'approve') }));
+      // فريق عمل المسار يعتمد المُرسَل وكذلك المسودات (المرفوعة بالنيابة ولو ناقصة)
+      if (w === 'ent1' || (w === 'draft' && s.role === 'path')) {
+        patchItem(id, (i) => ({ wf: 'exec', approval: 'تم الإرسال', ret: null, log: withLog(s, i, 'approve') }));
         toast('تم اعتماد ' + typeLabelDefFor(it.type, it.path) + ' — إلى مرحلة التنفيذ');
       } else if (w === 'pm1') {
         patchItem(id, (i) => ({ wf: 'exec', ret: null, log: withLog(s, i, 'approve') }));
         toast('تم نقل ' + typeLabelDefFor(it.type, it.path) + ' إلى مرحلة التنفيذ');
       }
       setUi({ menuOpenId: null, dActionMenuOpen: false });
+    },
+    // اعتماد جماعي لفريق عمل المسار: كل الظاهر القابل للاعتماد — مرسل أو مسودة
+    openApproveAll: (ids) => {
+      if (!ids.length) return;
+      setUi({
+        confirmModal: {
+          kind: 'approveAll',
+          title: 'اعتماد المدخلات',
+          body: 'سيتم اعتماد ' + ids.length + ' من المدخلات — بما فيها غير المكتملة — ونقلها إلى مرحلة التنفيذ. هل تريد المتابعة؟',
+          okLabel: 'اعتماد الكل',
+          cancelLabel: 'إلغاء',
+          payload: { ids: ids.join(',') },
+        },
+      });
+    },
+    approveAll: (ids) => {
+      const s = get();
+      const idset = new Set(ids);
+      const targets = s.items.filter((i) => idset.has(i.id) && ['draft', 'ent1'].includes(wfOf(i)));
+      if (!targets.length) return;
+      const tset = new Set(targets.map((i) => i.id));
+      set((st) => ({
+        items: st.items.map((i) =>
+          tset.has(i.id) ? { ...i, wf: 'exec' as WfState, approval: 'تم الإرسال', ret: null, log: withLog(st, i, 'approve') } : i
+        ),
+        ui: { ...st.ui, draftSel: [] },
+      }));
+      logChange('اعتماد جماعي', undefined, 'اعتماد ' + targets.length + ' من المدخلات دفعة واحدة');
+      persist();
+      toast('تم اعتماد ' + targets.length + ' من المدخلات — إلى مرحلة التنفيذ');
+    },
+    // حذف جماعي للمسودات المحددة — بعد رسالة تأكيد
+    openDeleteDrafts: (ids) => {
+      if (!ids.length) return;
+      setUi({
+        confirmModal: {
+          kind: 'deleteDrafts',
+          title: 'حذف المسودات المحددة',
+          body: 'سيتم حذف ' + ids.length + ' من المسودات نهائياً ولا يمكن التراجع عن ذلك. هل تريد المتابعة؟',
+          okLabel: 'حذف نهائياً',
+          cancelLabel: 'إلغاء',
+          payload: { ids: ids.join(',') },
+        },
+      });
+    },
+    deleteDrafts: (ids) => {
+      const s = get();
+      const idset = new Set(ids);
+      const targets = s.items.filter((i) => idset.has(i.id) && wfOf(i) === 'draft');
+      if (!targets.length) return;
+      const tset = new Set(targets.map((i) => i.id));
+      set((st) => ({ items: st.items.filter((i) => !tset.has(i.id)), ui: { ...st.ui, draftSel: [] } }));
+      logChange('حذف جماعي للمسودات', undefined, 'حذف ' + targets.length + ' من المسودات دفعة واحدة');
+      persist();
+      toast('تم حذف ' + targets.length + ' من المسودات');
     },
     rejectItem: (id, info) => setUi({ reqModal: { id, mode: info ? 'info' : 'reject', note: '' }, menuOpenId: null, dActionMenuOpen: false }),
     reqInfoItem: (id) => get().rejectItem(id, true),
