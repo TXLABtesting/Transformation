@@ -513,7 +513,11 @@ export function ProjCommitteePage() {
   const [retId, setRetId] = useState<string | null>(null);
   const [note, setNote] = useState('');
 
-  const reset = () => { setName(''); setLead(''); setMember(''); setStart(''); setEnd(''); setEditId(null); };
+  // النموذج يفتح تحت الجدول عند الطلب فقط — والزر ينزل إليه في كل نقرة
+  const [formOpen, setFormOpen] = useState(false);
+  const scrollToForm = () => setTimeout(() => document.getElementById('proj-def-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
+
+  const reset = () => { setName(''); setLead(''); setMember(''); setStart(''); setEnd(''); setEditId(null); setFormOpen(false); };
   const save = () => {
     if (!name.trim()) return s.toast('أدخل اسم المشروع');
     if (!lead) return s.toast('اختر قائد المشروع');
@@ -526,9 +530,18 @@ export function ProjCommitteePage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
+        <button
+          onClick={() => { setEditId(null); setName(''); setLead(''); setMember(''); setStart(''); setEnd(''); setFormOpen(true); scrollToForm(); }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(37,99,235,.35)', fontFamily: 'inherit' }}
+        >
+          <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة مشروع
+        </button>
+      </div>
 
-      <div style={{ ...card, padding: 20 }}>
+      {formOpen && (
+      <div id="proj-def-form" style={{ ...card, padding: 20, scrollMarginTop: 90, order: 2 }}>
         <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 14 }}>{editId ? 'تعديل مشروع' : 'إضافة مشروع استراتيجي'}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 12 }}>
           <div>
@@ -557,9 +570,10 @@ export function ProjCommitteePage() {
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
           <button onClick={save} style={btnPrimary}>{editId ? 'حفظ التعديلات' : 'إضافة المشروع'}</button>
-          {editId && <button onClick={reset} style={btnGhost}>إلغاء</button>}
+          <button onClick={reset} style={btnGhost}>إلغاء</button>
         </div>
       </div>
+      )}
 
       <div style={{ ...card, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 760 }}>
@@ -604,7 +618,7 @@ export function ProjCommitteePage() {
                       )}
                       {!isSent && !isApproved && (
                         <>
-                          <button onClick={() => { setEditId(d.id); setName(d.name); setLead(d.lead); setMember(d.member || ''); setStart((d.start || '').slice(0, 7)); setEnd((d.end || '').slice(0, 7)); }} style={{ ...btnGhost, ...smallBtn }}>تعديل</button>
+                          <button onClick={() => { setEditId(d.id); setName(d.name); setLead(d.lead); setMember(d.member || ''); setStart((d.start || '').slice(0, 7)); setEnd((d.end || '').slice(0, 7)); setFormOpen(true); scrollToForm(); }} style={{ ...btnGhost, ...smallBtn }}>تعديل</button>
                           <button onClick={() => setDelId(d.id)} style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', ...smallBtn }}>حذف</button>
                         </>
                       )}
