@@ -9,6 +9,7 @@ import { useStore } from '@/lib/store';
 import { useViewModel } from '@/lib/viewModel';
 import { Dashboard } from '@/components/Dashboard';
 import { AdminConsole } from '@/components/AdminConsole';
+import { StrategicProjects } from '@/components/StrategicProjects';
 import { CreatePanel } from '@/components/CreatePanel';
 import { DetailPanel } from '@/components/DetailPanel';
 import { BasketDrawer, DraftBar, FundBar, AssignBar } from '@/components/Basket';
@@ -41,7 +42,8 @@ export default function DashboardPage() {
     <>
       <ResponsiveZoom />
       {vm.isDashboard && vm.isAdmin && <AdminConsole vm={vm} />}
-      {vm.isDashboard && !vm.isAdmin && (
+      {vm.isDashboard && !vm.isAdmin && vm.isProj && <StrategicProjects vm={vm} />}
+      {vm.isDashboard && !vm.isAdmin && !vm.isProj && (
         <>
           <Dashboard vm={vm} />
           {vm.showBasket && <FundBar vm={vm} />}

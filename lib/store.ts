@@ -25,6 +25,8 @@ import {
   blankOwner,
   wfOf,
   isTeamUpload,
+  type ProjDef,
+  type ProjForm,
   execAllDone,
   launchAllDone,
   entOf,
@@ -201,6 +203,9 @@ type State = {
   setupDone: boolean;
   items: Item[];
   launchPlans: LaunchPlan[];
+  // المشاريع الاستراتيجية: تعريفات المشرف ونماذج الأعضاء (معزولة عن المسارات)
+  projDefs: ProjDef[];
+  projForms: ProjForm[];
   expectedResults: ExpectedResult[];
   // contact-page inquiry inboxes (editable from the admin backoffice)
   contactEmails: Record<string, string>;
@@ -379,6 +384,14 @@ type Actions = {
   doSubmitScope: (id: string) => void;
   // workflow
   approveItem: (id: string) => void;
+  // المشاريع الاستراتيجية
+  addProjDef: (d: Omit<ProjDef, 'id'>) => void;
+  updateProjDef: (id: string, patch: Partial<ProjDef>) => void;
+  removeProjDef: (id: string) => void;
+  saveProjForm: (f: ProjForm, submit: boolean) => void;
+  deleteProjForm: (id: string) => void;
+  approveProjForm: (id: string) => void;
+  returnProjForm: (id: string, note: string) => void;
   openApproveAll: (ids: string[]) => void;
   approveAll: (ids: string[]) => void;
   openDeleteDrafts: (ids: string[]) => void;
@@ -547,6 +560,8 @@ function initialState(): State {
     entityName: DEFAULT_ENTITY,
     setupDone: false,
     items: seedItems(),
+    projDefs: [],
+    projForms: [],
     launchPlans: recalcPlanBudgets(seedItems(), seedLaunchPlans()),
     expectedResults: seedExpectedResults(),
     contactEmails: { ...DEFAULT_CONTACT_EMAILS },
@@ -655,6 +670,8 @@ export const useStore = create<Store>((set, get) => {
       seedV: SEED_V,
       items: s.items,
       launchPlans: s.launchPlans,
+      projDefs: s.projDefs,
+      projForms: s.projForms,
       expectedResults: s.expectedResults,
       contactEmails: s.contactEmails,
       aboutHero: s.aboutHero,
@@ -776,6 +793,8 @@ export const useStore = create<Store>((set, get) => {
             ? (saved!.users as UserRec[]).map((u) => ({ ...u, role: migrateRole(u.role) }))
             : seedUsers(DEFAULT_ENTITY),
           items,
+          projDefs: !fresh && Array.isArray(saved!.projDefs) ? (saved!.projDefs as ProjDef[]) : [],
+          projForms: !fresh && Array.isArray(saved!.projForms) ? (saved!.projForms as ProjForm[]) : [],
           phase: (saved!.phase as State['phase']) || s.phase,
           setup: (saved!.setup as Setup) || s.setup,
           readNotifs: (saved!.readNotifs as string[]) || [],
@@ -2184,6 +2203,99 @@ export const useStore = create<Store>((set, get) => {
         toast('تم نقل ' + typeLabelDefFor(it.type, it.path) + ' إلى مرحلة التنفيذ');
       }
       setUi({ menuOpenId: null, dActionMenuOpen: false });
+    },
+    // ---- المشاريع الاستراتيجية ------------------------------------------
+    addProjDef: (d) => {
+      if (!d.name.trim()) return toast('أدخل اسم المشروع');
+      const def: ProjDef = { id: 'pj' + Date.now(), ...d };
+      set((st) => ({ projDefs: [...st.projDefs, def] }));
+      logChange('إضافة مشروع استراتيجي', def.name, 'القائد: ' + (def.lead || '—'));
+      persist();
+      toast('تمت إضافة المشروع: ' + def.name);
+    },
+    updateProjDef: (id, patch) => {
+      const def = get().projDefs.find((p) => p.id === id);
+      if (!def) return;
+      set((st) => ({ projDefs: st.projDefs.map((p) => (p.id === id ? { ...p, ...patch } : p)) }));
+      logChange('تعديل مشروع استراتيجي', patch.name || def.name);
+      persist();
+      toast('تم تحديث المشروع');
+    },
+    removeProjDef: (id) => {
+      const def = get().projDefs.find((p) => p.id === id);
+      if (!def) return;
+      set((st) => ({
+        projDefs: st.projDefs.filter((p) => p.id !== id),
+        projForms: st.projForms.filter((f) => f.projId !== id),
+      }));
+      logChange('حذف مشروع استراتيجي', def.name);
+      persist();
+      toast('تم حذف المشروع ونماذجه');
+    },
+    saveProjForm: (f, submit) => {
+      const s = get();
+      const def = s.projDefs.find((p) => p.id === f.projId);
+      if (!def) return toast('اختر المشروع أولاً');
+      const exists = s.projForms.some((x) => x.id === f.id);
+      const entry: ProjForm = {
+        ...f,
+        owner: f.owner || actorName(s),
+        wf: submit ? 'sent' : 'draft',
+        ret: submit ? null : f.ret,
+        log: [
+          ...(f.log || []),
+          { action: exists ? (submit ? 'submit' : 'edit') : 'create', by: actorName(s), role: actorRole(s), at: Date.now(), note: submit ? 'أُرسل لاعتماد اللجنة الوطنية' : '' },
+        ],
+      };
+      set((st) => ({
+        projForms: exists ? st.projForms.map((x) => (x.id === f.id ? entry : x)) : [...st.projForms, entry],
+      }));
+      logChange(submit ? 'إرسال نموذج مشروع للاعتماد' : 'حفظ نموذج مشروع', def.name);
+      persist();
+      toast(submit ? 'تم إرسال النموذج لاعتماد اللجنة الوطنية' : 'تم حفظ النموذج كمسودة');
+    },
+    deleteProjForm: (id) => {
+      const s = get();
+      const f = s.projForms.find((x) => x.id === id);
+      if (!f || f.wf === 'approved') return;
+      const def = s.projDefs.find((p) => p.id === f.projId);
+      set((st) => ({ projForms: st.projForms.filter((x) => x.id !== id) }));
+      logChange('حذف نموذج مشروع', def?.name);
+      persist();
+      toast('تم حذف النموذج');
+    },
+    approveProjForm: (id) => {
+      const s = get();
+      const f = s.projForms.find((x) => x.id === id);
+      if (!f || f.wf !== 'sent') return;
+      const def = s.projDefs.find((p) => p.id === f.projId);
+      set((st) => ({
+        projForms: st.projForms.map((x) =>
+          x.id === id
+            ? { ...x, wf: 'approved' as const, ret: null, log: [...(x.log || []), { action: 'approve', by: actorName(s), role: actorRole(s), at: Date.now(), note: '' }] }
+            : x
+        ),
+      }));
+      logChange('اعتماد نموذج مشروع', def?.name);
+      persist();
+      toast('تم اعتماد النموذج: ' + (def?.name || ''));
+    },
+    returnProjForm: (id, note) => {
+      const s = get();
+      const f = s.projForms.find((x) => x.id === id);
+      if (!f || f.wf !== 'sent') return;
+      if (!note.trim()) return toast('نرجو كتابة الملاحظات المطلوب معالجتها');
+      const def = s.projDefs.find((p) => p.id === f.projId);
+      set((st) => ({
+        projForms: st.projForms.map((x) =>
+          x.id === id
+            ? { ...x, wf: 'draft' as const, ret: { note, at: Date.now() }, log: [...(x.log || []), { action: 'info', by: actorName(s), role: actorRole(s), at: Date.now(), note }] }
+            : x
+        ),
+      }));
+      logChange('إعادة نموذج مشروع للتعديل', def?.name, note);
+      persist();
+      toast('أُعيد النموذج للعضو مع الملاحظات');
     },
     // اعتماد جماعي لفريق عمل المسار: كل الظاهر القابل للاعتماد — مرسل أو مسودة
     openApproveAll: (ids) => {

@@ -1615,6 +1615,8 @@ function build(s: Store) {
     resultsPage,
     resultModal,
     isAdmin,
+    // دور أعضاء المشاريع الاستراتيجية — لوحة مستقلة عن لوحات المسارات
+    isProj: rawRole === 'proj',
     adminReturn: s.role === 'admin' && !!s.ui.adminDash,
     admin,
     // view

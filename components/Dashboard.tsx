@@ -3,6 +3,7 @@ import { Fragment, useEffect, useState, type CSSProperties, type ReactNode, useM
 import type { VM } from '@/lib/viewModel';
 import { InlineCreateForm } from './CreatePanel';
 import { Icon } from './Icon';
+import { ProjApprovals } from './StrategicProjects';
 import { Tour, TOUR_EVENT, type TourStep } from './Tour';
 import { LAUNCH_TYPES, TBD_BATCH } from '@/lib/domain';
 
@@ -2659,6 +2660,9 @@ export function Dashboard({ vm }: { vm: VM }) {
               <div data-tour="ai-heading" style={{ margin: '2px 0 -4px' }}>
                 <div className="hd" style={{ fontSize: 22, fontWeight: 800, color: '#13213C' }}>لوحة اللجنة الوطنية</div>
               </div>
+
+              {/* نماذج المشاريع الاستراتيجية بانتظار اعتماد اللجنة */}
+              <ProjApprovals />
 
               {/* same KPI boxes as the stream dashboards (no priority boxes) */}
               <SegKpiStrip

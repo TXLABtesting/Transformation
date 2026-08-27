@@ -4,7 +4,7 @@
 // numbers, colors and formulas are verbatim from the Claude Design prototype.
 // ============================================================================
 
-export type RoleKey = 'entity' | 'path' | 'coord' | 'ai' | 'admin';
+export type RoleKey = 'entity' | 'path' | 'coord' | 'ai' | 'admin' | 'proj';
 export type ItemType = 'project' | 'initiative' | 'operation' | 'service';
 export type WfState =
   | 'draft'
@@ -702,6 +702,12 @@ export const ROLE: Record<
     badge: '#1D4ED8',
     bg: '#EAF1FE',
   },
+  proj: {
+    label: 'أعضاء المشاريع الاستراتيجية',
+    sub: 'تعبئة نماذج المشاريع الاستراتيجية وإرسالها لاعتماد اللجنة الوطنية',
+    badge: '#1D4ED8',
+    bg: '#EAF1FE',
+  },
 };
 
 // Access-role reference (الأدوار والصلاحيات) — mirrors the DB `roles` table.
@@ -716,6 +722,7 @@ export const ROLE_INFO: {
   { key: 'ai', nameAr: 'اللجنة الوطنية للذكاء الاصطناعي المساعد', descAr: 'اطلاع وطني على جميع المدخلات المعتمدة من فرق عمل المسارات عبر كل المسارات والجهات.', scope: 'وطني', permissions: ['item.view.approved.all'] },
   { key: 'path', nameAr: 'فريق عمل المسار في المشروع', descAr: 'يراجع مدخلات كل الجهات ضمن مساره ويعتمدها أو يطلب معلومات إضافية.', scope: 'مسار واحد أو أكثر', permissions: ['item.view.stream', 'item.approve', 'item.info.request', 'plan.view'] },
   { key: 'coord', nameAr: 'منسق المسار في الجهة الاتحادية', descAr: 'يعبّئ جميع بيانات مسارات جهته ويرسلها للاعتماد.', scope: 'مسار واحد أو أكثر داخل جهته', permissions: ['item.create', 'item.update', 'item.submit', 'plan.edit'] },
+  { key: 'proj', nameAr: 'أعضاء المشاريع الاستراتيجية', descAr: 'يعبّئون نماذج المشاريع الاستراتيجية المحددة مسبقاً (بيانات المشروع والمراحل التنفيذية وفريق العمل) ويرسلونها لاعتماد اللجنة الوطنية.', scope: 'المشاريع المكلفون بها', permissions: ['project.form.create', 'project.form.update', 'project.form.submit'] },
 ];
 
 // Real stream representatives (فريق عمل المسار) — one per transformation stream
@@ -728,8 +735,42 @@ export const ROLE_PILLS: { key: RoleKey; label: string }[] = [
   { key: 'coord', label: 'منسق المسار في الجهة الاتحادية' },
   { key: 'path', label: 'فريق عمل المسار في المشروع' },
   { key: 'ai', label: 'اللجنة الوطنية للذكاء الاصطناعي المساعد' },
+  { key: 'proj', label: 'أعضاء المشاريع الاستراتيجية' },
   { key: 'admin', label: 'مشرف النظام' },
 ];
+
+// ============================================================================
+// المشاريع الاستراتيجية — قادة المشاريع المعتمدون (يعيّنهم مشرف النظام على
+// المشاريع؛ لا حسابات لهم في هذه المرحلة — بيانات وصفية فقط)
+// ============================================================================
+export const PROJECT_LEADS = [
+  'معالي عمر العلماء',
+  'معالي مريم الحمادي',
+  'معالي هدى الهاشمي',
+  'سعادة محمد بن طليعة',
+  'سعادة فوزية الطاير',
+  'سعادة هيثم الريس',
+  'سعادة إبراهيم سلمان',
+];
+
+// مشروع معرّف مسبقاً من مشرف النظام (الاسم والقائد وفترة التنفيذ)
+export type ProjDef = { id: string; name: string; lead: string; start: string; end: string };
+export type ProjPhase = { name: string; start: string; end: string };
+export type ProjMember = { name: string; title: string; entity: string; email: string; phone: string };
+// نموذج المشروع الذي يعبّئه عضو المشاريع الاستراتيجية — الفريق: العنصر الأول رئيس الفريق
+export type ProjForm = {
+  id: string;
+  projId: string;
+  owner: string;
+  entityResp: string;
+  desc: string;
+  outputs: string[];
+  phases: ProjPhase[];
+  team: ProjMember[];
+  wf: 'draft' | 'sent' | 'approved';
+  ret: { note: string; at: number } | null;
+  log: LogEntry[];
+};
 
 /**
  * أدوار أُلغيت بدمجها في أدوار البنية المعتمدة (أربعة أدوار):
