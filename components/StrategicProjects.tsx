@@ -526,18 +526,10 @@ export function ProjCommitteePage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
-        <div style={{ fontSize: 12, color: '#9AA6BC', marginTop: 3 }}>
-          تعريف المشاريع وإسنادها إلى القادة وأعضائهم المسؤولين، واعتماد النماذج المرسلة من الأعضاء
-        </div>
-      </div>
+      <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
 
       <div style={{ ...card, padding: 20 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{editId ? 'تعديل مشروع' : 'إضافة مشروع استراتيجي'}</div>
-        <div style={{ fontSize: 12, color: '#8A97AD', marginBottom: 14 }}>
-          المشاريع المعرّفة هنا تظهر لأعضاء المشاريع الاستراتيجية لتعبئة نماذجها وإرسالها لاعتماد اللجنة
-        </div>
+        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 14 }}>{editId ? 'تعديل مشروع' : 'إضافة مشروع استراتيجي'}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 12 }}>
           <div>
             <label style={label}>اسم المشروع{req}</label>
