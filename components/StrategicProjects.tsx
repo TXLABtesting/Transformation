@@ -266,43 +266,31 @@ export function ProjMemberSection() {
     setTimeout(() => document.getElementById('proj-form-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
   };
 
-  const kpi = (labelTxt: string, v: number, c: string, bg: string) => (
-    <div style={{ ...card, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <div>
-        <div style={{ fontSize: 12.5, color: '#8A97AD', fontWeight: 700 }}>{labelTxt}</div>
-        <div style={{ fontSize: 26, fontWeight: 900, color: '#13213C', marginTop: 4 }}>{v}</div>
-      </div>
-      <span style={{ width: 42, height: 42, borderRadius: 12, background: bg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Icon d="M3 3v18h18M8 17V9m4 8V5m4 12v-6" size={19} color={c} />
-      </span>
+  const kpi = (labelTxt: string, v: number) => (
+    <div style={{ ...card, padding: '16px 18px' }}>
+      <div style={{ fontSize: 12.5, color: '#8A97AD', fontWeight: 700 }}>{labelTxt}</div>
+      <div style={{ fontSize: 26, fontWeight: 900, color: '#13213C', marginTop: 4 }}>{v}</div>
     </div>
   );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* عنوان الصفحة بنمط بقية صفحات المنصة */}
-      <div>
-        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
-        <div style={{ fontSize: 12, color: '#9AA6BC', marginTop: 3 }}>
-          تعبئة نماذج المشاريع المعرّفة من اللجنة الوطنية وإرسالها للاعتماد
-        </div>
-      </div>
+      <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
 
       <div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 14, marginBottom: 20 }}>
-          {kpi('إجمالي المشاريع', defs.length, '#1D4ED8', '#E5EEFF')}
+          {kpi('إجمالي المشاريع', defs.length)}
           {/* يتطلب التعبئة = مشاريع بلا نموذج بعد + المسودات والمعادة للتعديل */}
           {kpi(
             'يتطلب التعبئة',
             defs.filter((d) => {
               const f = forms.find((x) => x.projId === d.id);
               return !f || f.wf === 'draft';
-            }).length,
-            '#B45309',
-            '#FFF3DE'
+            }).length
           )}
-          {kpi('قيد اعتماد اللجنة', forms.filter((f) => f.wf === 'sent').length, '#0E7C86', '#E3F4F6')}
-          {kpi('معتمدة', forms.filter((f) => f.wf === 'approved').length, '#0B8A4B', '#EAF7F0')}
+          {kpi('قيد اعتماد اللجنة', forms.filter((f) => f.wf === 'sent').length)}
+          {kpi('معتمدة', forms.filter((f) => f.wf === 'approved').length)}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
