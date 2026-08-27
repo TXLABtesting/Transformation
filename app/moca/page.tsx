@@ -34,9 +34,11 @@ export default function MocaPage() {
       router.replace('/login');
       return;
     }
-    // مشرف النظام لا يُحتجز في نسخة الوزارة حتى لو كانت جهته من UAE PASS هي
-    // وزارة شؤون مجلس الوزراء — لوحته الموحدة (اللوحات + لوحة المشرف) على /dashboard
-    if (mainRole === 'admin') {
+    // نسخة الوزارة لمنسوبي وزارة شؤون مجلس الوزراء فقط (عدا المشرف):
+    //  - مشرف النظام → لوحة الإدارة الموحدة على /dashboard
+    //  - أي دور آخر جهته ليست الوزارة → لوحته الخاصة على /dashboard
+    const isMocaUser = /وزارة شؤون مجلس الوزراء/.test(String(mainEntity || ''));
+    if (mainRole === 'admin' || !isMocaUser) {
       router.replace('/dashboard');
       return;
     }
@@ -44,7 +46,10 @@ export default function MocaPage() {
   }, [mainHydrated, mainAuthChecked, mainView, mainRole, mainEntity, syncSession, router]);
 
   // لا نرسم شيئاً قبل قراءة التخزين المحلي تفادياً لاختلاف SSR/CSR
-  if (!hydrated || (!DEMO && (!mainHydrated || !mainAuthChecked || mainView === 'login' || mainRole === 'admin')))
+  const liveBlocked =
+    !DEMO &&
+    (!mainHydrated || !mainAuthChecked || mainView === 'login' || mainRole === 'admin' || !/وزارة شؤون مجلس الوزراء/.test(String(mainEntity || '')));
+  if (!hydrated || liveBlocked)
     return <div style={{ minHeight: '100vh', background: '#EEF2F9' }} />;
   return <MocaWorkspace />;
 }
