@@ -242,6 +242,8 @@ type State = {
   sessionRoles: RoleKey[];
   /** جهات صاحب الجلسة من الخادم (جهته ونطاقاته) — بها يظهر مبدّل الجهات */
   sessionEntities: { id: string; name: string }[];
+  /** وحدات وقطاعات وزارة شؤون مجلس الوزراء المسندة لصاحب الجلسة */
+  sessionMocaUnits: string[];
 };
 
 type Actions = {
@@ -269,6 +271,7 @@ type Actions = {
   adminSaveUser: (u: UserRec) => void;
   adminToggleUser: (id: string) => void;
   adminRemoveUser: (id: string) => void;
+  adminDisableUser: (id: string) => void;
   // dropdowns / panels
   toggleNotifs: () => void;
   markNotifsRead: (ids: string[]) => void;
@@ -625,6 +628,7 @@ function initialState(): State {
     sessionAdmin: false,
     sessionRoles: [],
     sessionEntities: [],
+    sessionMocaUnits: [],
   };
 }
 
@@ -944,6 +948,7 @@ export const useStore = create<Store>((set, get) => {
               return {
                 ...s,
                 sessionRoles: sessionRoles.length ? sessionRoles : [role],
+                sessionMocaUnits: Array.isArray(res.user.mocaUnits) ? (res.user.mocaUnits as string[]) : [],
                 // المشرف يدخل على لوحة الإدارة مباشرة — ومبدّل الأدوار أعلى
                 // الصفحة يتيح له التنقل إلى اللوحات وبقية الأدوار متى شاء
                 sessionAdmin: role === 'admin',
@@ -1179,8 +1184,26 @@ export const useStore = create<Store>((set, get) => {
       })();
     },
     adminRemoveUser: (id) => {
-      // The backend has no hard-delete for users (accounts stay for the
-      // audit trail — see audit_logs FK). "Remove" here means disable.
+      // حذف نهائي على الخادم: الأدوار والنطاقات تُحذف معه، وسجل التدقيق
+      // يحتفظ بأثر الحذف بفاعل فارغ. النسخة المحلية تُحدَّث تفاؤلياً.
+      const u = get().users.find((x) => x.id === id);
+      set((s) => ({ users: s.users.filter((x) => x.id !== id) }));
+      logChange('إدارة المستخدمين — حذف حساب', u?.name || u?.email || id);
+      persist();
+      if (!API_MODE) return toast('تم حذف الحساب');
+      fetch('/api/admin/users/' + id, { method: 'DELETE', credentials: 'include' })
+        .then(async (r) => {
+          if (r.ok) return toast('تم حذف الحساب');
+          const b = await r.json().catch(() => ({}));
+          if (u) set((s) => ({ users: [...s.users, u] })); // الفشل يعيد الصف
+          toast(b.message || 'تعذّر حذف الحساب');
+        })
+        .catch(() => {
+          if (u) set((s) => ({ users: [...s.users, u] }));
+          toast('تعذّر الاتصال بالخادم');
+        });
+    },
+    adminDisableUser: (id) => {
       const u = get().users.find((x) => x.id === id);
       set((s) => ({ users: s.users.map((x) => (x.id === id ? { ...x, active: false } : x)) }));
       logChange('إدارة المستخدمين — تعطيل حساب', u?.name || u?.email || id);

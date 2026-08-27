@@ -378,6 +378,29 @@ function Header() {
                 <FilterSelect value={s.unitSector} onChange={(v) => s.setScope(s.unitId, v)} minWidth={180} options={unit.sectors.map((x) => ({ v: x, label: x }))} />
               )}
             </>
+          ) : (s.myUnits || []).length > 1 ? (
+            // أُسندت له أكثر من جهة/قطاع داخل الوزارة — يتنقل بينها من هنا
+            <select
+              value={s.unitSector ? s.unitId + '::' + s.unitSector : s.unitId}
+              onChange={(e) => s.pickUnit(e.target.value)}
+              style={{
+                background: '#fff',
+                border: '1px solid #DCE3EE',
+                borderRadius: 10,
+                padding: '8px 12px',
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#33415C',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+                maxWidth: 280,
+              }}
+            >
+              {(s.myUnits || []).map((raw) => {
+                const [uid2, sec = ''] = raw.split('::');
+                return <option key={raw} value={raw}>{mocaScopeLabel(uid2, sec)}</option>;
+              })}
+            </select>
           ) : (
             <div
               style={{

@@ -10,7 +10,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuthUser } from '@/lib/security/auth';
 import { handleApiError } from '@/lib/security/http';
 import { isGlobalRole } from '@/lib/security/rbac';
-import { assertMocaView, canWriteMoca, mocaScopeForUser } from '@/lib/security/moca-access';
+import { assertMocaView, canWriteMoca, mocaInScope, mocaScopesForUser } from '@/lib/security/moca-access';
 import { MOCA_ENTRY_COLS } from '@/lib/server/moca-proj-map';
 
 export const runtime = 'nodejs';
@@ -33,7 +33,9 @@ export async function POST(req: NextRequest) {
     const entries = Array.isArray(body.entries) ? body.entries.slice(0, 3000) : [];
     const useCases = Array.isArray(body.useCases) ? body.useCases.slice(0, 3000) : [];
     const global = isGlobalRole(u);
-    const scope = await mocaScopeForUser(u);
+    // وحدات المستخدم المسندة — قد تكون أكثر من وحدة/قطاع، وبلا إسناد يعمل
+    // على الوزارة كلها. الكتابة تُقصر على الوحدة الواردة إن كانت ضمن نطاقه.
+    const scopes = await mocaScopesForUser(u);
     const writer = canWriteMoca(u);
 
     if (!global && !writer) return NextResponse.json({ ok: true, skipped: true });
@@ -66,9 +68,7 @@ export async function POST(req: NextRequest) {
     // ---- منسق الوزارة: محتوى وحدته إن أُسندت له، وإلا محتوى الوزارة كلها ----
     // في الحالتين لا يطال إلا جداول الوزارة، ولا يعتمد شيئاً بنفسه.
     const inScope = (unitId?: string, unitSector?: string) =>
-      !scope
-        ? !!unitId
-        : unitId === scope.unitId && (!scope.unitSector || unitSector === scope.unitSector);
+      !scopes.length ? !!unitId : mocaInScope(scopes, { unitId, unitSector });
 
     const mine = entries.filter((e) => inScope(str(e.unitId), str(e.unitSector)));
     const keepIds: string[] = [];
@@ -79,8 +79,9 @@ export async function POST(req: NextRequest) {
       for (const [k, v] of Object.entries(e)) if (!MOCA_ENTRY_COLS.has(k)) fields[k] = v;
       const ret = (e.ret || null) as { type?: string; note?: string; at?: string } | null;
       const data = {
-        unitId: scope ? scope.unitId : String(e.unitId || ''),
-        unitSector: scope ? scope.unitSector || String(e.unitSector || '') : String(e.unitSector || ''),
+        // الوحدة كما وردت — «mine» مصفاة أصلاً على وحدات المستخدم المسندة
+        unitId: String(e.unitId || ''),
+        unitSector: String(e.unitSector || ''),
         // المنسق لا يعتمد: أي حالة غير مسودة/قيد الاعتماد تُترك للخادم
         wf: e.wf === 'pending' ? 'pending' : e.wf === 'approved' ? undefined : 'draft',
         retType: ret ? String(ret.type || 'info') : null,
@@ -117,11 +118,11 @@ export async function POST(req: NextRequest) {
     }
 
     // ما حُذف محلياً يُحذف على الخادم — ضمن نطاق المنسق وغير المعتمد فقط
+    const scopeWhere = (sc: { unitId: string; unitSector: string }) =>
+      sc.unitSector ? { unitId: sc.unitId, unitSector: sc.unitSector } : { unitId: sc.unitId };
     await prisma.mocaEntry.deleteMany({
       where: {
-        ...(scope
-          ? { unitId: scope.unitId, ...(scope.unitSector ? { unitSector: scope.unitSector } : {}) }
-          : {}),
+        ...(scopes.length === 0 ? {} : scopes.length === 1 ? scopeWhere(scopes[0]) : { OR: scopes.map(scopeWhere) }),
         wf: { not: 'approved' },
         id: { notIn: keepIds.length ? keepIds : ['__none__'] },
       },
@@ -134,8 +135,8 @@ export async function POST(req: NextRequest) {
       const id = str(c.id);
       const data = {
         entryId: str(c.entryId) ?? null,
-        unitId: scope ? scope.unitId : String(c.unitId || ''),
-        unitSector: scope ? scope.unitSector || String(c.unitSector || '') : String(c.unitSector || ''),
+        unitId: String(c.unitId || ''),
+        unitSector: String(c.unitSector || ''),
         mainProcess: String(c.mainProcess || ''),
         subProcess: String(c.subProcess || ''),
         status: String(c.status || ''),
@@ -158,9 +159,7 @@ export async function POST(req: NextRequest) {
     }
     await prisma.mocaUseCase.deleteMany({
       where: {
-        ...(scope
-          ? { unitId: scope.unitId, ...(scope.unitSector ? { unitSector: scope.unitSector } : {}) }
-          : {}),
+        ...(scopes.length === 0 ? {} : scopes.length === 1 ? scopeWhere(scopes[0]) : { OR: scopes.map(scopeWhere) }),
         id: { notIn: ucKeep.length ? ucKeep : ['__none__'] },
       },
     });

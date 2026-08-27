@@ -4,6 +4,7 @@ import { requireAuthUser } from '@/lib/security/auth';
 import { assertEntity, assertPermission, canAccessAllEntities } from '@/lib/security/rbac';
 import { handleApiError, getIp } from '@/lib/security/http';
 import { writeAuditLog } from '@/lib/security/audit';
+import { jsonError, messages } from '@/lib/security/errors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,6 +19,30 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     if (!canAccessAllEntities(actor)) assertEntity(actor, u.entityId);
     return NextResponse.json({ user: u });
   } catch (e) { return handleApiError(e); }
+}
+
+/**
+ * حذف نهائي للحساب. أدواره ونطاقاته وإشعاراته تُحذف معه بالتتابع، وسجل
+ * التدقيق يبقى بفاعل فارغ (onDelete: SetNull) فلا يضيع أثر ما جرى.
+ * مقصور على الأدوار العامة، ولا يحذف المستخدم نفسه.
+ */
+export async function DELETE(req: NextRequest, { params }: Ctx) {
+  try {
+    const actor = await requireAuthUser(req);
+    assertPermission(actor, 'users:disable');
+    if (!canAccessAllEntities(actor)) throw Object.assign(new Error('forbidden'), { status: 403 });
+    if (actor.id === params.id) return jsonError('VALIDATION_ERROR', messages.cannotDeleteSelf, 400);
+    const existing = await prisma.user.findUnique({ where: { id: params.id } });
+    if (!existing) throw Object.assign(new Error('not-found'), { status: 404 });
+    await prisma.$transaction(async (tx) => {
+      await writeAuditLog({ actorUserId: actor.id, action: 'user_deleted', resourceType: 'user', resourceId: params.id, entityId: existing.entityId, metadata: { email: existing.email }, ipAddress: getIp(req), userAgent: req.headers.get('user-agent') }, tx);
+      await tx.setting.deleteMany({ where: { key: { in: ['moca_unit:' + params.id, 'proj_lead:' + params.id] } } });
+      await tx.user.delete({ where: { id: params.id } });
+    });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return handleApiError(e);
+  }
 }
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {

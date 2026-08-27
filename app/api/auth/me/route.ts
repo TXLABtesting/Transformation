@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loadAuthUser } from '@/lib/security/auth';
 import { jsonError, messages } from '@/lib/security/errors';
+import { readMocaUnits } from '@/lib/security/moca-access';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,6 +24,9 @@ export async function GET(req: NextRequest) {
       streamId: user.streamId,
       entityScopes: user.entityScopes,
       streamScopes: user.streamScopes,
+      // وحدات وقطاعات وزارة شؤون مجلس الوزراء المسندة — بها يظهر مبدّل
+      // الجهة/القطاع داخل نسخة الوزارة لمن أُسندت له أكثر من وحدة
+      mocaUnits: await readMocaUnits(user.id),
     },
     roles: user.roles,
     permissions: user.permissions,

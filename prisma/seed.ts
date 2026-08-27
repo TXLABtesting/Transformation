@@ -237,6 +237,13 @@ async function main() {
     return user;
   };
 
+  // الحسابات التجريبية مطفأة افتراضياً: قاعدة بيانات المشروع تبدأ ببيانات
+  // مرجعية فقط (الأدوار والصلاحيات والمسارات والجهات) بلا أي مستخدم، وتُنشئ
+  // IT حسابات المستخدمين الحقيقيين ببريد UAE PASS من لوحة المشرف أو مباشرة.
+  // لقاعدة عرض/اختبار فقط: SEED_DEMO_USERS=1
+  const seedUsers = process.env.SEED_DEMO_USERS === '1';
+  if (!seedUsers) console.log('users: skipped — set SEED_DEMO_USERS=1 for sample accounts');
+  if (seedUsers) {
   // System administrator (مشرف النظام) — provisions stream heads & committee
   await upsertUser('admin@aigp.gov.ae', { role: 'admin', name: 'مشرف النظام', title: 'مسؤول المنصة' });
 
@@ -269,6 +276,7 @@ async function main() {
       streamId: p.id,
     });
   }
+  } // نهاية الحسابات التجريبية
 
   // 7+8) DEMO PORTFOLIO — sample launch plans + items. OFF by default:
   // production starts with an EMPTY portfolio (reference data + accounts

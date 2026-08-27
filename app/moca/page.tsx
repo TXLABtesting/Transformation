@@ -19,6 +19,7 @@ export default function MocaPage() {
   const mainView = useStore((s) => s.view);
   const mainRole = useStore((s) => s.role);
   const mainEntity = useStore((s) => s.entityName);
+  const mainMocaUnits = useStore((s) => s.sessionMocaUnits);
 
   useEffect(() => {
     hydrate();
@@ -42,8 +43,8 @@ export default function MocaPage() {
       router.replace('/dashboard');
       return;
     }
-    syncSession(mainRole === 'coord' ? 'coord' : 'committee', mainEntity);
-  }, [mainHydrated, mainAuthChecked, mainView, mainRole, mainEntity, syncSession, router]);
+    syncSession(mainRole === 'coord' ? 'coord' : 'committee', mainEntity, mainMocaUnits);
+  }, [mainHydrated, mainAuthChecked, mainView, mainRole, mainEntity, mainMocaUnits, syncSession, router]);
 
   // لا نرسم شيئاً قبل قراءة التخزين المحلي تفادياً لاختلاف SSR/CSR
   const liveBlocked =

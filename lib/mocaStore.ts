@@ -66,6 +66,8 @@ export type MocaState = {
   role: MocaRole;
   unitId: string;
   unitSector: string;
+  /** وحدات الوزارة المسندة لصاحب الجلسة (النسخة الحية) — أكثر من واحدة تُظهر المبدّل */
+  myUnits: string[];
   entries: MocaEntry[];
   useCases: MocaUseCase[];
   toast: string;
@@ -90,7 +92,9 @@ export type MocaState = {
   hydrate: () => void;
   setRole: (r: MocaRole) => void;
   setScope: (unitId: string, sector: string) => void;
-  syncSession: (r: MocaRole, entityName?: string) => void;
+  syncSession: (r: MocaRole, entityName?: string, units?: string[]) => void;
+  /** التنقل بين وحدات الوزارة المسندة للمستخدم (النسخة الحية) */
+  pickUnit: (raw: string) => void;
   openForm: (id?: string) => void;
   closeForm: () => void;
   setDraft: (k: string, v: unknown) => void;
@@ -168,6 +172,7 @@ export const useMoca = create<MocaState>((set, get) => {
     role: 'coord',
     unitId: MOCA_UNITS[0].id,
     unitSector: '',
+    myUnits: [],
     entries: [],
     useCases: [],
     toast: '',
@@ -236,12 +241,33 @@ export const useMoca = create<MocaState>((set, get) => {
 
     // النسخة الحية: صفحة /moca تستدعيها بعد قراءة جلسة المنصة لتثبيت الدور
     // والنطاق من سجل المستخدم — لا مبدّل ولا قيم مفترضة في الواجهة.
-    syncSession: (r, entityName) => {
+    syncSession: (r, entityName, units) => {
       const s = get();
-      const scope = mocaScopeFromEntity(entityName, { unitId: s.unitId, unitSector: s.unitSector });
-      const same = s.role === r && scope.unitId === s.unitId && scope.unitSector === s.unitSector;
+      // الوحدات المسندة من سجل المستخدم تحكم النطاق: واحدة تُثبَّت، وأكثر من
+      // واحدة تُتيح المبدّل ويبقى المختار ما دام ضمنها
+      const assigned = (units || []).map((raw) => {
+        const [unitId, unitSector = ''] = String(raw).split('::');
+        return { unitId, unitSector };
+      });
+      const inAssigned = assigned.some((a) => a.unitId === s.unitId && a.unitSector === s.unitSector);
+      const scope = assigned.length
+        ? inAssigned
+          ? { unitId: s.unitId, unitSector: s.unitSector }
+          : assigned[0]
+        : mocaScopeFromEntity(entityName, { unitId: s.unitId, unitSector: s.unitSector });
+      const sameUnits = JSON.stringify(s.myUnits || []) === JSON.stringify(units || []);
+      const same = s.role === r && scope.unitId === s.unitId && scope.unitSector === s.unitSector && sameUnits;
       if (same) return;
-      set({ role: r, ...scope, view: 'list', detailId: null });
+      set({ role: r, ...scope, myUnits: units || [], view: 'list', detailId: null });
+      persist();
+    },
+
+    // النسخة الحية: التنقل بين الوحدات المسندة وحدها — لا وحدة خارجها
+    pickUnit: (raw) => {
+      const s = get();
+      if (!(s.myUnits || []).includes(raw)) return;
+      const [unitId, unitSector = ''] = String(raw).split('::');
+      set({ unitId, unitSector, detailId: null, view: 'list' });
       persist();
     },
 

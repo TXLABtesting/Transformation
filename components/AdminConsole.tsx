@@ -42,7 +42,8 @@ const DB_BACKED = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
 // Real reference rows fetched from Postgres (see /api/admin/{entities,streams,roles}).
 type DbEntity = { id: string; nameAr: string };
 type DbStream = { id: string; nameAr: string };
-type DbRole = { id: string; code: string; nameAr: string };
+// الأدوار وصلاحياتها تُقرأ من قاعدة البيانات كما هي — لا قائمة أدوار في الشيفرة
+type DbRole = { id: string; code: string; nameAr: string; permissions?: string[]; scope?: string };
 
 // The account being created/edited in UserEditor. Uses real DB ids
 // (entityId/streamId/roleCode) instead of the free-text/legacy fields on
@@ -216,7 +217,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
             <div style={{ fontSize: 11.5, color: '#8A97AD' }}>إدارة المستخدمين والأدوار وتعيين رؤساء المسارات واللجنة</div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', maxWidth: '100%' }}>
           {/* open the monitoring dashboards with the committee-wide scope */}
           <button
             onClick={() => s.setAdminDash(true)}
@@ -226,9 +227,9 @@ export function AdminConsole({ vm }: { vm: VM }) {
             لوحات المتابعة
           </button>
           {vm.showRoleSwitcher && (
-            <div style={{ display: 'flex', background: '#F4F7FC', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 12, padding: 3, gap: 2 }}>
+            <div style={{ display: 'flex', background: '#F4F7FC', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 12, padding: 3, gap: 2, maxWidth: '100%', overflowX: 'auto' }}>
               {vm.rolePills.map((p) => (
-                <button key={p.key} onClick={p.onClick} style={{ borderRadius: 9, padding: '7px 11px', fontWeight: 700, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', ...(p.active ? { background: '#fff', color: '#1D4ED8', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #D8E3F5' } : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }) }}>
+                <button key={p.key} onClick={p.onClick} style={{ borderRadius: 9, padding: '7px 11px', fontWeight: 700, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flex: 'none', ...(p.active ? { background: '#fff', color: '#1D4ED8', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #D8E3F5' } : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }) }}>
                   {p.label}
                 </button>
               ))}
@@ -242,10 +243,10 @@ export function AdminConsole({ vm }: { vm: VM }) {
 
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '22px 22px 60px' }}>
         {/* KPIs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 14, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(210px,100%),1fr))', gap: 14, marginBottom: 20 }}>
           {kpis.map((k) => (
-            <div key={k.label} style={{ ...card, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div>
+            <div key={k.label} style={{ ...card, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minWidth: 0 }}>
+              <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, color: '#8A97AD', fontWeight: 600 }}>{k.label}</div>
                 <div style={{ fontSize: 26, fontWeight: 900, marginTop: 4 }}>{k.value}</div>
               </div>
@@ -257,9 +258,9 @@ export function AdminConsole({ vm }: { vm: VM }) {
         </div>
 
         {/* tabs */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 16, borderBottom: '1px solid #E2E8F2' }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16, borderBottom: '1px solid #E2E8F2', overflowX: 'auto' }}>
           {tabs.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', padding: '10px 14px', fontSize: 13, fontWeight: 800, color: tab === t.key ? '#1D4ED8' : '#8A97AD', borderBottom: tab === t.key ? '2px solid #1D4ED8' : '2px solid transparent', marginBottom: -1 }}>
+            <button key={t.key} onClick={() => setTab(t.key)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', padding: '10px 14px', fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap', flex: 'none', color: tab === t.key ? '#1D4ED8' : '#8A97AD', borderBottom: tab === t.key ? '2px solid #1D4ED8' : '2px solid transparent', marginBottom: -1 }}>
               {t.label}
             </button>
           ))}
@@ -1252,6 +1253,8 @@ function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onBulk, onEdi
     { key: 'all', label: 'الكل' },
     ...a.roleInfo.map((r) => ({ key: r.key, label: r.nameAr })),
   ];
+  // الحذف نهائي — يسبقه تأكيد يذكر الحساب باسمه وبريده
+  const [del, setDel] = useState<UserRec | null>(null);
   return (
     <div style={{ ...card, overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 16px', flexWrap: 'wrap' }}>
@@ -1307,7 +1310,7 @@ function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onBulk, onEdi
                   <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-start' }}>
                     <IconBtn title="تعديل" d={IC_EDIT} onClick={() => onEdit(u)} />
                     <IconBtn title={u.active ? 'إيقاف' : 'تفعيل'} d={u.active ? IC_X : IC_CHECK} onClick={() => onToggle(u.id)} />
-                    {!u.system && <IconBtn title="حذف" d={IC_TRASH} danger onClick={() => onRemove(u.id)} />}
+                    {!u.system && <IconBtn title="حذف نهائي" d={IC_TRASH} danger onClick={() => setDel(u)} />}
                   </div>
                 </td>
               </tr>
@@ -1318,6 +1321,22 @@ function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onBulk, onEdi
           </tbody>
         </table>
       </div>
+      {del && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 70, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={() => setDel(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(8,17,35,.55)' }} />
+          <div style={{ position: 'relative', width: '100%', maxWidth: 440, background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 30px 70px -24px rgba(2,12,35,.5)' }}>
+            <div className="hd" style={{ fontSize: 16, fontWeight: 800, color: '#13213C', marginBottom: 8 }}>حذف الحساب نهائياً</div>
+            <div style={{ fontSize: 12.5, color: '#54627B', lineHeight: 1.9, marginBottom: 16 }}>
+              سيُحذف حساب «{del.name || del.email}» ودوره ونطاقاته نهائياً ولا يمكن التراجع.
+              يبقى أثر ما نفّذه في سجل التدقيق.
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => setDel(null)} style={{ background: '#EEF1F7', color: '#54627B', border: 'none', borderRadius: 12, padding: '11px 20px', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+              <button onClick={() => { onRemove(del.id); setDel(null); }} style={{ background: 'linear-gradient(180deg,#E0525E,#C0303B)', color: '#fff', border: 'none', borderRadius: 12, padding: '11px 20px', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>حذف نهائي</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1512,10 +1531,19 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
   // عضو المشاريع الاستراتيجية يُسند إلى أحد قادة المشاريع المعتمدين
   const needsLead = f.roleCode === 'strategic_project_member';
   const isMoca = /وزارة شؤون مجلس الوزراء/.test(entities.find((en) => en.id === f.entityId)?.nameAr || '');
-  // المنسق يعمل داخل جهته فيلزمه تحديدها؛ وفريق عمل المسار يعمل على المسار
-  // عبر الجهات كلها فالجهة عنده اختيارية، وكلاهما يُسند لمسار أو أكثر
-  const needsStreams = f.roleCode === 'entity_coordinator' || f.roleCode === 'stream_owner';
-  const entityRequired = f.roleCode === 'entity_coordinator' || f.roleCode === 'entity_representative';
+  // ما يلزم الدور من نطاق يُشتق من صلاحياته في قاعدة البيانات لا من مسمّاه،
+  // فأي دور تضيفه IT في القاعدة يطلب حقوله الصحيحة بلا تغيير في الشيفرة:
+  //  - صلاحية إدارية عامة (users/roles/funding:approve) → بلا جهة ولا مسار
+  //  - إنشاء المدخلات (items:create) → يعمل داخل جهة: الجهة والمسارات لازمة
+  //  - اعتماد المدخلات (items:approve) → يعمل على المسار عبر الجهات: المسارات
+  //    لازمة والجهة اختيارية
+  // نطاق الدور يصل من /api/admin/roles: قيمة من قاعدة البيانات إن أسندتها IT
+  // (settings: role_scope:<code>)، وإلا مشتقة من صلاحيات الدور نفسه.
+  const scope = roles.find((r) => r.code === f.roleCode)?.scope || 'none';
+  const worksInEntity = scope === 'entity_stream' || scope === 'entity';
+  const worksOnStream = scope === 'stream';
+  const needsStreams = scope === 'entity_stream' || scope === 'stream';
+  const entityRequired = worksInEntity;
   const streamsOk = !needsStreams || isMoca || f.streamIds.length > 0;
   const valid =
     !!f.name.trim() && emailOk && (!needsLead || !!f.projLead) && (!entityRequired || !!f.entityId) && streamsOk;
@@ -1557,18 +1585,18 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
                   (ممثل الجهة/مدقق/مستعرض…) للتوافق ولا تُسنَد من هنا؛ دور
                   قديم مسند لحساب قائم يبقى ظاهراً حتى لا يختفي من المحرر.
                   ولمستخدمي وزارة شؤون مجلس الوزراء يظهر المنسق بمسمى الوزارة */}
+              {/* الأدوار كما هي في قاعدة البيانات — إضافتها أو تعديل مسمياتها
+                  وصلاحياتها يتم في قاعدة البيانات، ولا قائمة أدوار في الشيفرة */}
               <select style={{ ...inputSt, cursor: 'pointer' }} value={f.roleCode} onChange={(e) => set({ roleCode: e.target.value })}>
                 <option value="">— بدون دور (يُعيَّن لاحقًا) —</option>
-                {(() => {
-                  const APPROVED = ['entity_coordinator', 'stream_owner', 'ai_committee', 'system_admin'];
-                  const moca = /وزارة شؤون مجلس الوزراء/.test(entities.find((en) => en.id === f.entityId)?.nameAr || '');
-                  const label = (r: DbRole) =>
-                    moca && r.code === 'entity_coordinator' ? 'منسق الجهة أو القطاع' : r.nameAr;
-                  const list = roles
-                    .filter((r) => APPROVED.includes(r.code) || r.code === f.roleCode)
-                    .sort((a, b) => APPROVED.indexOf(a.code) - APPROVED.indexOf(b.code));
-                  return list.map((r) => <option key={r.code} value={r.code}>{label(r)} ({r.code})</option>);
-                })()}
+                {roles
+                  .slice()
+                  .sort((a, b) => a.nameAr.localeCompare(b.nameAr, 'ar'))
+                  .map((r) => (
+                    <option key={r.code} value={r.code}>
+                      {isMoca && r.code === 'entity_coordinator' ? 'منسق الجهة أو القطاع' : r.nameAr} ({r.code})
+                    </option>
+                  ))}
               </select>
             </div>
           </div>
@@ -1598,9 +1626,9 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
                 <option value="">— بدون جهة —</option>
                 {entities.map((en) => <option key={en.id} value={en.id}>{en.nameAr}</option>)}
               </select>
-              {!entityRequired && !isMoca && (
+              {!entityRequired && !isMoca && !!f.roleCode && (
                 <div style={{ fontSize: 11.5, color: '#8A97AD', marginTop: 5 }}>
-                  {needsStreams ? 'فريق عمل المسار يعمل على مسارات المنصة كلها — الجهة اختيارية' : 'هذا الدور لا يتطلب جهة'}
+                  {worksOnStream ? 'هذا الدور يعمل على مساراته عبر الجهات كلها — الجهة اختيارية' : 'هذا الدور لا يتطلب جهة'}
                 </div>
               )}
             </div>
