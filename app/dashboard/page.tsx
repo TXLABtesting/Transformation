@@ -16,6 +16,8 @@ import { Overlays } from '@/components/Overlays';
 import { Toast } from '@/components/Toast';
 import { ResponsiveZoom } from '@/components/ResponsiveZoom';
 
+const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
+
 export default function DashboardPage() {
   const router = useRouter();
   const hydrate = useStore((s) => s.hydrate);
@@ -23,6 +25,9 @@ export default function DashboardPage() {
   // في نسخة الخادم لا يُحكم بعدم التسجيل قبل انتهاء فحص الجلسة، وإلا قُذف
   // المستخدم المسجّل خارج اللوحة عند فتحها بتحميل مباشر
   const authChecked = useStore((s) => s._authChecked);
+  const sessionAdmin = useStore((s) => s.sessionAdmin);
+  const role = useStore((s) => s.role);
+  const entityName = useStore((s) => s.entityName);
   const vm = useViewModel();
 
   useEffect(() => {
@@ -33,6 +38,15 @@ export default function DashboardPage() {
   useEffect(() => {
     if (hydrated && authChecked && vm.isLogin) router.replace('/login');
   }, [hydrated, authChecked, vm.isLogin, router]);
+
+  // منسوبو وزارة شؤون مجلس الوزراء يعملون في نسخة الوزارة لا في قوائم
+  // المسارات (بنيتها جهات ومكاتب بلا مسارات) — عدا مشرف النظام الذي يبقى
+  // على لوحته الموحّدة وينتقل بمبدّل الأدوار
+  useEffect(() => {
+    if (DEMO || !hydrated || !authChecked || vm.isLogin) return;
+    if (sessionAdmin) return;
+    if (role === 'coord' && /وزارة شؤون مجلس الوزراء/.test(String(entityName || ''))) router.replace('/moca');
+  }, [hydrated, authChecked, vm.isLogin, sessionAdmin, role, entityName, router]);
 
   // لا شيء يُرسم قبل قراءة الجلسة — يمنع اختلاف SSR/CSR
   if (!hydrated || !authChecked || vm.isLogin) return <div style={{ minHeight: '100vh', background: '#EEF2F9' }} />;

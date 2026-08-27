@@ -95,8 +95,11 @@ function build(s: Store) {
   const ent = (i: Item) => entOf(i, entityName);
 
   // ---- base scoping (§8) ----
+  // مشرف النظام حين يعاين دوراً: «كل الجهات» يرفع حصر الجهة والمسار معاً
+  const adminAll = !!s.sessionAdmin && !!ui.allEntities;
   let base: Item[];
-  if (rawRole === 'coord') base = s.items.filter((i) => i.path === myPath && ent(i) === entityName);
+  if (adminAll) base = s.items;
+  else if (rawRole === 'coord') base = s.items.filter((i) => i.path === myPath && ent(i) === entityName);
   else if (role === 'path') base = s.items.filter((i) => i.path === myPath);
   else base = s.items;
 
@@ -1266,28 +1269,55 @@ function build(s: Store) {
   const unreadLabel = notifUnread > 9 ? '9+' : String(notifUnread);
 
   // ---- role pills (active styles) ----
-  // مبدّل الجهة للمنسق — نسخة تجريبية فقط؛ في النسخة الحية الجهة من الجلسة
-  const entitySwitch =
-    process.env.NEXT_PUBLIC_DEMO_MODE === '1' && rawRole === 'coord'
-      ? {
-          value: entityName,
-          options: Array.from(
-            new Set([DEFAULT_ENTITY, ...svcCatalogEntities(), ...FEDERAL_ENTITIES, entityName].filter(Boolean))
-          ).sort((a, b) => a.localeCompare(b, 'ar')),
-          onChange: (v: string) => s.setEntityName(v),
+  // مبدّل الجهة: في النسخة التجريبية للمنسق على كل الجهات؛ وفي النسخة الحية
+  // بحسب جهات الجلسة من الخادم — مشرف النظام يراها كلها مع خيار «كل الجهات»
+  const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
+  const ALL_ENTITIES = 'كل الجهات';
+  const entitySwitch = (() => {
+    if (DEMO) {
+      if (rawRole !== 'coord') return null;
+      return {
+        value: entityName,
+        options: Array.from(
+          new Set([DEFAULT_ENTITY, ...svcCatalogEntities(), ...FEDERAL_ENTITIES, entityName].filter(Boolean))
+        ).sort((a, b) => a.localeCompare(b, 'ar')),
+        onChange: (v: string) => s.setEntityName(v),
+      };
+    }
+    // النسخة الحية: يظهر لمشرف النظام، ولمن أُسندت له أكثر من جهة
+    const names = (s.sessionEntities || []).map((e) => e.name).filter(Boolean);
+    if (!s.sessionAdmin && names.length < 2) return null;
+    const options = Array.from(new Set([...(s.sessionAdmin ? [ALL_ENTITIES] : []), ...names, entityName].filter(Boolean)));
+    return {
+      value: ui.allEntities ? ALL_ENTITIES : entityName,
+      options,
+      onChange: (v: string) => {
+        if (v === ALL_ENTITIES) { s.setAllEntities(true); return; }
+        s.setEntityName(v);
+        // اختيار الوزارة يفتح نسختها كما في النسخة التجريبية
+        if (/وزارة شؤون مجلس الوزراء/.test(v) && rawRole === 'coord') {
+          try { useMoca.getState().setRole('coord'); } catch { /* ignore */ }
+          window.location.href = (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/moca/';
         }
-      : null;
+      },
+    };
+  })();
 
   // منسق جهته وزارة شؤون مجلس الوزراء يعمل في نسخة الوزارة المستقلة —
   // في النسخة الحية الدور والجهة من الجلسة، فالتحويل هنا للنسخة التجريبية فقط
-  const rolePills = ROLE_PILLS.map((p) => ({
+  // النسخة التجريبية تعرض الأدوار كلها للتجريب؛ والنسخة الحية تعرض أدوار
+  // صاحب الجلسة وحدها — ومشرف النظام يعاين كل اللوحات فيراها كلها
+  const pillSource =
+    DEMO || s.sessionAdmin
+      ? ROLE_PILLS
+      : ROLE_PILLS.filter((p) => (s.sessionRoles || []).includes(p.key));
+  const rolePills = pillSource.map((p) => ({
     key: p.key,
     label: p.label,
     active: actualRole === p.key,
     onClick: () => {
       if (
         p.key === 'coord' &&
-        process.env.NEXT_PUBLIC_DEMO_MODE === '1' &&
         /وزارة شؤون مجلس الوزراء/.test(entityName)
       ) {
         s.setRole('coord');
@@ -1313,8 +1343,11 @@ function build(s: Store) {
   const repPos = s.setup.rep.position || '';
   const repInitials = repName.split(/\s+/).slice(0, 2).map((w) => w[0]).join('') || 'م';
 
-  // header profile identity follows the previewed role
-  const profileName =
+  // header profile identity: اسم صاحب الجلسة الفعلي متى توفّر من الخادم،
+  // وإلا مسمى الدور المعروض (النسخة التجريبية بلا جلسة حقيقية)
+  const sessionName = (s.me?.name || '').trim();
+  const sessionTitle = (s.me?.title || '').trim();
+  const roleName =
     rawRole === 'path'
       ? PATH_REPS[myPath] || 'فريق عمل المسار في المشروع'
       : rawRole === 'ai'
@@ -1324,7 +1357,8 @@ function build(s: Store) {
           : rawRole === 'coord'
             ? s.setup.owners[myPath]?.name || 'منسق المسار في الجهة الاتحادية'
             : repName;
-  const profilePos =
+  const profileName = sessionName || roleName;
+  const rolePos =
     rawRole === 'path'
       ? 'فريق عمل مسار ' + pathById(myPath).name
       : rawRole === 'ai'
@@ -1334,6 +1368,8 @@ function build(s: Store) {
           : rawRole === 'coord'
             ? 'منسق مسار ' + pathById(myPath).name + ' في الجهة'
             : repPos;
+  // تحت الاسم: مسمى الدور — ومع اسم فعلي يُذكر المسمى الوظيفي إن وُجد
+  const profilePos = sessionName ? [sessionTitle, roleName].filter(Boolean).join(' — ') : rolePos;
   const profileInitials =
     profileName.split(/\s+/).slice(0, 2).map((w) => w[0]).join('') || 'م';
 
@@ -1676,7 +1712,8 @@ function build(s: Store) {
     entitySwitch,
     // النسخة التجريبية: مبدّل الأدوار للجميع. النسخة الحية: لمشرف النظام
     // فقط — يتنقل به بين لوحات الأدوار ولوحة الإدارة (جلسة واحدة موحّدة).
-    showRoleSwitcher: process.env.NEXT_PUBLIC_DEMO_MODE === '1' || s.sessionAdmin,
+    // التجريبية للجميع؛ والحية لمشرف النظام أو لمن أُسند له أكثر من دور
+    showRoleSwitcher: DEMO || s.sessionAdmin || (s.sessionRoles || []).length > 1,
     // coordinator assigned to several streams: header dropdown to switch the
     // ACTIVE stream (everything on screen is scoped to it). In demo mode we list
     // ALL streams so every stream can be exercised from one coordinator login;

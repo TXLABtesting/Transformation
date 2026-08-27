@@ -155,6 +155,8 @@ export type UiState = {
   // sidebar navigation
   navSection: string; // 'overview' | 'projects' | 'operations' | 'services' | 'launchplans'
   navStream: string | null; // drill-down stream inside a type section
+  // مشرف النظام يعاين دور المنسق: «كل الجهات» يرفع حصر الجهة عن القوائم
+  allEntities: boolean;
   draftSel: string[]; // coordinator: selected drafts for group send
   batchFilter: string | null; // drill-down from a مرحلة card into its items
   // services-stream list filters: الخدمة / القطاع / الأولوية
@@ -235,6 +237,11 @@ type State = {
   /** هل صاحب الجلسة مشرف نظام؟ يُثبّت من الجلسة ولا يتغير بتبديل العرض —
       به يظهر شريط التنقل بين اللوحات (الأدوار ولوحة الإدارة) للمشرف وحده */
   sessionAdmin: boolean;
+  /** أدوار صاحب الجلسة كما في قاعدة الصلاحيات — بها يظهر مبدّل الأدوار
+      لمن أُسند إليه أكثر من دور (النسخة الحية) */
+  sessionRoles: RoleKey[];
+  /** جهات صاحب الجلسة من الخادم (جهته ونطاقاته) — بها يظهر مبدّل الجهات */
+  sessionEntities: { id: string; name: string }[];
 };
 
 type Actions = {
@@ -256,6 +263,7 @@ type Actions = {
   setRole: (r: RoleKey) => void;
   // الجهة الاتحادية للمستخدم — مصدر تقييد دليل الخدمات (تجريبي فقط)
   setEntityName: (name: string) => void;
+  setAllEntities: (v: boolean) => void;
   // admin — user & role management (backed by /api/admin/* — see AdminConsole)
   adminLoadUsers: () => Promise<void>;
   adminSaveUser: (u: UserRec) => void;
@@ -540,6 +548,7 @@ function defaultUi(): UiState {
     dViewStep: null,
     navSection: 'overview',
     navStream: null,
+    allEntities: false,
     draftSel: [],
     batchFilter: null,
     svcServiceF: 'all',
@@ -614,6 +623,8 @@ function initialState(): State {
     _hydrated: false,
     _authChecked: !BACKEND_AUTH,
     sessionAdmin: false,
+    sessionRoles: [],
+    sessionEntities: [],
   };
 }
 
@@ -925,11 +936,14 @@ export const useStore = create<Store>((set, get) => {
               phone: String(res.user.phone || ''),
             };
             const role = roleFromBackend(roles);
+            // كل دور أُسند لصاحب الجلسة بمفتاحه في الواجهة — بلا تكرار
+            const sessionRoles = Array.from(new Set(roles.map((r) => roleFromBackend([r])))) as RoleKey[];
             set((s) => {
               const myPath = res.user.streamId || scopes[0] || s.myPath;
               const myPaths = scopes.length ? scopes : [myPath];
               return {
                 ...s,
+                sessionRoles: sessionRoles.length ? sessionRoles : [role],
                 // المشرف يدخل على لوحة الإدارة مباشرة — ومبدّل الأدوار أعلى
                 // الصفحة يتيح له التنقل إلى اللوحات وبقية الأدوار متى شاء
                 sessionAdmin: role === 'admin',
@@ -947,6 +961,15 @@ export const useStore = create<Store>((set, get) => {
             });
             // بيانات المشاريع الاستراتيجية تُقرأ من الخادم بعد ثبوت الجلسة
             get().loadProjects();
+            // جهات صاحب الجلسة — النقطة نفسها تُرجع لمشرف النظام كل الجهات
+            // ولغيره جهته ونطاقاته فقط، فتضبط خيارات مبدّل الجهات تلقائياً
+            fetch('/api/admin/entities', { credentials: 'include' })
+              .then((r) => (r.ok ? r.json() : null))
+              .then((d) => {
+                const list = Array.isArray(d?.entities) ? d.entities : [];
+                set({ sessionEntities: list.map((e: { id: string; nameAr: string }) => ({ id: e.id, name: e.nameAr })).filter((e: { name: string }) => e.name) });
+              })
+              .catch(() => {});
           })
           .catch(() => {})
           // انتهى الفحص أياً كانت نتيجته — تُرفع الحراسة عن الصفحات المحمية
@@ -1062,11 +1085,17 @@ export const useStore = create<Store>((set, get) => {
     // جهة المستخدم — تُشتق من الجلسة في نسخة الخادم؛ التبديل متاح في النسخة
     // التجريبية فقط لاستعراض دليل خدمات كل جهة.
     setEntityName: (name) => {
-      if (process.env.NEXT_PUBLIC_DEMO_MODE !== '1') return;
+      // النسخة التجريبية للجميع، والنسخة الحية لمشرف النظام وحده — يعاين بها
+      // جهات المنصة دون أن تُكتب هوية جلسته من صفحات أخرى
+      if (process.env.NEXT_PUBLIC_DEMO_MODE !== '1' && !get().sessionAdmin) return;
       const v = (name || '').trim();
       if (!v) return;
-      set(() => ({ entityName: v }));
+      set((s) => ({ entityName: v, ui: { ...s.ui, allEntities: false } }));
       persist();
+    },
+    setAllEntities: (v) => {
+      if (process.env.NEXT_PUBLIC_DEMO_MODE !== '1' && !get().sessionAdmin) return;
+      setUi({ allEntities: v });
     },
 
     // ---- admin: user & role management ----
@@ -1094,13 +1123,17 @@ export const useStore = create<Store>((set, get) => {
           (knownRoles as string[]).includes(r) ? (r as RoleKey) : migrateRole(r) !== r ? migrateRole(r) : 'entity';
         const mapped: UserRec[] = (data.users || []).map((u: any) => ({
           id: u.id,
-          role: toRoleKey(u.role),
+          // دور الصلاحيات هو المرجع — عمود الدور القديم قد يكون متأخراً عن
+          // إسناد RBAC، فيظهر المشرف مثلاً على أنه عضو اللجنة الوطنية
+          role: u.roles?.[0]?.code ? roleFromBackend([u.roles[0].code]) : toRoleKey(u.role),
           name: u.name || '',
           title: u.title || '',
           email: u.email || '',
           phone: u.phone || '',
           entityName: u.entity || undefined,
           streamId: u.streamId || undefined,
+          streamIds: Array.isArray(u.streamScopes) && u.streamScopes.length ? u.streamScopes : u.streamId ? [u.streamId] : [],
+          mocaUnits: Array.isArray(u.mocaUnits) ? u.mocaUnits : [],
           active: !!u.accessEnabled,
           entityId: u.entityId || undefined,
           roleCode: u.roles?.[0]?.code || undefined,

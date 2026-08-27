@@ -42,36 +42,62 @@ export function assertMocaApprove(user: AuthUser): void {
 }
 
 /**
- * نطاق وحدة/قطاع منسق الوزارة.
+ * نطاق وحدات/قطاعات منسق الوزارة.
  *
  * الإسناد اختياري ويُخزَّن في جدول الإعدادات العام القائم (settings) بمفتاح
- * `moca_unit:<userId>` وقيمته `<unitId>` أو `<unitId>::<القطاع>` — بلا أي عمود
- * أو جدول جديد. متى وُجد الإسناد قُصر المنسق على وحدته، وإن لم يوجد عمل على
- * مستوى الوزارة كاملة (وهي جهته أصلاً) ولا يطال أي جهة أخرى بحال.
- *
- * تعيد null للأدوار العامة (اللجنة/المشرف) أي بلا قيد.
+ * `moca_unit:<userId>` — بلا أي عمود أو جدول جديد. تقبل القيمة أكثر من وحدة
+ * مفصولة بـ «|»، وكل وحدة `<unitId>` أو `<unitId>::<القطاع>`. متى وُجد الإسناد
+ * قُصر المنسق على وحداته، وإن لم يوجد عمل على مستوى الوزارة كاملة (وهي جهته
+ * أصلاً) ولا يطال أي جهة أخرى بحال.
  */
-export async function mocaScopeForUser(
-  user: AuthUser
-): Promise<{ unitId: string; unitSector: string } | null> {
-  if (isGlobalRole(user)) return null;
+export const mocaUnitKey = (userId: string) => 'moca_unit:' + userId;
+
+export type MocaScope = { unitId: string; unitSector: string };
+
+/** وحدات المستخدم المسندة كما خُزّنت — مصفوفة نصية "unit" أو "unit::قطاع" */
+export async function readMocaUnits(userId: string): Promise<string[]> {
   try {
-    const row = await prisma.setting.findUnique({ where: { key: 'moca_unit:' + user.id } });
-    const raw = String(row?.value || '').trim();
-    if (!raw) return null; // بلا إسناد: نطاق الوزارة كاملة
-    const [unitId, sector = ''] = raw.split('::');
-    return { unitId, unitSector: sector };
+    const row = await prisma.setting.findUnique({ where: { key: mocaUnitKey(userId) } });
+    return String(row?.value || '')
+      .split('|')
+      .map((v) => v.trim())
+      .filter(Boolean);
   } catch {
-    return null;
+    return [];
   }
 }
 
-/** المدخلات المرئية: الأدوار العامة ترى المُرسَل وما بعده، والمنسق يرى نطاقه */
+const parseUnit = (raw: string): MocaScope => {
+  const [unitId, sector = ''] = raw.split('::');
+  return { unitId, unitSector: sector };
+};
+
+/** تعيد [] للأدوار العامة (اللجنة/المشرف) ولمن بلا إسناد — أي بلا قيد */
+export async function mocaScopesForUser(user: AuthUser): Promise<MocaScope[]> {
+  if (isGlobalRole(user)) return [];
+  return (await readMocaUnits(user.id)).map(parseUnit);
+}
+
+/** نطاق واحد — يبقى للتوافق مع ما يحتاج وحدة واحدة (الكتابة الافتراضية) */
+export async function mocaScopeForUser(user: AuthUser): Promise<MocaScope | null> {
+  const all = await mocaScopesForUser(user);
+  return all[0] || null;
+}
+
+/** المدخلات المرئية: الأدوار العامة ترى المُرسَل وما بعده، والمنسق يرى نطاقاته */
 export async function mocaEntryWhere(user: AuthUser) {
   if (isGlobalRole(user)) return { wf: { not: 'draft' } };
-  const scope = await mocaScopeForUser(user);
-  if (!scope) return {}; // منسق بلا إسناد وحدة: مدخلات الوزارة كلها
-  return scope.unitSector
-    ? { unitId: scope.unitId, unitSector: scope.unitSector }
-    : { unitId: scope.unitId };
+  const scopes = await mocaScopesForUser(user);
+  if (!scopes.length) return {}; // منسق بلا إسناد وحدة: مدخلات الوزارة كلها
+  const clause = (sc: MocaScope) =>
+    sc.unitSector ? { unitId: sc.unitId, unitSector: sc.unitSector } : { unitId: sc.unitId };
+  return scopes.length === 1 ? clause(scopes[0]) : { OR: scopes.map(clause) };
+}
+
+/** هل يقع المدخل ضمن نطاقات المستخدم؟ (الكتابة تُقصر على وحداته) */
+export function mocaInScope(scopes: MocaScope[], e: { unitId?: string; unitSector?: string }): boolean {
+  if (!scopes.length) return true;
+  return scopes.some((sc) =>
+    sc.unitSector ? sc.unitId === e.unitId && sc.unitSector === e.unitSector : sc.unitId === e.unitId
+  );
 }

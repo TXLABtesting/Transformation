@@ -49,13 +49,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         data: { userId: params.id, roleId: role.id },
       });
       // Update the legacy role field to match
+      // يطابق roleFromBackend في الواجهة: مشرف النظام دوره 'admin' لا 'ai'،
+      // وإلا ظهر المشرف في قوائم الإدارة على أنه عضو اللجنة الوطنية
       const legacyMap: Record<string, string> = {
         entity_coordinator: 'coord',
         entity_representative: 'entity',
         stream_owner: 'path',
         ai_committee: 'ai',
-        system_admin: 'ai',
+        system_admin: 'admin',
         program_admin: 'ai',
+        strategic_project_member: 'proj',
         viewer: 'entity',
         auditor: 'entity',
       };

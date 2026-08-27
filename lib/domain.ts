@@ -800,7 +800,9 @@ export type UserRec = {
   email: string;
   phone: string;
   entityName?: string; // entity / coord
-  streamId?: string; // coord / path
+  streamId?: string; // coord / path — المسار الأساسي
+  streamIds?: string[]; // coord / path — كل المسارات المسندة
+  mocaUnits?: string[]; // وحدات وقطاعات وزارة شؤون مجلس الوزراء المسندة
   projLead?: string; // proj: قائد المشاريع الذي يتبعه العضو
   active: boolean;
   system?: boolean; // seeded reference account (kept out of the demo delete path)

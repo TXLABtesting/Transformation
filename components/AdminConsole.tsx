@@ -7,6 +7,7 @@
 // ---------------------------------------------------------------------------
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { DOC_CATS, type DocCat, CONTACT_STREAMS, PATHS, PROJECT_LEADS } from '@/lib/domain';
+import { mocaUnitOptions } from '@/lib/moca';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
 import type { RoleKey, UserRec } from '@/lib/domain';
@@ -54,13 +55,17 @@ type UserDraft = {
   phone: string;
   entityId: string;
   streamId: string;
+  /** مسارات المستخدم — المنسق وفريق المسار يُسندان لأكثر من مسار */
+  streamIds: string[];
+  /** وحدات وقطاعات وزارة شؤون مجلس الوزراء المسندة (unitId أو unitId::قطاع) */
+  mocaUnits: string[];
   projLead?: string;
   roleCode: string; // '' = no role assigned yet
   active: boolean;
 };
 
 const blankDraft = (seed?: Partial<UserDraft>): UserDraft => ({
-  id: '', name: '', title: '', email: '', phone: '', entityId: '', streamId: '', roleCode: '', projLead: '', active: true, ...seed,
+  id: '', name: '', title: '', email: '', phone: '', entityId: '', streamId: '', streamIds: [], mocaUnits: [], roleCode: '', projLead: '', active: true, ...seed,
 });
 
 const draftFromUser = (u: UserRec): UserDraft => ({
@@ -71,6 +76,8 @@ const draftFromUser = (u: UserRec): UserDraft => ({
   phone: u.phone,
   entityId: u.entityId || '',
   streamId: u.streamId || '',
+  streamIds: u.streamIds?.length ? u.streamIds : u.streamId ? [u.streamId] : [],
+  mocaUnits: u.mocaUnits || [],
   roleCode: u.roleCode || '',
   projLead: u.projLead || '',
   active: u.active,
@@ -156,6 +163,14 @@ export function AdminConsole({ vm }: { vm: VM }) {
             body: JSON.stringify({ userId: id, lead: d.projLead || '' }),
           }).catch(() => {});
         }
+      }
+      // النطاقات: مسارات المستخدم (قد تكون أكثر من مسار) ووحدات الوزارة
+      {
+        const res = await fetch(`/api/admin/users/${id}/scopes`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ streamScopes: d.streamIds || [], mocaUnits: d.mocaUnits || [] }),
+        });
+        if (!res.ok) { const body = await res.json().catch(() => ({} as any)); return body.message || 'تعذّر حفظ نطاقات المستخدم'; }
       }
       // New accounts are created disabled (status: pending) — only call
       // enable if the checkbox is on. Edits only call enable/disable when
@@ -1454,6 +1469,31 @@ function RolesTab({ a }: { a: VM['admin'] }) {
   );
 }
 
+// ---- اختيار متعدد بمربعات تحديد — للمسارات ولوحدات الوزارة -----------------
+function MultiPick({ options, value, onChange, emptyHint }: {
+  options: { v: string; label: string }[];
+  value: string[];
+  onChange: (v: string[]) => void;
+  emptyHint?: string;
+}) {
+  const toggle = (v: string) => onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
+  return (
+    <div style={{ border: '1px solid #DCE3EE', borderRadius: 11, padding: 10, maxHeight: 190, overflowY: 'auto', display: 'grid', gap: 2 }}>
+      {options.map((o) => (
+        <label
+          key={o.v}
+          style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: '#33405A', background: value.includes(o.v) ? '#EAF1FE' : 'transparent' }}
+        >
+          <input type="checkbox" checked={value.includes(o.v)} onChange={() => toggle(o.v)} />
+          {o.label}
+        </label>
+      ))}
+      {!options.length && <div style={{ fontSize: 12, color: '#8A97AD', padding: 6 }}>لا خيارات متاحة</div>}
+      {!value.length && emptyHint && <div style={{ fontSize: 11.5, color: '#8A97AD', padding: '4px 8px' }}>{emptyHint}</div>}
+    </div>
+  );
+}
+
 // ---- User editor modal ----------------------------------------------------
 function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
   draft: UserDraft;
@@ -1471,7 +1511,14 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
   const emailOk = /^\S+@\S+\.\S+$/.test(f.email.trim());
   // عضو المشاريع الاستراتيجية يُسند إلى أحد قادة المشاريع المعتمدين
   const needsLead = f.roleCode === 'strategic_project_member';
-  const valid = !!f.name.trim() && emailOk && (!needsLead || !!f.projLead);
+  const isMoca = /وزارة شؤون مجلس الوزراء/.test(entities.find((en) => en.id === f.entityId)?.nameAr || '');
+  // المنسق يعمل داخل جهته فيلزمه تحديدها؛ وفريق عمل المسار يعمل على المسار
+  // عبر الجهات كلها فالجهة عنده اختيارية، وكلاهما يُسند لمسار أو أكثر
+  const needsStreams = f.roleCode === 'entity_coordinator' || f.roleCode === 'stream_owner';
+  const entityRequired = f.roleCode === 'entity_coordinator' || f.roleCode === 'entity_representative';
+  const streamsOk = !needsStreams || isMoca || f.streamIds.length > 0;
+  const valid =
+    !!f.name.trim() && emailOk && (!needsLead || !!f.projLead) && (!entityRequired || !!f.entityId) && streamsOk;
 
   const handleSave = async () => {
     if (!valid) return;
@@ -1535,31 +1582,29 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
               <input style={{ ...inputSt, direction: 'ltr', textAlign: 'right' }} value={f.phone} onChange={(e) => set({ phone: e.target.value })} placeholder="+971 5x xxx xxxx" />
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: needsLead ? '1fr 1fr' : '1fr', gap: 12 }}>
             <div>
-              <label style={labelSt}>الجهة</label>
+              <label style={labelSt}>الجهة{entityRequired ? ' *' : ''}</label>
               <select
                 style={{ ...inputSt, cursor: 'pointer' }}
                 value={f.entityId}
                 onChange={(e) => {
                   const entityId = e.target.value;
                   const moca = /وزارة شؤون مجلس الوزراء/.test(entities.find((en) => en.id === entityId)?.nameAr || '');
-                  // بنية الوزارة جهات ومكاتب لا مسارات — يُمسح المسار تلقائياً
-                  set(moca ? { entityId, streamId: '' } : { entityId });
+                  // بنية الوزارة جهات ومكاتب لا مسارات — تُمسح المسارات تلقائياً
+                  set(moca ? { entityId, streamId: '', streamIds: [] } : { entityId, mocaUnits: [] });
                 }}
               >
                 <option value="">— بدون جهة —</option>
                 {entities.map((en) => <option key={en.id} value={en.id}>{en.nameAr}</option>)}
               </select>
-            </div>
-            {/وزارة شؤون مجلس الوزراء/.test(entities.find((en) => en.id === f.entityId)?.nameAr || '') ? (
-              <div>
-                <label style={labelSt}>النطاق</label>
-                <div style={{ ...inputSt, background: '#F4F7FC', color: '#54627B', display: 'flex', alignItems: 'center', fontSize: 12 }}>
-                  بنية الوزارة: جهات ومكاتب وقطاعات — لا مسارات؛ يعمل على نسخة الوزارة
+              {!entityRequired && !isMoca && (
+                <div style={{ fontSize: 11.5, color: '#8A97AD', marginTop: 5 }}>
+                  {needsStreams ? 'فريق عمل المسار يعمل على مسارات المنصة كلها — الجهة اختيارية' : 'هذا الدور لا يتطلب جهة'}
                 </div>
-              </div>
-            ) : needsLead ? (
+              )}
+            </div>
+            {needsLead && (
               <div>
                 <label style={labelSt}>قائد المشاريع المسؤول *</label>
                 <select style={{ ...inputSt, cursor: 'pointer' }} value={f.projLead || ''} onChange={(e) => set({ projLead: e.target.value })}>
@@ -1567,16 +1612,35 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
                   {PROJECT_LEADS.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
-            ) : (
-              <div>
-                <label style={labelSt}>المسار</label>
-                <select style={{ ...inputSt, cursor: 'pointer' }} value={f.streamId} onChange={(e) => set({ streamId: e.target.value })}>
-                  <option value="">— بدون مسار —</option>
-                  {streams.map((st) => <option key={st.id} value={st.id}>{st.nameAr}</option>)}
-                </select>
-              </div>
             )}
           </div>
+
+          {/* وزارة شؤون مجلس الوزراء: بنيتها جهات ومكاتب وقطاعات لا مسارات —
+              يُسند المستخدم إلى وحدة أو أكثر، وبلا إسناد يعمل على الوزارة كلها */}
+          {isMoca && (
+            <div>
+              <label style={labelSt}>الجهات والقطاعات داخل الوزارة</label>
+              <MultiPick
+                options={mocaUnitOptions().map((o) => ({ v: o.sector ? o.unitId + '::' + o.sector : o.unitId, label: o.label }))}
+                value={f.mocaUnits}
+                onChange={(v) => set({ mocaUnits: v })}
+                emptyHint="بلا تحديد: يعمل على مدخلات الوزارة كلها"
+              />
+            </div>
+          )}
+
+          {/* المسارات — للمنسق وفريق عمل المسار، ويقبل أكثر من مسار */}
+          {needsStreams && !isMoca && (
+            <div>
+              <label style={labelSt}>المسارات{needsStreams ? ' *' : ''}</label>
+              <MultiPick
+                options={streams.map((st) => ({ v: st.id, label: st.nameAr }))}
+                value={f.streamIds}
+                onChange={(v) => set({ streamIds: v, streamId: v[0] || '' })}
+                emptyHint="اختر مساراً واحداً على الأقل"
+              />
+            </div>
+          )}
           <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#33405A' }}>
             <input type="checkbox" checked={f.active} onChange={(e) => set({ active: e.target.checked })} />
             الحساب نشط
