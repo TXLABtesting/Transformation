@@ -64,6 +64,7 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   type RoleKey,
   itemActivities, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload } from './domain';
 import { stripHtml } from './richtext';
+import { useMoca } from './mocaStore';
 import { FEDERAL_ENTITIES } from './entities';
 import { svcCatalogEntities } from './svcCatalog';
 
@@ -1265,7 +1266,8 @@ function build(s: Store) {
   const notifUnread = notifs.filter((notif) => !readSet.has(notif.id)).length;
   const unreadLabel = notifUnread > 9 ? '9+' : String(notifUnread);
 
-  // مبدّل الجهة للمنسق — نسخة تجريبية فقط، لتسهيل التنقل بين الجهات
+  // مبدّل الجهة للمنسق — نسخة تجريبية فقط، لتسهيل التنقل بين الجهات؛
+  // اختيار وزارة شؤون مجلس الوزراء يفتح نسختها المستقلة (بنيتها مختلفة)
   const entitySwitch =
     process.env.NEXT_PUBLIC_DEMO_MODE === '1' && rawRole === 'coord'
       ? {
@@ -1273,7 +1275,13 @@ function build(s: Store) {
           options: Array.from(
             new Set([DEFAULT_ENTITY, ...svcCatalogEntities(), ...FEDERAL_ENTITIES, entityName].filter(Boolean))
           ).sort((a, b) => a.localeCompare(b, 'ar')),
-          onChange: (v: string) => s.setEntityName(v),
+          onChange: (v: string) => {
+            s.setEntityName(v);
+            if (/وزارة شؤون مجلس الوزراء/.test(v)) {
+              try { useMoca.getState().setRole('coord'); } catch { /* ignore */ }
+              window.location.href = (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/moca/';
+            }
+          },
         }
       : null;
 
