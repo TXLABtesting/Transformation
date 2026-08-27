@@ -1513,6 +1513,15 @@ function MultiPick({ options, value, onChange, emptyHint }: {
   );
 }
 
+/** سطر أسفل المنتقي: كم اختير من كم — القائمة أطول من ارتفاع الصندوق */
+function PickCount({ value, total }: { value: string[]; total: number }) {
+  return (
+    <div style={{ fontSize: 11.5, color: value.length ? '#1D4ED8' : '#8A97AD', fontWeight: 700, marginTop: 5 }}>
+      {value.length ? 'المحدد: ' + value.length + ' من ' + total : 'لم يُحدَّد شيء من ' + total}
+    </div>
+  );
+}
+
 // ---- User editor modal ----------------------------------------------------
 function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
   draft: UserDraft;
@@ -1654,6 +1663,7 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
                 onChange={(v) => set({ mocaUnits: v })}
                 emptyHint="بلا تحديد: يعمل على مدخلات الوزارة كلها"
               />
+              <PickCount value={f.mocaUnits} total={mocaUnitOptions().length} />
             </div>
           )}
 
@@ -1667,6 +1677,7 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
                 onChange={(v) => set({ streamIds: v, streamId: v[0] || '' })}
                 emptyHint="اختر مساراً واحداً على الأقل"
               />
+              <PickCount value={f.streamIds} total={streams.length} />
             </div>
           )}
           <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#33405A' }}>
