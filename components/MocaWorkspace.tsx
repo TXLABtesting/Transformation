@@ -32,7 +32,7 @@ import {
   type MocaUseCase,
 } from '@/lib/moca';
 import { useMoca, mocaVisibleEntries, mocaVisibleUseCases, mocaApplyReturn, mocaApplyPlaceReturn } from '@/lib/mocaStore';
-import { DEFAULT_ENTITY } from '@/lib/domain';
+import { DEFAULT_ENTITY, ROLE_PILLS } from '@/lib/domain';
 import { FEDERAL_ENTITIES } from '@/lib/entities';
 import { svcCatalogEntities } from '@/lib/svcCatalog';
 import { useStore } from '@/lib/store';
@@ -297,10 +297,22 @@ function Header() {
               gap: 2,
             }}
           >
-            {MOCA_ROLES.map((r) => (
+            {/* مبدّل الأدوار الموحّد نفسه: المنسق يبقى في نسخة الوزارة،
+                وبقية الأدوار تعود بلوحاتها في المنصة القياسية */}
+            {ROLE_PILLS.map((r) => (
               <button
                 key={r.key}
-                onClick={() => s.setRole(r.key)}
+                onClick={() => {
+                  if (r.key === 'coord') { s.setRole('coord'); return; }
+                  try {
+                    const raw = window.localStorage.getItem('aitp_state');
+                    const d = raw ? JSON.parse(raw) : {};
+                    d.role = r.key;
+                    d.view = 'dashboard';
+                    window.localStorage.setItem('aitp_state', JSON.stringify(d));
+                  } catch { /* ignore */ }
+                  window.location.href = BASE + '/dashboard/';
+                }}
                 style={{
                   borderRadius: 9,
                   padding: '8px 13px',
@@ -308,7 +320,7 @@ function Header() {
                   fontSize: 11.5,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
-                  ...(s.role === r.key
+                  ...(r.key === 'coord' && s.role === 'coord'
                     ? { background: '#fff', color: '#1D4ED8', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #D8E3F5' }
                     : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }),
                 }}

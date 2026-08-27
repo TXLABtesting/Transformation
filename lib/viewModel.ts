@@ -1286,11 +1286,25 @@ function build(s: Store) {
       : null;
 
   // ---- role pills (active styles) ----
+  // منسق جهته وزارة شؤون مجلس الوزراء يعمل في نسخة الوزارة المستقلة —
+  // اختيار دور المنسق والجهة الوزارة يفتحها مباشرة (تجريبي)
   const rolePills = ROLE_PILLS.map((p) => ({
     key: p.key,
     label: p.label,
     active: actualRole === p.key,
-    onClick: () => s.setRole(p.key),
+    onClick: () => {
+      if (
+        p.key === 'coord' &&
+        process.env.NEXT_PUBLIC_DEMO_MODE === '1' &&
+        /وزارة شؤون مجلس الوزراء/.test(entityName)
+      ) {
+        s.setRole('coord');
+        try { useMoca.getState().setRole('coord'); } catch { /* ignore */ }
+        window.location.href = (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/moca/';
+        return;
+      }
+      s.setRole(p.key);
+    },
   }));
 
   // ---- basket ----
