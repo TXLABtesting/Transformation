@@ -629,3 +629,119 @@ model Notification {
   @@index([streamId])
   @@map("notifications")
 }
+
+// ---------------------------------------------------------------------------
+// وزارة شؤون مجلس الوزراء — نسخة الوزارة المستقلة (بنية جهات ومكاتب وقطاعات)
+// جداول مستقلة تماماً: لا تمسّ أي جدول قائم ولا دورة اعتماد الجهات الاتحادية.
+// منسقو الوزارة يعبّئون ويرسلون، واللجنة الوطنية تعتمد أو تعيد بملاحظات.
+// ---------------------------------------------------------------------------
+
+/// مدخل حصر المهام والعمليات في الوزارة. حقول النموذج التفصيلية تُحفظ في
+/// `fields` (Json) لأنها تتبع نموذج الوزارة المعتمد لا نموذج المسارات.
+model MocaEntry {
+  id          String    @id @default(cuid())
+  unitId      String    @map("unit_id")
+  unitSector  String    @default("") @map("unit_sector")
+  wf          String    @default("draft")
+  retType     String?   @map("ret_type")
+  retNote     String?   @map("ret_note")
+  retAt       DateTime? @map("ret_at")
+  fields      Json      @default("{}")
+  // التوزيع على دفعات الإطلاق — للمدخل المعتمد فقط
+  execBatch   String?   @map("exec_batch")
+  startDate   String?   @map("start_date")
+  endDate     String?   @map("end_date")
+  batchWf     String?   @map("batch_wf")
+  batchRet    String?   @map("batch_ret")
+  batchNote   String?   @map("batch_note")
+  createdById String?   @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  submittedAt DateTime? @map("submitted_at")
+  decidedAt   DateTime? @map("decided_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  useCases MocaUseCase[]
+
+  @@index([unitId, unitSector])
+  @@index([wf])
+  @@map("moca_entries")
+}
+
+/// حالة استخدام مبنية على مدخل معتمد، وتحديثاتها المتتابعة (Json).
+model MocaUseCase {
+  id          String   @id @default(cuid())
+  entryId     String?  @map("entry_id")
+  unitId      String   @map("unit_id")
+  unitSector  String   @default("") @map("unit_sector")
+  mainProcess String   @default("") @map("main_process")
+  subProcess  String   @default("") @map("sub_process")
+  status      String   @default("")
+  updates     Json     @default("[]")
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  entry MocaEntry? @relation(fields: [entryId], references: [id], onDelete: SetNull)
+
+  @@index([unitId, unitSector])
+  @@map("moca_use_cases")
+}
+
+// ---------------------------------------------------------------------------
+// المشاريع الاستراتيجية — اللجنة الوطنية تعرّف المشاريع وتسندها إلى القادة
+// وأعضائهم، والأعضاء يعبّئون نماذجها وترجع للجنة للاعتماد. جداول مستقلة.
+// ---------------------------------------------------------------------------
+
+/// تعريف مشروع استراتيجي: الاسم والقائد والعضو المسؤول وفترة التنفيذ
+/// (شهر وسنة بصيغة YYYY-MM).
+model ProjDef {
+  id          String   @id @default(cuid())
+  name        String
+  lead        String   @default("")
+  member      String   @default("")
+  startMonth  String   @default("") @map("start_month")
+  endMonth    String   @default("") @map("end_month")
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  forms ProjForm[]
+
+  @@map("proj_defs")
+}
+
+/// نموذج المشروع الذي يعبّئه عضو المشاريع الاستراتيجية: بيانات المشروع
+/// والمخرجات والمراحل التنفيذية وفريق العمل (قوائم Json).
+model ProjForm {
+  id          String    @id @default(cuid())
+  projId      String    @map("proj_id")
+  ownerId     String?   @map("owner_id")
+  ownerName   String    @default("") @map("owner_name")
+  entityResp  String    @default("") @map("entity_resp")
+  description String    @default("")
+  outputs     Json      @default("[]")
+  phases      Json      @default("[]")
+  team        Json      @default("[]")
+  wf          String    @default("draft")
+  retNote     String?   @map("ret_note")
+  retAt       DateTime? @map("ret_at")
+  log         Json      @default("[]")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  project ProjDef @relation(fields: [projId], references: [id], onDelete: Cascade)
+
+  @@unique([projId])
+  @@index([wf])
+  @@map("proj_forms")
+}
+
+/// إسناد عضو المشاريع الاستراتيجية إلى قائد المشاريع المسؤول عنه.
+/// جدول ربط مستقل — لا عمود جديد على جدول المستخدمين.
+model ProjMemberLead {
+  userId    String   @id @map("user_id")
+  lead      String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("proj_member_leads")
+}

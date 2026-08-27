@@ -3,6 +3,8 @@ import { Fragment, useEffect, useState, type CSSProperties, type ReactNode, useM
 import type { VM } from '@/lib/viewModel';
 import { InlineCreateForm } from './CreatePanel';
 import { Icon } from './Icon';
+import { ProjCommitteePage, ProjMemberSection } from './StrategicProjects';
+import { MocaCommitteeView } from './MocaCommitteeView';
 import { Tour, TOUR_EVENT, type TourStep } from './Tour';
 import { LAUNCH_TYPES, TBD_BATCH } from '@/lib/domain';
 
@@ -2995,6 +2997,15 @@ export function Dashboard({ vm }: { vm: VM }) {
               {vm.inlineCreate && <InlineCreateForm vm={vm} />}
             </>
           )}
+
+          {/* ===== وزارة شؤون مجلس الوزراء داخل لوحة اللجنة ===== */}
+          {vm.isAiRole && vm.navSection === 'mocaInv' && <MocaCommitteeView mode="inv" />}
+          {vm.isAiRole && vm.navSection === 'mocaLplan' && <MocaCommitteeView mode="batches" />}
+          {vm.isAiRole && vm.navSection === 'mocaUse' && <MocaCommitteeView mode="usecases" />}
+
+          {/* ===== المشاريع الاستراتيجية (اللجنة + الأعضاء) ===== */}
+          {vm.navSection === 'stratProjects' && vm.isAiRole && <ProjCommitteePage />}
+          {vm.navSection === 'stratProjects' && vm.isProj && <ProjMemberSection />}
 
           {/* ===== ENTITIES (committee) ===== */}
           {vm.navSection === 'entities' && (

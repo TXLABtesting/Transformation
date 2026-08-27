@@ -35,6 +35,7 @@ const RBAC_ROLES = [
   ['entity_coordinator', 'منسق المسار في الجهة الاتحادية'],
   ['stream_owner', 'فريق عمل المسار في المشروع'],
   ['ai_committee', 'اللجنة الوطنية للذكاء الاصطناعي المساعد'],
+  ['strategic_project_member', 'أعضاء المشاريع الاستراتيجية'],
   ['viewer', 'مستعرض'],
   ['auditor', 'مدقق'],
 ] as const;
@@ -61,12 +62,15 @@ const ROLE_PERMISSION_MATRIX: Record<string, string[]> = {
   entity_coordinator: ['entities:view','streams:view','items:view','items:create','items:update','items:submit','items:export','launch_plans:view','funding:view','nominations:view','reports:view'],
   stream_owner: ['entities:view','streams:view','items:view','items:approve','items:reject','items:export','launch_plans:view','launch_plans:approve','funding:view','nominations:view','nominations:approve','nominations:reject','reports:view'],
   ai_committee: ['entities:view','streams:view','items:view','items:approve','items:reject','items:export','launch_plans:view','funding:view','funding:approve','funding:reject','funding:cancel','nominations:view','reports:view','reports:export','ai_review:run'],
+  // أعضاء المشاريع الاستراتيجية: نماذج مشاريعهم فقط — بلا صلاحيات على مدخلات المسارات
+  strategic_project_member: ['entities:view','streams:view','reports:view'],
   viewer: ['entities:view','streams:view','items:view','launch_plans:view','funding:view','nominations:view','reports:view'],
   auditor: ['entities:view','streams:view','items:view','items:export','launch_plans:view','funding:view','nominations:view','reports:view','reports:export','audit:view'],
 };
 
 // Legacy UI role key (users.role) → backend RBAC role code.
 const LEGACY_TO_RBAC: Record<string, string> = {
+  proj: 'strategic_project_member',
   admin: 'system_admin',
   ai: 'ai_committee',
   entity: 'entity_representative',

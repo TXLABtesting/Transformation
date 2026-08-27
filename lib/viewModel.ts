@@ -64,6 +64,7 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   type RoleKey,
   itemActivities, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload } from './domain';
 import { stripHtml } from './richtext';
+import { useMoca } from './mocaStore';
 import { FEDERAL_ENTITIES } from './entities';
 import { svcCatalogEntities } from './svcCatalog';
 
@@ -828,7 +829,9 @@ function build(s: Store) {
   // ---- sidebar navigation (§redesign v2) ----
   // the coordinator has no dashboard: entering lands directly on قوائم الحصر
   const navSection =
-    (rawRole === 'coord' || rawRole === 'path') && (ui.navSection || 'overview') === 'overview' ? 'all' : ui.navSection || 'overview';
+    rawRole === 'proj'
+      ? 'stratProjects' // أعضاء المشاريع الاستراتيجية: صفحة واحدة داخل قالب المنصة
+      : (rawRole === 'coord' || rawRole === 'path') && (ui.navSection || 'overview') === 'overview' ? 'all' : ui.navSection || 'overview';
   const navStream = ui.navStream; // selected stream summary card ('all' = null)
   const batchFilter = ui.batchFilter; // drill-down from a مرحلة card
   const devStatusOf = devStatusOfItem;
@@ -948,7 +951,9 @@ function build(s: Store) {
     onClick,
   });
   const navItemsOut =
-    rawRole === 'coord'
+    rawRole === 'proj'
+      ? [plainNav('stratProjects', 'المشاريع الاستراتيجية', NAV_GRID4)]
+      : rawRole === 'coord'
       ? [
           invHead,
           ...coordStreamIds.map((pid) =>
@@ -986,6 +991,7 @@ function build(s: Store) {
                   s.setNavStream(p.id);
                 })
               ),
+              { key: 'inv-moca', label: 'وزارة شؤون مجلس الوزراء', icon: NAV_BUILDING, sub: true, pin: true, heading: false, count: undefined as number | undefined, active: navSection === 'mocaInv', onClick: () => s.setNavSection('mocaInv') },
               lplanHead,
               ...PATHS.map((p) =>
                 lplanItem(p.id, navSection === 'lplan' && navStream === p.id, () => {
@@ -993,7 +999,11 @@ function build(s: Store) {
                   s.setNavStream(p.id);
                 })
               ),
+              { key: 'lp-moca', label: 'وزارة شؤون مجلس الوزراء', icon: NAV_BUILDING, sub: true, pin: true, heading: false, count: undefined as number | undefined, active: navSection === 'mocaLplan', onClick: () => s.setNavSection('mocaLplan') },
+              { key: 'uc-moca', label: 'حالات الاستخدام', icon: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10c.6.6 1 1.2 1 2h6c0-.8.4-1.4 1-2a6 6 0 0 0-4-10z', sub: false, pin: false, heading: false, count: undefined as number | undefined, active: navSection === 'mocaUse', onClick: () => s.setNavSection('mocaUse') },
               plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
+              // إدارة المشاريع الاستراتيجية واعتماد نماذجها — صفحة اللجنة الخاصة
+              plainNav('stratProjects', 'المشاريع الاستراتيجية', NAV_GRID4),
               ]
           : navItems;
 
@@ -1255,11 +1265,25 @@ function build(s: Store) {
   const unreadLabel = notifUnread > 9 ? '9+' : String(notifUnread);
 
   // ---- role pills (active styles) ----
+  // منسق جهته وزارة شؤون مجلس الوزراء يعمل في نسخة الوزارة المستقلة —
+  // في النسخة الحية الدور والجهة من الجلسة، فالتحويل هنا للنسخة التجريبية فقط
   const rolePills = ROLE_PILLS.map((p) => ({
     key: p.key,
     label: p.label,
     active: actualRole === p.key,
-    onClick: () => s.setRole(p.key),
+    onClick: () => {
+      if (
+        p.key === 'coord' &&
+        process.env.NEXT_PUBLIC_DEMO_MODE === '1' &&
+        /وزارة شؤون مجلس الوزراء/.test(entityName)
+      ) {
+        s.setRole('coord');
+        try { useMoca.getState().setRole('coord'); } catch { /* ignore */ }
+        window.location.href = (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/moca/';
+        return;
+      }
+      s.setRole(p.key);
+    },
   }));
 
   // ---- basket ----
@@ -1312,7 +1336,13 @@ function build(s: Store) {
       roleBadge: ROLE[u.role]?.badge || '#64748B',
       roleBg: ROLE[u.role]?.bg || '#EEF2F7',
       streamLabel: streamName(u.streamId),
-      scopeLabel: [u.entityName, streamName(u.streamId)].filter(Boolean).join(' · ') || '—',
+      // عضو المشاريع الاستراتيجية: نطاقه قائده المسؤول لا الجهة/المسار
+      scopeLabel:
+        u.role === 'proj'
+          ? u.projLead
+            ? 'القائد: ' + u.projLead
+            : '—'
+          : [u.entityName, streamName(u.streamId)].filter(Boolean).join(' · ') || '—',
       initials: u.name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('') || 'م',
     }));
   const admin = {
@@ -1615,6 +1645,8 @@ function build(s: Store) {
     resultsPage,
     resultModal,
     isAdmin,
+    // دور أعضاء المشاريع الاستراتيجية — صفحته داخل قالب المنصة القياسي
+    isProj: rawRole === 'proj',
     adminReturn: s.role === 'admin' && !!s.ui.adminDash,
     admin,
     // view

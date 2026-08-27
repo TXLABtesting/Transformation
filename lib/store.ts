@@ -25,6 +25,8 @@ import {
   blankOwner,
   wfOf,
   isTeamUpload,
+  type ProjDef,
+  type ProjForm,
   execAllDone,
   launchAllDone,
   entOf,
@@ -201,6 +203,9 @@ type State = {
   setupDone: boolean;
   items: Item[];
   launchPlans: LaunchPlan[];
+  // المشاريع الاستراتيجية — تُقرأ وتُكتب عبر /api/projects في نسخة الخادم
+  projDefs: ProjDef[];
+  projForms: ProjForm[];
   expectedResults: ExpectedResult[];
   // contact-page inquiry inboxes (editable from the admin backoffice)
   contactEmails: Record<string, string>;
@@ -380,6 +385,15 @@ type Actions = {
   doSubmitScope: (id: string) => void;
   // workflow
   approveItem: (id: string) => void;
+  // المشاريع الاستراتيجية
+  loadProjects: () => void;
+  addProjDef: (d: Omit<ProjDef, 'id'>) => void;
+  updateProjDef: (id: string, patch: Partial<ProjDef>) => void;
+  removeProjDef: (id: string) => void;
+  saveProjForm: (f: ProjForm, submit: boolean) => void;
+  deleteProjForm: (id: string) => void;
+  approveProjForm: (id: string) => void;
+  returnProjForm: (id: string, note: string) => void;
   openApproveAll: (ids: string[]) => void;
   approveAll: (ids: string[]) => void;
   openDeleteDrafts: (ids: string[]) => void;
@@ -447,7 +461,9 @@ const roleFromBackend = (roles: string[] = []): RoleKey =>
         ? 'path'
         : roles.includes('entity_coordinator')
           ? 'coord'
-          : 'entity';
+          : roles.includes('strategic_project_member')
+            ? 'proj'
+            : 'entity';
 
 // Fire-and-forget sync of the persisted blob to Postgres (server mode only).
 function apiPut(data: unknown) {
@@ -570,6 +586,8 @@ function initialState(): State {
     entityName: INITIAL_ENTITY,
     setupDone: false,
     items: seedItems(),
+    projDefs: [],
+    projForms: [],
     launchPlans: recalcPlanBudgets(seedItems(), seedLaunchPlans()),
     expectedResults: seedExpectedResults(),
     contactEmails: { ...DEFAULT_CONTACT_EMAILS },
@@ -924,6 +942,8 @@ export const useStore = create<Store>((set, get) => {
                 _authChecked: true,
               };
             });
+            // بيانات المشاريع الاستراتيجية تُقرأ من الخادم بعد ثبوت الجلسة
+            get().loadProjects();
           })
           .catch(() => {})
           // انتهى الفحص أياً كانت نتيجته — تُرفع الحراسة عن الصفحات المحمية
@@ -1060,7 +1080,12 @@ export const useStore = create<Store>((set, get) => {
         const res = await fetch('/api/admin/users', { credentials: 'include' });
         if (!res.ok) return;
         const data = await res.json();
-        const knownRoles: RoleKey[] = ['entity', 'path', 'coord', 'ai', 'admin'];
+        const knownRoles: RoleKey[] = ['entity', 'path', 'coord', 'ai', 'admin', 'proj'];
+        // إسناد أعضاء المشاريع الاستراتيجية إلى قادتهم (جدول ربط مستقل)
+        const leads: Record<string, string> = await fetch('/api/projects/member-leads', { credentials: 'include' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => (d?.memberLeads as Record<string, string>) || {})
+          .catch(() => ({}));
         // المسميات القديمة (deputy/secretariat) تُرحَّل إلى أدوار البنية المعتمدة
         const toRoleKey = (r: string): RoleKey =>
           (knownRoles as string[]).includes(r) ? (r as RoleKey) : migrateRole(r) !== r ? migrateRole(r) : 'entity';
@@ -1076,6 +1101,7 @@ export const useStore = create<Store>((set, get) => {
           active: !!u.accessEnabled,
           entityId: u.entityId || undefined,
           roleCode: u.roles?.[0]?.code || undefined,
+          projLead: leads[u.id] || undefined,
         }));
         set({ users: mapped });
         persist();
@@ -2342,6 +2368,144 @@ export const useStore = create<Store>((set, get) => {
     closeSubReview: () => setUi({ subReview: null }),
 
     // ---- workflow ----
+    // ---- المشاريع الاستراتيجية ------------------------------------------
+    // في نسخة الخادم كل العمليات تمرّ على /api/projects بحُرّاس الجلسة
+    // والصلاحيات نفسها؛ الحالة المحلية تُحدَّث من ردّ الخادم.
+    loadProjects: () => {
+      if (!API_MODE || typeof window === 'undefined') return;
+      fetch('/api/projects/defs', { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d?.projDefs) set({ projDefs: d.projDefs as ProjDef[] }); })
+        .catch(() => {});
+      fetch('/api/projects/forms', { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d?.projForms) set({ projForms: d.projForms as ProjForm[] }); })
+        .catch(() => {});
+    },
+    addProjDef: (d) => {
+      if (!d.name.trim()) return toast('أدخل اسم المشروع');
+      fetch('/api/projects/defs', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(d),
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('failed'))))
+        .then((res) => {
+          set((st) => ({ projDefs: [...st.projDefs, res.projDef as ProjDef] }));
+          logChange('إضافة مشروع استراتيجي', d.name, 'القائد: ' + (d.lead || '—'));
+          toast('تمت إضافة المشروع: ' + d.name);
+        })
+        .catch(() => toast('تعذّر حفظ المشروع — تحقق من الاتصال'));
+    },
+    updateProjDef: (id, patch) => {
+      const def = get().projDefs.find((p) => p.id === id);
+      if (!def) return;
+      fetch('/api/projects/defs/' + id, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(patch),
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('failed'))))
+        .then((res) => {
+          set((st) => ({ projDefs: st.projDefs.map((p) => (p.id === id ? (res.projDef as ProjDef) : p)) }));
+          logChange('تعديل مشروع استراتيجي', patch.name || def.name);
+          toast('تم تحديث المشروع');
+        })
+        .catch(() => toast('تعذّر تحديث المشروع'));
+    },
+    removeProjDef: (id) => {
+      const def = get().projDefs.find((p) => p.id === id);
+      if (!def) return;
+      fetch('/api/projects/defs/' + id, { method: 'DELETE', credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('failed'))))
+        .then(() => {
+          set((st) => ({
+            projDefs: st.projDefs.filter((p) => p.id !== id),
+            projForms: st.projForms.filter((f) => f.projId !== id),
+          }));
+          logChange('حذف مشروع استراتيجي', def.name);
+          toast('تم حذف المشروع ونماذجه');
+        })
+        .catch(() => toast('تعذّر حذف المشروع'));
+    },
+    saveProjForm: (f, submit) => {
+      const s0 = get();
+      const def = s0.projDefs.find((p) => p.id === f.projId);
+      if (!def) return toast('اختر المشروع أولاً');
+      fetch('/api/projects/forms', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...f, owner: f.owner || actorName(s0), send: submit }),
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('failed'))))
+        .then((res) => {
+          const saved = res.projForm as ProjForm;
+          set((st) => ({
+            projForms: st.projForms.some((x) => x.projId === saved.projId)
+              ? st.projForms.map((x) => (x.projId === saved.projId ? saved : x))
+              : [...st.projForms, saved],
+          }));
+          logChange(submit ? 'إرسال نموذج مشروع للاعتماد' : 'حفظ نموذج مشروع', def.name);
+          toast(submit ? 'تم إرسال النموذج لاعتماد اللجنة الوطنية' : 'تم حفظ النموذج كمسودة');
+        })
+        .catch(() => toast('تعذّر حفظ النموذج — تحقق من الاتصال'));
+    },
+    deleteProjForm: (id) => {
+      const s0 = get();
+      const f = s0.projForms.find((x) => x.id === id);
+      if (!f || f.wf === 'approved') return;
+      const def = s0.projDefs.find((p) => p.id === f.projId);
+      fetch('/api/projects/forms/' + id, { method: 'DELETE', credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('failed'))))
+        .then(() => {
+          set((st) => ({ projForms: st.projForms.filter((x) => x.id !== id) }));
+          logChange('حذف نموذج مشروع', def?.name);
+          toast('تم حذف النموذج');
+        })
+        .catch(() => toast('تعذّر حذف النموذج'));
+    },
+    approveProjForm: (id) => {
+      const s0 = get();
+      const f = s0.projForms.find((x) => x.id === id);
+      if (!f || f.wf !== 'sent') return;
+      const def = s0.projDefs.find((p) => p.id === f.projId);
+      fetch('/api/projects/forms/' + id, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'approve' }),
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('failed'))))
+        .then((res) => {
+          set((st) => ({ projForms: st.projForms.map((x) => (x.id === id ? (res.projForm as ProjForm) : x)) }));
+          logChange('اعتماد نموذج مشروع', def?.name);
+          toast('تم اعتماد النموذج: ' + (def?.name || ''));
+        })
+        .catch(() => toast('تعذّر اعتماد النموذج'));
+    },
+    returnProjForm: (id, note) => {
+      const s0 = get();
+      const f = s0.projForms.find((x) => x.id === id);
+      if (!f || f.wf !== 'sent') return;
+      if (!note.trim()) return toast('نرجو كتابة الملاحظات المطلوب معالجتها');
+      const def = s0.projDefs.find((p) => p.id === f.projId);
+      fetch('/api/projects/forms/' + id, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'return', note }),
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('failed'))))
+        .then((res) => {
+          set((st) => ({ projForms: st.projForms.map((x) => (x.id === id ? (res.projForm as ProjForm) : x)) }));
+          logChange('إعادة نموذج مشروع للتعديل', def?.name, note);
+          toast('أُعيد النموذج للعضو مع الملاحظات');
+        })
+        .catch(() => toast('تعذّر إعادة النموذج'));
+    },
     approveItem: (id) => {
       const s = get();
       const it = findItem(id);

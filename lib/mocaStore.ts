@@ -26,6 +26,28 @@ const KEY = 'aigp_moca_state';
 // (تنظيف بيانات العرض) — الإدخالات الجديدة بعدها تُحفظ طبيعياً
 const MOCA_DATA_V = 3;
 
+// نسخة الخادم: بيانات الوزارة في قاعدة البيانات لا في المتصفح — القراءة من
+// نقاط /api/moca والكتابة عبر /api/moca/sync التي تفرض نطاق كل مستخدم.
+const MOCA_API = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
+let mocaSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** دفع الحالة الحالية إلى الخادم (مؤجَّل) — الخادم يفرض نطاق كل مستخدم */
+function mocaPushToServer() {
+  if (!MOCA_API || typeof window === 'undefined') return;
+  if (mocaSyncTimer) clearTimeout(mocaSyncTimer);
+  mocaSyncTimer = setTimeout(() => {
+    const cur = useMoca.getState();
+    fetch('/api/moca/sync', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ entries: cur.entries, useCases: cur.useCases }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+  }, 400);
+}
+
 export type MocaConfirm = {
   title: string;
   body: string;
@@ -123,6 +145,7 @@ export const useMoca = create<MocaState>((set, get) => {
   const persist = () => {
     if (typeof window === 'undefined') return;
     const s = get();
+    mocaPushToServer();
     try {
       window.localStorage.setItem(
         KEY,
@@ -182,6 +205,17 @@ export const useMoca = create<MocaState>((set, get) => {
         entries: !freshData && Array.isArray(saved?.entries) ? (saved!.entries as MocaEntry[]) : [],
         useCases: !freshData && Array.isArray(saved?.useCases) ? (saved!.useCases as MocaUseCase[]) : [],
       });
+      // النسخة الحية: قاعدة البيانات هي المصدر — تُستبدل النسخة المحلية بها
+      if (MOCA_API && typeof window !== 'undefined') {
+        fetch('/api/moca/entries', { credentials: 'include' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => { if (Array.isArray(d?.entries)) set({ entries: d.entries as MocaEntry[] }); })
+          .catch(() => {});
+        fetch('/api/moca/use-cases', { credentials: 'include' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => { if (Array.isArray(d?.useCases)) set({ useCases: d.useCases as MocaUseCase[] }); })
+          .catch(() => {});
+      }
     },
 
     // تبديل الدور/النطاق متاح في النسخة التجريبية فقط — في النسخة الحية
@@ -573,6 +607,7 @@ export function mocaApplyReturn(id: string, kind: 'info' | 'reject', note: strin
   } catch {
     /* ignore */
   }
+  mocaPushToServer();
   useMoca.getState().showToast(kind === 'reject' ? 'تم رفض المدخل وإعادته للمنسق' : 'تمت إعادة المدخل للتعديل');
 }
 
@@ -596,5 +631,6 @@ export function mocaApplyPlaceReturn(id: string, kind: 'info' | 'reject', note: 
   } catch {
     /* ignore */
   }
+  mocaPushToServer();
   useMoca.getState().showToast(kind === 'reject' ? 'تم رفض التوزيع وإعادته للمنسق' : 'تمت إعادة التوزيع للتعديل');
 }

@@ -6,7 +6,7 @@
 // in team setup, so they appear here read-only for oversight.
 // ---------------------------------------------------------------------------
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { DOC_CATS, type DocCat, CONTACT_STREAMS, PATHS } from '@/lib/domain';
+import { DOC_CATS, type DocCat, CONTACT_STREAMS, PATHS, PROJECT_LEADS } from '@/lib/domain';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
 import type { RoleKey, UserRec } from '@/lib/domain';
@@ -54,12 +54,13 @@ type UserDraft = {
   phone: string;
   entityId: string;
   streamId: string;
+  projLead?: string;
   roleCode: string; // '' = no role assigned yet
   active: boolean;
 };
 
 const blankDraft = (seed?: Partial<UserDraft>): UserDraft => ({
-  id: '', name: '', title: '', email: '', phone: '', entityId: '', streamId: '', roleCode: '', active: true, ...seed,
+  id: '', name: '', title: '', email: '', phone: '', entityId: '', streamId: '', roleCode: '', projLead: '', active: true, ...seed,
 });
 
 const draftFromUser = (u: UserRec): UserDraft => ({
@@ -71,6 +72,7 @@ const draftFromUser = (u: UserRec): UserDraft => ({
   entityId: u.entityId || '',
   streamId: u.streamId || '',
   roleCode: u.roleCode || '',
+  projLead: u.projLead || '',
   active: u.active,
 });
 
@@ -147,6 +149,13 @@ export function AdminConsole({ vm }: { vm: VM }) {
           body: JSON.stringify({ roleCode: d.roleCode }),
         });
         if (!res.ok) { const body = await res.json().catch(() => ({} as any)); return body.message || body.error || 'فشل تعيين الدور'; }
+        // إسناد عضو المشاريع الاستراتيجية إلى قائده (جدول ربط مستقل)
+        if (d.roleCode === 'strategic_project_member') {
+          await fetch('/api/projects/member-leads', {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+            body: JSON.stringify({ userId: id, lead: d.projLead || '' }),
+          }).catch(() => {});
+        }
       }
       // New accounts are created disabled (status: pending) — only call
       // enable if the checkbox is on. Edits only call enable/disable when
@@ -1460,7 +1469,9 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
   const [error, setError] = useState('');
 
   const emailOk = /^\S+@\S+\.\S+$/.test(f.email.trim());
-  const valid = !!f.name.trim() && emailOk;
+  // عضو المشاريع الاستراتيجية يُسند إلى أحد قادة المشاريع المعتمدين
+  const needsLead = f.roleCode === 'strategic_project_member';
+  const valid = !!f.name.trim() && emailOk && (!needsLead || !!f.projLead);
 
   const handleSave = async () => {
     if (!valid) return;
@@ -1547,6 +1558,14 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
                 <div style={{ ...inputSt, background: '#F4F7FC', color: '#54627B', display: 'flex', alignItems: 'center', fontSize: 12 }}>
                   بنية الوزارة: جهات ومكاتب وقطاعات — لا مسارات؛ يعمل على نسخة الوزارة
                 </div>
+              </div>
+            ) : needsLead ? (
+              <div>
+                <label style={labelSt}>قائد المشاريع المسؤول *</label>
+                <select style={{ ...inputSt, cursor: 'pointer' }} value={f.projLead || ''} onChange={(e) => set({ projLead: e.target.value })}>
+                  <option value="">اختر القائد…</option>
+                  {PROJECT_LEADS.map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
               </div>
             ) : (
               <div>
