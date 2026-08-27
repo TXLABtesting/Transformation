@@ -2769,14 +2769,21 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {vm.showAddBtn && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <button
-                      onClick={s.openCreateManual}
+                      onClick={() => {
+                        s.openCreateManual();
+                        // النموذج يفتح أسفل الجدول — انزل إليه في كل نقرة حتى لو كان مفتوحاً
+                        setTimeout(() => document.getElementById('inline-create-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
+                      }}
                       data-tour="add"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(37,99,235,.35)', fontFamily: 'inherit' }}
                     >
                       <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة المدخلات
                     </button>
                     <button
-                      onClick={s.openCreateBulk}
+                      onClick={() => {
+                        s.openCreateBulk();
+                        setTimeout(() => document.getElementById('inline-create-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
+                      }}
                       data-tour="bulk"
                       style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(11,138,75,.4)', fontFamily: 'inherit' }}
                     >
@@ -2787,8 +2794,19 @@ export function Dashboard({ vm }: { vm: VM }) {
                 {/* فريق عمل مسار العمليات: رفع ملف الحصر بالنيابة عن جهة */}
                 {vm.showTeamBulk && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    {vm.approveAllIds.length > 0 && (
+                      <button
+                        onClick={() => s.openApproveAll(vm.approveAllIds)}
+                        style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(37,99,235,.35)', fontFamily: 'inherit' }}
+                      >
+                        <Icon d="M20 6 9 17l-5-5" size={16} strokeWidth={2.2} /> اعتماد الكل ({vm.approveAllIds.length})
+                      </button>
+                    )}
                     <button
-                      onClick={s.openTeamBulk}
+                      onClick={() => {
+                        s.openTeamBulk();
+                        setTimeout(() => document.getElementById('inline-create-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
+                      }}
                       data-tour="bulk"
                       style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(11,138,75,.4)', fontFamily: 'inherit' }}
                     >
@@ -2970,7 +2988,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   </div>
                 </div>
               ) : (
-                <ListView cards={vm.sectionCards} stream={vm.listStream} showEntity={vm.showEntFilter} />
+                <ListView cards={vm.sectionCards} stream={vm.listStream} showEntity={vm.showEntFilter} onSetSelection={(ids) => s.setDraftSel(ids)} />
               )}
 
               {/* inline add-manually form — under the table, not a popup */}
@@ -3602,7 +3620,10 @@ function PrioText({ v }: { v: string }) {
   return <span style={{ color: c, fontWeight: 800 }}>{v}</span>;
 }
 
-function ListView({ cards, stream, showEntity }: { cards: CardVM[]; stream?: string | null; showEntity?: boolean }) {
+function ListView({ cards, stream, showEntity, onSetSelection }: { cards: CardVM[]; stream?: string | null; showEntity?: boolean; onSetSelection?: (ids: string[]) => void }) {
+  // تحديد الكل: يظهر متى وُجدت صفوف قابلة للتحديد (مسودات) في القائمة الحالية
+  const selectable = cards.filter((c) => c.showDraftCheck);
+  const allChecked = selectable.length > 0 && selectable.every((c) => c.draftChecked);
   const th: CSSProperties = {
     textAlign: 'right',
     padding: '10px 14px',
@@ -3631,7 +3652,21 @@ function ListView({ cards, stream, showEntity }: { cards: CardVM[]; stream?: str
       <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1020 }}>
         <thead>
           <tr>
-            <th style={th}>{stream === 'strategy' ? 'المهمة' : stream === 'services' ? 'الخدمة' : 'العنوان'}</th>
+            <th style={th}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9 }}>
+                {selectable.length > 0 && onSetSelection && (
+                  <input
+                    type="checkbox"
+                    checked={allChecked}
+                    onChange={() => onSetSelection(allChecked ? [] : selectable.map((c) => c.id))}
+                    title="تحديد الكل"
+                    aria-label="تحديد الكل"
+                    style={{ width: 15, height: 15, accentColor: '#2563EB', cursor: 'pointer', flex: 'none' }}
+                  />
+                )}
+                {stream === 'strategy' ? 'المهمة' : stream === 'services' ? 'الخدمة' : 'العنوان'}
+              </span>
+            </th>
             {showEntity && <th style={th}>الجهة</th>}
             {stream === 'ops' ? (
               <>

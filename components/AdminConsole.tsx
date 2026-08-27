@@ -6,7 +6,7 @@
 // in team setup, so they appear here read-only for oversight.
 // ---------------------------------------------------------------------------
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { DOC_CATS, type DocCat, CONTACT_STREAMS } from '@/lib/domain';
+import { DOC_CATS, type DocCat, CONTACT_STREAMS, PATHS } from '@/lib/domain';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
 import type { RoleKey, UserRec } from '@/lib/domain';
@@ -407,7 +407,7 @@ const ROLE_LOG_LABELS: Record<string, string> = {
   ai: 'اللجنة الوطنية للذكاء الاصطناعي المساعد',
   admin: 'مشرف النظام',
 };
-type FeedRow = { at: number; by: string; role: string; action: string; target?: string; note?: string };
+type FeedRow = { at: number; by: string; role: string; action: string; target?: string; note?: string; entity?: string; path?: string };
 // نسخة الخادم فقط تملك سجل تدقيق الواجهات البرمجية
 const AUDIT_API = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
 
@@ -423,19 +423,45 @@ function ChangeLogTab() {
       .catch(() => {});
   }, []);
 
-  const feed: FeedRow[] = useMemo(() => {
+  // مرشحات السجل: الجهة، المسار، والفترة الزمنية
+  const [entF, setEntF] = useState('all');
+  const [pathF, setPathF] = useState('all');
+  const [fromD, setFromD] = useState('');
+  const [toD, setToD] = useState('');
+
+  const allRows: FeedRow[] = useMemo(() => {
     const rows: FeedRow[] = [...s.changeLog];
     for (const it of s.items) {
       for (const l of it.log || []) {
-        rows.push({ at: l.at, by: l.by, role: l.role, action: LOG_ACTION_LABELS[l.action] || l.action, target: it.title, note: l.note });
+        rows.push({ at: l.at, by: l.by, role: l.role, action: LOG_ACTION_LABELS[l.action] || l.action, target: it.title, note: l.note, entity: it.entity || '', path: it.path });
       }
     }
     rows.sort((a, b) => b.at - a.at);
+    return rows;
+  }, [s.changeLog, s.items]);
+
+  const entityOptions = useMemo(
+    () => Array.from(new Set(allRows.map((r) => r.entity || '').filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ar')),
+    [allRows]
+  );
+
+  const feed: FeedRow[] = useMemo(() => {
+    let rows = allRows;
+    if (entF !== 'all') rows = rows.filter((r) => (r.entity || '') === entF || r.target === entF);
+    if (pathF !== 'all') rows = rows.filter((r) => r.path === pathF);
+    if (fromD) {
+      const t0 = new Date(fromD + 'T00:00:00').getTime();
+      if (!isNaN(t0)) rows = rows.filter((r) => r.at >= t0);
+    }
+    if (toD) {
+      const t1 = new Date(toD + 'T23:59:59').getTime();
+      if (!isNaN(t1)) rows = rows.filter((r) => r.at <= t1);
+    }
     const needle = q.trim();
     return needle
-      ? rows.filter((r) => [r.by, r.action, r.target, r.note, ROLE_LOG_LABELS[r.role] || r.role].join(' ').includes(needle))
+      ? rows.filter((r) => [r.by, r.action, r.target, r.note, r.entity, ROLE_LOG_LABELS[r.role] || r.role].join(' ').includes(needle))
       : rows;
-  }, [s.changeLog, s.items, q]);
+  }, [allRows, q, entF, pathF, fromD, toD]);
 
   const fmt = (at: number) => {
     const d = new Date(at);
@@ -452,19 +478,52 @@ function ChangeLogTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ background: '#fff', border: '1px solid #E7ECF4', borderRadius: 16, padding: 18 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>سجل التغييرات</div>
-            <div style={{ fontSize: 12, color: '#8A97AD', marginTop: 4 }}>
-              كل تغيير في النظام: من قام به، ودوره، والتاريخ والوقت — الأحدث أولاً ({feed.length} سجلاً)
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>سجل التغييرات ({feed.length})</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <select
+              value={entF}
+              onChange={(e) => setEntF(e.target.value)}
+              style={{ border: '1px solid #DCE3EE', borderRadius: 10, padding: '9px 11px', fontSize: 12.5, fontFamily: 'inherit', maxWidth: 200, outline: 'none', background: '#fff', color: '#1F2D49' }}
+            >
+              <option value="all">كل الجهات</option>
+              {entityOptions.map((e) => (
+                <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+            <select
+              value={pathF}
+              onChange={(e) => setPathF(e.target.value)}
+              style={{ border: '1px solid #DCE3EE', borderRadius: 10, padding: '9px 11px', fontSize: 12.5, fontFamily: 'inherit', outline: 'none', background: '#fff', color: '#1F2D49' }}
+            >
+              <option value="all">كل المسارات</option>
+              {PATHS.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <input
+              type="date"
+              value={fromD}
+              onChange={(e) => setFromD(e.target.value)}
+              title="من تاريخ"
+              aria-label="من تاريخ"
+              style={{ border: '1px solid #DCE3EE', borderRadius: 10, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none', color: '#1F2D49' }}
+            />
+            <input
+              type="date"
+              value={toD}
+              onChange={(e) => setToD(e.target.value)}
+              title="إلى تاريخ"
+              aria-label="إلى تاريخ"
+              style={{ border: '1px solid #DCE3EE', borderRadius: 10, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none', color: '#1F2D49' }}
+            />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="بحث بالاسم أو الإجراء أو المدخل…"
+              style={{ border: '1px solid #DCE3EE', borderRadius: 10, padding: '9px 13px', fontSize: 12.5, fontFamily: 'inherit', minWidth: 220, outline: 'none' }}
+            />
           </div>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="بحث بالاسم أو الإجراء أو المدخل…"
-            style={{ border: '1px solid #DCE3EE', borderRadius: 10, padding: '9px 13px', fontSize: 12.5, fontFamily: 'inherit', minWidth: 240, outline: 'none' }}
-          />
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
