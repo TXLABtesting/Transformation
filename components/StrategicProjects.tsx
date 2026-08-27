@@ -183,7 +183,7 @@ function ProjFormPanel({ form, setForm, def, onSave, onSubmit, onClose }: {
         <>
           <div style={{ marginBottom: 16 }}>
             <label style={label}>الجهة المسؤولة{req}</label>
-            <input value={form.entityResp} onChange={(e) => set({ entityResp: e.target.value })} placeholder="أدخل اسم الجهة المسؤولة" style={{ ...inp}} />
+            <input value={form.entityResp} onChange={(e) => set({ entityResp: arOnly(e.target.value) })} placeholder="أدخل اسم الجهة المسؤولة" style={{ ...inp}} />
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={label}>وصف المشروع{req}</label>
@@ -223,7 +223,7 @@ function ProjFormPanel({ form, setForm, def, onSave, onSubmit, onClose }: {
                   <tr key={i} style={{ borderTop: '1px solid #F0F3F9' }}>
                     <td style={{ padding: '10px 14px', fontSize: 12.5, color: '#8A97AD', fontWeight: 700 }}>{i + 1}</td>
                     <td style={{ padding: '10px 8px' }}>
-                      <input value={p.name} onChange={(e) => set({ phases: form.phases.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} placeholder="اسم المرحلة" style={{ ...inp}} />
+                      <input value={p.name} onChange={(e) => set({ phases: form.phases.map((x, j) => (j === i ? { ...x, name: arOnly(e.target.value) } : x)) })} placeholder="اسم المرحلة" style={{ ...inp}} />
                     </td>
                     <td style={{ padding: '10px 8px' }}>
                       <input type="date" value={p.start} onChange={(e) => set({ phases: form.phases.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)) })} style={{ ...inp}} />
