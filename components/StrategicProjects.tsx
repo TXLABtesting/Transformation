@@ -7,7 +7,7 @@
 //    التنفيذية الرئيسية، فريق العمل — حفظ كمسودة أو إرسال لاعتماد اللجنة
 // معزول بالكامل عن مسارات التحول (لا يمسّ عناصرها أو دورات اعتمادها)
 // ===========================================================================
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useStore } from '@/lib/store';
 import { PROJECT_LEADS, type ProjDef, type ProjForm, type ProjMember, type ProjPhase } from '@/lib/domain';
@@ -257,16 +257,12 @@ export function ProjMemberSection() {
   const forms = s.projForms;
   const [editing, setEditing] = useState<ProjForm | null>(null);
   const [readOnly, setReadOnly] = useState(false);
-  const [picking, setPicking] = useState(false);
 
   const defOf = (id: string) => defs.find((d) => d.id === id);
-  // مشروع واحد = نموذج واحد: الاختيار يعرض المشاريع التي لا نموذج لها بعد
-  const availableDefs = defs.filter((d) => !forms.some((f) => f.projId === d.id));
 
   const openForm = (f: ProjForm, ro: boolean) => {
     setEditing(f);
     setReadOnly(ro);
-    setPicking(false);
     setTimeout(() => document.getElementById('proj-form-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
   };
 
@@ -294,47 +290,27 @@ export function ProjMemberSection() {
 
       <div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 14, marginBottom: 20 }}>
-          {kpi('إجمالي النماذج', forms.length, '#1D4ED8', '#E5EEFF')}
-          {kpi('مسودات', forms.filter((f) => f.wf === 'draft').length, '#B45309', '#FFF3DE')}
+          {kpi('إجمالي المشاريع', defs.length, '#1D4ED8', '#E5EEFF')}
+          {/* يتطلب التعبئة = مشاريع بلا نموذج بعد + المسودات والمعادة للتعديل */}
+          {kpi(
+            'يتطلب التعبئة',
+            defs.filter((d) => {
+              const f = forms.find((x) => x.projId === d.id);
+              return !f || f.wf === 'draft';
+            }).length,
+            '#B45309',
+            '#FFF3DE'
+          )}
           {kpi('قيد اعتماد اللجنة', forms.filter((f) => f.wf === 'sent').length, '#0E7C86', '#E3F4F6')}
           {kpi('معتمدة', forms.filter((f) => f.wf === 'approved').length, '#0B8A4B', '#EAF7F0')}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
           <div style={{ fontSize: 16.5, fontWeight: 800 }}>نماذج مشاريعي</div>
-          <button
-            onClick={() => {
-              if (!availableDefs.length) { s.toast(defs.length ? 'كل المشاريع المعرّفة لها نماذج بالفعل' : 'لا مشاريع معرّفة بعد — تضيفها اللجنة الوطنية من صفحة المشاريع الاستراتيجية'); return; }
-              setPicking(true); setEditing(null);
-            }}
-            style={{ ...btnPrimary, display: 'inline-flex', alignItems: 'center', gap: 8 }}
-          >
-            <Icon d="M12 5v14M5 12h14" size={16} color="#fff" strokeWidth={2.4} /> إضافة مشروع
-          </button>
         </div>
 
-        {/* اختيار المشروع المعرّف مسبقاً */}
-        {picking && (
-          <div style={{ ...card, padding: 22, marginBottom: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 6 }}>اختر المشروع</div>
-            <div style={{ fontSize: 12, color: '#8A97AD', marginBottom: 14 }}>المشاريع وقادتها وأعضاؤها وفترات تنفيذها معرّفة مسبقاً من اللجنة الوطنية — اختر مشروعك لتعبئة نموذجه</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 12 }}>
-              {availableDefs.map((d) => (
-                <button key={d.id} onClick={() => openForm(blankForm(d.id), false)} style={{ textAlign: 'right', background: '#F7F9FD', border: '1px solid #E7ECF4', borderRadius: 13, padding: 16, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>{d.name}</div>
-                  <div style={{ fontSize: 12, color: '#54627B', marginTop: 6 }}>القائد: {d.lead || '—'}</div>
-                  {d.member && <div style={{ fontSize: 12, color: '#54627B', marginTop: 3 }}>العضو المسؤول: {d.member}</div>}
-                  <div style={{ fontSize: 11.5, color: '#8A97AD', marginTop: 3 }}>{fmtPeriod(d)}</div>
-                </button>
-              ))}
-            </div>
-            <div style={{ marginTop: 14 }}>
-              <button onClick={() => setPicking(false)} style={btnGhost}>إلغاء</button>
-            </div>
-          </div>
-        )}
-
-        {/* القائمة */}
+        {/* القائمة: كل المشاريع المعرّفة من اللجنة — بلا إضافة من العضو؛
+            المشروع بلا نموذج يبدأ بزر «تعبئة النموذج» مباشرة من صفه */}
         <div style={{ ...card, overflowX: 'auto', marginBottom: 22 }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 860 }}>
             <thead>
@@ -345,34 +321,40 @@ export function ProjMemberSection() {
               </tr>
             </thead>
             <tbody>
-              {forms.map((f) => {
-                const d = defOf(f.projId);
-                const chip = chipOf(f);
-                const editable = f.wf === 'draft';
+              {defs.map((d) => {
+                const f = forms.find((x) => x.projId === d.id);
+                const chip = f ? chipOf(f) : { t: 'لم يُعبأ بعد', c: '#8A97AD', bg: '#F1F4FA' };
+                const editable = !!f && f.wf === 'draft';
                 return (
-                  <tr key={f.id}>
-                    <td style={{ padding: '13px 15px', fontSize: 13, fontWeight: 800, color: '#13213C', borderBottom: '1px solid #F4F6FA' }}>{d?.name || '—'}</td>
-                    <td style={{ padding: '13px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{d?.lead || '—'}</td>
+                  <tr key={d.id}>
+                    <td style={{ padding: '13px 15px', fontSize: 13, fontWeight: 800, color: '#13213C', borderBottom: '1px solid #F4F6FA' }}>{d.name}</td>
+                    <td style={{ padding: '13px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{d.lead || '—'}</td>
                     <td style={{ padding: '13px 15px', fontSize: 12, color: '#54627B', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{fmtPeriod(d)}</td>
-                    <td style={{ padding: '13px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA' }}>{f.entityResp || '—'}</td>
+                    <td style={{ padding: '13px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA' }}>{f?.entityResp || '—'}</td>
                     <td style={{ padding: '13px 15px', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>
                       <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: chip.bg, color: chip.c }}>{chip.t}</span>
                     </td>
                     <td style={{ padding: '13px 15px', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => openForm(f, !editable)} style={{ ...btnGhost, padding: '8px 15px', fontSize: 12 }}>{editable ? 'تعديل' : 'عرض'}</button>
-                        {editable && (
-                          <button onClick={() => s.deleteProjForm(f.id)} style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, padding: '8px 15px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>حذف</button>
+                        {!f ? (
+                          <button onClick={() => openForm(blankForm(d.id), false)} style={{ ...btnPrimary, padding: '8px 16px', fontSize: 12 }}>تعبئة النموذج</button>
+                        ) : (
+                          <>
+                            <button onClick={() => openForm(f, !editable)} style={{ ...btnGhost, padding: '8px 15px', fontSize: 12 }}>{editable ? 'تعديل' : 'عرض'}</button>
+                            {editable && (
+                              <button onClick={() => s.deleteProjForm(f.id)} style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, padding: '8px 15px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>حذف</button>
+                            )}
+                          </>
                         )}
                       </div>
                     </td>
                   </tr>
                 );
               })}
-              {!forms.length && (
+              {!defs.length && (
                 <tr>
                   <td colSpan={6} style={{ padding: 34, textAlign: 'center', color: '#8A97AD', fontSize: 13 }}>
-                    لا نماذج بعد — ابدأ بزر «إضافة مشروع» أعلاه
+                    لا مشاريع معرّفة بعد — تضيفها اللجنة الوطنية
                   </td>
                 </tr>
               )}
@@ -397,20 +379,10 @@ export function ProjMemberSection() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// قسم الاعتماد — داخل صفحة اللجنة «المشاريع الاستراتيجية» نفسها
-function ProjApprovalsSection() {
-  const s = useStore();
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [retId, setRetId] = useState<string | null>(null);
-  const [note, setNote] = useState('');
-  const sent = s.projForms.filter((f) => f.wf === 'sent');
-  const approved = s.projForms.filter((f) => f.wf === 'approved');
-  if (!sent.length && !approved.length) return null;
-  const defOf = (id: string) => s.projDefs.find((d) => d.id === id);
-
-  const detail = (f: ProjForm) => (
-    <div style={{ background: '#F7F9FD', borderRadius: 12, padding: 16, marginTop: 12, fontSize: 12.5, color: '#33415C', lineHeight: 1.9 }}>
+// تفاصيل النموذج المعبأ — تُعرض صفاً ممتداً داخل جدول اللجنة
+function ProjFormDetail({ f }: { f: ProjForm }) {
+  return (
+    <div style={{ background: '#F7F9FD', borderRadius: 12, padding: 16, fontSize: 12.5, color: '#33415C', lineHeight: 1.9 }}>
       <div><b>الجهة المسؤولة:</b> {f.entityResp || '—'}</div>
       <div style={{ marginTop: 4 }}><b>وصف المشروع:</b> {f.desc || '—'}</div>
       <div style={{ marginTop: 8 }}>
@@ -433,74 +405,6 @@ function ProjApprovalsSection() {
       </div>
     </div>
   );
-
-  return (
-    <div style={{ ...card, padding: 22, marginBottom: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-        <span style={{ width: 34, height: 34, borderRadius: 10, background: '#E5EEFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" size={17} color="#1D4ED8" />
-        </span>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>نماذج المشاريع — الاعتماد</div>
-        {sent.length > 0 && (
-          <span style={{ background: '#FFF3DE', color: '#B45309', borderRadius: 999, padding: '4px 12px', fontSize: 11.5, fontWeight: 800 }}>بانتظار الاعتماد: {sent.length}</span>
-        )}
-        {approved.length > 0 && (
-          <span style={{ background: '#EAF7F0', color: '#0B8A4B', borderRadius: 999, padding: '4px 12px', fontSize: 11.5, fontWeight: 800 }}>المعتمدة: {approved.length}</span>
-        )}
-      </div>
-      {[...sent, ...approved].map((f) => {
-        const d = defOf(f.projId);
-        const isSent = f.wf === 'sent';
-        return (
-          <div key={f.id} style={{ border: '1px solid #E7ECF4', borderRadius: 13, padding: '14px 18px', marginTop: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>{d?.name || '—'}</div>
-                <div style={{ fontSize: 12, color: '#54627B', marginTop: 4 }}>
-                  القائد: {d?.lead || '—'} · فترة التنفيذ: {fmtPeriod(d)} · الجهة المسؤولة: {f.entityResp || '—'}
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {!isSent && <span style={{ background: '#EAF7F0', color: '#0B8A4B', borderRadius: 999, padding: '4px 12px', fontSize: 11.5, fontWeight: 800 }}>معتمد</span>}
-                <button onClick={() => setOpenId(openId === f.id ? null : f.id)} style={{ ...btnGhost, padding: '8px 15px', fontSize: 12 }}>
-                  {openId === f.id ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
-                </button>
-                {isSent && (
-                  <>
-                    <button onClick={() => s.approveProjForm(f.id)} style={{ background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 17px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      اعتماد
-                    </button>
-                    <button onClick={() => { setRetId(f.id); setNote(''); }} style={{ background: '#FFF3DE', color: '#B45309', border: 'none', borderRadius: 10, padding: '9px 17px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      إعادة بملاحظات
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-            {openId === f.id && detail(f)}
-          </div>
-        );
-      })}
-
-      {retId && (
-        <div onClick={() => setRetId(null)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(9,20,45,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, direction: 'rtl' }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, background: '#fff', borderRadius: 16, padding: 22 }}>
-            <div style={{ fontSize: 14.5, fontWeight: 800, color: '#13213C', marginBottom: 10 }}>إعادة النموذج للعضو</div>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4} placeholder="الملاحظات المطلوب معالجتها…" style={{ ...inp, resize: 'vertical' }} />
-            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button
-                onClick={() => { if (note.trim()) { s.returnProjForm(retId, note); setRetId(null); } else s.toast('نرجو كتابة الملاحظات المطلوب معالجتها'); }}
-                style={btnPrimary}
-              >
-                إعادة النموذج
-              </button>
-              <button onClick={() => setRetId(null)} style={btnGhost}>إلغاء</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -515,6 +419,10 @@ export function ProjCommitteePage() {
   const [end, setEnd] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   const [delId, setDelId] = useState<string | null>(null);
+  // الاعتماد داخل الجدول نفسه: صف تفاصيل ممتد + نافذة ملاحظات الإعادة
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [retId, setRetId] = useState<string | null>(null);
+  const [note, setNote] = useState('');
 
   const reset = () => { setName(''); setLead(''); setMember(''); setStart(''); setEnd(''); setEditId(null); };
   const save = () => {
@@ -526,12 +434,6 @@ export function ProjCommitteePage() {
     else s.addProjDef({ name, lead, member, start, end });
     reset();
   };
-  // حالة نموذج كل مشروع كما تظهر في جدول اللجنة
-  const formStatus = (projId: string) => {
-    const f = s.projForms.find((x) => x.projId === projId);
-    if (!f) return { t: 'لم يُعبأ بعد', c: '#8A97AD', bg: '#F1F4FA' };
-    return chipOf(f);
-  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -541,9 +443,6 @@ export function ProjCommitteePage() {
           تعريف المشاريع وإسنادها إلى القادة وأعضائهم المسؤولين، واعتماد النماذج المرسلة من الأعضاء
         </div>
       </div>
-
-      {/* النماذج المرسلة للاعتماد — في الصفحة نفسها */}
-      <ProjApprovalsSection />
 
       <div style={{ ...card, padding: 20 }}>
         <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{editId ? 'تعديل مشروع' : 'إضافة مشروع استراتيجي'}</div>
@@ -592,9 +491,14 @@ export function ProjCommitteePage() {
           </thead>
           <tbody>
             {s.projDefs.map((d) => {
-              const st = formStatus(d.id);
+              const f = s.projForms.find((x) => x.projId === d.id);
+              const st = f ? chipOf(f) : { t: 'لم يُعبأ بعد', c: '#8A97AD', bg: '#F1F4FA' };
+              const isSent = f?.wf === 'sent';
+              const isApproved = f?.wf === 'approved';
+              const smallBtn = { padding: '7px 14px', fontSize: 12 } as const;
               return (
-                <tr key={d.id}>
+                <Fragment key={d.id}>
+                <tr>
                   <td style={{ padding: '12px 15px', fontSize: 13, fontWeight: 800, color: '#13213C', borderBottom: '1px solid #F4F6FA' }}>{d.name}</td>
                   <td style={{ padding: '12px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{d.lead}</td>
                   <td style={{ padding: '12px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{d.member || '—'}</td>
@@ -603,12 +507,40 @@ export function ProjCommitteePage() {
                     <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: st.bg, color: st.c }}>{st.t}</span>
                   </td>
                   <td style={{ padding: '12px 15px', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => { setEditId(d.id); setName(d.name); setLead(d.lead); setMember(d.member || ''); setStart(d.start); setEnd(d.end); }} style={{ ...btnGhost, padding: '7px 14px', fontSize: 12 }}>تعديل</button>
-                      <button onClick={() => setDelId(d.id)} style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>حذف</button>
+                    {/* الإجراءات تتبدل بحسب حالة النموذج في الصف نفسه */}
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {f && (
+                        <button onClick={() => setOpenId(openId === d.id ? null : d.id)} style={{ ...btnGhost, ...smallBtn }}>
+                          {openId === d.id ? 'إخفاء' : 'عرض'}
+                        </button>
+                      )}
+                      {isSent && (
+                        <>
+                          <button onClick={() => s.approveProjForm(f.id)} style={{ background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', ...smallBtn }}>
+                            اعتماد
+                          </button>
+                          <button onClick={() => { setRetId(f.id); setNote(''); }} style={{ background: '#FFF3DE', color: '#B45309', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', ...smallBtn }}>
+                            إعادة بملاحظات
+                          </button>
+                        </>
+                      )}
+                      {!isSent && !isApproved && (
+                        <>
+                          <button onClick={() => { setEditId(d.id); setName(d.name); setLead(d.lead); setMember(d.member || ''); setStart(d.start); setEnd(d.end); }} style={{ ...btnGhost, ...smallBtn }}>تعديل</button>
+                          <button onClick={() => setDelId(d.id)} style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', ...smallBtn }}>حذف</button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
+                {f && openId === d.id && (
+                  <tr>
+                    <td colSpan={6} style={{ padding: '4px 15px 14px', borderBottom: '1px solid #F4F6FA' }}>
+                      <ProjFormDetail f={f} />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               );
             })}
             {!s.projDefs.length && (
@@ -617,6 +549,24 @@ export function ProjCommitteePage() {
           </tbody>
         </table>
       </div>
+
+      {retId && (
+        <div onClick={() => setRetId(null)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(9,20,45,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, direction: 'rtl' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, background: '#fff', borderRadius: 16, padding: 22 }}>
+            <div style={{ fontSize: 14.5, fontWeight: 800, color: '#13213C', marginBottom: 10 }}>إعادة النموذج للعضو</div>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4} placeholder="الملاحظات المطلوب معالجتها…" style={{ ...inp, resize: 'vertical' }} />
+            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+              <button
+                onClick={() => { if (note.trim()) { s.returnProjForm(retId, note); setRetId(null); } else s.toast('نرجو كتابة الملاحظات المطلوب معالجتها'); }}
+                style={btnPrimary}
+              >
+                إعادة النموذج
+              </button>
+              <button onClick={() => setRetId(null)} style={btnGhost}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {delId && (
         <div onClick={() => setDelId(null)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(9,20,45,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, direction: 'rtl' }}>
