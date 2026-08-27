@@ -1002,10 +1002,11 @@ function build(s: Store) {
                 })
               ),
               { key: 'lp-moca', label: 'وزارة شؤون مجلس الوزراء', icon: NAV_BUILDING, sub: true, pin: true, heading: false, count: undefined as number | undefined, active: navSection === 'mocaLplan', onClick: () => s.setNavSection('mocaLplan') },
-              { key: 'uc-moca', label: 'حالات الاستخدام', icon: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10c.6.6 1 1.2 1 2h6c0-.8.4-1.4 1-2a6 6 0 0 0-4-10z', sub: false, pin: false, heading: false, count: undefined as number | undefined, active: navSection === 'mocaUse', onClick: () => s.setNavSection('mocaUse') },
               plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
               // إدارة المشاريع الاستراتيجية واعتماد نماذجها — صفحة اللجنة الخاصة
               plainNav('stratProjects', 'المشاريع الاستراتيجية', NAV_GRID4),
+              // حالات الاستخدام تبقى آخر عنصر في القائمة الجانبية
+              { key: 'uc-moca', label: 'حالات الاستخدام', icon: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10c.6.6 1 1.2 1 2h6c0-.8.4-1.4 1-2a6 6 0 0 0-4-10z', sub: false, pin: false, heading: false, count: undefined as number | undefined, active: navSection === 'mocaUse', onClick: () => s.setNavSection('mocaUse') },
               ]
           : navItems;
 
