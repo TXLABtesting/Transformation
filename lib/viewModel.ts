@@ -1265,6 +1265,18 @@ function build(s: Store) {
   const unreadLabel = notifUnread > 9 ? '9+' : String(notifUnread);
 
   // ---- role pills (active styles) ----
+  // مبدّل الجهة للمنسق — نسخة تجريبية فقط؛ في النسخة الحية الجهة من الجلسة
+  const entitySwitch =
+    process.env.NEXT_PUBLIC_DEMO_MODE === '1' && rawRole === 'coord'
+      ? {
+          value: entityName,
+          options: Array.from(
+            new Set([DEFAULT_ENTITY, ...svcCatalogEntities(), ...FEDERAL_ENTITIES, entityName].filter(Boolean))
+          ).sort((a, b) => a.localeCompare(b, 'ar')),
+          onChange: (v: string) => s.setEntityName(v),
+        }
+      : null;
+
   // منسق جهته وزارة شؤون مجلس الوزراء يعمل في نسخة الوزارة المستقلة —
   // في النسخة الحية الدور والجهة من الجلسة، فالتحويل هنا للنسخة التجريبية فقط
   const rolePills = ROLE_PILLS.map((p) => ({
@@ -1660,6 +1672,7 @@ function build(s: Store) {
     role: rawRole,
     roleLabel: ROLE[rawRole].label,
     rolePills,
+    entitySwitch,
     // النسخة التجريبية: مبدّل الأدوار للجميع. النسخة الحية: لمشرف النظام
     // فقط — يتنقل به بين لوحات الأدوار ولوحة الإدارة (جلسة واحدة موحّدة).
     showRoleSwitcher: process.env.NEXT_PUBLIC_DEMO_MODE === '1' || s.sessionAdmin,

@@ -10,7 +10,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuthUser } from '@/lib/security/auth';
 import { handleApiError } from '@/lib/security/http';
 import { isGlobalRole } from '@/lib/security/rbac';
-import { assertMocaView, canWriteMoca, mocaUnitScopeOf } from '@/lib/security/moca-access';
+import { assertMocaView, canWriteMoca, mocaScopeForUser } from '@/lib/security/moca-access';
 import { MOCA_ENTRY_COLS } from '@/lib/server/moca-proj-map';
 
 export const runtime = 'nodejs';
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const entries = Array.isArray(body.entries) ? body.entries.slice(0, 3000) : [];
     const useCases = Array.isArray(body.useCases) ? body.useCases.slice(0, 3000) : [];
     const global = isGlobalRole(u);
-    const scope = mocaUnitScopeOf(u);
+    const scope = await mocaScopeForUser(u);
     const writer = canWriteMoca(u);
 
     if (!global && !writer) return NextResponse.json({ ok: true, skipped: true });
@@ -63,10 +63,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, mode: 'decisions' });
     }
 
-    // ---- منسق الوزارة: محتوى وحدته فقط ----
-    if (!scope || !scope.unitId) return NextResponse.json({ ok: true, skipped: true });
+    // ---- منسق الوزارة: محتوى وحدته إن أُسندت له، وإلا محتوى الوزارة كلها ----
+    // في الحالتين لا يطال إلا جداول الوزارة، ولا يعتمد شيئاً بنفسه.
     const inScope = (unitId?: string, unitSector?: string) =>
-      unitId === scope.unitId && (!scope.unitSector || unitSector === scope.unitSector);
+      !scope
+        ? !!unitId
+        : unitId === scope.unitId && (!scope.unitSector || unitSector === scope.unitSector);
 
     const mine = entries.filter((e) => inScope(str(e.unitId), str(e.unitSector)));
     const keepIds: string[] = [];
@@ -77,8 +79,8 @@ export async function POST(req: NextRequest) {
       for (const [k, v] of Object.entries(e)) if (!MOCA_ENTRY_COLS.has(k)) fields[k] = v;
       const ret = (e.ret || null) as { type?: string; note?: string; at?: string } | null;
       const data = {
-        unitId: scope.unitId,
-        unitSector: scope.unitSector || String(e.unitSector || ''),
+        unitId: scope ? scope.unitId : String(e.unitId || ''),
+        unitSector: scope ? scope.unitSector || String(e.unitSector || '') : String(e.unitSector || ''),
         // المنسق لا يعتمد: أي حالة غير مسودة/قيد الاعتماد تُترك للخادم
         wf: e.wf === 'pending' ? 'pending' : e.wf === 'approved' ? undefined : 'draft',
         retType: ret ? String(ret.type || 'info') : null,
@@ -117,8 +119,9 @@ export async function POST(req: NextRequest) {
     // ما حُذف محلياً يُحذف على الخادم — ضمن نطاق المنسق وغير المعتمد فقط
     await prisma.mocaEntry.deleteMany({
       where: {
-        unitId: scope.unitId,
-        ...(scope.unitSector ? { unitSector: scope.unitSector } : {}),
+        ...(scope
+          ? { unitId: scope.unitId, ...(scope.unitSector ? { unitSector: scope.unitSector } : {}) }
+          : {}),
         wf: { not: 'approved' },
         id: { notIn: keepIds.length ? keepIds : ['__none__'] },
       },
@@ -131,8 +134,8 @@ export async function POST(req: NextRequest) {
       const id = str(c.id);
       const data = {
         entryId: str(c.entryId) ?? null,
-        unitId: scope.unitId,
-        unitSector: scope.unitSector || String(c.unitSector || ''),
+        unitId: scope ? scope.unitId : String(c.unitId || ''),
+        unitSector: scope ? scope.unitSector || String(c.unitSector || '') : String(c.unitSector || ''),
         mainProcess: String(c.mainProcess || ''),
         subProcess: String(c.subProcess || ''),
         status: String(c.status || ''),
@@ -155,8 +158,9 @@ export async function POST(req: NextRequest) {
     }
     await prisma.mocaUseCase.deleteMany({
       where: {
-        unitId: scope.unitId,
-        ...(scope.unitSector ? { unitSector: scope.unitSector } : {}),
+        ...(scope
+          ? { unitId: scope.unitId, ...(scope.unitSector ? { unitSector: scope.unitSector } : {}) }
+          : {}),
         id: { notIn: ucKeep.length ? ucKeep : ['__none__'] },
       },
     });

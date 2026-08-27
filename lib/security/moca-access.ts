@@ -42,36 +42,36 @@ export function assertMocaApprove(user: AuthUser): void {
 }
 
 /**
- * نطاق الوحدة/القطاع للمنسق داخل الوزارة. الوحدة تُشتق من نطاقات المستخدم
- * المخزّنة (user_stream_scopes تُستخدم في الوزارة لحفظ معرّف الوحدة) وإلا
- * فمن معرّف المسار في سجله — والأدوار العامة بلا قيد.
+ * نطاق وحدة/قطاع منسق الوزارة.
+ *
+ * الإسناد اختياري ويُخزَّن في جدول الإعدادات العام القائم (settings) بمفتاح
+ * `moca_unit:<userId>` وقيمته `<unitId>` أو `<unitId>::<القطاع>` — بلا أي عمود
+ * أو جدول جديد. متى وُجد الإسناد قُصر المنسق على وحدته، وإن لم يوجد عمل على
+ * مستوى الوزارة كاملة (وهي جهته أصلاً) ولا يطال أي جهة أخرى بحال.
+ *
+ * تعيد null للأدوار العامة (اللجنة/المشرف) أي بلا قيد.
  */
-export function mocaUnitScopeOf(user: AuthUser): { unitId: string; unitSector: string } | null {
+export async function mocaScopeForUser(
+  user: AuthUser
+): Promise<{ unitId: string; unitSector: string } | null> {
   if (isGlobalRole(user)) return null;
-  const raw = String(user.streamId || user.streamScopes[0] || '').trim();
-  if (!raw) return { unitId: '', unitSector: '' };
-  // الصيغة المخزّنة: "<unitId>" أو "<unitId>::<sector>"
-  const [unitId, sector = ''] = raw.split('::');
-  return { unitId, unitSector: sector };
+  try {
+    const row = await prisma.setting.findUnique({ where: { key: 'moca_unit:' + user.id } });
+    const raw = String(row?.value || '').trim();
+    if (!raw) return null; // بلا إسناد: نطاق الوزارة كاملة
+    const [unitId, sector = ''] = raw.split('::');
+    return { unitId, unitSector: sector };
+  } catch {
+    return null;
+  }
 }
 
-/** المدخلات المرئية: الأدوار العامة ترى المُرسَل وما بعده، والمنسق يرى وحدته */
+/** المدخلات المرئية: الأدوار العامة ترى المُرسَل وما بعده، والمنسق يرى نطاقه */
 export async function mocaEntryWhere(user: AuthUser) {
   if (isGlobalRole(user)) return { wf: { not: 'draft' } };
-  const scope = mocaUnitScopeOf(user);
-  if (!scope || !scope.unitId) return { id: '__no_scope__' };
+  const scope = await mocaScopeForUser(user);
+  if (!scope) return {}; // منسق بلا إسناد وحدة: مدخلات الوزارة كلها
   return scope.unitSector
     ? { unitId: scope.unitId, unitSector: scope.unitSector }
     : { unitId: scope.unitId };
-}
-
-/** يتحقق أن المدخل ضمن نطاق المنسق قبل أي تعديل */
-export async function assertMocaEntryScope(user: AuthUser, id: string): Promise<void> {
-  const row = await prisma.mocaEntry.findUnique({ where: { id }, select: { unitId: true, unitSector: true } });
-  if (!row) throw Object.assign(new Error('not-found'), { status: 404 });
-  if (isGlobalRole(user)) return;
-  const scope = mocaUnitScopeOf(user);
-  if (!scope || row.unitId !== scope.unitId || (scope.unitSector && row.unitSector !== scope.unitSector)) {
-    throw Object.assign(new Error('forbidden'), { status: 403 });
-  }
 }

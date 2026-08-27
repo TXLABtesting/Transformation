@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuthUser } from '@/lib/security/auth';
 import { handleApiError } from '@/lib/security/http';
-import { assertMocaView, mocaUnitScopeOf } from '@/lib/security/moca-access';
+import { assertMocaView, mocaScopeForUser } from '@/lib/security/moca-access';
 import { isGlobalRole } from '@/lib/security/rbac';
 import { mocaUseCaseToClient, type MocaUseCaseRow } from '@/lib/server/moca-proj-map';
 
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   try {
     const u = await requireAuthUser(req);
     assertMocaView(u);
-    const scope = mocaUnitScopeOf(u);
+    const scope = await mocaScopeForUser(u);
     const where = isGlobalRole(u) || !scope
       ? {}
       : scope.unitSector

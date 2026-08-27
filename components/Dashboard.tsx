@@ -2037,6 +2037,19 @@ export function Dashboard({ vm }: { vm: VM }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* مبدّل الجهة للمنسق — نسخة تجريبية فقط لتسهيل التنقل بين الجهات */}
+          {vm.entitySwitch && (
+            <select
+              value={vm.entitySwitch.value}
+              onChange={(e) => vm.entitySwitch!.onChange(e.target.value)}
+              title="التنقل بين الجهات (تجريبي)"
+              style={{ height: 38, maxWidth: 230, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', background: '#fff', borderRadius: 11, padding: '0 10px', fontSize: 12, fontWeight: 700, color: '#13213C', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}
+            >
+              {vm.entitySwitch.options.map((en) => (
+                <option key={en} value={en}>{en}</option>
+              ))}
+            </select>
+          )}
           {/* Phase countdown (moved out of the banner) */}
 
           {/* Notifications */}

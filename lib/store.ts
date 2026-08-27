@@ -884,12 +884,15 @@ export const useStore = create<Store>((set, get) => {
             normalizeBatches(items, []);
             set((s) => ({
               ...s,
-              view: d.view || s.view,
-              entityName: d.entityName || s.entityName,
-              role: d.role || s.role,
-              myPath: d.myPath || s.myPath,
-              myPaths: Array.isArray(d.myPaths) && d.myPaths.length ? d.myPaths : s.myPaths,
-              setupDone: !!d.setupDone,
+              // هوية المستخدم (الدور والجهة والمسار والعرض) تأتي من جلسته عبر
+              // /api/auth/me فقط. كتلة الحالة المشتركة تحمل المحتوى لا الهوية —
+              // وأخذ الهوية منها كان يجعل مستخدماً يرث دور آخر شارَكه الكتلة.
+              view: BACKEND_AUTH ? s.view : d.view || s.view,
+              entityName: BACKEND_AUTH ? s.entityName : d.entityName || s.entityName,
+              role: BACKEND_AUTH ? s.role : d.role || s.role,
+              myPath: BACKEND_AUTH ? s.myPath : d.myPath || s.myPath,
+              myPaths: BACKEND_AUTH ? s.myPaths : Array.isArray(d.myPaths) && d.myPaths.length ? d.myPaths : s.myPaths,
+              setupDone: BACKEND_AUTH ? s.setupDone : !!d.setupDone,
               items,
               phase: d.phase || s.phase,
               setup: d.setup || s.setup,
@@ -2383,6 +2386,8 @@ export const useStore = create<Store>((set, get) => {
         .catch(() => {});
     },
     addProjDef: (d) => {
+      if (!API_MODE) return toast('المشاريع الاستراتيجية متاحة في النسخة المتصلة بالخادم فقط');
+
       if (!d.name.trim()) return toast('أدخل اسم المشروع');
       fetch('/api/projects/defs', {
         method: 'POST',
@@ -2399,6 +2404,8 @@ export const useStore = create<Store>((set, get) => {
         .catch(() => toast('تعذّر حفظ المشروع — تحقق من الاتصال'));
     },
     updateProjDef: (id, patch) => {
+      if (!API_MODE) return toast('المشاريع الاستراتيجية متاحة في النسخة المتصلة بالخادم فقط');
+
       const def = get().projDefs.find((p) => p.id === id);
       if (!def) return;
       fetch('/api/projects/defs/' + id, {
@@ -2416,6 +2423,8 @@ export const useStore = create<Store>((set, get) => {
         .catch(() => toast('تعذّر تحديث المشروع'));
     },
     removeProjDef: (id) => {
+      if (!API_MODE) return toast('المشاريع الاستراتيجية متاحة في النسخة المتصلة بالخادم فقط');
+
       const def = get().projDefs.find((p) => p.id === id);
       if (!def) return;
       fetch('/api/projects/defs/' + id, { method: 'DELETE', credentials: 'include' })
@@ -2431,6 +2440,8 @@ export const useStore = create<Store>((set, get) => {
         .catch(() => toast('تعذّر حذف المشروع'));
     },
     saveProjForm: (f, submit) => {
+      if (!API_MODE) return toast('المشاريع الاستراتيجية متاحة في النسخة المتصلة بالخادم فقط');
+
       const s0 = get();
       const def = s0.projDefs.find((p) => p.id === f.projId);
       if (!def) return toast('اختر المشروع أولاً');
@@ -2454,6 +2465,8 @@ export const useStore = create<Store>((set, get) => {
         .catch(() => toast('تعذّر حفظ النموذج — تحقق من الاتصال'));
     },
     deleteProjForm: (id) => {
+      if (!API_MODE) return toast('المشاريع الاستراتيجية متاحة في النسخة المتصلة بالخادم فقط');
+
       const s0 = get();
       const f = s0.projForms.find((x) => x.id === id);
       if (!f || f.wf === 'approved') return;
@@ -2468,6 +2481,8 @@ export const useStore = create<Store>((set, get) => {
         .catch(() => toast('تعذّر حذف النموذج'));
     },
     approveProjForm: (id) => {
+      if (!API_MODE) return toast('المشاريع الاستراتيجية متاحة في النسخة المتصلة بالخادم فقط');
+
       const s0 = get();
       const f = s0.projForms.find((x) => x.id === id);
       if (!f || f.wf !== 'sent') return;
@@ -2487,6 +2502,8 @@ export const useStore = create<Store>((set, get) => {
         .catch(() => toast('تعذّر اعتماد النموذج'));
     },
     returnProjForm: (id, note) => {
+      if (!API_MODE) return toast('المشاريع الاستراتيجية متاحة في النسخة المتصلة بالخادم فقط');
+
       const s0 = get();
       const f = s0.projForms.find((x) => x.id === id);
       if (!f || f.wf !== 'sent') return;
