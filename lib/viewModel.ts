@@ -828,7 +828,9 @@ function build(s: Store) {
   // ---- sidebar navigation (§redesign v2) ----
   // the coordinator has no dashboard: entering lands directly on قوائم الحصر
   const navSection =
-    (rawRole === 'coord' || rawRole === 'path') && (ui.navSection || 'overview') === 'overview' ? 'all' : ui.navSection || 'overview';
+    rawRole === 'proj'
+      ? 'stratProjects' // أعضاء المشاريع الاستراتيجية: صفحة واحدة داخل قالب المنصة
+      : (rawRole === 'coord' || rawRole === 'path') && (ui.navSection || 'overview') === 'overview' ? 'all' : ui.navSection || 'overview';
   const navStream = ui.navStream; // selected stream summary card ('all' = null)
   const batchFilter = ui.batchFilter; // drill-down from a مرحلة card
   const devStatusOf = devStatusOfItem;
@@ -948,7 +950,9 @@ function build(s: Store) {
     onClick,
   });
   const navItemsOut =
-    rawRole === 'coord'
+    rawRole === 'proj'
+      ? [plainNav('stratProjects', 'المشاريع الاستراتيجية', NAV_GRID4)]
+      : rawRole === 'coord'
       ? [
           invHead,
           ...coordStreamIds.map((pid) =>
@@ -994,6 +998,8 @@ function build(s: Store) {
                 })
               ),
               plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
+              // إدارة المشاريع الاستراتيجية واعتماد نماذجها — صفحة اللجنة الخاصة
+              plainNav('stratProjects', 'المشاريع الاستراتيجية', NAV_GRID4),
               ]
           : navItems;
 

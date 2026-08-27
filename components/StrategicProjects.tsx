@@ -1,16 +1,15 @@
 'use client';
 // ===========================================================================
 // المشاريع الاستراتيجية — دور «أعضاء المشاريع الاستراتيجية»
-//  - المشرف يعرّف المشاريع (الاسم/القائد/فترة التنفيذ) من لوحة المشرف
+//  - اللجنة الوطنية تعرّف المشاريع من صفحتها الجانبية «المشاريع الاستراتيجية»
+//    (الاسم/القائد/العضو المسؤول/فترة التنفيذ) وتعتمد النماذج من الصفحة نفسها
 //  - العضو يختار مشروعاً معرّفاً ويعبّئ نموذجه: بيانات المشروع، المراحل
 //    التنفيذية الرئيسية، فريق العمل — حفظ كمسودة أو إرسال لاعتماد اللجنة
-//  - اللجنة الوطنية تعتمد النموذج أو تعيده بملاحظات
 // معزول بالكامل عن مسارات التحول (لا يمسّ عناصرها أو دورات اعتمادها)
 // ===========================================================================
 import { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useStore } from '@/lib/store';
-import type { VM } from '@/lib/viewModel';
 import { PROJECT_LEADS, type ProjDef, type ProjForm, type ProjMember, type ProjPhase } from '@/lib/domain';
 import { Icon } from './Icon';
 
@@ -251,8 +250,8 @@ function ProjFormPanel({ form, setForm, def, readOnly, onSave, onSubmit, onClose
 }
 
 // ---------------------------------------------------------------------------
-// لوحة العضو
-export function StrategicProjects({ vm }: { vm: VM }) {
+// قسم العضو — يُعرض داخل قالب المنصة القياسي (الترويسة والشريط الجانبي نفساهما)
+export function ProjMemberSection() {
   const s = useStore();
   const defs = s.projDefs;
   const forms = s.projForms;
@@ -284,39 +283,16 @@ export function StrategicProjects({ vm }: { vm: VM }) {
   );
 
   return (
-    <div style={{ direction: 'rtl', minHeight: '100vh', background: '#EEF2F9', color: '#16233F' }}>
-      {/* رأس مبسّط: العنوان + مبدّل الأدوار في النسخة التجريبية */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #E7ECF4', padding: '14px 26px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#2E74EE,#1F5FE0)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Icon d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" size={20} color="#fff" />
-          </span>
-          <div>
-            <div style={{ fontSize: 15.5, fontWeight: 800 }}>المشاريع الاستراتيجية</div>
-            <div style={{ fontSize: 11.5, color: '#8A97AD' }}>أعضاء المشاريع الاستراتيجية — تعبئة نماذج المشاريع وإرسالها لاعتماد اللجنة الوطنية</div>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* عنوان الصفحة بنمط بقية صفحات المنصة */}
+      <div>
+        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
+        <div style={{ fontSize: 12, color: '#9AA6BC', marginTop: 3 }}>
+          تعبئة نماذج المشاريع المعرّفة من اللجنة الوطنية وإرسالها للاعتماد
         </div>
-        {vm.showRoleSwitcher && (
-          <div style={{ display: 'flex', background: '#F4F7FC', border: '1px solid #E7ECF4', borderRadius: 12, padding: 3, gap: 2, flexWrap: 'wrap' }}>
-            {vm.rolePills.map((p) => (
-              <button
-                key={p.key}
-                onClick={p.onClick}
-                style={{
-                  borderRadius: 9, padding: '8px 13px', fontWeight: 700, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit',
-                  ...(p.active
-                    ? { background: '#fff', color: '#1D4ED8', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #D8E3F5' }
-                    : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }),
-                }}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
-      <div style={{ maxWidth: 1180, margin: '0 auto', padding: '22px 22px 60px' }}>
+      <div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 14, marginBottom: 20 }}>
           {kpi('إجمالي النماذج', forms.length, '#1D4ED8', '#E5EEFF')}
           {kpi('مسودات', forms.filter((f) => f.wf === 'draft').length, '#B45309', '#FFF3DE')}
@@ -328,7 +304,7 @@ export function StrategicProjects({ vm }: { vm: VM }) {
           <div style={{ fontSize: 16.5, fontWeight: 800 }}>نماذج مشاريعي</div>
           <button
             onClick={() => {
-              if (!availableDefs.length) { s.toast(defs.length ? 'كل المشاريع المعرّفة لها نماذج بالفعل' : 'لا مشاريع معرّفة بعد — يضيفها مشرف النظام من لوحة المشرف'); return; }
+              if (!availableDefs.length) { s.toast(defs.length ? 'كل المشاريع المعرّفة لها نماذج بالفعل' : 'لا مشاريع معرّفة بعد — تضيفها اللجنة الوطنية من صفحة المشاريع الاستراتيجية'); return; }
               setPicking(true); setEditing(null);
             }}
             style={{ ...btnPrimary, display: 'inline-flex', alignItems: 'center', gap: 8 }}
@@ -341,12 +317,13 @@ export function StrategicProjects({ vm }: { vm: VM }) {
         {picking && (
           <div style={{ ...card, padding: 22, marginBottom: 16 }}>
             <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 6 }}>اختر المشروع</div>
-            <div style={{ fontSize: 12, color: '#8A97AD', marginBottom: 14 }}>المشاريع وقادتها وفترات تنفيذها معرّفة مسبقاً من مشرف النظام — اختر مشروعك لتعبئة نموذجه</div>
+            <div style={{ fontSize: 12, color: '#8A97AD', marginBottom: 14 }}>المشاريع وقادتها وأعضاؤها وفترات تنفيذها معرّفة مسبقاً من اللجنة الوطنية — اختر مشروعك لتعبئة نموذجه</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 12 }}>
               {availableDefs.map((d) => (
                 <button key={d.id} onClick={() => openForm(blankForm(d.id), false)} style={{ textAlign: 'right', background: '#F7F9FD', border: '1px solid #E7ECF4', borderRadius: 13, padding: 16, cursor: 'pointer', fontFamily: 'inherit' }}>
                   <div style={{ fontSize: 13.5, fontWeight: 800, color: '#13213C' }}>{d.name}</div>
                   <div style={{ fontSize: 12, color: '#54627B', marginTop: 6 }}>القائد: {d.lead || '—'}</div>
+                  {d.member && <div style={{ fontSize: 12, color: '#54627B', marginTop: 3 }}>العضو المسؤول: {d.member}</div>}
                   <div style={{ fontSize: 11.5, color: '#8A97AD', marginTop: 3 }}>{fmtPeriod(d)}</div>
                 </button>
               ))}
@@ -421,14 +398,12 @@ export function StrategicProjects({ vm }: { vm: VM }) {
 }
 
 // ---------------------------------------------------------------------------
-// قسم اعتماد اللجنة الوطنية — يُعرض داخل لوحة اللجنة فقط وعند وجود نماذج
-export function ProjApprovals() {
+// قسم الاعتماد — داخل صفحة اللجنة «المشاريع الاستراتيجية» نفسها
+function ProjApprovalsSection() {
   const s = useStore();
-  const role = s.role;
   const [openId, setOpenId] = useState<string | null>(null);
   const [retId, setRetId] = useState<string | null>(null);
   const [note, setNote] = useState('');
-  if (role !== 'ai') return null;
   const sent = s.projForms.filter((f) => f.wf === 'sent');
   const approved = s.projForms.filter((f) => f.wf === 'approved');
   if (!sent.length && !approved.length) return null;
@@ -465,7 +440,7 @@ export function ProjApprovals() {
         <span style={{ width: 34, height: 34, borderRadius: 10, background: '#E5EEFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" size={17} color="#1D4ED8" />
         </span>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>نماذج المشاريع — الاعتماد</div>
         {sent.length > 0 && (
           <span style={{ background: '#FFF3DE', color: '#B45309', borderRadius: 999, padding: '4px 12px', fontSize: 11.5, fontWeight: 800 }}>بانتظار الاعتماد: {sent.length}</span>
         )}
@@ -529,32 +504,51 @@ export function ProjApprovals() {
 }
 
 // ---------------------------------------------------------------------------
-// لوحة المشرف — تعريف المشاريع (الاسم/القائد/فترة التنفيذ)
-export function ProjAdminTab() {
+// صفحة اللجنة الوطنية «المشاريع الاستراتيجية» — تعريف المشاريع وإسنادها
+// (القائد + العضو المسؤول) واعتماد النماذج المرسلة، كل ذلك في صفحة واحدة
+export function ProjCommitteePage() {
   const s = useStore();
   const [name, setName] = useState('');
   const [lead, setLead] = useState('');
+  const [member, setMember] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   const [delId, setDelId] = useState<string | null>(null);
 
-  const reset = () => { setName(''); setLead(''); setStart(''); setEnd(''); setEditId(null); };
+  const reset = () => { setName(''); setLead(''); setMember(''); setStart(''); setEnd(''); setEditId(null); };
   const save = () => {
     if (!name.trim()) return s.toast('أدخل اسم المشروع');
     if (!lead) return s.toast('اختر قائد المشروع');
+    if (!member.trim()) return s.toast('أدخل اسم العضو المسؤول من القائد');
     if (!start || !end) return s.toast('حدد فترة التنفيذ (البدء والانتهاء)');
-    if (editId) s.updateProjDef(editId, { name, lead, start, end });
-    else s.addProjDef({ name, lead, start, end });
+    if (editId) s.updateProjDef(editId, { name, lead, member, start, end });
+    else s.addProjDef({ name, lead, member, start, end });
     reset();
+  };
+  // حالة نموذج كل مشروع كما تظهر في جدول اللجنة
+  const formStatus = (projId: string) => {
+    const f = s.projForms.find((x) => x.projId === projId);
+    if (!f) return { t: 'لم يُعبأ بعد', c: '#8A97AD', bg: '#F1F4FA' };
+    return chipOf(f);
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div>
+        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
+        <div style={{ fontSize: 12, color: '#9AA6BC', marginTop: 3 }}>
+          تعريف المشاريع وإسنادها إلى القادة وأعضائهم المسؤولين، واعتماد النماذج المرسلة من الأعضاء
+        </div>
+      </div>
+
+      {/* النماذج المرسلة للاعتماد — في الصفحة نفسها */}
+      <ProjApprovalsSection />
+
       <div style={{ ...card, padding: 20 }}>
         <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{editId ? 'تعديل مشروع' : 'إضافة مشروع استراتيجي'}</div>
         <div style={{ fontSize: 12, color: '#8A97AD', marginBottom: 14 }}>
-          المشاريع المعرّفة هنا تظهر لأعضاء المشاريع الاستراتيجية لتعبئة نماذجها — القائد بيانات وصفية في هذه المرحلة
+          المشاريع المعرّفة هنا تظهر لأعضاء المشاريع الاستراتيجية لتعبئة نماذجها وإرسالها لاعتماد اللجنة
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 12 }}>
           <div>
@@ -567,6 +561,10 @@ export function ProjAdminTab() {
               <option value="">اختر القائد…</option>
               {PROJECT_LEADS.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
+          </div>
+          <div>
+            <label style={label}>العضو المسؤول{req}</label>
+            <input value={member} onChange={(e) => setMember(e.target.value)} placeholder="اسم العضو المسؤول من القائد" style={inp} />
           </div>
           <div>
             <label style={label}>تاريخ البدء{req}</label>
@@ -587,24 +585,26 @@ export function ProjAdminTab() {
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 760 }}>
           <thead>
             <tr>
-              {['المشروع', 'القائد', 'تاريخ البدء', 'تاريخ الانتهاء', 'النماذج', 'الإجراء'].map((h) => (
+              {['المشروع', 'القائد', 'العضو المسؤول', 'فترة التنفيذ', 'حالة النموذج', 'الإجراء'].map((h) => (
                 <th key={h} style={{ textAlign: 'right', padding: '11px 15px', fontSize: 11.5, fontWeight: 700, color: '#8A97AD', borderBottom: '1px solid #EEF1F7', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {s.projDefs.map((d) => {
-              const n = s.projForms.filter((f) => f.projId === d.id).length;
+              const st = formStatus(d.id);
               return (
                 <tr key={d.id}>
                   <td style={{ padding: '12px 15px', fontSize: 13, fontWeight: 800, color: '#13213C', borderBottom: '1px solid #F4F6FA' }}>{d.name}</td>
                   <td style={{ padding: '12px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{d.lead}</td>
-                  <td style={{ padding: '12px 15px', fontSize: 12.5, color: '#54627B', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{d.start || '—'}</td>
-                  <td style={{ padding: '12px 15px', fontSize: 12.5, color: '#54627B', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{d.end || '—'}</td>
-                  <td style={{ padding: '12px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA' }}>{n}</td>
+                  <td style={{ padding: '12px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{d.member || '—'}</td>
+                  <td style={{ padding: '12px 15px', fontSize: 12, color: '#54627B', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{fmtPeriod(d)}</td>
+                  <td style={{ padding: '12px 15px', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: st.bg, color: st.c }}>{st.t}</span>
+                  </td>
                   <td style={{ padding: '12px 15px', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => { setEditId(d.id); setName(d.name); setLead(d.lead); setStart(d.start); setEnd(d.end); }} style={{ ...btnGhost, padding: '7px 14px', fontSize: 12 }}>تعديل</button>
+                      <button onClick={() => { setEditId(d.id); setName(d.name); setLead(d.lead); setMember(d.member || ''); setStart(d.start); setEnd(d.end); }} style={{ ...btnGhost, padding: '7px 14px', fontSize: 12 }}>تعديل</button>
                       <button onClick={() => setDelId(d.id)} style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>حذف</button>
                     </div>
                   </td>

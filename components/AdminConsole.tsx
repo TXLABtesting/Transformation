@@ -12,7 +12,6 @@ import { useStore } from '@/lib/store';
 import type { RoleKey, UserRec } from '@/lib/domain';
 import { downloadUsersTemplate, readSheetRows } from '@/lib/export';
 import { Icon } from './Icon';
-import { ProjAdminTab } from './StrategicProjects';
 
 const IC_USERS = 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75';
 const IC_SHIELD = 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z';
@@ -31,7 +30,7 @@ const inputSt: CSSProperties = {
   fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#16233F', outline: 'none',
 };
 
-type Tab = 'users' | 'assign' | 'roles' | 'projects' | 'site' | 'contact' | 'changelog';
+type Tab = 'users' | 'assign' | 'roles' | 'site' | 'contact' | 'changelog';
 
 const blankUser = (): UserRec => ({
   id: '', role: 'coord', name: '', title: '', email: '', phone: '', active: true,
@@ -61,7 +60,6 @@ export function AdminConsole({ vm }: { vm: VM }) {
     { key: 'users', label: 'المستخدمون' },
     { key: 'assign', label: 'رؤساء المسارات واللجنة' },
     { key: 'roles', label: 'الأدوار والصلاحيات' },
-    { key: 'projects', label: 'المشاريع الاستراتيجية' },
     { key: 'site', label: 'الموقع العام' },
     { key: 'contact', label: 'التواصل والاستفسارات' },
     { key: 'changelog', label: 'سجل التغييرات' },
@@ -134,7 +132,6 @@ export function AdminConsole({ vm }: { vm: VM }) {
         )}
         {tab === 'assign' && <AssignTab a={a} onEdit={setEditing} onAdd={(u) => setEditing(u)} />}
         {tab === 'roles' && <RolesTab a={a} />}
-        {tab === 'projects' && <ProjAdminTab />}
         {tab === 'site' && <SiteTab />}
         {tab === 'contact' && <ContactTab a={a} />}
         {tab === 'changelog' && <ChangeLogTab />}
