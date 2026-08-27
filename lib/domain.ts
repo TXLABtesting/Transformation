@@ -984,6 +984,8 @@ export type Item = {
   desc: string;
   path: string;
   approval: string;
+  // مدخل رفعه فريق عمل المسار بالنيابة عن الجهة (يبقى مرئياً للفريق حتى وهو مسودة)
+  teamUp?: boolean;
   priority?: string;
   rank?: number;
   complexity?: string;
@@ -1081,6 +1083,12 @@ export type Item = {
 // ============================================================================
 // 3. Workflow
 // ============================================================================
+// هل المدخل مرفوع من فريق عمل المسار بالنيابة عن جهة؟ العلم الصريح، مع
+// التعرف على المدخلات الأقدم من سجل إنشائها (قبل إضافة العلم)
+export function isTeamUpload(i: Item): boolean {
+  return !!i.teamUp || (i.log || []).some((l) => (l.note || '').startsWith('استيراد ملف بالنيابة عن'));
+}
+
 export function wfOf(i: Item): WfState {
   if (i.wf === 'pm1' || i.wf === 'pm2') return 'exec'; // legacy coercion
   if (i.wf) return i.wf;

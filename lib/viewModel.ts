@@ -62,7 +62,7 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   TWO_STEP_PHASES,
   type Item,
   type RoleKey,
-  itemActivities, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY } from './domain';
+  itemActivities, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload } from './domain';
 import { stripHtml } from './richtext';
 import { FEDERAL_ENTITIES } from './entities';
 import { svcCatalogEntities } from './svcCatalog';
@@ -115,9 +115,9 @@ function build(s: Store) {
       return w !== 'draft' && w !== 'ent1';
     });
   } else if (rawRole === 'path') {
-    // فريق عمل المسار يرى كل مدخلات مساره بما فيها المسودات غير المكتملة —
-    // خصوصاً ملفات Excel المرفوعة بالنيابة عن الجهات — لمتابعتها واعتمادها
-    roleBase = base;
+    // فريق عمل المسار يراجع مُرسَلات المنسقين، ويرى من المسودات فقط ما رفعه
+    // هو بالنيابة عن الجهات (ولو ناقصاً) — مسودات المنسق الخاصة تبقى خاصة به
+    roleBase = base.filter((i) => wfOf(i) !== 'draft' || isTeamUpload(i));
   } else if (rawRole === 'entity') {
     roleBase = base.filter((i) => wfOf(i) !== 'draft');
   }
@@ -1142,11 +1142,16 @@ function build(s: Store) {
         }).sort((a, b) => b.total - a.total);
 
   const cards = visible.map((i) => mkCard(i, s, { rawRole, role, myName, ent }));
-  // اعتماد جماعي لفريق عمل المسار: كل الظاهر أمامه القابل للاعتماد —
-  // المُرسَل للاعتماد والمسودات غير المكتملة — ويحترم التصفية الحالية (الجهة…)
+  // اعتماد جماعي لفريق عمل المسار: كل الظاهر أمامه القابل للاعتماد — المُرسَل
+  // للاعتماد ومسودات رفعه بالنيابة — ويحترم التصفية الحالية (الجهة…)
   const approveAllIds =
     rawRole === 'path'
-      ? visible.filter((i) => ['ent1', 'draft'].includes(wfOf(i))).map((i) => i.id)
+      ? visible
+          .filter((i) => {
+            const w = wfOf(i);
+            return w === 'ent1' || (w === 'draft' && isTeamUpload(i));
+          })
+          .map((i) => i.id)
       : [];
 
   // bulk-assign selection state (change vs first assignment)
@@ -2009,10 +2014,10 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const score = transformScore(i);
   const step = stepIndexOf(i);
   // approval is فريق عمل المسار's responsibility — the team can also approve
-  // drafts directly (uploaded on behalf of entities, even when incomplete)
+  // its own on-behalf uploaded drafts directly (even when incomplete)
   const canApprove =
     ((rawRole === 'path' || rawRole === 'entity') && w === 'ent1') ||
-    (rawRole === 'path' && w === 'draft');
+    (rawRole === 'path' && w === 'draft' && isTeamUpload(i));
   const isFunded = !!i.funded;
   // status chip mirrors the real lifecycle exactly:
   // مسودة → بحاجة إلى تعديل → بانتظار اعتماد ممثل الجهة → مخطط · المرحلة N → مكتمل
@@ -2257,8 +2262,10 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     launchLabel,
     // coordinator bulk-assign checkbox
     showAssignCheck: rawRole === 'coord',
-    // الاختيار الجماعي للمسودات: المنسق (للإرسال/الحذف) وفريق المسار (للاعتماد/الحذف)
-    showDraftCheck: (ctx.rawRole === 'coord' || ctx.rawRole === 'path') && wfOf(i) === 'draft',
+    // الاختيار الجماعي للمسودات: المنسق (للإرسال/الحذف)، وفريق المسار
+    // لمسودات رفعه بالنيابة فقط (للاعتماد/الحذف)
+    showDraftCheck:
+      (ctx.rawRole === 'coord' || (ctx.rawRole === 'path' && isTeamUpload(i))) && wfOf(i) === 'draft',
     draftChecked: s.ui.draftSel.includes(i.id),
     onToggleDraftSel: () => s.toggleDraftSel(i.id),
     missingCount: wfOf(i) === 'draft' ? missingFieldsOf(i as unknown as Record<string, unknown>).length : 0,
