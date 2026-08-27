@@ -153,12 +153,12 @@ export function DraftBar({ vm }: { vm: VM }) {
           </button>
           {/* حذف المسودات المحددة دفعة واحدة — مع رسالة تأكيد قبل التنفيذ */}
           <button onClick={db.onDelete} style={{ ...btn, background: 'transparent', border: '1px solid rgba(252,165,165,.65)', color: '#FCA5A5' }}>
-            حذف المحدد
+            حذف
           </button>
           {db.pathMode ? (
             // فريق عمل المسار: اعتماد المحدد مباشرة (بعد تأكيد) بدل دورة الإرسال
             <button onClick={db.onApproveSel} style={{ ...btn, background: '#fff', color: '#0F1F3D' }}>
-              اعتماد المحدد
+              اعتماد
             </button>
           ) : (
             <>
