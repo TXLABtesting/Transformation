@@ -7,7 +7,7 @@
 //    التنفيذية الرئيسية، فريق العمل — حفظ كمسودة أو إرسال لاعتماد اللجنة
 // معزول بالكامل عن مسارات التحول (لا يمسّ عناصرها أو دورات اعتمادها)
 // ===========================================================================
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useStore } from '@/lib/store';
 import { PROJECT_LEADS, type ProjDef, type ProjForm, type ProjMember, type ProjPhase } from '@/lib/domain';
@@ -40,6 +40,14 @@ const blankForm = (projId: string): ProjForm => ({
 const memberComplete = (m: ProjMember) => !!(m.name.trim() && m.title.trim() && m.entity.trim() && m.email.trim() && m.phone.trim());
 const memberTouched = (m: ProjMember) => Object.values(m).some((v) => String(v).trim());
 
+// الحقول العربية لا تقبل حروفاً لاتينية — تُحذف أثناء الكتابة (بنفس قاعدة نماذج المسارات)
+const arOnly = (v: string) => v.replace(/[A-Za-z]/g, '');
+const hasLatin = (v: string) => /[A-Za-z]/.test(v);
+
+// صيغ الإدخال: بريد صحيح، وهاتف متحرك إماراتي (05XXXXXXXX أو +9715XXXXXXXX)
+const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+const phoneOk = (v: string) => /^(\+?971|00971|0)?5\d{8}$/.test(v.replace(/[\s-]/g, ''));
+
 // الحقول الناقصة قبل الإرسال — تُعرض نقاطاً كما في بقية المنصة
 function missingOf(f: ProjForm): string[] {
   const miss: string[] = [];
@@ -50,11 +58,27 @@ function missingOf(f: ProjForm): string[] {
   if (!phases.length) miss.push('المراحل التنفيذية الرئيسية (مرحلة واحدة على الأقل)');
   phases.forEach((p, i) => {
     if (!p.name.trim() || !p.start || !p.end) miss.push('استكمال بيانات المرحلة ' + (i + 1));
+    else if (p.end < p.start) miss.push('تاريخ انتهاء المرحلة ' + (i + 1) + ' قبل تاريخ بدئها');
   });
+  // صحة البريد والهاتف لكل عضو مُدخل بياناته
+  const contactIssues = (m: ProjMember, who: string) => {
+    if (m.email.trim() && !emailOk(m.email)) miss.push('البريد الإلكتروني غير صالح (' + who + ')');
+    if (m.phone.trim() && !phoneOk(m.phone)) miss.push('رقم الهاتف المتحرك غير صالح (' + who + ')');
+  };
   if (!f.team[0] || !memberComplete(f.team[0])) miss.push('بيانات رئيس الفريق كاملة');
+  if (f.team[0]) contactIssues(f.team[0], 'رئيس الفريق');
   f.team.slice(1).forEach((m, i) => {
     if (memberTouched(m) && !memberComplete(m)) miss.push('استكمال بيانات العضو ' + (i + 1));
+    if (memberTouched(m)) contactIssues(m, 'العضو ' + (i + 1));
   });
+  // الحقول النصية العربية يجب ألا تحوي حروفاً لاتينية
+  const latinIn: string[] = [];
+  if (hasLatin(f.entityResp)) latinIn.push('الجهة المسؤولة');
+  if (hasLatin(f.desc)) latinIn.push('وصف المشروع');
+  if (f.outputs.some(hasLatin)) latinIn.push('المخرجات المرجوة');
+  if (f.phases.some((p) => hasLatin(p.name))) latinIn.push('أسماء المراحل');
+  if (f.team.some((m) => hasLatin(m.name) || hasLatin(m.title) || hasLatin(m.entity))) latinIn.push('أسماء فريق العمل ومسمياتهم وجهاتهم');
+  if (latinIn.length) miss.push('الكتابة باللغة العربية مطلوبة في: ' + latinIn.join('، '));
   return miss;
 }
 
@@ -64,22 +88,23 @@ const WF_CHIP: Record<string, { t: string; c: string; bg: string }> = {
   approved: { t: 'معتمد', c: '#0B8A4B', bg: '#EAF7F0' },
 };
 const chipOf = (f: ProjForm) => (f.ret && f.wf === 'draft' ? { t: 'للتعديل', c: '#B45309', bg: '#FFF3DE' } : WF_CHIP[f.wf]);
-const fmtPeriod = (d?: ProjDef) => (d && (d.start || d.end) ? [d.start, d.end].filter(Boolean).join(' ← ') : '—');
+// فترة التنفيذ المعرّفة شهر وسنة فقط — تُعرض بالشهر العربي (تتقبل قيماً قديمة بأيام)
+const AR_M = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+const fmtMY = (v: string) => { const m = v.match(/^(\d{4})-(\d{2})/); return m ? AR_M[+m[2] - 1] + ' ' + m[1] : v; };
+const fmtPeriod = (d?: ProjDef) => (d && (d.start || d.end) ? [d.start, d.end].filter(Boolean).map(fmtMY).join(' ← ') : '—');
 
 // ---------------------------------------------------------------------------
 // نموذج المشروع — الأقسام الثلاثة كما في التصميم المعتمد
-function ProjFormPanel({ form, setForm, def, readOnly, onSave, onSubmit, onClose }: {
+function ProjFormPanel({ form, setForm, def, onSave, onSubmit, onClose }: {
   form: ProjForm;
   setForm: (f: ProjForm) => void;
   def: ProjDef | undefined;
-  readOnly: boolean;
   onSave: () => void;
   onSubmit: () => void;
   onClose: () => void;
 }) {
   const [missing, setMissing] = useState<string[]>([]);
   const set = (patch: Partial<ProjForm>) => setForm({ ...form, ...patch });
-  const ro = readOnly ? { background: '#F7F9FD', pointerEvents: 'none' as const } : {};
 
   const section = (n: number, title: string, body: ReactNode) => (
     <div style={{ ...card, padding: 22, marginBottom: 16 }}>
@@ -97,7 +122,7 @@ function ProjFormPanel({ form, setForm, def, readOnly, onSave, onSubmit, onClose
         <span style={{ background: '#EEF2F9', color: '#3A4A66', borderRadius: 999, padding: '6px 14px', fontSize: 12, fontWeight: 800 }}>
           {idx === 0 ? 'رئيس الفريق' : 'العضو ' + (['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع', 'العاشر'][idx - 1] || idx)}
         </span>
-        {!readOnly && idx > 1 && (
+        {idx > 1 && (
           <button onClick={() => set({ team: form.team.filter((_, i) => i !== idx) })} title="إزالة العضو" style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 9, padding: '6px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
             إزالة
           </button>
@@ -110,18 +135,29 @@ function ProjFormPanel({ form, setForm, def, readOnly, onSave, onSubmit, onClose
           ['entity', 'الجهة', 'اسم الجهة'],
           ['email', 'البريد الإلكتروني', 'name@entity.gov.ae'],
           ['phone', 'الهاتف المتحرك', '050 000 0000'],
-        ] as const).map(([k, lb, ph]) => (
+        ] as const).map(([k, lb, ph]) => {
+          // تلوين فوري للصيغ غير الصالحة (بريد/هاتف) أثناء الكتابة
+          const bad =
+            (k === 'email' && m.email.trim() !== '' && !emailOk(m.email)) ||
+            (k === 'phone' && m.phone.trim() !== '' && !phoneOk(m.phone));
+          return (
           <div key={k}>
             <label style={label}>{lb}{req}</label>
             <input
               value={m[k]}
-              onChange={(e) => set({ team: form.team.map((x, i) => (i === idx ? { ...x, [k]: e.target.value } : x)) })}
+              onChange={(e) => set({ team: form.team.map((x, i) => (i === idx ? { ...x, [k]: k === 'email' || k === 'phone' ? e.target.value : arOnly(e.target.value) } : x)) })}
               placeholder={ph}
               dir={k === 'email' || k === 'phone' ? 'ltr' : 'rtl'}
-              style={{ ...inp, ...ro, textAlign: k === 'email' || k === 'phone' ? 'left' : 'right' }}
+              style={{ ...inp, textAlign: k === 'email' || k === 'phone' ? 'left' : 'right', ...(bad ? { borderColor: '#C0303B', background: '#FFFBFB' } : {}) }}
             />
+            {bad && (
+              <div style={{ fontSize: 11, color: '#C0303B', fontWeight: 700, marginTop: 5 }}>
+                {k === 'email' ? 'صيغة البريد غير صحيحة — مثال: name@entity.gov.ae' : 'رقم غير صالح — مثال: 0501234567'}
+              </div>
+            )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -147,27 +183,25 @@ function ProjFormPanel({ form, setForm, def, readOnly, onSave, onSubmit, onClose
         <>
           <div style={{ marginBottom: 16 }}>
             <label style={label}>الجهة المسؤولة{req}</label>
-            <input value={form.entityResp} onChange={(e) => set({ entityResp: e.target.value })} placeholder="أدخل اسم الجهة المسؤولة" style={{ ...inp, ...ro }} />
+            <input value={form.entityResp} onChange={(e) => set({ entityResp: e.target.value })} placeholder="أدخل اسم الجهة المسؤولة" style={{ ...inp}} />
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={label}>وصف المشروع{req}</label>
-            <textarea value={form.desc} onChange={(e) => set({ desc: e.target.value })} rows={5} style={{ ...inp, ...ro, resize: 'vertical', lineHeight: 1.8 }} />
+            <textarea value={form.desc} onChange={(e) => set({ desc: arOnly(e.target.value) })} rows={5} style={{ ...inp, resize: 'vertical', lineHeight: 1.8 }} />
           </div>
           <label style={label}>المخرجات المرجوة{req}</label>
           {form.outputs.map((o, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <span style={{ width: 26, height: 26, borderRadius: '50%', background: '#E5EEFF', color: '#1D4ED8', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 12, flex: 'none' }}>{i + 1}</span>
-              <input value={o} onChange={(e) => set({ outputs: form.outputs.map((x, j) => (j === i ? e.target.value : x)) })} placeholder={'المخرج المرجو رقم ' + (i + 1)} style={{ ...inp, ...ro }} />
-              {!readOnly && form.outputs.length > 1 && (
+              <input value={o} onChange={(e) => set({ outputs: form.outputs.map((x, j) => (j === i ? arOnly(e.target.value) : x)) })} placeholder={'المخرج المرجو رقم ' + (i + 1)} style={{ ...inp}} />
+              {form.outputs.length > 1 && (
                 <button onClick={() => set({ outputs: form.outputs.filter((_, j) => j !== i) })} title="إزالة المخرج" style={{ background: 'transparent', border: 'none', color: '#C0303B', cursor: 'pointer', fontSize: 16, fontWeight: 800, flex: 'none' }}>✕</button>
               )}
             </div>
           ))}
-          {!readOnly && (
-            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-              <button onClick={() => set({ outputs: [...form.outputs, ''] })} style={btnDashed}>+ إضافة مخرج</button>
-            </div>
-          )}
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <button onClick={() => set({ outputs: [...form.outputs, ''] })} style={btnDashed}>+ إضافة مخرج</button>
+          </div>
         </>
       ))}
 
@@ -181,7 +215,7 @@ function ProjFormPanel({ form, setForm, def, readOnly, onSave, onSubmit, onClose
                   <th style={{ padding: '11px 14px', fontSize: 12, fontWeight: 800, color: '#54627B', textAlign: 'right' }}>اسم المرحلة{req}</th>
                   <th style={{ padding: '11px 14px', fontSize: 12, fontWeight: 800, color: '#54627B', textAlign: 'right' }}>التاريخ المخطط للبدء{req}</th>
                   <th style={{ padding: '11px 14px', fontSize: 12, fontWeight: 800, color: '#54627B', textAlign: 'right' }}>التاريخ المخطط للانتهاء{req}</th>
-                  {!readOnly && <th style={{ width: 50 }} />}
+                  <th style={{ width: 50 }} />
                 </tr>
               </thead>
               <tbody>
@@ -189,34 +223,38 @@ function ProjFormPanel({ form, setForm, def, readOnly, onSave, onSubmit, onClose
                   <tr key={i} style={{ borderTop: '1px solid #F0F3F9' }}>
                     <td style={{ padding: '10px 14px', fontSize: 12.5, color: '#8A97AD', fontWeight: 700 }}>{i + 1}</td>
                     <td style={{ padding: '10px 8px' }}>
-                      <input value={p.name} onChange={(e) => set({ phases: form.phases.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} placeholder="اسم المرحلة" style={{ ...inp, ...ro }} />
+                      <input value={p.name} onChange={(e) => set({ phases: form.phases.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} placeholder="اسم المرحلة" style={{ ...inp}} />
                     </td>
                     <td style={{ padding: '10px 8px' }}>
-                      <input type="date" value={p.start} onChange={(e) => set({ phases: form.phases.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)) })} style={{ ...inp, ...ro }} />
+                      <input type="date" value={p.start} onChange={(e) => set({ phases: form.phases.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)) })} style={{ ...inp}} />
                     </td>
                     <td style={{ padding: '10px 8px' }}>
-                      <input type="date" value={p.end} onChange={(e) => set({ phases: form.phases.map((x, j) => (j === i ? { ...x, end: e.target.value } : x)) })} style={{ ...inp, ...ro }} />
+                      <input
+                        type="date"
+                        value={p.end}
+                        onChange={(e) => set({ phases: form.phases.map((x, j) => (j === i ? { ...x, end: e.target.value } : x)) })}
+                        title={p.start && p.end && p.end < p.start ? 'تاريخ الانتهاء قبل تاريخ البدء' : undefined}
+                        style={{ ...inp, ...(p.start && p.end && p.end < p.start ? { borderColor: '#C0303B', background: '#FFFBFB' } : {}) }}
+                      />
                     </td>
-                    {!readOnly && (
-                      <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                        {form.phases.length > 1 && (
-                          <button onClick={() => set({ phases: form.phases.filter((_, j) => j !== i) })} title="إزالة المرحلة" style={{ background: 'transparent', border: 'none', color: '#C0303B', cursor: 'pointer', fontSize: 15, fontWeight: 800 }}>✕</button>
-                        )}
-                      </td>
-                    )}
+                    <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                      {form.phases.length > 1 && (
+                        <button onClick={() => set({ phases: form.phases.filter((_, j) => j !== i) })} title="إزالة المرحلة" style={{ background: 'transparent', border: 'none', color: '#C0303B', cursor: 'pointer', fontSize: 15, fontWeight: 800 }}>✕</button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {!readOnly && <button onClick={() => set({ phases: [...form.phases, emptyPhase()] })} style={btnDashed}>+ إضافة مرحلة</button>}
+          <button onClick={() => set({ phases: [...form.phases, emptyPhase()] })} style={btnDashed}>+ إضافة مرحلة</button>
         </>
       ))}
 
       {section(3, 'فريق العمل', (
         <>
           {form.team.map((m, i) => memberCard(m, i))}
-          {!readOnly && <button onClick={() => set({ team: [...form.team, emptyMember()] })} style={btnDashed}>+ إضافة أعضاء</button>}
+          <button onClick={() => set({ team: [...form.team, emptyMember()] })} style={btnDashed}>+ إضافة أعضاء</button>
         </>
       ))}
 
@@ -229,7 +267,7 @@ function ProjFormPanel({ form, setForm, def, readOnly, onSave, onSubmit, onClose
         </div>
       )}
 
-      {!readOnly && (
+      {(
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-start', marginBottom: 30 }}>
           <button
             onClick={() => {
@@ -256,13 +294,13 @@ export function ProjMemberSection() {
   const defs = s.projDefs;
   const forms = s.projForms;
   const [editing, setEditing] = useState<ProjForm | null>(null);
-  const [readOnly, setReadOnly] = useState(false);
+  // العرض للقراءة في اللوحة الجانبية المنزلقة — التحرير في النموذج الكامل
+  const [viewId, setViewId] = useState<string | null>(null);
 
   const defOf = (id: string) => defs.find((d) => d.id === id);
 
-  const openForm = (f: ProjForm, ro: boolean) => {
+  const openForm = (f: ProjForm) => {
     setEditing(f);
-    setReadOnly(ro);
     setTimeout(() => document.getElementById('proj-form-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
   };
 
@@ -325,14 +363,14 @@ export function ProjMemberSection() {
                     <td style={{ padding: '13px 15px', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', gap: 6 }}>
                         {!f ? (
-                          <button onClick={() => openForm(blankForm(d.id), false)} style={{ ...btnPrimary, padding: '8px 16px', fontSize: 12 }}>تعبئة النموذج</button>
-                        ) : (
+                          <button onClick={() => openForm(blankForm(d.id))} style={{ ...btnPrimary, padding: '8px 16px', fontSize: 12 }}>تعبئة النموذج</button>
+                        ) : editable ? (
                           <>
-                            <button onClick={() => openForm(f, !editable)} style={{ ...btnGhost, padding: '8px 15px', fontSize: 12 }}>{editable ? 'تعديل' : 'عرض'}</button>
-                            {editable && (
-                              <button onClick={() => s.deleteProjForm(f.id)} style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, padding: '8px 15px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>حذف</button>
-                            )}
+                            <button onClick={() => openForm(f)} style={{ ...btnGhost, padding: '8px 15px', fontSize: 12 }}>تعديل</button>
+                            <button onClick={() => s.deleteProjForm(f.id)} style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, padding: '8px 15px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>حذف</button>
                           </>
+                        ) : (
+                          <button onClick={() => setViewId(f.id)} style={{ ...btnGhost, padding: '8px 15px', fontSize: 12 }}>عرض</button>
                         )}
                       </div>
                     </td>
@@ -356,40 +394,103 @@ export function ProjMemberSection() {
             form={editing}
             setForm={setEditing}
             def={defOf(editing.projId)}
-            readOnly={readOnly}
             onClose={() => setEditing(null)}
             onSave={() => { s.saveProjForm(editing, false); setEditing(null); }}
             onSubmit={() => { s.saveProjForm(editing, true); setEditing(null); }}
           />
         )}
       </div>
+
+      {/* لوحة العرض الجانبية */}
+      {(() => {
+        const f = viewId ? forms.find((x) => x.id === viewId) : null;
+        return f ? <ProjDetailDrawer f={f} d={defOf(f.projId)} onClose={() => setViewId(null)} /> : null;
+      })()}
     </div>
   );
 }
 
-// تفاصيل النموذج المعبأ — تُعرض صفاً ممتداً داخل جدول اللجنة
-function ProjFormDetail({ f }: { f: ProjForm }) {
+// عرض تفاصيل النموذج في لوحة جانبية منزلقة — بنمط لوحات التفاصيل في المنصة
+function ProjDetailDrawer({ f, d, onClose }: { f: ProjForm; d?: ProjDef; onClose: () => void }) {
+  const chip = chipOf(f);
+  const secTitle: CSSProperties = { fontSize: 13.5, fontWeight: 800, color: '#13213C', marginBottom: 10 };
+  const box: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', borderRadius: 14, padding: 18, marginBottom: 14 };
   return (
-    <div style={{ background: '#F7F9FD', borderRadius: 12, padding: 16, fontSize: 12.5, color: '#33415C', lineHeight: 1.9 }}>
-      <div><b>الجهة المسؤولة:</b> {f.entityResp || '—'}</div>
-      <div style={{ marginTop: 4 }}><b>وصف المشروع:</b> {f.desc || '—'}</div>
-      <div style={{ marginTop: 8 }}>
-        <b>المخرجات المرجوة:</b>
-        <ul style={{ margin: '4px 0 0', paddingRight: 18 }}>{f.outputs.filter((o) => o.trim()).map((o, i) => <li key={i}>{o}</li>)}</ul>
-      </div>
-      <div style={{ marginTop: 8 }}>
-        <b>المراحل التنفيذية:</b>
-        <ul style={{ margin: '4px 0 0', paddingRight: 18 }}>
-          {f.phases.filter((p) => p.name.trim()).map((p, i) => <li key={i}>{p.name} ({p.start || '—'} ← {p.end || '—'})</li>)}
-        </ul>
-      </div>
-      <div style={{ marginTop: 8 }}>
-        <b>فريق العمل:</b>
-        <ul style={{ margin: '4px 0 0', paddingRight: 18 }}>
-          {f.team.filter(memberTouched).map((m, i) => (
-            <li key={i}>{i === 0 ? 'رئيس الفريق: ' : ''}{m.name} — {m.title} — {m.entity} — <span dir="ltr">{m.email}</span> — <span dir="ltr">{m.phone}</span></li>
-          ))}
-        </ul>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 55, direction: 'rtl' }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(8,18,40,.5)', animation: 'fadeIn .2s' }} />
+      <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: 680, maxWidth: '97vw', background: '#F4F7FC', boxShadow: '-24px 0 70px -24px rgba(2,12,35,.5)', animation: 'slideInRight .3s', display: 'flex', flexDirection: 'column' }}>
+        {/* header */}
+        <div style={{ background: '#fff', borderBottom: '1px solid #E7ECF4', padding: '16px 22px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>{d?.name || 'المشروع'}</div>
+              <div style={{ fontSize: 12, color: '#54627B', marginTop: 6 }}>
+                القائد: <b>{d?.lead || '—'}</b>{d?.member ? <> · العضو المسؤول: <b>{d.member}</b></> : null} · فترة التنفيذ: <b>{fmtPeriod(d)}</b>
+              </div>
+              <span style={{ display: 'inline-block', marginTop: 9, fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 999, background: chip.bg, color: chip.c }}>{chip.t}</span>
+            </div>
+            <button onClick={onClose} aria-label="إغلاق" style={{ background: '#F4F7FC', border: '1px solid #E7ECF4', borderRadius: 10, width: 34, height: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flex: 'none' }}>
+              <Icon d="M18 6L6 18M6 6l12 12" size={15} color="#54627B" />
+            </button>
+          </div>
+        </div>
+        {/* body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+          {f.ret && f.wf === 'draft' && (
+            <div style={{ background: '#FFF3DE', border: '1px solid #F5D9AE', color: '#B45309', borderRadius: 12, padding: '12px 16px', fontSize: 12.5, fontWeight: 700, marginBottom: 14 }}>
+              ملاحظات اللجنة الوطنية: {f.ret.note}
+            </div>
+          )}
+          <div style={box}>
+            <div style={secTitle}>بيانات المشروع</div>
+            <div style={{ fontSize: 12.5, color: '#33415C', lineHeight: 1.9 }}>
+              <div><b>الجهة المسؤولة:</b> {f.entityResp || '—'}</div>
+              <div style={{ marginTop: 6 }}><b>وصف المشروع:</b> {f.desc || '—'}</div>
+              <div style={{ marginTop: 8 }}>
+                <b>المخرجات المرجوة:</b>
+                <ul style={{ margin: '4px 0 0', paddingRight: 18 }}>{f.outputs.filter((o) => o.trim()).map((o, i) => <li key={i}>{o}</li>)}</ul>
+              </div>
+            </div>
+          </div>
+          <div style={box}>
+            <div style={secTitle}>المراحل التنفيذية الرئيسية</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['#', 'المرحلة', 'البدء', 'الانتهاء'].map((h) => (
+                    <th key={h} style={{ textAlign: 'right', padding: '8px 10px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD', borderBottom: '1px solid #EEF1F7' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {f.phases.filter((p) => p.name.trim()).map((p, i) => (
+                  <tr key={i}>
+                    <td style={{ padding: '9px 10px', fontSize: 12, color: '#8A97AD', borderBottom: '1px solid #F4F6FA' }}>{i + 1}</td>
+                    <td style={{ padding: '9px 10px', fontSize: 12.5, fontWeight: 700, color: '#13213C', borderBottom: '1px solid #F4F6FA' }}>{p.name}</td>
+                    <td style={{ padding: '9px 10px', fontSize: 12, color: '#54627B', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{p.start || '—'}</td>
+                    <td style={{ padding: '9px 10px', fontSize: 12, color: '#54627B', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{p.end || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={box}>
+            <div style={secTitle}>فريق العمل</div>
+            {f.team.filter(memberTouched).map((m, i) => (
+              <div key={i} style={{ border: '1px solid #EEF1F7', borderRadius: 12, padding: '12px 14px', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ background: '#EEF2F9', color: '#3A4A66', borderRadius: 999, padding: '3px 11px', fontSize: 11, fontWeight: 800 }}>{i === 0 ? 'رئيس الفريق' : 'عضو'}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{m.name}</span>
+                </div>
+                <div style={{ fontSize: 12, color: '#54627B', lineHeight: 1.9 }}>
+                  {m.title} — {m.entity}
+                  <br />
+                  <span dir="ltr">{m.email}</span> · <span dir="ltr">{m.phone}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -408,7 +509,7 @@ export function ProjCommitteePage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [delId, setDelId] = useState<string | null>(null);
   // الاعتماد داخل الجدول نفسه: صف تفاصيل ممتد + نافذة ملاحظات الإعادة
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
   const [retId, setRetId] = useState<string | null>(null);
   const [note, setNote] = useState('');
 
@@ -440,7 +541,7 @@ export function ProjCommitteePage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 12 }}>
           <div>
             <label style={label}>اسم المشروع{req}</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسم المشروع" style={inp} />
+            <input value={name} onChange={(e) => setName(arOnly(e.target.value))} placeholder="اسم المشروع" style={inp} />
           </div>
           <div>
             <label style={label}>قائد المشروع{req}</label>
@@ -451,15 +552,15 @@ export function ProjCommitteePage() {
           </div>
           <div>
             <label style={label}>العضو المسؤول{req}</label>
-            <input value={member} onChange={(e) => setMember(e.target.value)} placeholder="اسم العضو المسؤول من القائد" style={inp} />
+            <input value={member} onChange={(e) => setMember(arOnly(e.target.value))} placeholder="اسم العضو المسؤول من القائد" style={inp} />
           </div>
           <div>
-            <label style={label}>تاريخ البدء{req}</label>
-            <input type="date" value={start} onChange={(e) => setStart(e.target.value)} style={inp} />
+            <label style={label}>البدء (الشهر والسنة){req}</label>
+            <input type="month" value={start} onChange={(e) => setStart(e.target.value)} style={inp} />
           </div>
           <div>
-            <label style={label}>تاريخ الانتهاء{req}</label>
-            <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} style={inp} />
+            <label style={label}>الانتهاء (الشهر والسنة){req}</label>
+            <input type="month" value={end} onChange={(e) => setEnd(e.target.value)} style={inp} />
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
@@ -485,8 +586,7 @@ export function ProjCommitteePage() {
               const isApproved = f?.wf === 'approved';
               const smallBtn = { padding: '7px 14px', fontSize: 12 } as const;
               return (
-                <Fragment key={d.id}>
-                <tr>
+                <tr key={d.id}>
                   <td style={{ padding: '12px 15px', fontSize: 13, fontWeight: 800, color: '#13213C', borderBottom: '1px solid #F4F6FA' }}>{d.name}</td>
                   <td style={{ padding: '12px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{d.lead}</td>
                   <td style={{ padding: '12px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{d.member || '—'}</td>
@@ -498,9 +598,7 @@ export function ProjCommitteePage() {
                     {/* الإجراءات تتبدل بحسب حالة النموذج في الصف نفسه */}
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {f && (
-                        <button onClick={() => setOpenId(openId === d.id ? null : d.id)} style={{ ...btnGhost, ...smallBtn }}>
-                          {openId === d.id ? 'إخفاء' : 'عرض'}
-                        </button>
+                        <button onClick={() => setViewId(f.id)} style={{ ...btnGhost, ...smallBtn }}>عرض</button>
                       )}
                       {isSent && (
                         <>
@@ -514,21 +612,13 @@ export function ProjCommitteePage() {
                       )}
                       {!isSent && !isApproved && (
                         <>
-                          <button onClick={() => { setEditId(d.id); setName(d.name); setLead(d.lead); setMember(d.member || ''); setStart(d.start); setEnd(d.end); }} style={{ ...btnGhost, ...smallBtn }}>تعديل</button>
+                          <button onClick={() => { setEditId(d.id); setName(d.name); setLead(d.lead); setMember(d.member || ''); setStart((d.start || '').slice(0, 7)); setEnd((d.end || '').slice(0, 7)); }} style={{ ...btnGhost, ...smallBtn }}>تعديل</button>
                           <button onClick={() => setDelId(d.id)} style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', ...smallBtn }}>حذف</button>
                         </>
                       )}
                     </div>
                   </td>
                 </tr>
-                {f && openId === d.id && (
-                  <tr>
-                    <td colSpan={6} style={{ padding: '4px 15px 14px', borderBottom: '1px solid #F4F6FA' }}>
-                      <ProjFormDetail f={f} />
-                    </td>
-                  </tr>
-                )}
-                </Fragment>
               );
             })}
             {!s.projDefs.length && (
@@ -537,6 +627,12 @@ export function ProjCommitteePage() {
           </tbody>
         </table>
       </div>
+
+      {/* لوحة العرض الجانبية */}
+      {(() => {
+        const f = viewId ? s.projForms.find((x) => x.id === viewId) : null;
+        return f ? <ProjDetailDrawer f={f} d={s.projDefs.find((x) => x.id === f.projId)} onClose={() => setViewId(null)} /> : null;
+      })()}
 
       {retId && (
         <div onClick={() => setRetId(null)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(9,20,45,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, direction: 'rtl' }}>

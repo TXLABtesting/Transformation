@@ -6,7 +6,7 @@
 // in team setup, so they appear here read-only for oversight.
 // ---------------------------------------------------------------------------
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { DOC_CATS, type DocCat, CONTACT_STREAMS, PATHS } from '@/lib/domain';
+import { DOC_CATS, type DocCat, CONTACT_STREAMS, PATHS, PROJECT_LEADS } from '@/lib/domain';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
 import type { RoleKey, UserRec } from '@/lib/domain';
@@ -1280,8 +1280,10 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
   // مستخدموها بلا مسار ويعملون على نسخة الوزارة /moca
   const isMocaEntity = /وزارة شؤون مجلس الوزراء/.test(String(f.entityName || ''));
   const needsStream = (f.role === 'coord' || f.role === 'path') && !isMocaEntity;
+  // أعضاء المشاريع الاستراتيجية: يُسندون لأحد قادة المشاريع المعتمدين
+  const needsLead = f.role === 'proj';
   const emailOk = /^\S+@\S+\.\S+$/.test(f.email.trim());
-  const valid = f.name.trim() && emailOk && (!needsEntity || f.entityName) && (!needsStream || f.streamId);
+  const valid = f.name.trim() && emailOk && (!needsEntity || f.entityName) && (!needsStream || f.streamId) && (!needsLead || f.projLead);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1321,6 +1323,15 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
               <input style={{ ...inputSt, direction: 'ltr', textAlign: 'right' }} value={f.phone} onChange={(e) => set({ phone: e.target.value })} placeholder="+971 5x xxx xxxx" />
             </div>
           </div>
+          {needsLead && (
+            <div>
+              <label style={labelSt}>قائد المشاريع المسؤول *</label>
+              <select style={{ ...inputSt, cursor: 'pointer' }} value={f.projLead || ''} onChange={(e) => set({ projLead: e.target.value })}>
+                <option value="">اختر القائد…</option>
+                {PROJECT_LEADS.map((l) => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
+          )}
           {(needsEntity || needsStream) && (
             <div style={{ display: 'grid', gridTemplateColumns: needsEntity && needsStream ? '1fr 1fr' : '1fr', gap: 12 }}>
               {needsEntity && (
@@ -1358,7 +1369,7 @@ function UserEditor({ a, user, onClose, onSave }: { a: VM['admin']; user: UserRe
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, marginTop: 20 }}>
-          <button disabled={!valid} onClick={() => valid && onSave({ ...f, name: f.name.trim(), email: f.email.trim(), entityName: needsEntity ? f.entityName : undefined, streamId: needsStream ? f.streamId : undefined })} style={{ border: 'none', background: valid ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', borderRadius: 11, padding: '11px 22px', fontWeight: 800, fontSize: 13, cursor: valid ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+          <button disabled={!valid} onClick={() => valid && onSave({ ...f, name: f.name.trim(), email: f.email.trim(), entityName: needsEntity ? f.entityName : undefined, streamId: needsStream ? f.streamId : undefined, projLead: needsLead ? f.projLead : undefined })} style={{ border: 'none', background: valid ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', borderRadius: 11, padding: '11px 22px', fontWeight: 800, fontSize: 13, cursor: valid ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
             حفظ
           </button>
           <button onClick={onClose} style={{ border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', background: '#fff', color: '#54627B', borderRadius: 11, padding: '11px 20px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>

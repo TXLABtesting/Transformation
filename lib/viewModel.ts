@@ -1318,7 +1318,13 @@ function build(s: Store) {
       roleBadge: ROLE[u.role]?.badge || '#64748B',
       roleBg: ROLE[u.role]?.bg || '#EEF2F7',
       streamLabel: streamName(u.streamId),
-      scopeLabel: [u.entityName, streamName(u.streamId)].filter(Boolean).join(' · ') || '—',
+      // عضو المشاريع الاستراتيجية: نطاقه قائده المسؤول لا الجهة/المسار
+      scopeLabel:
+        u.role === 'proj'
+          ? u.projLead
+            ? 'القائد: ' + u.projLead
+            : '—'
+          : [u.entityName, streamName(u.streamId)].filter(Boolean).join(' · ') || '—',
       initials: u.name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('') || 'م',
     }));
   const admin = {

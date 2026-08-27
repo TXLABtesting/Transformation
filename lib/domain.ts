@@ -797,6 +797,7 @@ export type UserRec = {
   phone: string;
   entityName?: string; // entity / coord
   streamId?: string; // coord / path
+  projLead?: string; // proj: قائد المشاريع الذي يتبعه العضو
   active: boolean;
   system?: boolean; // seeded reference account (kept out of the demo delete path)
 };
