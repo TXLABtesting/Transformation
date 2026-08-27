@@ -1421,7 +1421,13 @@ function UseCasesView() {
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-start' }}>
                           {isCoord && (
                             <>
-                              <IconBtn d={IC.plus} title="إضافة تحديث" color="#1D4ED8" bg="#EAF1FE" border="#C9DBFB" onClick={() => setOpenId(u.id)} />
+                              <button
+                                onClick={() => setOpenId(u.id)}
+                                title="إضافة تحديث جديد"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EAF1FE', border: '1px solid #C9DBFB', color: '#1D4ED8', borderRadius: 9, padding: '7px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                              >
+                                <Icon d={IC.plus} size={13} strokeWidth={2.4} color="#1D4ED8" /> إضافة تحديث جديد
+                              </button>
                               <IconBtn d={IC.trash} title="إزالة حالة الاستخدام" color="#C0303B" bg="#FDF6F6" border="#F3D4D7" onClick={() => s.removeUseCase(u.id)} />
                             </>
                           )}
