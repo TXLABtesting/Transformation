@@ -699,30 +699,51 @@ export function ProjCommitteePage() {
             <label style={label}>العضو المسؤول{req}</label>
             {!LIVE ? (
               <input value={member} onChange={(e) => setMember(arOnly(e.target.value))} placeholder="اسم العضو المسؤول من القائد" style={inp} />
-            ) : memberMode === 'pick' ? (
+            ) : (
               <>
+                {/* الأصل: الاختيار من الأعضاء المسجلين — القائمة تبقى ظاهرة دائماً */}
                 <select
                   value={memberSel}
-                  onChange={(e) => { if (e.target.value === '__new__') { setMemberMode('new'); setMemberSel(''); } else setMemberSel(e.target.value); }}
-                  style={{ ...inp, cursor: 'pointer' }}
+                  onChange={(e) => { setMemberSel(e.target.value); if (e.target.value) setMemberMode('pick'); }}
+                  style={{ ...inp, cursor: 'pointer', ...(memberMode === 'new' ? { opacity: 0.55 } : {}) }}
                 >
                   <option value="">اختر من الأعضاء المسجلين…</option>
                   {regMembers.map((mm) => <option key={mm.id} value={mm.id}>{mm.name} — {mm.email}</option>)}
-                  <option value="__new__">+ عضو جديد بالبريد الإلكتروني</option>
                 </select>
-                <div style={{ fontSize: 11, color: '#8A97AD', marginTop: 5 }}>يُسند العضو المختار إلى قائد هذا المشروع</div>
-              </>
-            ) : (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px,100%),1fr))', gap: 10 }}>
-                  <input value={newName} onChange={(e) => setNewName(arOnly(e.target.value))} placeholder="اسم العضو" style={inp} />
-                  <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="name@entity.gov.ae" style={{ ...inp, direction: 'ltr', textAlign: 'right' }} />
-                  <input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="050 000 0000" style={{ ...inp, direction: 'ltr', textAlign: 'right' }} />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, color: '#8A97AD' }}>يُنشأ له حساب بدور أعضاء المشاريع الاستراتيجية تحت قائد المشروع، ويدخل عبر UAE PASS بهذا البريد</span>
-                  <button type="button" onClick={() => setMemberMode('pick')} style={{ border: 'none', background: 'transparent', color: '#1D4ED8', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', padding: 0, whiteSpace: 'nowrap' }}>← الاختيار من المسجلين</button>
-                </div>
+                {memberMode === 'pick' && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 11, color: '#8A97AD' }}>يُسند العضو المختار إلى قائد هذا المشروع</span>
+                    <button type="button" onClick={() => { setMemberMode('new'); setMemberSel(''); }} style={{ border: 'none', background: 'transparent', color: '#1D4ED8', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', padding: 0, whiteSpace: 'nowrap' }}>
+                      + العضو غير مسجل؟ أضفه يدوياً
+                    </button>
+                  </div>
+                )}
+                {/* غير مسجل: لوحة إضافة يدوية تحت القائمة — لا تحل محلها */}
+                {memberMode === 'new' && (
+                  <div style={{ border: '1.5px dashed #C9DBFB', background: '#F8FAFF', borderRadius: 12, padding: 14, marginTop: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1D4ED8' }}>إضافة عضو غير مسجل</span>
+                      <button type="button" onClick={() => setMemberMode('pick')} style={{ border: 'none', background: 'transparent', color: '#8A97AD', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>✕ إلغاء</button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(210px,100%),1fr))', gap: 10 }}>
+                      <div>
+                        <label style={{ ...label, fontSize: 11.5, marginBottom: 5 }}>اسم العضو{req}</label>
+                        <input value={newName} onChange={(e) => setNewName(arOnly(e.target.value))} placeholder="الاسم الكامل" style={inp} />
+                      </div>
+                      <div>
+                        <label style={{ ...label, fontSize: 11.5, marginBottom: 5 }}>البريد الإلكتروني{req}</label>
+                        <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="name@entity.gov.ae" style={{ ...inp, direction: 'ltr', textAlign: 'right' }} />
+                      </div>
+                      <div>
+                        <label style={{ ...label, fontSize: 11.5, marginBottom: 5 }}>الهاتف المتحرك</label>
+                        <input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="050 000 0000" style={{ ...inp, direction: 'ltr', textAlign: 'right' }} />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#8A97AD', marginTop: 8 }}>
+                      يُنشأ له حساب بدور أعضاء المشاريع الاستراتيجية تحت قائد المشروع، ويدخل عبر UAE PASS بهذا البريد
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
