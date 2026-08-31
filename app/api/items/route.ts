@@ -56,9 +56,13 @@ export async function POST(req: NextRequest) {
     )
       return jsonError('VALIDATION_ERROR', messages.validation, 400);
 
+    // Global roles (admin/committee) act across entities, so the target entity
+    // must be explicit — silently falling back to the actor's own entity would
+    // mis-attribute the item. Entity-scoped roles always write to their own.
     const entityId = isGlobalRole(user)
-      ? String(body.entityId || user.entityId || '')
+      ? String(body.entityId || '')
       : user.entityId || user.entityScopes[0];
+    if (!entityId) return jsonError('VALIDATION_ERROR', messages.validation, 400);
     // Coordinator creates items in their entity + stream
     assertItemAccess(user, entityId, body.streamId as string);
 

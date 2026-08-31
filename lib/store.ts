@@ -2252,6 +2252,15 @@ export const useStore = create<Store>((set, get) => {
       // والمكتمل منها يدخل مباشرة قائمة مراجعة الفريق (تم الإرسال) بينما
       // يبقى الناقص مسودة تستكملها الجهة
       const teamUpload = s.role === 'path' && !!s.ui.bulkEntity;
+      // نسبة الجهة تُختم على المدخل نفسه لحظة إنشائه ولا تُستنتج لاحقاً من
+      // جلسة العارض: مشرف يستعرض دور المنسق وهو على «كل الجهات» لا يرفع
+      // ملفاً قبل اختيار جهة محددة، وإلا نُسبت المدخلات لجهة خاطئة
+      if (!teamUpload && s.ui.allEntities) {
+        return toast('اختر جهة محددة من قائمة الجهات أعلى الصفحة أولاً — تُنسب مدخلات الملف إليها');
+      }
+      if (!teamUpload && !s.entityName) {
+        return toast('تعذّر تحديد الجهة التي تُنسب إليها المدخلات — أعد تسجيل الدخول أو اختر الجهة أولاً');
+      }
       const toAdd = s.ui.bulkRows
         .filter((r) => r._v !== 'يوجد خطأ')
         .map((r, ri) => {
@@ -2265,7 +2274,7 @@ export const useStore = create<Store>((set, get) => {
             id: 'n' + Date.now() + ri + Math.floor(Math.random() * 1000),
             title: r.title,
             desc: r.desc,
-            ...(teamUpload ? { entity: s.ui.bulkEntity, teamUp: true } : {}),
+            ...(teamUpload ? { entity: s.ui.bulkEntity, teamUp: true } : { entity: s.entityName }),
             approval: submitted ? 'تم الإرسال' : 'مسودة',
             wf: (submitted ? 'ent1' : 'draft') as WfState,
             ret: null,
@@ -3079,6 +3088,12 @@ function commitDraft(
   if (!draft) return;
   const editing = s.ui.editingId;
   const ec = s.ui.editCtx;
+  // الجهة تُختم على المدخل الجديد لحظة إنشائه (التعديل يحفظ جهته القائمة).
+  // مشرف يستعرض دور المنسق على «كل الجهات» يختار جهة محددة أولاً حتى لا
+  // يُنسب المدخل لجهة خاطئة عند عرضه من بقية الأدوار
+  if (!editing && !draft.entity && s.ui.allEntities) {
+    return toast('اختر جهة محددة من قائمة الجهات أعلى الصفحة أولاً — يُنسب المدخل إليها');
+  }
   let wf: WfState = asDraft ? 'draft' : 'ent1';
   let fyi: Item['fyi'] = draft.fyi || null;
   let logNote = '';
@@ -3100,6 +3115,7 @@ function commitDraft(
   const mirrored = mirrorActivities({ ...draft, activities: cleaned && cleaned.length ? cleaned : undefined });
   const finalItem: Item = {
     ...(mirrored as Item),
+    entity: (mirrored as Item).entity || s.entityName || undefined,
     approval: asDraft ? 'مسودة' : approval || 'تم الإرسال',
     wf,
     ret: null,
