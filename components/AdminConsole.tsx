@@ -1566,7 +1566,11 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
   const worksOnStream = scope === 'stream';
   const needsStreams = scope === 'entity_stream' || scope === 'stream';
   const entityRequired = worksInEntity;
-  const streamsOk = !needsStreams || isMoca || f.streamIds.length > 0;
+  // بنية الوزارة (جهات وقطاعات بدل مسارات) تسري على من يعمل داخل الجهة
+  // (المنسق ونحوه) وحده. فريق عمل المسار يعمل على مساره عبر الجهات كلها،
+  // فانتماؤه للوزارة لا علاقة له بمساره: مساراته تبقى مطلوبة وتُعرض له.
+  const mocaStructure = isMoca && worksInEntity;
+  const streamsOk = !needsStreams || mocaStructure || f.streamIds.length > 0;
   const valid =
     !!f.name.trim() && emailOk && (!needsLead || !!f.projLead) && (!entityRequired || !!f.entityId) && streamsOk;
 
@@ -1642,13 +1646,14 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
                   const entityId = e.target.value;
                   const moca = /وزارة شؤون مجلس الوزراء/.test(entities.find((en) => en.id === entityId)?.nameAr || '');
                   // بنية الوزارة جهات ومكاتب لا مسارات — تُمسح المسارات تلقائياً
-                  set(moca ? { entityId, streamId: '', streamIds: [] } : { entityId, mocaUnits: [] });
+                  // لمن تسري عليه بنيتها فقط (المنسق)، أما فريق المسار فمساراته تبقى
+                  set(moca && worksInEntity ? { entityId, streamId: '', streamIds: [] } : { entityId, mocaUnits: [] });
                 }}
               >
                 <option value="">— بدون جهة —</option>
                 {entities.map((en) => <option key={en.id} value={en.id}>{en.nameAr}</option>)}
               </select>
-              {!entityRequired && !isMoca && !!f.roleCode && (
+              {!entityRequired && !mocaStructure && !!f.roleCode && (
                 <div style={{ fontSize: 11.5, color: '#8A97AD', marginTop: 5 }}>
                   {worksOnStream ? 'هذا الدور يعمل على مساراته عبر الجهات كلها — الجهة اختيارية' : 'هذا الدور لا يتطلب جهة'}
                 </div>
@@ -1667,7 +1672,7 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
 
           {/* وزارة شؤون مجلس الوزراء: بنيتها جهات ومكاتب وقطاعات لا مسارات —
               يُسند المستخدم إلى وحدة أو أكثر، وبلا إسناد يعمل على الوزارة كلها */}
-          {isMoca && (
+          {mocaStructure && (
             <div>
               <label style={labelSt}>الجهات والقطاعات داخل الوزارة</label>
               <MultiPick
@@ -1681,7 +1686,7 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
           )}
 
           {/* المسارات — للمنسق وفريق عمل المسار، ويقبل أكثر من مسار */}
-          {needsStreams && !isMoca && (
+          {needsStreams && !mocaStructure && (
             <div>
               <label style={labelSt}>المسارات{needsStreams ? ' *' : ''}</label>
               <MultiPick
