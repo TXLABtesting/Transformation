@@ -2016,7 +2016,7 @@ export const useStore = create<Store>((set, get) => {
             id: 'n' + Date.now() + ri + Math.floor(Math.random() * 1000),
             title: r.title,
             desc: r.desc,
-            ...(teamUpload ? { entity: s.ui.bulkEntity, teamUp: true } : {}),
+            ...(teamUpload ? { entity: s.ui.bulkEntity, teamUp: true } : s.entityName ? { entity: s.entityName } : {}),
             approval: submitted ? 'تم الإرسال' : 'مسودة',
             wf: (submitted ? 'ent1' : 'draft') as WfState,
             ret: null,
@@ -2792,6 +2792,7 @@ function commitDraft(
   const mirrored = mirrorActivities({ ...draft, activities: cleaned && cleaned.length ? cleaned : undefined });
   const finalItem: Item = {
     ...(mirrored as Item),
+    entity: (mirrored as Item).entity || s.entityName || undefined,
     approval: asDraft ? 'مسودة' : approval || 'تم الإرسال',
     wf,
     ret: null,
