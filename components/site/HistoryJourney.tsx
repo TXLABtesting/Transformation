@@ -107,7 +107,10 @@ export function HistoryJourney({ milestones }: HistoryJourneyProps) {
         const vis = clamp(1 - Math.abs(t) * 1.15, 0, 1);
         const inner = el.querySelector<HTMLElement>("[data-inner]");
         if (inner) {
-          inner.style.transform = `translate3d(${(t * 30).toFixed(2)}px,0,0) scale(${(1.06 - vis * 0.06).toFixed(4)})`;
+          // الإزاحة محدودة بـ ±1 لوحة: أبعد من ذلك كانت تتجاوز هامش الصورة
+          // الزائد فتظهر حافة الصورة خطاً عمودياً صريحاً وسط التدرج
+          const ti = clamp(t, -1, 1);
+          inner.style.transform = `translate3d(${(ti * 30).toFixed(2)}px,0,0) scale(${(1.06 - vis * 0.06).toFixed(4)})`;
         }
         const num = el.querySelector<HTMLElement>("[data-num]");
         if (num) {
@@ -383,7 +386,8 @@ function Panel({ milestone }: { milestone: SiteHistoryMilestone }) {
               src={asset(image)}
               alt=""
               className="absolute inset-y-0 block h-full object-cover"
-              style={{ left: -48, width: "calc(100% + 96px)" }}
+              style={{ left: -110,
+                  maxWidth: "none", width: "calc(100% + 220px)" }}
             />
             <div className="pointer-events-none absolute inset-0 bg-white/[.18]" />
             <div
@@ -443,8 +447,9 @@ function Panel({ milestone }: { milestone: SiteHistoryMilestone }) {
                 alt=""
                 className="absolute inset-y-0 block h-full object-cover"
                 style={{
-                  left: -48,
-                  width: "calc(100% + 96px)",
+                  left: -110,
+                  maxWidth: "none",
+                  width: "calc(100% + 220px)",
                   objectPosition: "center 30%",
                 }}
               />
@@ -553,9 +558,9 @@ function Panel({ milestone }: { milestone: SiteHistoryMilestone }) {
           <div
             className="relative h-screen self-center overflow-hidden"
             style={{
-              maskImage: "linear-gradient(to right,#000 72%,transparent 97%)",
+              maskImage: "linear-gradient(to right,transparent 1%,#000 12%,#000 72%,transparent 97%)",
               WebkitMaskImage:
-                "linear-gradient(to right,#000 72%,transparent 97%)",
+                "linear-gradient(to right,transparent 1%,#000 12%,#000 72%,transparent 97%)",
             }}
           >
             <div data-inner className="absolute inset-0 will-change-transform">
@@ -563,7 +568,8 @@ function Panel({ milestone }: { milestone: SiteHistoryMilestone }) {
                 src={asset(image)}
                 alt=""
                 className="absolute inset-y-0 block h-full object-cover"
-                style={{ left: -48, right: -48, width: "calc(100% + 96px)" }}
+                style={{ left: -110,
+                  maxWidth: "none", right: -110, width: "calc(100% + 220px)" }}
               />
               <div
                 className="pointer-events-none absolute inset-0"
@@ -614,9 +620,10 @@ function Panel({ milestone }: { milestone: SiteHistoryMilestone }) {
             alt=""
             className="absolute inset-y-0 block h-full object-cover"
             style={{
-              left: -64,
-              right: -64,
-              width: "calc(100% + 128px)",
+              left: -110,
+                  maxWidth: "none",
+              right: -110,
+              width: "calc(100% + 220px)",
               objectPosition: "center 30%",
               filter: "saturate(.7)",
             }}
