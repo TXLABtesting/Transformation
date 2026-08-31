@@ -22,12 +22,15 @@ export async function GET(req: NextRequest) {
     // إسناد وحدات وزارة شؤون مجلس الوزراء يُقرأ دفعة واحدة من جدول الإعدادات
     const unitRows = await prisma.setting.findMany({ where: { key: { startsWith: 'moca_unit:' } } });
     const unitsByUser = new Map(unitRows.map((r) => [r.key.slice('moca_unit:'.length), String(r.value || '').split('|').map((v) => v.trim()).filter(Boolean)]));
+    const opsRows = await prisma.setting.findMany({ where: { key: { startsWith: 'ops_scope:' } } });
+    const opsByUser = new Map(opsRows.map((r) => [r.key.slice('ops_scope:'.length), String(r.value || '').split('|').map((v) => v.trim()).filter(Boolean)]));
     return NextResponse.json({ users: users.map((u) => ({
       id: u.id, name: u.name, email: u.email, role: u.role, status: u.status, accessEnabled: u.accessEnabled,
       entityId: u.entityId, streamId: u.streamId, entity: u.entity?.nameAr, stream: u.stream?.nameAr,
       roles: u.roles.map((r) => ({ id: r.role.id, code: r.role.code, nameAr: r.role.nameAr })),
       entityScopes: u.entityScopes.map((s) => s.entityId), streamScopes: u.streamScopes.map((s) => s.streamId),
       mocaUnits: unitsByUser.get(u.id) || [],
+      opsScopes: opsByUser.get(u.id) || [],
       lastLoginAt: u.lastLogin, createdAt: u.createdAt,
     })) });
   } catch (e) { return handleApiError(e); }

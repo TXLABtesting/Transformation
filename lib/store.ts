@@ -1148,6 +1148,7 @@ export const useStore = create<Store>((set, get) => {
           streamId: u.streamId || undefined,
           streamIds: Array.isArray(u.streamScopes) && u.streamScopes.length ? u.streamScopes : u.streamId ? [u.streamId] : [],
           mocaUnits: Array.isArray(u.mocaUnits) ? u.mocaUnits : [],
+          opsScopes: Array.isArray(u.opsScopes) ? u.opsScopes : [],
           active: !!u.accessEnabled,
           entityId: u.entityId || undefined,
           roleCode: u.roles?.[0]?.code || undefined,

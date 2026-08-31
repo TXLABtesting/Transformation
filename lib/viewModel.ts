@@ -1385,7 +1385,25 @@ function build(s: Store) {
   // ---- admin console (لوحة المشرف) ----
   const isAdmin = rawRole === 'admin';
   const roleOrder: RoleKey[] = ['admin', 'ai', 'path', 'coord'];
-  const streamName = (id?: string) => (id ? pathById(id).name : '');
+  // اسم المسار من قائمة مسارات المشروع الخمسة كاملة — لا من المسارات الثلاثة
+  // التي تُدار داخل المنصة وحدها. الرجوع لأول مسار عند عدم التطابق كان يُظهر
+  // «بناء القدرات» و«تقنيات الذكاء الاصطناعي» على أنهما «العمليات والدعم المؤسسي».
+  const streamName = (id?: string) => {
+    if (!id) return '';
+    const c = CONTACT_STREAMS.find((x) => x.key === id);
+    if (c) return c.label;
+    const p = PATHS.find((x) => x.id === id);
+    return p ? p.name : id;
+  };
+  const streamsLabel = (u: { streamId?: string; streamIds?: string[]; opsScopes?: string[] }) => {
+    const ids = u.streamIds?.length ? u.streamIds : u.streamId ? [u.streamId] : [];
+    // مسار العمليات بمنسقيه: يُذكر التخصص المسند بعد اسم المسار
+    const ops = (u.opsScopes || []).filter(Boolean);
+    return Array.from(new Set(ids))
+      .map((id) => (id === 'ops' && ops.length ? streamName(id) + ' (' + ops.join('، ') + ')' : streamName(id)))
+      .filter(Boolean)
+      .join(' · ');
+  };
   const adminUsers = [...s.users]
     .sort((a, b) => roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role) || a.name.localeCompare(b.name, 'ar'))
     .map((u) => ({
@@ -1393,14 +1411,14 @@ function build(s: Store) {
       roleLabel: ROLE[u.role]?.label || u.role,
       roleBadge: ROLE[u.role]?.badge || '#64748B',
       roleBg: ROLE[u.role]?.bg || '#EEF2F7',
-      streamLabel: streamName(u.streamId),
+      streamLabel: streamsLabel(u),
       // عضو المشاريع الاستراتيجية: نطاقه قائده المسؤول لا الجهة/المسار
       scopeLabel:
         u.role === 'proj'
           ? u.projLead
             ? 'القائد: ' + u.projLead
             : '—'
-          : [u.entityName, streamName(u.streamId)].filter(Boolean).join(' · ') || '—',
+          : [u.entityName, streamsLabel(u)].filter(Boolean).join(' · ') || '—',
       initials: u.name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('') || 'م',
     }));
   const admin = {

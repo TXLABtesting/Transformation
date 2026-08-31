@@ -8,6 +8,7 @@ import { handleApiError, getIp } from '@/lib/security/http';
 import { writeAuditLog } from '@/lib/security/audit';
 import { jsonError, messages } from '@/lib/security/errors';
 import { mocaUnitKey, readMocaUnits } from '@/lib/security/moca-access';
+import { readOpsScopes } from '@/lib/server/ops-scope';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       streamScopes: u.streamScopes.map((s) => s.streamId),
       entityScopes: u.entityScopes.map((s) => s.entityId),
       mocaUnits: await readMocaUnits(params.id),
+      opsScopes: await readOpsScopes(params.id),
     });
   } catch (e) {
     return handleApiError(e);
@@ -46,6 +48,7 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
       streamScopes?: string[];
       entityScopes?: string[];
       mocaUnits?: string[]; // "unitId" أو "unitId::قطاع"
+      opsScopes?: string[]; // تخصصات مسار العمليات: الدعم المؤسسي/التخصصية
     } | null;
     if (!body) return jsonError('VALIDATION_ERROR', messages.validation, 400);
 
@@ -76,6 +79,14 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
       }
       // المسار الأساسي يتبع أول مسار مسند حتى تبقى الجلسة متسقة
       await tx.user.update({ where: { id: params.id }, data: { streamId: streamIds[0] || null } });
+      if (body.opsScopes) {
+        const v = Array.from(new Set(body.opsScopes.map((x) => String(x).trim()).filter(Boolean))).join('|');
+        await tx.setting.upsert({
+          where: { key: 'ops_scope:' + params.id },
+          update: { value: v },
+          create: { key: 'ops_scope:' + params.id, value: v },
+        });
+      }
       if (body.mocaUnits) {
         const units = Array.from(new Set(body.mocaUnits.map((v) => String(v).trim()).filter(Boolean)));
         await tx.setting.upsert({

@@ -188,6 +188,8 @@ export const SUPPORT_FUNCTIONS = [
 ];
 export const SUPPORT_OPTYPE = 'عمليات الدعم المؤسسي';
 export const OPS_SPECIAL_OPTYPE = 'العمليات التخصصية';
+/** تخصصات مسار العمليات: للمسار منسقان — يُسند الحساب لأحدهما أو لكليهما */
+export const OPS_SUBSCOPES = [SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE];
 
 // خيارات حقول مسار العمليات — من نموذج حصر العمليات المعتمد (ورقة «المعادلات»)
 export const OPS_AUTOMATED_OPTIONS = ['نعم', 'جزئياً', 'لا'];
@@ -813,6 +815,7 @@ export type UserRec = {
   streamId?: string; // coord / path — المسار الأساسي
   streamIds?: string[]; // coord / path — كل المسارات المسندة
   mocaUnits?: string[]; // وحدات وقطاعات وزارة شؤون مجلس الوزراء المسندة
+  opsScopes?: string[]; // تخصصات مسار العمليات المسندة (الدعم المؤسسي/التخصصية)
   projLead?: string; // proj: قائد المشاريع الذي يتبعه العضو
   active: boolean;
   system?: boolean; // seeded reference account (kept out of the demo delete path)

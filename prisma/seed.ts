@@ -10,6 +10,7 @@ import { seedItems, seedLaunchPlans } from '../lib/seed';
 import {
   PATHS,
   PATH_REPS,
+  CONTACT_STREAMS,
   execMilestones,
   DEFAULT_PROGRAM_PHASES,
   DEFAULT_ENTITY,
@@ -113,6 +114,16 @@ async function main() {
         headName: PATH_REPS[p.id] || null,
         sortOrder: i,
       },
+    });
+  }
+  // مسارا المشروع الآخران (بناء القدرات والتدريب، وتقنيات الذكاء الاصطناعي
+  // والبيانات) لا تُدار مدخلاتهما داخل المنصة، لكن تُسند لهما حسابات من لوحة
+  // المشرف — فيجب أن يوجد صفّاهما وإلا فشل الإسناد وظهر المستخدم على مسار آخر
+  for (const [i, c] of CONTACT_STREAMS.filter((x) => x.key !== 'general' && !PATHS.some((p) => p.id === x.key)).entries()) {
+    await prisma.stream.upsert({
+      where: { id: c.key },
+      update: {},
+      create: { id: c.key, nameAr: c.label, descAr: c.label, sortOrder: PATHS.length + i },
     });
   }
 

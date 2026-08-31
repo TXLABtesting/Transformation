@@ -6,7 +6,7 @@
 // in team setup, so they appear here read-only for oversight.
 // ---------------------------------------------------------------------------
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { DOC_CATS, type DocCat, CONTACT_STREAMS, PATHS, PROJECT_LEADS } from '@/lib/domain';
+import { DOC_CATS, type DocCat, CONTACT_STREAMS, PATHS, PROJECT_LEADS, OPS_SUBSCOPES } from '@/lib/domain';
 import { mocaUnitOptions } from '@/lib/moca';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
@@ -60,13 +60,15 @@ type UserDraft = {
   streamIds: string[];
   /** وحدات وقطاعات وزارة شؤون مجلس الوزراء المسندة (unitId أو unitId::قطاع) */
   mocaUnits: string[];
+  /** تخصصات مسار العمليات المسندة — للمسار منسقان */
+  opsScopes: string[];
   projLead?: string;
   roleCode: string; // '' = no role assigned yet
   active: boolean;
 };
 
 const blankDraft = (seed?: Partial<UserDraft>): UserDraft => ({
-  id: '', name: '', title: '', email: '', phone: '', entityId: '', streamId: '', streamIds: [], mocaUnits: [], roleCode: '', projLead: '', active: true, ...seed,
+  id: '', name: '', title: '', email: '', phone: '', entityId: '', streamId: '', streamIds: [], mocaUnits: [], opsScopes: [], roleCode: '', projLead: '', active: true, ...seed,
 });
 
 const draftFromUser = (u: UserRec): UserDraft => ({
@@ -79,6 +81,7 @@ const draftFromUser = (u: UserRec): UserDraft => ({
   streamId: u.streamId || '',
   streamIds: u.streamIds?.length ? u.streamIds : u.streamId ? [u.streamId] : [],
   mocaUnits: u.mocaUnits || [],
+  opsScopes: u.opsScopes || [],
   roleCode: u.roleCode || '',
   projLead: u.projLead || '',
   active: u.active,
@@ -177,7 +180,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
       {
         const res = await fetch(`/api/admin/users/${id}/scopes`, {
           method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-          body: JSON.stringify({ streamScopes: d.streamIds || [], mocaUnits: d.mocaUnits || [] }),
+          body: JSON.stringify({ streamScopes: d.streamIds || [], mocaUnits: d.mocaUnits || [], opsScopes: d.opsScopes || [] }),
         });
         if (!res.ok) { const body = await res.json().catch(() => ({} as any)); return body.message || 'تعذّر حفظ نطاقات المستخدم'; }
       }
@@ -1684,10 +1687,23 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
               <MultiPick
                 options={streams.map((st) => ({ v: st.id, label: st.nameAr }))}
                 value={f.streamIds}
-                onChange={(v) => set({ streamIds: v, streamId: v[0] || '' })}
+                onChange={(v) => set({ streamIds: v, streamId: v[0] || '', ...(v.includes('ops') ? {} : { opsScopes: [] }) })}
                 emptyHint="اختر مساراً واحداً على الأقل"
               />
               <PickCount value={f.streamIds} total={streams.length} />
+              {/* لمسار العمليات منسقان — يُسند الحساب لأحدهما أو لكليهما */}
+              {f.streamIds.includes('ops') && (
+                <div style={{ marginTop: 12 }}>
+                  <label style={labelSt}>التخصص داخل مسار العمليات والدعم المؤسسي</label>
+                  <MultiPick
+                    options={OPS_SUBSCOPES.map((o) => ({ v: o, label: 'منسق ' + o }))}
+                    value={f.opsScopes}
+                    onChange={(v) => set({ opsScopes: v })}
+                    emptyHint="بلا تحديد: المسار كاملاً بتخصصيه"
+                  />
+                  <PickCount value={f.opsScopes} total={OPS_SUBSCOPES.length} />
+                </div>
+              )}
             </div>
           )}
           <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#33405A' }}>
