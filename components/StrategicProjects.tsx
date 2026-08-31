@@ -15,7 +15,7 @@ import { Icon } from './Icon';
 
 const card: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16 };
 const label: CSSProperties = { display: 'block', fontSize: 12.5, fontWeight: 800, color: '#13213C', marginBottom: 7 };
-const inp: CSSProperties = { width: '100%', border: '1px solid #DCE3EE', borderRadius: 11, padding: '11px 13px', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#13213C', background: '#fff' };
+const inp: CSSProperties = { width: '100%', border: '1px solid #DCE3EE', borderRadius: 11, padding: '11px 13px', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#13213C', backgroundColor: '#fff' };
 const req = <span style={{ color: '#C0303B' }}> *</span>;
 const btnPrimary: CSSProperties = { background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, padding: '12px 22px', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' };
 const btnGhost: CSSProperties = { background: '#fff', border: '1px solid #DCE3EE', color: '#54627B', borderRadius: 11, padding: '12px 20px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' };
@@ -550,7 +550,7 @@ export function ProjCommitteePage() {
           </div>
           <div>
             <label style={label}>قائد المشروع{req}</label>
-            <select value={lead} onChange={(e) => setLead(e.target.value)} style={{ ...inp, background: '#fff' }}>
+            <select value={lead} onChange={(e) => setLead(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
               <option value="">اختر القائد…</option>
               {PROJECT_LEADS.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
