@@ -15,7 +15,7 @@ import { Icon } from './Icon';
 
 const card: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16 };
 const label: CSSProperties = { display: 'block', fontSize: 12.5, fontWeight: 800, color: '#13213C', marginBottom: 7 };
-const inp: CSSProperties = { width: '100%', border: '1px solid #DCE3EE', borderRadius: 11, padding: '11px 13px', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#13213C', background: '#fff' };
+const inp: CSSProperties = { width: '100%', border: '1px solid #DCE3EE', borderRadius: 11, padding: '11px 13px', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#13213C', backgroundColor: '#fff' };
 const req = <span style={{ color: '#C0303B' }}> *</span>;
 const btnPrimary: CSSProperties = { background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, padding: '12px 22px', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' };
 const btnGhost: CSSProperties = { background: '#fff', border: '1px solid #DCE3EE', color: '#54627B', borderRadius: 11, padding: '12px 20px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' };
@@ -602,6 +602,7 @@ export function ProjCommitteePage() {
   const [memberSel, setMemberSel] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newName, setNewName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const loadMembers = () => {
     if (!LIVE) return;
@@ -621,7 +622,7 @@ export function ProjCommitteePage() {
   const [formOpen, setFormOpen] = useState(false);
   const scrollToForm = () => setTimeout(() => document.getElementById('proj-def-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
 
-  const reset = () => { setName(''); setLead(''); setMember(''); setStart(''); setEnd(''); setEditId(null); setFormOpen(false); setMemberMode('pick'); setMemberSel(''); setNewEmail(''); setNewName(''); };
+  const reset = () => { setName(''); setLead(''); setMember(''); setStart(''); setEnd(''); setEditId(null); setFormOpen(false); setMemberMode('pick'); setMemberSel(''); setNewEmail(''); setNewName(''); setNewPhone(''); };
   const emailValid = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
   const save = async () => {
     if (saving) return;
@@ -647,11 +648,13 @@ export function ProjCommitteePage() {
       if (!r?.member) return s.toast('تعذّر إسناد العضو — حاول مجدداً');
       m = { name: r.member.name, memberId: r.member.id, memberEmail: r.member.email };
     } else {
+      if (!newName.trim()) return s.toast('أدخل اسم العضو الجديد');
       if (!emailValid(newEmail)) return s.toast('أدخل بريداً إلكترونياً صالحاً للعضو الجديد');
+      if (newPhone.trim() && !phoneOk(newPhone)) return s.toast('رقم الهاتف المتحرك غير صالح — مثال: 0501234567');
       setSaving(true);
       const r = await fetch('/api/projects/members', {
         method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: newEmail.trim(), name: newName.trim(), lead }),
+        body: JSON.stringify({ email: newEmail.trim(), name: newName.trim(), phone: newPhone.trim(), lead }),
       }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
       setSaving(false);
       if (!r?.member) return s.toast('تعذّر إنشاء حساب العضو — تحقق من البريد');
@@ -670,7 +673,7 @@ export function ProjCommitteePage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
         <button
-          onClick={() => { setEditId(null); setName(''); setLead(''); setMember(''); setMemberMode('pick'); setMemberSel(''); setNewEmail(''); setNewName(''); loadMembers(); setFormOpen(true); scrollToForm(); }}
+          onClick={() => { setEditId(null); setName(''); setLead(''); setMember(''); setMemberMode('pick'); setMemberSel(''); setNewEmail(''); setNewName(''); setNewPhone(''); loadMembers(); setFormOpen(true); scrollToForm(); }}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(37,99,235,.35)', fontFamily: 'inherit' }}
         >
           <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة مشروع
@@ -687,7 +690,7 @@ export function ProjCommitteePage() {
           </div>
           <div>
             <label style={label}>قائد المشروع{req}</label>
-            <select value={lead} onChange={(e) => setLead(e.target.value)} style={{ ...inp, background: '#fff' }}>
+            <select value={lead} onChange={(e) => setLead(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
               <option value="">اختر القائد…</option>
               {PROJECT_LEADS.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
@@ -701,7 +704,7 @@ export function ProjCommitteePage() {
                 <select
                   value={memberSel}
                   onChange={(e) => { if (e.target.value === '__new__') { setMemberMode('new'); setMemberSel(''); } else setMemberSel(e.target.value); }}
-                  style={{ ...inp, background: '#fff' }}
+                  style={{ ...inp, cursor: 'pointer' }}
                 >
                   <option value="">اختر من الأعضاء المسجلين…</option>
                   {regMembers.map((mm) => <option key={mm.id} value={mm.id}>{mm.name} — {mm.email}</option>)}
@@ -711,9 +714,10 @@ export function ProjCommitteePage() {
               </>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(240px,100%),1fr))', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px,100%),1fr))', gap: 10 }}>
+                  <input value={newName} onChange={(e) => setNewName(arOnly(e.target.value))} placeholder="اسم العضو" style={inp} />
                   <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="name@entity.gov.ae" style={{ ...inp, direction: 'ltr', textAlign: 'right' }} />
-                  <input value={newName} onChange={(e) => setNewName(arOnly(e.target.value))} placeholder="اسم العضو (اختياري)" style={inp} />
+                  <input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="050 000 0000" style={{ ...inp, direction: 'ltr', textAlign: 'right' }} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 11, color: '#8A97AD' }}>يُنشأ له حساب بدور أعضاء المشاريع الاستراتيجية تحت قائد المشروع، ويدخل عبر UAE PASS بهذا البريد</span>

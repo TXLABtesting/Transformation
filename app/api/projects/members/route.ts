@@ -36,12 +36,17 @@ export async function POST(req: NextRequest) {
   try {
     const actor = await requireAuthUser(req);
     assertProjAdmin(actor);
-    const b = (await req.json().catch(() => null)) as { email?: string; name?: string; lead?: string } | null;
+    const b = (await req.json().catch(() => null)) as { email?: string; name?: string; phone?: string; lead?: string } | null;
     const email = String(b?.email || '').trim().toLowerCase();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
       return jsonError('VALIDATION_ERROR', messages.validation, 400);
     }
     const name = String(b?.name || '').trim() || email.split('@')[0];
+    // الهاتف اختياري — وإن ورد فبصيغة هاتف متحرك إماراتي صحيحة
+    const phone = String(b?.phone || '').trim();
+    if (phone && !/^(\+?971|00971|0)?5\d{8}$/.test(phone.replace(/[\s-]/g, ''))) {
+      return jsonError('VALIDATION_ERROR', messages.validation, 400);
+    }
     const lead = String(b?.lead || '').trim();
 
     const role = await prisma.role.findUnique({ where: { code: PROJ_MEMBER_ROLE } });
@@ -53,12 +58,14 @@ export async function POST(req: NextRequest) {
       let created = false;
       let outName: string;
       if (existing) {
-        // حساب قائم بأي دور: يُستخدم كما هو دون المساس بدوره أو جهته
+        // حساب قائم بأي دور: يُستخدم كما هو دون المساس بدوره أو جهته —
+        // ويُستكمل هاتفه إن كان فارغاً وورد في الطلب
         userId = existing.id;
         outName = existing.name;
+        if (phone && !existing.phone) await tx.user.update({ where: { id: existing.id }, data: { phone } });
       } else {
         const nu = await tx.user.create({
-          data: { name, email, role: 'proj', status: 'active', accessEnabled: true },
+          data: { name, email, phone: phone || null, role: 'proj', status: 'active', accessEnabled: true },
         });
         await tx.userRole.create({ data: { userId: nu.id, roleId: role.id } });
         userId = nu.id;
