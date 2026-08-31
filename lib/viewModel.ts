@@ -1294,10 +1294,12 @@ function build(s: Store) {
       onChange: (v: string) => {
         if (v === ALL_ENTITIES) { s.setAllEntities(true); return; }
         s.setEntityName(v);
-        // اختيار الوزارة يفتح نسختها كما في النسخة التجريبية
-        if (/وزارة شؤون مجلس الوزراء/.test(v) && rawRole === 'coord') {
-          try { useMoca.getState().setRole('coord'); } catch { /* ignore */ }
-          window.location.href = (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/moca/';
+        // اختيار الوزارة يفتح نسختها. الانتقال تحميل كامل للصفحة، وفحص الجلسة
+        // بعده يعيد دور صاحبها الحقيقي — لذا يُمرَّر ?preview=1 ليعرف المشرف
+        // أنه دخل نسخة الوزارة عن قصد فلا تُعيده الحراسة إلى لوحة الإدارة.
+        if (/وزارة شؤون مجلس الوزراء/.test(v) && (rawRole === 'coord' || s.sessionAdmin)) {
+          const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+          window.location.href = base + '/moca/' + (s.sessionAdmin ? '?preview=1' : '');
         }
       },
     };
@@ -1316,8 +1318,12 @@ function build(s: Store) {
     label: p.label,
     active: actualRole === p.key,
     onClick: () => {
+      // منسق جهته الوزارة يعمل في نسخة الوزارة. أما مشرف النظام فيعاين اللوحات
+      // داخل المنصة — نسخة الوزارة يفتحها باختيارها من مبدّل الجهات لا من هنا،
+      // وإلا تعذّر عليه فتح لوحة المنسق أصلاً حين تكون جهته في الجلسة الوزارة.
       if (
         p.key === 'coord' &&
+        !s.sessionAdmin &&
         /وزارة شؤون مجلس الوزراء/.test(entityName)
       ) {
         s.setRole('coord');
@@ -1326,6 +1332,9 @@ function build(s: Store) {
         return;
       }
       s.setRole(p.key);
+      // المشرف يعاين دور المنسق: يبدأ على «كل الجهات» فيرى مدخلات المنصة كلها
+      // ثم يضيّق النطاق من مبدّل الجهات — بدلاً من قائمة فارغة بحسب جهته
+      if (p.key === 'coord' && s.sessionAdmin) s.setAllEntities(true);
     },
   }));
 

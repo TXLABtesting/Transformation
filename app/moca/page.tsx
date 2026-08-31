@@ -1,6 +1,6 @@
 // نسخة وزارة شؤون مجلس الوزراء — مسار مستقل لا يمس منصة الجهات الاتحادية
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMoca } from '@/lib/mocaStore';
 import { useStore } from '@/lib/store';
@@ -10,6 +10,12 @@ const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
 
 export default function MocaPage() {
   const router = useRouter();
+  // مشرف النظام يفتح نسخة الوزارة للمعاينة من مبدّل الجهات عبر ?preview=1
+  // (تُقرأ من العنوان مباشرة — useSearchParams يفرض حدود Suspense على صفحة مُهيّأة مسبقاً)
+  const [preview, setPreview] = useState(false);
+  useEffect(() => {
+    setPreview(new URLSearchParams(window.location.search).get('preview') === '1');
+  }, []);
   const hydrate = useMoca((s) => s.hydrate);
   const hydrated = useMoca((s) => s._hydrated);
   const syncSession = useMoca((s) => s.syncSession);
@@ -39,17 +45,19 @@ export default function MocaPage() {
     //  - مشرف النظام → لوحة الإدارة الموحدة على /dashboard
     //  - أي دور آخر جهته ليست الوزارة → لوحته الخاصة على /dashboard
     const isMocaUser = /وزارة شؤون مجلس الوزراء/.test(String(mainEntity || ''));
-    if (mainRole === 'admin' || !isMocaUser) {
+    // المشرف لا يُحتجز هنا إلا إن جاء بقصد المعاينة (?preview=1) من مبدّل
+    // الجهات — ويعاينها بصلاحيته الفعلية على الخادم: اطلاع واعتماد لا كتابة
+    if ((mainRole === 'admin' && !preview) || !isMocaUser) {
       router.replace('/dashboard');
       return;
     }
     syncSession(mainRole === 'coord' ? 'coord' : 'committee', mainEntity, mainMocaUnits);
-  }, [mainHydrated, mainAuthChecked, mainView, mainRole, mainEntity, mainMocaUnits, syncSession, router]);
+  }, [mainHydrated, mainAuthChecked, mainView, mainRole, mainEntity, mainMocaUnits, preview, syncSession, router]);
 
   // لا نرسم شيئاً قبل قراءة التخزين المحلي تفادياً لاختلاف SSR/CSR
   const liveBlocked =
     !DEMO &&
-    (!mainHydrated || !mainAuthChecked || mainView === 'login' || mainRole === 'admin' || !/وزارة شؤون مجلس الوزراء/.test(String(mainEntity || '')));
+    (!mainHydrated || !mainAuthChecked || mainView === 'login' || (mainRole === 'admin' && !preview) || !/وزارة شؤون مجلس الوزراء/.test(String(mainEntity || '')));
   if (!hydrated || liveBlocked)
     return <div style={{ minHeight: '100vh', background: '#EEF2F9' }} />;
   return <MocaWorkspace />;
