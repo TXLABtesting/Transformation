@@ -680,7 +680,7 @@ export function ProjCommitteePage() {
       {formOpen && (
       <div id="proj-def-form" style={{ ...card, padding: 20, scrollMarginTop: 90, order: 2 }}>
         <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 14 }}>{editId ? 'تعديل مشروع' : 'إضافة مشروع استراتيجي'}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(260px,100%),1fr))', gap: 14 }}>
           <div>
             <label style={label}>اسم المشروع{req}</label>
             <input value={name} onChange={(e) => setName(arOnly(e.target.value))} placeholder="اسم المشروع" style={inp} />
@@ -692,7 +692,7 @@ export function ProjCommitteePage() {
               {PROJECT_LEADS.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
-          <div>
+          <div style={{ gridColumn: '1 / -1' }}>
             <label style={label}>العضو المسؤول{req}</label>
             {!LIVE ? (
               <input value={member} onChange={(e) => setMember(arOnly(e.target.value))} placeholder="اسم العضو المسؤول من القائد" style={inp} />
@@ -711,11 +711,13 @@ export function ProjCommitteePage() {
               </>
             ) : (
               <>
-                <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="name@entity.gov.ae" style={{ ...inp, direction: 'ltr', textAlign: 'right' }} />
-                <input value={newName} onChange={(e) => setNewName(arOnly(e.target.value))} placeholder="اسم العضو (اختياري)" style={{ ...inp, marginTop: 8 }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-                  <span style={{ fontSize: 11, color: '#8A97AD' }}>يُنشأ له حساب بدور أعضاء المشاريع الاستراتيجية تحت قائد المشروع</span>
-                  <button type="button" onClick={() => setMemberMode('pick')} style={{ border: 'none', background: 'transparent', color: '#1D4ED8', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>الاختيار من المسجلين</button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(240px,100%),1fr))', gap: 10 }}>
+                  <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="name@entity.gov.ae" style={{ ...inp, direction: 'ltr', textAlign: 'right' }} />
+                  <input value={newName} onChange={(e) => setNewName(arOnly(e.target.value))} placeholder="اسم العضو (اختياري)" style={inp} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11, color: '#8A97AD' }}>يُنشأ له حساب بدور أعضاء المشاريع الاستراتيجية تحت قائد المشروع، ويدخل عبر UAE PASS بهذا البريد</span>
+                  <button type="button" onClick={() => setMemberMode('pick')} style={{ border: 'none', background: 'transparent', color: '#1D4ED8', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', padding: 0, whiteSpace: 'nowrap' }}>← الاختيار من المسجلين</button>
                 </div>
               </>
             )}
