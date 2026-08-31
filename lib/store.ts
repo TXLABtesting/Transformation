@@ -244,6 +244,8 @@ type State = {
   sessionEntities: { id: string; name: string }[];
   /** وحدات وقطاعات وزارة شؤون مجلس الوزراء المسندة لصاحب الجلسة */
   sessionMocaUnits: string[];
+  /** قائد المشاريع الاستراتيجية: اسم القائد الذي يمثله الحساب — فارغ لغيره */
+  sessionProjLead: string;
 };
 
 type Actions = {
@@ -472,7 +474,7 @@ const roleFromBackend = (roles: string[] = []): RoleKey =>
         ? 'path'
         : roles.includes('entity_coordinator')
           ? 'coord'
-          : roles.includes('strategic_project_member')
+          : roles.includes('strategic_project_member') || roles.includes('strategic_project_lead')
             ? 'proj'
             : 'entity';
 
@@ -629,6 +631,7 @@ function initialState(): State {
     sessionRoles: [],
     sessionEntities: [],
     sessionMocaUnits: [],
+    sessionProjLead: '',
   };
 }
 
@@ -949,6 +952,7 @@ export const useStore = create<Store>((set, get) => {
                 ...s,
                 sessionRoles: sessionRoles.length ? sessionRoles : [role],
                 sessionMocaUnits: Array.isArray(res.user.mocaUnits) ? (res.user.mocaUnits as string[]) : [],
+                sessionProjLead: String(res.user.projLead || ''),
                 // المشرف يدخل على لوحة الإدارة مباشرة — ومبدّل الأدوار أعلى
                 // الصفحة يتيح له التنقل إلى اللوحات وبقية الأدوار متى شاء
                 sessionAdmin: role === 'admin',
@@ -1123,6 +1127,11 @@ export const useStore = create<Store>((set, get) => {
           .then((r) => (r.ok ? r.json() : null))
           .then((d) => (d?.memberLeads as Record<string, string>) || {})
           .catch(() => ({}));
+        // وهويات حسابات القادة (أي قائد يمثله كل حساب) — للعرض والتحرير
+        const leadIds: Record<string, string> = await fetch('/api/projects/lead-identity', { credentials: 'include' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => (d?.leadIdentities as Record<string, string>) || {})
+          .catch(() => ({}));
         // المسميات القديمة (deputy/secretariat) تُرحَّل إلى أدوار البنية المعتمدة
         const toRoleKey = (r: string): RoleKey =>
           (knownRoles as string[]).includes(r) ? (r as RoleKey) : migrateRole(r) !== r ? migrateRole(r) : 'entity';
@@ -1142,7 +1151,7 @@ export const useStore = create<Store>((set, get) => {
           active: !!u.accessEnabled,
           entityId: u.entityId || undefined,
           roleCode: u.roles?.[0]?.code || undefined,
-          projLead: leads[u.id] || undefined,
+          projLead: leads[u.id] || leadIds[u.id] || undefined,
         }));
         set({ users: mapped });
         persist();

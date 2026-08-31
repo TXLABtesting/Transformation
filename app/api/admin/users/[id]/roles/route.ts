@@ -59,6 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         system_admin: 'admin',
         program_admin: 'ai',
         strategic_project_member: 'proj',
+        strategic_project_lead: 'proj',
         viewer: 'entity',
         auditor: 'entity',
       };

@@ -40,7 +40,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null) as { name?: string; email?: string; role?: string; entityId?: string; streamId?: string } | null;
     if (!body?.email || !body?.name) return jsonError('VALIDATION_ERROR', messages.validation, 400);
     const email = body.email.trim().toLowerCase();
-    const entityId = body.entityId || actor.entityId || undefined;
+    // «بدون جهة» يبقى بلا جهة: المشرف العام لا تُلصق جهته هو بالحساب الجديد
+    // (كانت جهة المشرف تُورَّث صمتاً فيظهر فريق المسار تحت وزارة المشرف).
+    // المشرف المحصور بجهة يبقى داخل جهته كما كان.
+    const entityId = body.entityId || (canAccessAllEntities(actor) ? undefined : actor.entityId) || undefined;
     if (!canAccessAllEntities(actor)) assertEntity(actor, entityId);
     // فحوص مسبقة برسائل مفهومة بدل خطأ قاعدة بيانات عام:
     // بريد مكرر، أو جهة/مسار غير موجودين في قاعدة البيانات

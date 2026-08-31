@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuthUser } from '@/lib/security/auth';
 import { handleApiError } from '@/lib/security/http';
-import { assertProjAdmin, canSeeProjects } from '@/lib/security/proj-access';
+import { assertProjAdmin, canSeeProjects, projDefWhere } from '@/lib/security/proj-access';
 import { projDefToClient, type ProjDefRow } from '@/lib/server/moca-proj-map';
 
 export const runtime = 'nodejs';
@@ -14,7 +14,11 @@ export async function GET(req: NextRequest) {
   try {
     const u = await requireAuthUser(req);
     if (!canSeeProjects(u)) return NextResponse.json({ projDefs: [] });
-    const rows = await prisma.projDef.findMany({ orderBy: { createdAt: 'asc' }, take: 500 });
+    // النطاق بحسب الدور: اللجنة/المشرف الكل، القائد مشاريع قيادته،
+    // والعضو مشاريعه المسندة إليه وحدها
+    const where = await projDefWhere(u);
+    if (where === 'none') return NextResponse.json({ projDefs: [] });
+    const rows = await prisma.projDef.findMany({ where: where || {}, orderBy: { createdAt: 'asc' }, take: 500 });
     return NextResponse.json({ projDefs: rows.map((r) => projDefToClient(r as ProjDefRow)) });
   } catch (e) {
     return handleApiError(e);
@@ -33,6 +37,8 @@ export async function POST(req: NextRequest) {
         name,
         lead: String(b.lead || ''),
         member: String(b.member || ''),
+        memberId: String(b.memberId || '').trim() || null,
+        memberEmail: String(b.memberEmail || '').trim().toLowerCase() || null,
         startMonth: String(b.start || ''),
         endMonth: String(b.end || ''),
         createdById: u.id,

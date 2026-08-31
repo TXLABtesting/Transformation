@@ -699,6 +699,10 @@ model ProjDef {
   name        String
   lead        String   @default("")
   member      String   @default("")
+  /// هوية العضو المسؤول: معرّف حسابه إن اختير من المسجلين، وبريده إن أُنشئ
+  /// له حساب من صفحة اللجنة — بهما يُحصر ما يراه كل عضو في مشاريعه وحدها
+  memberId    String?  @map("member_id")
+  memberEmail String?  @map("member_email")
   startMonth  String   @default("") @map("start_month")
   endMonth    String   @default("") @map("end_month")
   createdById String?  @map("created_by_id")

@@ -146,7 +146,8 @@ export function AdminConsole({ vm }: { vm: VM }) {
       } else {
         const res = await fetch(`/api/admin/users/${id}`, {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-          body: JSON.stringify({ name: d.name, title: d.title, phone: d.phone, entityId: d.entityId || undefined, streamId: d.streamId || undefined }),
+          // الفارغ يُرسل فارغاً عمداً: «بدون جهة/مسار» في المحرر تعني الإزالة فعلاً
+          body: JSON.stringify({ name: d.name, title: d.title, phone: d.phone, entityId: d.entityId || '', streamId: d.streamId || '' }),
         });
         const body = await res.json().catch(() => ({} as any));
         if (!res.ok) return body.message || body.error || 'فشل حفظ المستخدم';
@@ -160,6 +161,13 @@ export function AdminConsole({ vm }: { vm: VM }) {
         // إسناد عضو المشاريع الاستراتيجية إلى قائده (جدول ربط مستقل)
         if (d.roleCode === 'strategic_project_member') {
           await fetch('/api/projects/member-leads', {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+            body: JSON.stringify({ userId: id, lead: d.projLead || '' }),
+          }).catch(() => {});
+        }
+        // حساب قائد المشاريع: هوية القائد الذي يمثله (إعدادات proj_lead:<id>)
+        if (d.roleCode === 'strategic_project_lead') {
+          await fetch('/api/projects/lead-identity', {
             method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
             body: JSON.stringify({ userId: id, lead: d.projLead || '' }),
           }).catch(() => {});
@@ -1537,8 +1545,10 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
   const [error, setError] = useState('');
 
   const emailOk = /^\S+@\S+\.\S+$/.test(f.email.trim());
-  // عضو المشاريع الاستراتيجية يُسند إلى أحد قادة المشاريع المعتمدين
-  const needsLead = f.roleCode === 'strategic_project_member';
+  // عضو المشاريع الاستراتيجية يُسند إلى قائده، وحساب القائد يُسند إلى هويته
+  // (أي قائد من القادة المعتمدين يمثله) — كلاهما من قائمة القادة نفسها
+  const isLeadAccount = f.roleCode === 'strategic_project_lead';
+  const needsLead = f.roleCode === 'strategic_project_member' || isLeadAccount;
   const isMoca = /وزارة شؤون مجلس الوزراء/.test(entities.find((en) => en.id === f.entityId)?.nameAr || '');
   // ما يلزم الدور من نطاق يُشتق من صلاحياته في قاعدة البيانات لا من مسمّاه،
   // فأي دور تضيفه IT في القاعدة يطلب حقوله الصحيحة بلا تغيير في الشيفرة:
@@ -1643,7 +1653,7 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
             </div>
             {needsLead && (
               <div>
-                <label style={labelSt}>قائد المشاريع المسؤول *</label>
+                <label style={labelSt}>{isLeadAccount ? 'هوية القائد *' : 'قائد المشاريع المسؤول *'}</label>
                 <select style={{ ...inputSt, cursor: 'pointer' }} value={f.projLead || ''} onChange={(e) => set({ projLead: e.target.value })}>
                   <option value="">اختر القائد…</option>
                   {PROJECT_LEADS.map((l) => <option key={l} value={l}>{l}</option>)}

@@ -22,6 +22,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
         name: b.name !== undefined ? String(b.name) : undefined,
         lead: b.lead !== undefined ? String(b.lead) : undefined,
         member: b.member !== undefined ? String(b.member) : undefined,
+        memberId: b.memberId !== undefined ? String(b.memberId || '').trim() || null : undefined,
+        memberEmail: b.memberEmail !== undefined ? String(b.memberEmail || '').trim().toLowerCase() || null : undefined,
         startMonth: b.start !== undefined ? String(b.start) : undefined,
         endMonth: b.end !== undefined ? String(b.end) : undefined,
       },

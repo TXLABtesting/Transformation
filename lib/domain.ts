@@ -758,7 +758,17 @@ export const PROJECT_LEADS = [
 ];
 
 // مشروع معرّف مسبقاً من اللجنة (الاسم والقائد والعضو المسؤول وفترة التنفيذ)
-export type ProjDef = { id: string; name: string; lead: string; member?: string; start: string; end: string };
+export type ProjDef = {
+  id: string;
+  name: string;
+  lead: string;
+  member?: string;
+  /** هوية العضو المسؤول: معرّف حسابه وبريده — بهما تُحصر مشاريعه في صفحته */
+  memberId?: string;
+  memberEmail?: string;
+  start: string;
+  end: string;
+};
 export type ProjPhase = { name: string; start: string; end: string };
 export type ProjMember = { name: string; title: string; entity: string; email: string; phone: string };
 // نموذج المشروع الذي يعبّئه عضو المشاريع الاستراتيجية — الفريق: العنصر الأول رئيس الفريق

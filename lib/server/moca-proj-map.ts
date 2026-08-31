@@ -63,10 +63,12 @@ export const mocaUseCaseToClient = (r: MocaUseCaseRow) => ({
 // ---- المشاريع الاستراتيجية --------------------------------------------------
 export type ProjDefRow = {
   id: string; name: string; lead: string; member: string; startMonth: string; endMonth: string;
+  memberId?: string | null; memberEmail?: string | null;
 };
 
 export const projDefToClient = (r: ProjDefRow) => ({
   id: r.id, name: r.name, lead: r.lead, member: r.member, start: r.startMonth, end: r.endMonth,
+  memberId: r.memberId || undefined, memberEmail: r.memberEmail || undefined,
 });
 
 export type ProjFormRow = {

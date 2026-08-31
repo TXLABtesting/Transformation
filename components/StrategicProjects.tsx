@@ -289,7 +289,95 @@ function ProjFormPanel({ form, setForm, def, onSave, onSubmit, onClose }: {
 
 // ---------------------------------------------------------------------------
 // قسم العضو — يُعرض داخل قالب المنصة القياسي (الترويسة والشريط الجانبي نفساهما)
+// ---------------------------------------------------------------------------
+// صفحة قائد المشاريع الاستراتيجية: اطلاع على مشاريع قيادته وحالة تعبئتها —
+// النماذج تُعرض للقراءة فقط، والاعتماد يبقى للجنة الوطنية وحدها
+export function ProjLeadSection({ leadName }: { leadName: string }) {
+  const s = useStore();
+  // الخادم يقصر التعريفات والنماذج على مشاريع قيادته — والتصفية هنا احتياط
+  const defs = s.projDefs.filter((d) => !d.lead || d.lead === leadName);
+  const forms = s.projForms;
+  const [viewId, setViewId] = useState<string | null>(null);
+  const formOf = (projId: string) => forms.find((f) => f.projId === projId);
+
+  const kpi = (labelTxt: string, v: number) => (
+    <div style={{ ...card, padding: '16px 18px' }}>
+      <div style={{ fontSize: 12.5, color: '#8A97AD', fontWeight: 700 }}>{labelTxt}</div>
+      <div style={{ fontSize: 26, fontWeight: 900, color: '#13213C', marginTop: 4 }}>{v}</div>
+    </div>
+  );
+  const unfilled = defs.filter((d) => !formOf(d.id)).length;
+  const pending = defs.filter((d) => formOf(d.id)?.wf === 'sent').length;
+  const approved = defs.filter((d) => formOf(d.id)?.wf === 'approved').length;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div>
+        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
+        <div style={{ fontSize: 12.5, color: '#8A97AD', marginTop: 4 }}>{leadName}</div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(180px,100%),1fr))', gap: 12 }}>
+        {kpi('مشاريع تحت القيادة', defs.length)}
+        {kpi('يتطلب التعبئة', unfilled)}
+        {kpi('بانتظار اعتماد اللجنة', pending)}
+        {kpi('معتمد', approved)}
+      </div>
+      <div style={{ ...card, overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+          <thead>
+            <tr>
+              {['المشروع', 'العضو المسؤول', 'فترة التنفيذ', 'حالة النموذج', 'الإجراء'].map((h) => (
+                <th key={h} style={{ textAlign: 'right', padding: '11px 15px', fontSize: 11.5, fontWeight: 700, color: '#8A97AD', borderBottom: '1px solid #EEF1F7', whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {defs.map((d) => {
+              const f = formOf(d.id);
+              const st = f ? chipOf(f) : { t: 'لم يُعبأ بعد', c: '#8A97AD', bg: '#F1F4FA' };
+              return (
+                <tr key={d.id}>
+                  <td style={{ padding: '12px 15px', fontSize: 13, fontWeight: 800, color: '#13213C', borderBottom: '1px solid #F4F6FA' }}>{d.name}</td>
+                  <td style={{ padding: '12px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>
+                    {d.member || '—'}
+                    {d.memberEmail && <div style={{ fontSize: 11, color: '#8A97AD', direction: 'ltr', textAlign: 'right' }}>{d.memberEmail}</div>}
+                  </td>
+                  <td style={{ padding: '12px 15px', fontSize: 12, color: '#54627B', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>{fmtPeriod(d)}</td>
+                  <td style={{ padding: '12px 15px', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: st.bg, color: st.c }}>{st.t}</span>
+                  </td>
+                  <td style={{ padding: '12px 15px', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>
+                    {f ? (
+                      <button onClick={() => setViewId(f.id)} style={{ ...btnGhost, padding: '7px 14px', fontSize: 12 }}>عرض</button>
+                    ) : (
+                      <span style={{ fontSize: 11.5, color: '#8A97AD' }}>بانتظار تعبئة العضو</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {!defs.length && (
+              <tr><td colSpan={5} style={{ padding: 30, textAlign: 'center', color: '#8A97AD', fontSize: 13 }}>لا مشاريع مسندة لقيادتكم بعد</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {(() => {
+        const f = viewId ? forms.find((x) => x.id === viewId) : null;
+        return f ? <ProjDetailDrawer f={f} d={defs.find((x) => x.id === f.projId)} onClose={() => setViewId(null)} /> : null;
+      })()}
+    </div>
+  );
+}
+
 export function ProjMemberSection() {
+  const s = useStore();
+  // حساب دوره قائد مشاريع يرى صفحة القيادة بدل صفحة تعبئة الأعضاء
+  if (s.sessionProjLead) return <ProjLeadSection leadName={s.sessionProjLead} />;
+  return <ProjMemberFill />;
+}
+
+function ProjMemberFill() {
   const s = useStore();
   const defs = s.projDefs;
   const forms = s.projForms;
@@ -506,6 +594,22 @@ export function ProjCommitteePage() {
   const [member, setMember] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
+  // العضو المسؤول: اختيار من الأعضاء المسجلين، أو بريد جديد يُنشأ له حساب
+  // بدور أعضاء المشاريع الاستراتيجية تحت قائد المشروع — النسخة الحية فقط
+  const LIVE = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
+  const [regMembers, setRegMembers] = useState<{ id: string; name: string; email: string; lead: string }[]>([]);
+  const [memberMode, setMemberMode] = useState<'pick' | 'new'>('pick');
+  const [memberSel, setMemberSel] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newName, setNewName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const loadMembers = () => {
+    if (!LIVE) return;
+    fetch('/api/projects/members', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.members)) setRegMembers(d.members); })
+      .catch(() => {});
+  };
   const [editId, setEditId] = useState<string | null>(null);
   const [delId, setDelId] = useState<string | null>(null);
   // الاعتماد داخل الجدول نفسه: صف تفاصيل ممتد + نافذة ملاحظات الإعادة
@@ -517,14 +621,47 @@ export function ProjCommitteePage() {
   const [formOpen, setFormOpen] = useState(false);
   const scrollToForm = () => setTimeout(() => document.getElementById('proj-def-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
 
-  const reset = () => { setName(''); setLead(''); setMember(''); setStart(''); setEnd(''); setEditId(null); setFormOpen(false); };
-  const save = () => {
+  const reset = () => { setName(''); setLead(''); setMember(''); setStart(''); setEnd(''); setEditId(null); setFormOpen(false); setMemberMode('pick'); setMemberSel(''); setNewEmail(''); setNewName(''); };
+  const emailValid = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+  const save = async () => {
+    if (saving) return;
     if (!name.trim()) return s.toast('أدخل اسم المشروع');
     if (!lead) return s.toast('اختر قائد المشروع');
-    if (!member.trim()) return s.toast('أدخل اسم العضو المسؤول من القائد');
     if (!start || !end) return s.toast('حدد فترة التنفيذ (البدء والانتهاء)');
-    if (editId) s.updateProjDef(editId, { name, lead, member, start, end });
-    else s.addProjDef({ name, lead, member, start, end });
+
+    // هوية العضو المسؤول: من المسجلين أو حساب جديد بالبريد — تُثبَّت على
+    // التعريف ليُحصر ما يراه العضو في مشاريعه، ويُحدَّث قائده مع الإسناد
+    let m: { name: string; memberId?: string; memberEmail?: string } | null = null;
+    if (!LIVE) {
+      if (!member.trim()) return s.toast('أدخل اسم العضو المسؤول من القائد');
+      m = { name: member };
+    } else if (memberMode === 'pick') {
+      const sel = regMembers.find((x) => x.id === memberSel);
+      if (!sel) return s.toast('اختر العضو المسؤول من القائمة أو أضفه ببريده');
+      setSaving(true);
+      const r = await fetch('/api/projects/members', {
+        method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: sel.email, name: sel.name, lead }),
+      }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
+      setSaving(false);
+      if (!r?.member) return s.toast('تعذّر إسناد العضو — حاول مجدداً');
+      m = { name: r.member.name, memberId: r.member.id, memberEmail: r.member.email };
+    } else {
+      if (!emailValid(newEmail)) return s.toast('أدخل بريداً إلكترونياً صالحاً للعضو الجديد');
+      setSaving(true);
+      const r = await fetch('/api/projects/members', {
+        method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: newEmail.trim(), name: newName.trim(), lead }),
+      }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
+      setSaving(false);
+      if (!r?.member) return s.toast('تعذّر إنشاء حساب العضو — تحقق من البريد');
+      m = { name: r.member.name, memberId: r.member.id, memberEmail: r.member.email };
+      if (r.created) s.toast('أُنشئ حساب العضو ' + r.member.email + ' بدور أعضاء المشاريع الاستراتيجية');
+    }
+
+    const payload = { name, lead, member: m.name, memberId: m.memberId, memberEmail: m.memberEmail, start, end };
+    if (editId) s.updateProjDef(editId, payload);
+    else s.addProjDef(payload);
     reset();
   };
 
@@ -533,7 +670,7 @@ export function ProjCommitteePage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>المشاريع الاستراتيجية</div>
         <button
-          onClick={() => { setEditId(null); setName(''); setLead(''); setMember(''); setStart(''); setEnd(''); setFormOpen(true); scrollToForm(); }}
+          onClick={() => { setEditId(null); setName(''); setLead(''); setMember(''); setMemberMode('pick'); setMemberSel(''); setNewEmail(''); setNewName(''); loadMembers(); setFormOpen(true); scrollToForm(); }}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 2px 6px -2px rgba(37,99,235,.35)', fontFamily: 'inherit' }}
         >
           <Icon d="M12 5v14M5 12h14" size={17} strokeWidth={2.2} /> إضافة مشروع
@@ -557,7 +694,31 @@ export function ProjCommitteePage() {
           </div>
           <div>
             <label style={label}>العضو المسؤول{req}</label>
-            <input value={member} onChange={(e) => setMember(arOnly(e.target.value))} placeholder="اسم العضو المسؤول من القائد" style={inp} />
+            {!LIVE ? (
+              <input value={member} onChange={(e) => setMember(arOnly(e.target.value))} placeholder="اسم العضو المسؤول من القائد" style={inp} />
+            ) : memberMode === 'pick' ? (
+              <>
+                <select
+                  value={memberSel}
+                  onChange={(e) => { if (e.target.value === '__new__') { setMemberMode('new'); setMemberSel(''); } else setMemberSel(e.target.value); }}
+                  style={{ ...inp, background: '#fff' }}
+                >
+                  <option value="">اختر من الأعضاء المسجلين…</option>
+                  {regMembers.map((mm) => <option key={mm.id} value={mm.id}>{mm.name} — {mm.email}</option>)}
+                  <option value="__new__">+ عضو جديد بالبريد الإلكتروني</option>
+                </select>
+                <div style={{ fontSize: 11, color: '#8A97AD', marginTop: 5 }}>يُسند العضو المختار إلى قائد هذا المشروع</div>
+              </>
+            ) : (
+              <>
+                <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="name@entity.gov.ae" style={{ ...inp, direction: 'ltr', textAlign: 'right' }} />
+                <input value={newName} onChange={(e) => setNewName(arOnly(e.target.value))} placeholder="اسم العضو (اختياري)" style={{ ...inp, marginTop: 8 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                  <span style={{ fontSize: 11, color: '#8A97AD' }}>يُنشأ له حساب بدور أعضاء المشاريع الاستراتيجية تحت قائد المشروع</span>
+                  <button type="button" onClick={() => setMemberMode('pick')} style={{ border: 'none', background: 'transparent', color: '#1D4ED8', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>الاختيار من المسجلين</button>
+                </div>
+              </>
+            )}
           </div>
           <div>
             <label style={label}>البدء (الشهر والسنة){req}</label>
@@ -569,7 +730,7 @@ export function ProjCommitteePage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-          <button onClick={save} style={btnPrimary}>{editId ? 'حفظ التعديلات' : 'إضافة المشروع'}</button>
+          <button onClick={save} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.6 : 1 }}>{saving ? 'جارٍ الحفظ…' : editId ? 'حفظ التعديلات' : 'إضافة المشروع'}</button>
           <button onClick={reset} style={btnGhost}>إلغاء</button>
         </div>
       </div>
@@ -618,7 +779,7 @@ export function ProjCommitteePage() {
                       )}
                       {!isSent && !isApproved && (
                         <>
-                          <button onClick={() => { setEditId(d.id); setName(d.name); setLead(d.lead); setMember(d.member || ''); setStart((d.start || '').slice(0, 7)); setEnd((d.end || '').slice(0, 7)); setFormOpen(true); scrollToForm(); }} style={{ ...btnGhost, ...smallBtn }}>تعديل</button>
+                          <button onClick={() => { setEditId(d.id); setName(d.name); setLead(d.lead); setMember(d.member || ''); setMemberMode('pick'); setMemberSel(d.memberId || ''); setNewEmail(d.memberEmail || ''); setNewName(d.member || ''); loadMembers(); setStart((d.start || '').slice(0, 7)); setEnd((d.end || '').slice(0, 7)); setFormOpen(true); scrollToForm(); }} style={{ ...btnGhost, ...smallBtn }}>تعديل</button>
                           <button onClick={() => setDelId(d.id)} style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', ...smallBtn }}>حذف</button>
                         </>
                       )}

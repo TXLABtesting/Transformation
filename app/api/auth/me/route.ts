@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { loadAuthUser } from '@/lib/security/auth';
 import { jsonError, messages } from '@/lib/security/errors';
 import { readMocaUnits } from '@/lib/security/moca-access';
+import { projLeadName } from '@/lib/security/proj-access';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,6 +28,8 @@ export async function GET(req: NextRequest) {
       // وحدات وقطاعات وزارة شؤون مجلس الوزراء المسندة — بها يظهر مبدّل
       // الجهة/القطاع داخل نسخة الوزارة لمن أُسندت له أكثر من وحدة
       mocaUnits: await readMocaUnits(user.id),
+      // قائد المشاريع الاستراتيجية: اسم القائد الذي يمثله هذا الحساب
+      projLead: await projLeadName(user),
     },
     roles: user.roles,
     permissions: user.permissions,

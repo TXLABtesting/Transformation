@@ -53,8 +53,12 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     if (!canAccessAllEntities(actor)) assertEntity(actor, existing.entityId);
     const body = await req.json().catch(() => ({})) as { name?: string; title?: string; phone?: string; entityId?: string; streamId?: string; role?: string; status?: string };
     if (!canAccessAllEntities(actor) && body.entityId && body.entityId !== existing.entityId) throw Object.assign(new Error('forbidden-scope'), { status: 403 });
+    // السلسلة الفارغة تعني «إزالة الجهة/المسار» صراحةً — undefined تعني «بلا تغيير»
+    // (كان مسح الجهة من المحرر لا يُحفظ أبداً لأن الفارغ لم يكن يُرسل أصلاً)
+    const clearable = (v: string | undefined) => (v === '' ? null : v);
+    if (body.entityId === '' && !canAccessAllEntities(actor)) throw Object.assign(new Error('forbidden-scope'), { status: 403 });
     const updated = await prisma.$transaction(async (tx) => {
-      const u = await tx.user.update({ where: { id: params.id }, data: { name: body.name, title: body.title, phone: body.phone, entityId: body.entityId, streamId: body.streamId, role: body.role, status: body.status } });
+      const u = await tx.user.update({ where: { id: params.id }, data: { name: body.name, title: body.title, phone: body.phone, entityId: clearable(body.entityId), streamId: clearable(body.streamId), role: body.role, status: body.status } });
       await writeAuditLog({ actorUserId: actor.id, action: 'user_updated', resourceType: 'user', resourceId: u.id, entityId: u.entityId, ipAddress: getIp(req), userAgent: req.headers.get('user-agent') }, tx);
       return u;
     });
