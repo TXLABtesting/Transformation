@@ -913,8 +913,15 @@ function build(s: Store) {
 
   // coordinator side menu (لوحة الجهة): «قوائم الحصر» lists the assigned
   // stream(s) — one entry when a single stream, several when multi-assigned —
-  // then «دفعات الإطلاق». (Demo mode lists all streams for testing.)
-  const coordStreamIds = process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? PATHS.map((p) => p.id) : s.myPaths?.length ? s.myPaths : [myPath];
+  // then «دفعات الإطلاق». (Demo mode lists all streams for testing; the
+  // system admin previewing the role also gets ALL streams so any stream can
+  // be filled for the selected entity.)
+  const coordStreamIds =
+    process.env.NEXT_PUBLIC_DEMO_MODE === '1' || s.sessionAdmin
+      ? PATHS.map((p) => p.id)
+      : s.myPaths?.length
+        ? s.myPaths
+        : [myPath];
   const cntEntStream = (pid: string) => s.items.filter((i) => ent(i) === entityName && i.path === pid).length;
   const plainNav = (key: string, label: string, icon: string) => ({
     key,
@@ -1741,12 +1748,16 @@ function build(s: Store) {
     // فقط — يتنقل به بين لوحات الأدوار ولوحة الإدارة (جلسة واحدة موحّدة).
     // التجريبية للجميع؛ والحية لمشرف النظام أو لمن أُسند له أكثر من دور
     showRoleSwitcher: DEMO || s.sessionAdmin || (s.sessionRoles || []).length > 1,
+    // مشرف النسخة الحية يرى الأدوار الستة كلها — قائمة منسدلة أدرج من صف
+    // أزرار عريض؛ صاحب الدورين والنسخة التجريبية يبقيان على الأزرار
+    roleSwitcherCompact: !DEMO && !!s.sessionAdmin,
     // coordinator assigned to several streams: header dropdown to switch the
     // ACTIVE stream (everything on screen is scoped to it). In demo mode we list
     // ALL streams so every stream can be exercised from one coordinator login;
     // in production the list stays scoped to the coordinator's assigned streams.
     streamSwitcher: (() => {
-      const demoAllStreams = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
+      // المشرف يعاين الدور على كل المسارات — كالنسخة التجريبية
+      const demoAllStreams = process.env.NEXT_PUBLIC_DEMO_MODE === '1' || !!s.sessionAdmin;
       const ids = demoAllStreams ? PATHS.map((p) => p.id) : s.myPaths?.length ? s.myPaths : [myPath];
       return {
         // the coordinator switches streams from قوائم الحصر in the side nav —

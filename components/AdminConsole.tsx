@@ -237,7 +237,20 @@ export function AdminConsole({ vm }: { vm: VM }) {
             <Icon d="M4 20V10M10 20V4M16 20v-8M21 20H3" size={14} color="#fff" />
             لوحات المتابعة
           </button>
-          {vm.showRoleSwitcher && (
+          {vm.showRoleSwitcher && vm.roleSwitcherCompact && (
+            <select
+              data-r="hdrroles"
+              value={vm.rolePills.find((p) => p.active)?.key || ''}
+              onChange={(e) => vm.rolePills.find((p) => p.key === e.target.value)?.onClick()}
+              title="معاينة اللوحات بالأدوار"
+              style={{ height: 38, maxWidth: 250, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', backgroundColor: '#fff', borderRadius: 11, padding: '0 10px', fontSize: 12, fontWeight: 700, color: '#1D4ED8', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}
+            >
+              {vm.rolePills.map((p) => (
+                <option key={p.key} value={p.key}>{p.label}</option>
+              ))}
+            </select>
+          )}
+          {vm.showRoleSwitcher && !vm.roleSwitcherCompact && (
             <div style={{ display: 'flex', background: '#F4F7FC', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 12, padding: 3, gap: 2, maxWidth: '100%', overflowX: 'auto' }}>
               {vm.rolePills.map((p) => (
                 <button key={p.key} onClick={p.onClick} style={{ borderRadius: 9, padding: '7px 11px', fontWeight: 700, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flex: 'none', ...(p.active ? { background: '#fff', color: '#1D4ED8', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #D8E3F5' } : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }) }}>

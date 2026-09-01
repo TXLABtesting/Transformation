@@ -742,11 +742,6 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
             {pendingShown} {pendingShown === 1 ? 'توزيع بانتظار اعتمادك' : 'توزيعات بانتظار اعتمادك'}
           </span>
         )}
-        {auto && (
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '6px 14px' }}>
-            التوزيع آلي من «فترة التحويل» المختارة عند الإدخال — صفحة عرض فقط
-          </span>
-        )}
         {bt.showEntity && (
           <FilterSelect value={entF} options={entOptions} minWidth={170} onChange={setEntF} />
         )}
@@ -2000,9 +1995,24 @@ export function Dashboard({ vm }: { vm: VM }) {
           >
             <Icon d={mobileNav ? 'M18 6 6 18M6 6l12 12' : 'M3 6h18M3 12h18M3 18h18'} size={19} color="#33405A" strokeWidth={2.2} />
           </button>
-          {/* Role switcher: demo builds only (production role comes from the
-              UAE PASS / IdP mapping wired by IT). */}
-          {vm.showRoleSwitcher && (
+          {/* Role switcher: demo builds and the session admin previewing the
+              boards (production role comes from the UAE PASS / IdP mapping
+              wired by IT). The live admin gets a compact dropdown — six role
+              pills are too wide for the header. */}
+          {vm.showRoleSwitcher && vm.roleSwitcherCompact && (
+            <select
+              data-r="hdrroles"
+              value={vm.rolePills.find((p) => p.active)?.key || ''}
+              onChange={(e) => vm.rolePills.find((p) => p.key === e.target.value)?.onClick()}
+              title="معاينة اللوحات بالأدوار"
+              style={{ height: 38, maxWidth: 250, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', backgroundColor: '#fff', borderRadius: 11, padding: '0 10px', fontSize: 12, fontWeight: 700, color: '#1D4ED8', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}
+            >
+              {vm.rolePills.map((p) => (
+                <option key={p.key} value={p.key}>{p.label}</option>
+              ))}
+            </select>
+          )}
+          {vm.showRoleSwitcher && !vm.roleSwitcherCompact && (
             <div
               data-r="hdrpills"
               style={{

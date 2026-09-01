@@ -1312,9 +1312,11 @@ export const useStore = create<Store>((set, get) => {
       const st = get();
       if (st.myPath === p) return;
       // demo mode lets the coordinator switch to ANY stream (to exercise them
-      // all from one login); production stays restricted to assigned streams
-      const demoAllStreams = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
-      if (!demoAllStreams && !st.myPaths.includes(p)) return;
+      // all from one login), and the system admin previewing a role likewise
+      // works across all streams; production users stay restricted to their
+      // assigned streams
+      const allStreams = process.env.NEXT_PUBLIC_DEMO_MODE === '1' || st.sessionAdmin;
+      if (!allStreams && !st.myPaths.includes(p)) return;
       set({
         myPath: p,
         ui: { ...st.ui, filter: 'all', stepFilter: null, modalOpen: false, inlineCreate: false, draft: null, editingId: null, mStep: 'path' },
