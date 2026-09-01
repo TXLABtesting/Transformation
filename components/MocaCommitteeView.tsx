@@ -114,7 +114,7 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
     const pending = visible.filter((e) => e.wf === 'pending' && !e.ret).length;
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Header title={'حصر مهام وعمليات ' + MOCA_MINISTRY} pending={pending} sub="اعتماد أو إعادة بملاحظات أو رفض" />
+        <Header title={'حصر مهام وعمليات ' + MOCA_MINISTRY} pending={pending} />
         <div style={{ ...card, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 980 }}>
             <thead>
