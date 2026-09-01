@@ -285,50 +285,30 @@ function Header() {
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
         {demo ? (
-          /* مبدّل الدور — نسخة العرض فقط */
-          <div
-            style={{
-              display: 'flex',
-              background: '#F4F7FC',
-              border: '1px solid #E7ECF4',
-              boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-              borderRadius: 12,
-              padding: 3,
-              gap: 2,
+          /* مبدّل الدور — نسخة العرض: قائمة منسدلة موحّدة كالمنصة؛ المنسق
+             يبقى في نسخة الوزارة وبقية الأدوار تعود بلوحاتها في المنصة */
+          <select
+            data-r="hdrroles"
+            value={s.role === 'coord' ? 'coord' : 'ai'}
+            onChange={(e) => {
+              const k = e.target.value;
+              if (k === 'coord') { s.setRole('coord'); return; }
+              try {
+                const raw = window.localStorage.getItem('aitp_state');
+                const d = raw ? JSON.parse(raw) : {};
+                d.role = k;
+                d.view = 'dashboard';
+                window.localStorage.setItem('aitp_state', JSON.stringify(d));
+              } catch { /* ignore */ }
+              window.location.href = BASE + '/dashboard/';
             }}
+            title="معاينة اللوحات بالأدوار"
+            style={{ height: 38, maxWidth: 250, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', backgroundColor: '#fff', borderRadius: 11, padding: '0 10px', fontSize: 12, fontWeight: 700, color: '#1D4ED8', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            {/* مبدّل الأدوار الموحّد نفسه: المنسق يبقى في نسخة الوزارة،
-                وبقية الأدوار تعود بلوحاتها في المنصة القياسية */}
             {ROLE_PILLS.map((r) => (
-              <button
-                key={r.key}
-                onClick={() => {
-                  if (r.key === 'coord') { s.setRole('coord'); return; }
-                  try {
-                    const raw = window.localStorage.getItem('aitp_state');
-                    const d = raw ? JSON.parse(raw) : {};
-                    d.role = r.key;
-                    d.view = 'dashboard';
-                    window.localStorage.setItem('aitp_state', JSON.stringify(d));
-                  } catch { /* ignore */ }
-                  window.location.href = BASE + '/dashboard/';
-                }}
-                style={{
-                  borderRadius: 9,
-                  padding: '8px 13px',
-                  fontWeight: 700,
-                  fontSize: 11.5,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  ...(r.key === 'coord' && s.role === 'coord'
-                    ? { background: '#fff', color: '#1D4ED8', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #D8E3F5' }
-                    : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }),
-                }}
-              >
-                {r.label}
-              </button>
+              <option key={r.key} value={r.key}>{r.label}</option>
             ))}
-          </div>
+          </select>
         ) : (
           /* النسخة الحية: هوية الجهة والدور من الجلسة — بلا أي مبدّل */
           <div style={{ minWidth: 0 }}>

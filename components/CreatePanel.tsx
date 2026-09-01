@@ -1812,7 +1812,7 @@ function BulkStep({ vm }: { vm: VM }) {
               ))}
             </select>
             <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
-              تُنسب كل مدخلات الملف لهذه الجهة — المكتمل منها يدخل قائمة المراجعة مباشرة والناقص يبقى مسودة لدى الجهة
+              تُنسب مدخلات الملف لهذه الجهة
             </div>
           </div>
           <div style={{ flex: '1 1 220px', minWidth: 200 }}>
@@ -1829,7 +1829,7 @@ function BulkStep({ vm }: { vm: VM }) {
               ))}
             </select>
             <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
-              قالب الملف وأعمدته يتبعان المسار المختار — تغييره يلغي أي صفوف قُرئت بالقالب السابق
+              قالب الملف يتبع المسار المختار
             </div>
           </div>
         </div>

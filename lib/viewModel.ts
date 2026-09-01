@@ -926,6 +926,10 @@ function build(s: Store) {
   });
   const invHead = { key: 'invhead', label: 'قوائم الحصر', icon: '', sub: false, pin: false, heading: true, count: undefined as number | undefined, active: false, onClick: () => {} };
   const lplanHead = { key: 'lplanhead', label: 'دفعات الإطلاق', icon: '', sub: false, pin: false, heading: true, count: undefined as number | undefined, active: false, onClick: () => {} };
+  // عناصر البنية الجديدة للقائمة الجانبية: فاصل رفيع، وعنوان قسم، ومجموعة قابلة للطي
+  const navSep = (key: string) => ({ key, label: '', icon: '', sub: false, pin: false, heading: false, count: undefined as number | undefined, active: false, onClick: () => {}, sep: true });
+  const navSection2 = (key: string, label: string, icon = '') => ({ key, label, icon, sub: false, pin: false, heading: true, count: undefined as number | undefined, active: false, onClick: () => {} });
+  const navGroup = (key: string, label: string, group: string, groupOpen: boolean) => ({ key, label, icon: '', sub: false, pin: false, heading: false, count: undefined as number | undefined, active: false, onClick: () => {}, group, groupOpen });
   // دفعات الإطلاق per-stream subitems — every batches page is bound to its own
   // stream, so entries can never be placed on another stream's batches
   const lplanItem = (pid: string, active: boolean, onClick: () => void) => ({
@@ -950,7 +954,22 @@ function build(s: Store) {
     active,
     onClick,
   });
-  const navItemsOut =
+  type NavEntry = {
+    key: string;
+    label: string;
+    icon: string;
+    sub: boolean;
+    pin: boolean;
+    heading: boolean;
+    count: number | undefined;
+    active: boolean;
+    onClick: () => void;
+    sep?: boolean;
+    group?: string;
+    groupOpen?: boolean;
+    groupOf?: string;
+  };
+  const navItemsOut: NavEntry[] =
     rawRole === 'proj'
       ? [plainNav('stratProjects', 'المشاريع الاستراتيجية', NAV_GRID4)]
       : rawRole === 'coord'
@@ -981,32 +1000,36 @@ function build(s: Store) {
           ]
         : rawRole === 'ai'
           ? [
-              // committee chair + secretariat: national dashboard, then the
-              // three streams' inventories (view-only) and the batches —
-              // الوزارة تُعرض كجهة ضمن القوائم نفسها (عرض فقط؛ دورة اعتمادها
-              // الداخلية تبقى في نسختها المستقلة)
+              // اللجنة: البنية الجديدة — الرئيسية، ثم قسم الجهات الاتحادية
+              // بمجموعتين قابلتين للطي، ثم المشاريع الاستراتيجية، ثم قسم
+              // الوزارة بروابطه الثلاثة (نطاق الوزارة وحدها)
               plainNav('overview', 'الرئيسية', NAV_HOME),
-              invHead,
-              ...PATHS.map((p) =>
-                streamItem(p.id, roleBase.filter((i) => i.path === p.id).length, navSection === 'all' && navStream === p.id, () => {
+              navSep('sep-fed'),
+              navSection2('sect-fed', 'الجهات الحكومية الأخرى'),
+              navGroup('invhead', 'قوائم الحصر', 'inv', true),
+              ...PATHS.map((p) => ({
+                ...streamItem(p.id, roleBase.filter((i) => i.path === p.id).length, navSection === 'all' && navStream === p.id, () => {
                   s.setNavSection('all');
                   s.setNavStream(p.id);
-                })
-              ),
-              { key: 'inv-moca', label: 'وزارة شؤون مجلس الوزراء', icon: NAV_BUILDING, sub: true, pin: true, heading: false, count: undefined as number | undefined, active: navSection === 'mocaInv', onClick: () => s.setNavSection('mocaInv') },
-              lplanHead,
-              ...PATHS.map((p) =>
-                lplanItem(p.id, navSection === 'lplan' && navStream === p.id, () => {
+                }),
+                groupOf: 'inv',
+              })),
+              navGroup('lplanhead', 'دفعات الإطلاق', 'lplan', false),
+              ...PATHS.map((p) => ({
+                ...lplanItem(p.id, navSection === 'lplan' && navStream === p.id, () => {
                   s.setNavSection('lplan');
                   s.setNavStream(p.id);
-                })
-              ),
-              { key: 'lp-moca', label: 'وزارة شؤون مجلس الوزراء', icon: NAV_BUILDING, sub: true, pin: true, heading: false, count: undefined as number | undefined, active: navSection === 'mocaLplan', onClick: () => s.setNavSection('mocaLplan') },
+                }),
+                groupOf: 'lplan',
+              })),
               plainNav('entities', 'الجهات المشاركة', NAV_BUILDING),
-              // إدارة المشاريع الاستراتيجية واعتماد نماذجها — صفحة اللجنة الخاصة
+              navSep('sep-proj'),
               plainNav('stratProjects', 'المشاريع الاستراتيجية', NAV_GRID4),
-              // حالات الاستخدام تبقى آخر عنصر في القائمة الجانبية
+              navSep('sep-moca'),
+              navSection2('sect-moca', 'وزارة شؤون مجلس الوزراء', NAV_BUILDING),
               { key: 'uc-moca', label: 'حالات الاستخدام', icon: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10c.6.6 1 1.2 1 2h6c0-.8.4-1.4 1-2a6 6 0 0 0-4-10z', sub: false, pin: false, heading: false, count: undefined as number | undefined, active: navSection === 'mocaUse', onClick: () => s.setNavSection('mocaUse') },
+              { key: 'inv-moca', label: 'قوائم الحصر', icon: NAV_BUILDING, sub: false, pin: false, heading: false, count: undefined as number | undefined, active: navSection === 'mocaInv', onClick: () => s.setNavSection('mocaInv') },
+              { key: 'lp-moca', label: 'دفعات الإطلاق', icon: NAV_ROCKET, sub: false, pin: false, heading: false, count: undefined as number | undefined, active: navSection === 'mocaLplan', onClick: () => s.setNavSection('mocaLplan') },
               ]
           : navItems;
 
@@ -1686,6 +1709,8 @@ function build(s: Store) {
     // النسخة التجريبية: مبدّل الأدوار للجميع. النسخة الحية: لمشرف النظام
     // فقط — يتنقل به بين لوحات الأدوار ولوحة الإدارة (جلسة واحدة موحّدة).
     showRoleSwitcher: process.env.NEXT_PUBLIC_DEMO_MODE === '1' || s.sessionAdmin,
+    // أكثر من ثلاثة أدوار: قائمة منسدلة أدرج من صف أزرار عريض
+    roleSwitcherCompact: rolePills.length > 3,
     // coordinator assigned to several streams: header dropdown to switch the
     // ACTIVE stream (everything on screen is scoped to it). In demo mode we list
     // ALL streams so every stream can be exercised from one coordinator login;
@@ -1776,7 +1801,7 @@ function build(s: Store) {
               : rawRole === 'path'
                 ? 'قائمة حصر مسار ' + pathById(myPath).name
                 : rawRole === 'ai'
-                  ? 'قائمة الاعتماد'
+                  ? 'قائمة الحصر'
                   : ''
           : (navSection in typeSections ? (navSection === 'operations' && myPath === 'strategy' ? 'المهام' : typeSections[navSection]) : '') || '',
     portfolioStreams,
@@ -2418,7 +2443,20 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
     } else if (rawRole === 'coord') {
       // coordinator: returns / info requests from the stream head, and approvals
       if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تم الرفض من ') + (i.ret.from || 'فريق عمل المسار في المشروع'), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
-      if (w === 'exec' || w === 'launch') push('x-' + i.id, 'ok', 'check', 'اعتمد فريق عمل المسار ' + typeLabelDefFor(i.type, i.path), tl + ' · ' + i.title, i.id);
+      if (w === 'exec' || w === 'launch') {
+        // معتمد ولم يوزَّع بعد على دفعة إطلاق: التنبيه يطلب التوزيع صراحة
+        const unplaced = itemActivities(i).some((a) => placementState(i, a) === 'none');
+        push(
+          'x-' + i.id,
+          'ok',
+          'check',
+          unplaced
+            ? 'اعتُمد ' + typeLabelDefFor(i.type, i.path) + ' — بانتظار توزيعه على دفعات الإطلاق'
+            : 'اعتمد فريق عمل المسار ' + typeLabelDefFor(i.type, i.path),
+          tl + ' · ' + i.title,
+          i.id
+        );
+      }
       // قرارات فريق العمل على توزيعات الدفعات
       itemActivities(i).forEach((a, ai) => {
         const st = placementState(i, a);

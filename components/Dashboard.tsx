@@ -1933,6 +1933,9 @@ export function Dashboard({ vm }: { vm: VM }) {
   // stream/type sub-items sit in a dropdown under «الكل».
   const [mobileNav, setMobileNav] = useState(false);
   const [allOpen, setAllOpen] = useState(false);
+  // مجموعتا القائمة الجانبية القابلتان للطي: قوائم الحصر مفتوحة ودفعات
+  // الإطلاق مطوية ابتداءً — الطي حالة عرض ولا يغيّر التوجيه
+  const [navGroups, setNavGroups] = useState<Record<string, boolean>>({ inv: true, lplan: false });
   // notifications: once the panel has been opened and closed again, everything
   // that was visible counts as read (clears the badge)
   const notifIds = vm.notifs.map((n) => n.id).join('|');
@@ -1997,7 +2000,20 @@ export function Dashboard({ vm }: { vm: VM }) {
           </button>
           {/* Role switcher: demo builds only (production role comes from the
               UAE PASS / IdP mapping wired by IT). */}
-          {vm.showRoleSwitcher && (
+          {vm.showRoleSwitcher && vm.roleSwitcherCompact && (
+            <select
+              data-r="hdrroles"
+              value={vm.rolePills.find((p) => p.active)?.key || ''}
+              onChange={(e) => vm.rolePills.find((p) => p.key === e.target.value)?.onClick()}
+              title="معاينة اللوحات بالأدوار"
+              style={{ height: 38, maxWidth: 250, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', backgroundColor: '#fff', borderRadius: 11, padding: '0 10px', fontSize: 12, fontWeight: 700, color: '#1D4ED8', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}
+            >
+              {vm.rolePills.map((p) => (
+                <option key={p.key} value={p.key}>{p.label}</option>
+              ))}
+            </select>
+          )}
+          {vm.showRoleSwitcher && !vm.roleSwitcherCompact && (
             <div
               data-r="hdrpills"
               style={{
@@ -2424,9 +2440,40 @@ export function Dashboard({ vm }: { vm: VM }) {
           </div>
           {/* navigation */}
           <div data-r="navlist" style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {vm.navItems.map((n) => n.heading ? (
-            <div key={n.key} style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD' }}>{n.label}</div>
-          ) : (
+          {vm.navItems.map((n) => n.sep ? (
+            <div key={n.key} style={{ height: 1, background: '#F0F3F8', margin: '8px 2px' }} />
+          ) : n.heading ? (
+            <div key={n.key} style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {n.icon ? <Icon d={n.icon} size={12} color="#8A97AD" /> : null}
+              {n.label}
+            </div>
+          ) : n.group ? (
+            // رأس مجموعة قابلة للطي — نفس شكل بند القائمة، والسهم يدور مع الفتح
+            <button
+              key={n.key}
+              onClick={() => setNavGroups((o) => ({ ...o, [n.group!]: !o[n.group!] }))}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '11px 13px',
+                borderRadius: 11,
+                border: 'none',
+                background: 'transparent',
+                color: '#42506B',
+                fontWeight: 400,
+                fontSize: 13,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'right',
+              }}
+            >
+              {n.label}
+              <span style={{ marginInlineStart: 'auto', display: 'inline-flex', transition: 'transform .2s', transform: navGroups[n.group!] ? 'rotate(180deg)' : 'none' }}>
+                <Icon d="M6 9l6 6 6-6" size={14} color="#8A97AD" strokeWidth={2.4} />
+              </span>
+            </button>
+          ) : n.groupOf && !navGroups[n.groupOf] ? null : (
             <button
               key={n.key}
               className={n.sub ? 'mnav-sub' + (allOpen || n.pin ? '' : ' mnav-collapsed') : ''}
@@ -2536,7 +2583,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                 }}
               >
                 <Icon d="M5 8h14l-1.2 10.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8z M9 8V6a3 3 0 0 1 6 0v2" size={16} color="#2563EB" />
-                {vm.role === 'ai' ? 'قائمة الاعتماد' : 'سلة الترشيحات'}
+                {vm.role === 'ai' ? 'قائمة الحصر' : 'سلة الترشيحات'}
                 {vm.hasBasketBadge && (
                   <span
                     style={{
