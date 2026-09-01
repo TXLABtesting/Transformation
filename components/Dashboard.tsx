@@ -742,11 +742,6 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
             {pendingShown} {pendingShown === 1 ? 'توزيع بانتظار اعتمادك' : 'توزيعات بانتظار اعتمادك'}
           </span>
         )}
-        {auto && (
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '6px 14px' }}>
-            التوزيع آلي من «فترة التحويل» المختارة عند الإدخال — صفحة عرض فقط
-          </span>
-        )}
         {bt.showEntity && (
           <FilterSelect value={entF} options={entOptions} minWidth={170} onChange={setEntF} />
         )}
