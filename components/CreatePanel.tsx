@@ -3,7 +3,7 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail, opsPeriodOptions, OPS_NO_PRIORITY } from '@/lib/domain';
+import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, PATHS, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail, opsPeriodOptions, OPS_NO_PRIORITY } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate, downloadOpsTemplate } from '@/lib/export';
 import { useSvcCatalog, svcCatalogFor, svcCatalogEntities } from '@/lib/svcCatalog';
@@ -1780,28 +1780,57 @@ function FService({
 // STEP: BULK
 function BulkStep({ vm }: { vm: VM }) {
   const s = vm.store;
-  // فريق عمل المسار يرفع بالنيابة عن جهة — اختيار الجهة شرط قبل الرفع
+  // فريق عمل المسار يرفع بالنيابة عن جهة — اختيار الجهة والمسار شرط قبل الرفع
   const teamBulk = s.role === 'path';
   const entityChosen = !teamBulk || !!s.ui.bulkEntity;
+  // مسارات الرفع المتاحة: للمشرف (والنسخة التجريبية) كل مسارات المنصة،
+  // ولرئيس المسار مساراته المسندة فقط
+  const bulkStreamIds =
+    s.sessionAdmin || process.env.NEXT_PUBLIC_DEMO_MODE === '1'
+      ? PATHS.map((p) => p.id)
+      : (s.myPaths || []).filter((id) => PATHS.some((p) => p.id === id));
+  const bulkStreams = (bulkStreamIds.length ? bulkStreamIds : PATHS.map((p) => p.id)).map(
+    (id) => PATHS.find((p) => p.id === id)!
+  );
+  const bulkPath = s.ui.draft?.path || s.myPath;
   return (
     <div>
       {teamBulk && (
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 8 }}>
-            الجهة الاتحادية <span style={{ color: '#D23B45' }}>*</span>
-          </label>
-          <select
-            value={s.ui.bulkEntity || ''}
-            onChange={(e) => s.setBulkEntity(e.target.value)}
-            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 12, padding: '12px 14px', fontSize: 13, fontFamily: 'inherit', color: '#16233F', backgroundColor: '#fff', outline: 'none' }}
-          >
-            <option value="">اختر الجهة…</option>
-            {svcCatalogEntities().map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
-          <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
-            تُنسب كل مدخلات الملف لهذه الجهة — المكتمل منها يدخل قائمة المراجعة مباشرة والناقص يبقى مسودة لدى الجهة
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+          <div style={{ flex: '1 1 260px', minWidth: 220 }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 8 }}>
+              الجهة الاتحادية <span style={{ color: '#D23B45' }}>*</span>
+            </label>
+            <select
+              value={s.ui.bulkEntity || ''}
+              onChange={(e) => s.setBulkEntity(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 12, padding: '12px 14px', fontSize: 13, fontFamily: 'inherit', color: '#16233F', backgroundColor: '#fff', outline: 'none' }}
+            >
+              <option value="">اختر الجهة…</option>
+              {svcCatalogEntities().map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+            <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
+              تُنسب كل مدخلات الملف لهذه الجهة — المكتمل منها يدخل قائمة المراجعة مباشرة والناقص يبقى مسودة لدى الجهة
+            </div>
+          </div>
+          <div style={{ flex: '1 1 220px', minWidth: 200 }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 800, color: '#1F2D49', marginBottom: 8 }}>
+              المسار <span style={{ color: '#D23B45' }}>*</span>
+            </label>
+            <select
+              value={bulkPath}
+              onChange={(e) => s.setBulkStream(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 12, padding: '12px 14px', fontSize: 13, fontFamily: 'inherit', color: '#16233F', backgroundColor: '#fff', outline: 'none' }}
+            >
+              {bulkStreams.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
+              قالب الملف وأعمدته يتبعان المسار المختار — تغييره يلغي أي صفوف قُرئت بالقالب السابق
+            </div>
           </div>
         </div>
       )}

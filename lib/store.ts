@@ -338,6 +338,7 @@ type Actions = {
   /** فريق عمل مسار العمليات: رفع ملف بالنيابة عن جهة يختارها */
   openTeamBulk: () => void;
   setBulkEntity: (v: string) => void;
+  setBulkStream: (v: string) => void;
   closeInline: () => void;
   confirmInlineAdd: () => void;
   cancelConfirmAdd: () => void;
@@ -1441,6 +1442,19 @@ export const useStore = create<Store>((set, get) => {
       });
     },
     setBulkEntity: (v) => setUi({ bulkEntity: v }),
+    // رفع الفريق: اختيار المسار يحدد قالب الملف وأعمدته — تغييره يلغي أي
+    // صفوف قُرئت بقالب المسار السابق
+    setBulkStream: (v) =>
+      set((s) => ({
+        ui: {
+          ...s.ui,
+          activePath: v,
+          draft: s.ui.draft ? { ...s.ui.draft, path: v } : s.ui.draft,
+          bulkRows: [],
+          bulkLoaded: false,
+          bulkLaunches: [],
+        },
+      })),
     mBack: () => {
       // flow: (path) → method → type (manual) → form | bulk
       const s = get();
