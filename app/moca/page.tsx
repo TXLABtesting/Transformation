@@ -4,7 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMoca } from '@/lib/mocaStore';
 import { useStore } from '@/lib/store';
+import { mocaUnitOptions } from '@/lib/moca';
 import { MocaWorkspace } from '@/components/MocaWorkspace';
+
+// مفاتيح كل وحدات الوزارة وقطاعاتها — نطاق المشرف حين يعمل منسقاً بالنيابة
+const ALL_MOCA_UNITS = mocaUnitOptions().map((o) => (o.sector ? o.unitId + '::' + o.sector : o.unitId));
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
 
@@ -26,6 +30,7 @@ export default function MocaPage() {
   const mainRole = useStore((s) => s.role);
   const mainEntity = useStore((s) => s.entityName);
   const mainMocaUnits = useStore((s) => s.sessionMocaUnits);
+  const mainAdmin = useStore((s) => s.sessionAdmin);
 
   useEffect(() => {
     hydrate();
@@ -45,19 +50,27 @@ export default function MocaPage() {
     //  - مشرف النظام → لوحة الإدارة الموحدة على /dashboard
     //  - أي دور آخر جهته ليست الوزارة → لوحته الخاصة على /dashboard
     const isMocaUser = /وزارة شؤون مجلس الوزراء/.test(String(mainEntity || ''));
-    // المشرف لا يُحتجز هنا إلا إن جاء بقصد المعاينة (?preview=1) من مبدّل
-    // الجهات — ويعاينها بصلاحيته الفعلية على الخادم: اطلاع واعتماد لا كتابة
-    if ((mainRole === 'admin' && !preview) || !isMocaUser) {
+    // المشرف بـ ?preview=1 يدخل نسخة الوزارة أياً كانت جهة جلسته — قصد
+    // المعاينة كافٍ، ولا يُشترط أن يكون قد بدّل الجهة في المنصة أولاً
+    const adminPreview = mainAdmin && preview;
+    if ((mainRole === 'admin' && !preview) || (!isMocaUser && !adminPreview)) {
       router.replace('/dashboard');
       return;
     }
-    syncSession(mainRole === 'coord' ? 'coord' : 'committee', mainEntity, mainMocaUnits);
-  }, [mainHydrated, mainAuthChecked, mainView, mainRole, mainEntity, mainMocaUnits, preview, syncSession, router]);
+    // المشرف بدور المنسق يعمل بالنيابة على كل وحدات الوزارة — مبدّل الوحدات
+    // يعرضها كلها وتُنسب الإضافات للوحدة المختارة
+    const units = mainAdmin && mainRole === 'coord' ? ALL_MOCA_UNITS : mainMocaUnits;
+    syncSession(mainRole === 'coord' ? 'coord' : 'committee', mainEntity, units);
+  }, [mainHydrated, mainAuthChecked, mainView, mainRole, mainEntity, mainMocaUnits, mainAdmin, preview, syncSession, router]);
 
   // لا نرسم شيئاً قبل قراءة التخزين المحلي تفادياً لاختلاف SSR/CSR
   const liveBlocked =
     !DEMO &&
-    (!mainHydrated || !mainAuthChecked || mainView === 'login' || (mainRole === 'admin' && !preview) || !/وزارة شؤون مجلس الوزراء/.test(String(mainEntity || '')));
+    (!mainHydrated ||
+      !mainAuthChecked ||
+      mainView === 'login' ||
+      (mainRole === 'admin' && !preview) ||
+      (!/وزارة شؤون مجلس الوزراء/.test(String(mainEntity || '')) && !(mainAdmin && preview)));
   if (!hydrated || liveBlocked)
     return <div style={{ minHeight: '100vh', background: '#EEF2F9' }} />;
   return <MocaWorkspace />;

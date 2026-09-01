@@ -8,9 +8,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuthUser } from '@/lib/security/auth';
-import { handleApiError } from '@/lib/security/http';
+import { handleApiError, getIp } from '@/lib/security/http';
 import { isGlobalRole } from '@/lib/security/rbac';
 import { assertMocaView, canWriteMoca, mocaInScope, mocaScopesForUser } from '@/lib/security/moca-access';
+import { writeAuditLog } from '@/lib/security/audit';
 import { MOCA_ENTRY_COLS } from '@/lib/server/moca-proj-map';
 
 export const runtime = 'nodejs';
@@ -40,8 +41,20 @@ export async function POST(req: NextRequest) {
 
     if (!global && !writer) return NextResponse.json({ ok: true, skipped: true });
 
-    // ---- اللجنة/المشرف: حقول القرار فقط على الصفوف القائمة ----
-    if (global) {
+    const superAdmin = u.roles.includes('system_admin');
+    const audit = (action: string, metadata: object) =>
+      writeAuditLog({
+        actorUserId: u.id,
+        action,
+        resourceType: 'moca',
+        ipAddress: getIp(req),
+        userAgent: req.headers.get('user-agent'),
+        metadata: metadata as never,
+      });
+
+    // ---- اللجنة: حقول القرار فقط على الصفوف القائمة ----
+    if (global && !superAdmin) {
+      const decided: string[] = [];
       for (const e of entries) {
         const id = str(e.id);
         if (!id) continue;
@@ -61,8 +74,82 @@ export async function POST(req: NextRequest) {
             batchNote: str(e.batchNote) ?? null,
           },
         });
+        decided.push(id);
       }
+      await audit('moca_decisions', { entries: decided.length, ids: decided.slice(0, 200) });
       return NextResponse.json({ ok: true, mode: 'decisions' });
+    }
+
+    // ---- مشرف النظام: كتابة كاملة بالنيابة على كل الوحدات (مدقَّقة) ----
+    // تحديث/إنشاء بالمعرّف فقط. الحذف بالغياب مقصور على ما أنشأه المشرف
+    // بنفسه — صفوف المنسقين لا يمسحها غياب من متصفح غير محدّث.
+    if (superAdmin) {
+      const touched: string[] = [];
+      for (const e of entries) {
+        const id = str(e.id);
+        const unitId = String(e.unitId || '');
+        if (!unitId) continue;
+        const fields: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(e)) if (!MOCA_ENTRY_COLS.has(k)) fields[k] = v;
+        const ret = (e.ret || null) as { type?: string; note?: string; at?: string } | null;
+        const data = {
+          unitId,
+          unitSector: String(e.unitSector || ''),
+          wf: str(e.wf) || 'draft',
+          retType: ret ? String(ret.type || 'info') : null,
+          retNote: ret ? String(ret.note || '') : null,
+          retAt: ret ? dt(ret.at) ?? new Date() : null,
+          fields: fields as object,
+          execBatch: str(e.execBatch) ?? null,
+          startDate: str(e.startDate) ?? null,
+          endDate: str(e.endDate) ?? null,
+          batchWf: str(e.batchWf) ?? null,
+          batchRet: str(e.batchRet) ?? null,
+          batchNote: str(e.batchNote) ?? null,
+          submittedAt: dt(e.submittedAt),
+          decidedAt: dt(e.decidedAt),
+        };
+        if (id) {
+          const cur = await prisma.mocaEntry.findUnique({ where: { id }, select: { id: true } });
+          if (cur) await prisma.mocaEntry.update({ where: { id }, data });
+          else await prisma.mocaEntry.create({ data: { ...data, id, createdById: u.id } });
+          touched.push(id);
+        } else {
+          const created = await prisma.mocaEntry.create({ data: { ...data, createdById: u.id } });
+          touched.push(created.id);
+        }
+      }
+      await prisma.mocaEntry.deleteMany({
+        where: { createdById: u.id, wf: { not: 'approved' }, id: { notIn: touched.length ? touched : ['__none__'] } },
+      });
+      const ucTouched: string[] = [];
+      for (const c of useCases) {
+        const id = str(c.id);
+        const data = {
+          entryId: str(c.entryId) ?? null,
+          unitId: String(c.unitId || ''),
+          unitSector: String(c.unitSector || ''),
+          mainProcess: String(c.mainProcess || ''),
+          subProcess: String(c.subProcess || ''),
+          status: String(c.status || ''),
+          updates: (Array.isArray(c.updates) ? c.updates : []) as object,
+        };
+        if (!data.unitId) continue;
+        if (id) {
+          const cur = await prisma.mocaUseCase.findUnique({ where: { id }, select: { id: true } });
+          if (cur) await prisma.mocaUseCase.update({ where: { id }, data });
+          else await prisma.mocaUseCase.create({ data: { ...data, id, createdById: u.id } });
+          ucTouched.push(id);
+        } else {
+          const created = await prisma.mocaUseCase.create({ data: { ...data, createdById: u.id } });
+          ucTouched.push(created.id);
+        }
+      }
+      await prisma.mocaUseCase.deleteMany({
+        where: { createdById: u.id, id: { notIn: ucTouched.length ? ucTouched : ['__none__'] } },
+      });
+      await audit('moca_admin_sync', { entries: touched.length, useCases: ucTouched.length });
+      return NextResponse.json({ ok: true, mode: 'admin', entries: touched.length, useCases: ucTouched.length });
     }
 
     // ---- منسق الوزارة: محتوى وحدته إن أُسندت له، وإلا محتوى الوزارة كلها ----
@@ -164,6 +251,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await audit('moca_content_sync', { entries: keepIds.length, useCases: ucKeep.length });
     return NextResponse.json({ ok: true, mode: 'content', entries: keepIds.length, useCases: ucKeep.length });
   } catch (e) {
     return handleApiError(e);

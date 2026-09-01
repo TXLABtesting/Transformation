@@ -266,6 +266,12 @@ function Header() {
   const [prof, setProf] = useState(false);
   // تسجيل الخروج عبر جلسة المنصة نفسها (النسخة الحية تنهي جلسة الخادم أيضاً)
   const signOut = useStore((st) => st.logout);
+  // المشرف في النسخة الحية: مبدّلا الأدوار والجهات الموحّدان في ترويسة الوزارة
+  const mainAdmin = useStore((st) => st.sessionAdmin);
+  const mainEntities = useStore((st) => st.sessionEntities);
+  const setMainRole = useStore((st) => st.setRole);
+  const setMainEntity = useStore((st) => st.setEntityName);
+  const setMainAllEntities = useStore((st) => st.setAllEntities);
   // مبدّل الدور والنطاق للنسخة التجريبية فقط — في النسخة الحية يُشتقان من الجلسة
   const demo = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
   return (
@@ -285,55 +291,58 @@ function Header() {
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
         {demo ? (
-          /* مبدّل الدور — نسخة العرض فقط */
-          <div
-            style={{
-              display: 'flex',
-              background: '#F4F7FC',
-              border: '1px solid #E7ECF4',
-              boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-              borderRadius: 12,
-              padding: 3,
-              gap: 2,
+          /* مبدّل الدور — نسخة العرض: قائمة منسدلة موحّدة كالمنصة؛ المنسق
+             يبقى في نسخة الوزارة وبقية الأدوار تعود بلوحاتها في المنصة */
+          <select
+            data-r="hdrroles"
+            value={s.role === 'coord' ? 'coord' : 'ai'}
+            onChange={(e) => {
+              const k = e.target.value;
+              if (k === 'coord') { s.setRole('coord'); return; }
+              try {
+                const raw = window.localStorage.getItem('aitp_state');
+                const d = raw ? JSON.parse(raw) : {};
+                d.role = k;
+                d.view = 'dashboard';
+                window.localStorage.setItem('aitp_state', JSON.stringify(d));
+              } catch { /* ignore */ }
+              window.location.href = BASE + '/dashboard/';
             }}
+            title="معاينة اللوحات بالأدوار"
+            style={{ height: 38, maxWidth: 250, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', backgroundColor: '#fff', borderRadius: 11, padding: '0 10px', fontSize: 12, fontWeight: 700, color: '#1D4ED8', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            {/* مبدّل الأدوار الموحّد نفسه: المنسق يبقى في نسخة الوزارة،
-                وبقية الأدوار تعود بلوحاتها في المنصة القياسية */}
             {ROLE_PILLS.map((r) => (
-              <button
-                key={r.key}
-                onClick={() => {
-                  if (r.key === 'coord') { s.setRole('coord'); return; }
-                  try {
-                    const raw = window.localStorage.getItem('aitp_state');
-                    const d = raw ? JSON.parse(raw) : {};
-                    d.role = r.key;
-                    d.view = 'dashboard';
-                    window.localStorage.setItem('aitp_state', JSON.stringify(d));
-                  } catch { /* ignore */ }
+              <option key={r.key} value={r.key}>{r.label}</option>
+            ))}
+          </select>
+        ) : (
+          /* النسخة الحية: هوية الجهة والدور من الجلسة. المشرف يحمل مبدّل
+             الأدوار الموحّد نفسه — المنسق واللجنة داخل نسخة الوزارة، وبقية
+             الأدوار تعيده للوحاتها في المنصة */
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flexWrap: 'wrap' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{MOCA_MINISTRY}</div>
+              <div style={{ fontSize: 11.5, color: '#8E9AB0' }}>{role.label}</div>
+            </div>
+            {mainAdmin && (
+              <select
+                data-r="hdrroles"
+                value={s.role === 'coord' ? 'coord' : 'ai'}
+                onChange={(e) => {
+                  const k = e.target.value;
+                  if (k === 'coord') { setMainRole('coord'); return; }
+                  if (k === 'ai') { setMainRole('ai'); return; }
+                  setMainRole(k as (typeof ROLE_PILLS)[number]['key']);
                   window.location.href = BASE + '/dashboard/';
                 }}
-                style={{
-                  borderRadius: 9,
-                  padding: '8px 13px',
-                  fontWeight: 700,
-                  fontSize: 11.5,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  ...(r.key === 'coord' && s.role === 'coord'
-                    ? { background: '#fff', color: '#1D4ED8', boxShadow: '0 1px 4px rgba(15,31,61,.10)', border: '1px solid #D8E3F5' }
-                    : { background: 'transparent', color: '#54627B', border: '1px solid transparent' }),
-                }}
+                title="معاينة اللوحات بالأدوار"
+                style={{ height: 38, maxWidth: 250, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', backgroundColor: '#fff', borderRadius: 11, padding: '0 10px', fontSize: 12, fontWeight: 700, color: '#1D4ED8', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}
               >
-                {r.label}
-              </button>
-            ))}
-          </div>
-        ) : (
-          /* النسخة الحية: هوية الجهة والدور من الجلسة — بلا أي مبدّل */
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#13213C' }}>{MOCA_MINISTRY}</div>
-            <div style={{ fontSize: 11.5, color: '#8E9AB0' }}>{role.label}</div>
+                {ROLE_PILLS.map((r) => (
+                  <option key={r.key} value={r.key}>{r.label}</option>
+                ))}
+              </select>
+            )}
           </div>
         )}
       </div>
@@ -366,6 +375,26 @@ function Header() {
               .map((en) => (
                 <option key={en} value={en}>{en}</option>
               ))}
+          </select>
+        )}
+        {/* النسخة الحية: مبدّل الجهات الموحّد للمشرف — اختيار جهة أخرى أو
+            «كل الجهات» يعود به إلى المنصة على النطاق المختار */}
+        {!demo && mainAdmin && (
+          <select
+            value={MOCA_MINISTRY}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === MOCA_MINISTRY) return;
+              if (v === 'كل الجهات') setMainAllEntities(true);
+              else setMainEntity(v);
+              window.location.href = BASE + '/dashboard/';
+            }}
+            title="التنقل بين الجهات"
+            style={{ height: 38, maxWidth: 230, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', backgroundColor: '#fff', borderRadius: 11, padding: '0 10px', fontSize: 12, fontWeight: 700, color: '#13213C', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}
+          >
+            {Array.from(new Set(['كل الجهات', ...(mainEntities || []).map((x) => x.name), MOCA_MINISTRY].filter(Boolean))).map((en) => (
+              <option key={en} value={en}>{en}</option>
+            ))}
           </select>
         )}
         {/* نطاق المنسق: الجهة ثم القطاع — تبديل في النسخة التجريبية، وعرض

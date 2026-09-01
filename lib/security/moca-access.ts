@@ -86,7 +86,10 @@ export async function mocaScopeForUser(user: AuthUser): Promise<MocaScope | null
 
 /** المدخلات المرئية: الأدوار العامة ترى المُرسَل وما بعده، والمنسق يرى نطاقاته */
 export async function mocaEntryWhere(user: AuthUser) {
-  if (isGlobalRole(user)) return { wf: { not: 'draft' } };
+  // مشرف النظام يعمل بالنيابة على كل الوحدات فيرى المسودات أيضاً؛ اللجنة
+  // ترى المُرسل فما بعده فقط (مسودات الوحدات داخلية)
+  if (isGlobalRole(user))
+    return user.roles.includes('system_admin') ? {} : { wf: { not: 'draft' } };
   const scopes = await mocaScopesForUser(user);
   if (!scopes.length) return {}; // منسق بلا إسناد وحدة: مدخلات الوزارة كلها
   const clause = (sc: MocaScope) =>

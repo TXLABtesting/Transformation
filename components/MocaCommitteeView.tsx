@@ -27,17 +27,16 @@ const unitLabel = (e: { unitId: string; unitSector?: string }) =>
 
 const txt = (v: unknown) => String(v ?? '').trim() || '—';
 
-function Header({ title, count, pending, sub }: { title: string; count: number; pending?: number; sub: string }) {
+function Header({ title, pending, sub }: { title: string; pending?: number; sub?: string }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{MOCA_MINISTRY}</div>
-        <span style={{ background: '#EAF1FE', color: '#1D4ED8', borderRadius: 999, padding: '4px 12px', fontSize: 11.5, fontWeight: 800 }}>{title} · {count}</span>
+        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{title}</div>
         {!!pending && (
           <span style={{ background: '#FFF3DE', color: '#B45309', borderRadius: 999, padding: '4px 12px', fontSize: 11.5, fontWeight: 800 }}>بانتظار اعتماد اللجنة: {pending}</span>
         )}
       </div>
-      <div style={{ fontSize: 12, color: '#9AA6BC', marginTop: 4 }}>{sub}</div>
+      {sub ? <div style={{ fontSize: 12, color: '#9AA6BC', marginTop: 4 }}>{sub}</div> : null}
     </div>
   );
 }
@@ -115,7 +114,7 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
     const pending = visible.filter((e) => e.wf === 'pending' && !e.ret).length;
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Header title="حصر المهام والعمليات" count={visible.length} pending={pending} sub="مدخلات جهات الوزارة تصل هنا لاعتماد اللجنة الوطنية — اعتماد أو إعادة بملاحظات أو رفض" />
+        <Header title={'حصر مهام وعمليات ' + MOCA_MINISTRY} pending={pending} sub="اعتماد أو إعادة بملاحظات أو رفض" />
         <div style={{ ...card, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 980 }}>
             <thead>
@@ -275,7 +274,7 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
   const lastUpdate = (u: MocaUseCase) => (u.updates.length ? u.updates[u.updates.length - 1] : null);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Header title="حالات الاستخدام" count={useCases.length} sub="حالات الاستخدام التي تعمل عليها جهات الوزارة وتحديثاتها — للمتابعة" />
+      <Header title={'حالات استخدام ' + MOCA_MINISTRY} />
       <div style={{ ...card, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
           <thead>
