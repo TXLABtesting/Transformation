@@ -196,7 +196,7 @@ export function PublicNav({ tab, onNav, onLogin }: { tab: PublicTab; onNav: (t: 
 export function PublicFooter() {
   return (
     <div style={{ textAlign: 'center', padding: '26px 0', fontSize: 11.5, color: '#8A97AD', fontWeight: 600 }}>
-      جميع الحقوق محفوظة © 2026 مشروع الذكاء الاصطناعي المساعد
+      © جميع الحقوق محفوظة لمشروع الذكاء الاصطناعي المساعد لحكومة دولة الإمارات 2026
     </div>
   );
 }
