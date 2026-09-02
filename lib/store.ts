@@ -547,13 +547,18 @@ function defaultUi(): UiState {
   };
 }
 
+const DEFAULT_ROLE: RoleKey =
+  (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) ||
+  (process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? 'ai' : 'coord');
+
 function initialState(): State {
   return {
     view: 'login',
     lang: 'ar',
     // Default role for the delivered build (the switcher is removed): the
     // entity rep. Production will map roles from the IdP / users table.
-    role: (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey) || 'coord',
+    // The demo opens on the national-committee view; the switcher covers the rest.
+    role: DEFAULT_ROLE,
     myPath: 'ops',
     // streams this coordinator is assigned to (entity rep can assign several);
     // the header shows a switcher when there is more than one
@@ -782,11 +787,7 @@ export const useStore = create<Store>((set, get) => {
           lang: (saved!.lang as State['lang']) || 'ar',
           entityName: (saved!.entityName as string) || DEFAULT_ENTITY,
           // الأدوار الملغاة (نائب رئيس المسار / الأمانة العامة) تُرحَّل تلقائياً
-          role: migrateRole(
-            fresh
-              ? (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey)
-              : (saved!.role as RoleKey) || (process.env.NEXT_PUBLIC_DEFAULT_ROLE as RoleKey)
-          ),
+          role: migrateRole(fresh ? DEFAULT_ROLE : (saved!.role as RoleKey) || DEFAULT_ROLE),
           myPath: (saved!.myPath as string) || 'ops',
           myPaths: Array.isArray(saved!.myPaths) && (saved!.myPaths as string[]).length ? (saved!.myPaths as string[]) : s.myPaths,
           setupDone: !!saved!.setupDone,

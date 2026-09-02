@@ -52,7 +52,7 @@ export function AgentMarketplace() {
   const [q, setQ] = useState('');
 
   const sections = useMemo(() => {
-    const match = (a: Agent) => !q || norm(a.name + a.by + a.feats.join(' ') + a.cat).includes(norm(q));
+    const match = (a: Agent) => !q || norm(a.name + (ENTS[a.by] || '') + a.feats.join(' ') + a.cat).includes(norm(q));
     const list = AGENTS.filter(match);
     const byCat: { name: string; agents: (Agent & typeof BLOOMS[number] & { tag: string; ent: string })[] }[] = [];
     list.forEach((a) => {
@@ -180,13 +180,13 @@ export function AgentMarketplace() {
                       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 11, borderTop: '1px solid #EFF3F9', marginTop: 16, padding: '14px 4px 0' }}>
                         <div style={{ width: 38, height: 38, borderRadius: '50%', flex: '0 0 auto', background: '#EAF1FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#7C95BF" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="8.2" r="3.6" />
-                            <path d="M4.8 20c.7-3.7 3.7-5.8 7.2-5.8s6.5 2.1 7.2 5.8" />
+                            <path d="M4 21V7l8-4 8 4v14" />
+                            <path d="M4 21h16" />
+                            <path d="M9 10h.01M15 10h.01M9 14h.01M15 14h.01" />
                           </svg>
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 12.5, fontWeight: 900, color: '#0F1F3D' }}>{a.by}</div>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#5E6E8C', marginTop: 1 }}>{a.ent}</div>
+                          <div style={{ fontSize: 12.5, fontWeight: 900, color: '#0F1F3D' }}>{a.ent}</div>
                         </div>
                       </div>
                     </div>
