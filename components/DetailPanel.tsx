@@ -343,6 +343,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
                       <DetailCell label="مستوى الجاهزية">{isStgBlocked(a.transformScore) ? 'لا ينطبق (صفر)' : a.readinessLevel}</DetailCell>
                       <DetailCell label="مستوى الأثر المتوقع من التحول">{isStgBlocked(a.transformScore) ? 'لا ينطبق (صفر)' : a.impactScore}</DetailCell>
                     </DetailGrid>
+                    <DetailGrid cols={1}>
+                      <DetailCell label="فترة التحويل للذكاء الاصطناعي المساعد">{isStgBlocked(a.transformScore) ? 'لا ينطبق' : a.transformPeriod || '—'}</DetailCell>
+                    </DetailGrid>
                     <DetailGrid cols={3}>
                       <DetailCell label="مستوى المخاطر"><LevelPill v={a.riskLevel} /></DetailCell>
                       <DetailCell label="أولوية الاختيار">
