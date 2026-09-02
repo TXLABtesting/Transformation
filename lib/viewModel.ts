@@ -1331,7 +1331,10 @@ function build(s: Store) {
         // أنه دخل نسخة الوزارة عن قصد فلا تُعيده الحراسة إلى لوحة الإدارة.
         if (/وزارة شؤون مجلس الوزراء/.test(v) && (rawRole === 'coord' || s.sessionAdmin)) {
           const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
-          window.location.href = base + '/moca/' + (s.sessionAdmin ? '?preview=1' : '');
+          // الانتقال تحميل كامل يعيد الدور من الجلسة — الدور المُعايَن يُمرَّر
+          // في العنوان حتى يهبط المشرف بدور المنسق لا اللجنة إن كان يعاينه
+          window.location.href =
+            base + '/moca/' + (s.sessionAdmin ? '?preview=1' + (rawRole === 'coord' ? '&as=coord' : '') : '');
         }
       },
     };

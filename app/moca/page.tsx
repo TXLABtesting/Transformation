@@ -1,6 +1,6 @@
 // نسخة وزارة شؤون مجلس الوزراء — مسار مستقل لا يمس منصة الجهات الاتحادية
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMoca } from '@/lib/mocaStore';
 import { useStore } from '@/lib/store';
@@ -17,8 +17,14 @@ export default function MocaPage() {
   // مشرف النظام يفتح نسخة الوزارة للمعاينة من مبدّل الجهات عبر ?preview=1
   // (تُقرأ من العنوان مباشرة — useSearchParams يفرض حدود Suspense على صفحة مُهيّأة مسبقاً)
   const [preview, setPreview] = useState(false);
+  // ?as=coord: المشرف كان يعاين دور المنسق قبل الانتقال — التحميل الكامل
+  // يعيد دوره من الجلسة، فيُعاد تثبيت المعاينة مرة واحدة عند الهبوط
+  const [asCoord, setAsCoord] = useState(false);
+  const appliedAs = useRef(false);
   useEffect(() => {
-    setPreview(new URLSearchParams(window.location.search).get('preview') === '1');
+    const q = new URLSearchParams(window.location.search);
+    setPreview(q.get('preview') === '1');
+    setAsCoord(q.get('as') === 'coord');
   }, []);
   const hydrate = useMoca((s) => s.hydrate);
   const hydrated = useMoca((s) => s._hydrated);
@@ -57,11 +63,19 @@ export default function MocaPage() {
       router.replace('/dashboard');
       return;
     }
+    // ?as=coord (مرة واحدة عند الهبوط): فحص الجلسة أعاد دور المشرف الحقيقي،
+    // فتُعاد معاينة المنسق التي كان عليها قبل الانتقال — وبعدها يتحكم مبدّل
+    // الأدوار في الترويسة كالمعتاد
+    if (mainAdmin && asCoord && !appliedAs.current && mainRole !== 'coord') {
+      appliedAs.current = true;
+      useStore.getState().setRole('coord');
+      return;
+    }
     // المشرف بدور المنسق يعمل بالنيابة على كل وحدات الوزارة — مبدّل الوحدات
     // يعرضها كلها وتُنسب الإضافات للوحدة المختارة
     const units = mainAdmin && mainRole === 'coord' ? ALL_MOCA_UNITS : mainMocaUnits;
     syncSession(mainRole === 'coord' ? 'coord' : 'committee', mainEntity, units);
-  }, [mainHydrated, mainAuthChecked, mainView, mainRole, mainEntity, mainMocaUnits, mainAdmin, preview, syncSession, router]);
+  }, [mainHydrated, mainAuthChecked, mainView, mainRole, mainEntity, mainMocaUnits, mainAdmin, preview, asCoord, syncSession, router]);
 
   // لا نرسم شيئاً قبل قراءة التخزين المحلي تفادياً لاختلاف SSR/CSR
   const liveBlocked =
