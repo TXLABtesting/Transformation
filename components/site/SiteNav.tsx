@@ -27,6 +27,7 @@ const PUBLIC_LINKS: NavLink[] = [
 /** روابط الأعضاء — تبقى مخفية حتى تسجيل الدخول (وفق التصميم) */
 const MEMBER_LINKS: NavLink[] = [
   { href: '/library', label: 'المنشورات' },
+  ...(process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? [{ href: '/marketplace', label: 'سوق المساعدين' }] : []),
   { href: '/contact', label: 'تواصل معنا' },
 ];
 
