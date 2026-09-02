@@ -3,7 +3,7 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, PATHS, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail, opsPeriodOptions, OPS_NO_PRIORITY } from '@/lib/domain';
+import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, PATHS, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail, opsPeriodOptions, streamPeriodOptions, OPS_NO_PRIORITY } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate, downloadOpsTemplate } from '@/lib/export';
 import { useSvcCatalog, svcCatalogFor, svcCatalogEntities } from '@/lib/svcCatalog';
@@ -1499,6 +1499,24 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     {derivedPill('أولوية الاختيار', !!calc, calc ? cat + ' · ' + calc.total + '/30' : 'تُحسب تلقائياً بعد استكمال التقييمات الستة ومستوى المخاطر', calc ? { c, bg } : undefined)}
                     {derivedYesNo('أولوية التحول', activityTransformYes('strategy', a))}
+                  </div>
+                );
+              })()}
+              {/* فترة التحويل = التوزيع الآلي على دفعات الإطلاق (كمسار العمليات):
+                  مطلوبة لكل نشاط قابل للتحول، ولا تنطبق على «غير قابل» */}
+              {(() => {
+                const blocked = isStgBlocked(a.transformScore);
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+                    {blocked
+                      ? field(
+                          'فترة التحويل للذكاء الاصطناعي المساعد',
+                          <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px', minHeight: 44, display: 'flex', alignItems: 'center' }}>
+                            لا ينطبق — غير قابل للتحول
+                          </div>,
+                          false
+                        )
+                      : selA(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', streamPeriodOptions('strategy'))}
                   </div>
                 );
               })()}

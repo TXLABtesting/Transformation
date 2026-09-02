@@ -62,7 +62,8 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   TWO_STEP_PHASES,
   type Item,
   type RoleKey,
-  itemActivities, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload } from './domain';
+  itemActivities, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload,
+  isAutoPlacedStream, periodBatchOf as periodBatchFor } from './domain';
 import { stripHtml } from './richtext';
 import { useMoca } from './mocaStore';
 import { FEDERAL_ENTITIES } from './entities';
@@ -1513,20 +1514,12 @@ function build(s: Store) {
   const batchTables = btStream
     ? (() => {
         const bPath = btStream;
-        // مسار العمليات: التوزيع آلي من «فترة التحويل» المختارة عند الإدخال —
-        // الصفحة عرض فقط لكل الأدوار ولا دورة اعتماد ثانية (الاعتماد مرة
-        // واحدة على المدخل نفسه)
-        const autoPlaced = bPath === 'ops';
+        // العمليات والاستراتيجية: التوزيع آلي من «فترة التحويل» المختارة عند
+        // الإدخال — الصفحة عرض فقط لكل الأدوار ولا دورة اعتماد ثانية
+        // (الاعتماد مرة واحدة على المدخل نفسه)
+        const autoPlaced = isAutoPlacedStream(bPath);
         // «الدفعة X - شهر» → دفعة الإطلاق المطابقة + الشهر
-        const periodBatchOf = (period?: string): { batch: string; month: string } | null => {
-          const v = String(period || '').trim();
-          if (!v) return null;
-          for (const b of streamLaunchBatches(bPath)) {
-            const short = b.name.replace('إطلاق ', '');
-            if (v.startsWith(short + ' - ')) return { batch: b.name, month: v.slice(short.length + 3).trim() };
-          }
-          return null;
-        };
+        const periodBatchOf = (period?: string) => periodBatchFor(period, bPath);
         return {
           streamName: pathById(bPath).name,
           autoPlaced,
@@ -2445,7 +2438,9 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
       if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تم الرفض من ') + (i.ret.from || 'فريق عمل المسار في المشروع'), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
       if (w === 'exec' || w === 'launch') {
         // معتمد ولم يوزَّع بعد على دفعة إطلاق: التنبيه يطلب التوزيع صراحة
-        const unplaced = itemActivities(i).some((a) => placementState(i, a) === 'none');
+        const unplaced = itemActivities(i).some(
+          (a) => placementState(i, a) === 'none' && !periodBatchFor(a.transformPeriod, i.path)
+        );
         push(
           'x-' + i.id,
           'ok',

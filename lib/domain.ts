@@ -421,10 +421,12 @@ export function activityMissing(path: string, a: ActivityDetail): string[] {
     need(a.usageIntensity, 'كثافة الاستخدام');
     need(a.outputClarity, 'وضوح المخرجات وقابليتها للمراجعة');
     need(a.transformScore, 'قابلية التحول');
-    // «غير قابل للتحول» يغلق الحقلين ويحتسبهما صفراً
+    // «غير قابل للتحول» يغلق الحقلين ويحتسبهما صفراً — وفترة التحويل مثلهما:
+    // التوزيع الآلي كمسار العمليات، فكل مهمة قابلة تصل معتمدةً بدفعتها
     if (!isStgBlocked(a.transformScore)) {
       need(a.readinessLevel, 'مستوى الجاهزية');
       need(a.impactScore, 'مستوى الأثر المتوقع من التحول');
+      need(a.transformPeriod, 'فترة التحويل للذكاء الاصطناعي المساعد');
     }
     need(a.riskLevel, 'مستوى المخاطر');
   } else if (path === 'services') {
@@ -1338,9 +1340,9 @@ export function launchBatches(streamId?: string | null): Phase[] {
 // فترة التحويل للذكاء الاصطناعي المساعد (مسار العمليات): قائمة «الدفعة -
 // الشهر» مشتقة من دفعات الإطلاق المعتمدة وحدود كل دفعة الزمنية
 const PERIOD_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-export function opsPeriodOptions(): string[] {
+export function streamPeriodOptions(streamId?: string | null): string[] {
   const out: string[] = [];
-  for (const b of launchBatches()) {
+  for (const b of launchBatches(streamId)) {
     const short = b.name.replace('إطلاق ', '');
     const from = new Date(b.start + 'T00:00:00');
     const to = new Date(b.end + 'T00:00:00');
@@ -1349,6 +1351,25 @@ export function opsPeriodOptions(): string[] {
     }
   }
   return out;
+}
+export function opsPeriodOptions(): string[] {
+  return streamPeriodOptions();
+}
+
+// المسارات ذات التوزيع الآلي: «فترة التحويل» المختارة عند الإدخال هي التوزيع
+// نفسه — صفحات الدفعات عرض فقط ولا دورة اعتماد ثانية (العمليات والاستراتيجية)
+export const AUTO_PLACED_STREAMS = ['ops', 'strategy'];
+export const isAutoPlacedStream = (id?: string | null): boolean => AUTO_PLACED_STREAMS.includes(String(id || ''));
+
+// «الدفعة X - شهر» → دفعة الإطلاق المطابقة + الشهر (للعرض والتوزيع الآلي)
+export function periodBatchOf(period: string | undefined, streamId?: string | null): { batch: string; month: string } | null {
+  const v = String(period || '').trim();
+  if (!v) return null;
+  for (const b of launchBatches(streamId)) {
+    const short = b.name.replace('إطلاق ', '');
+    if (v.startsWith(short + ' - ')) return { batch: b.name, month: v.slice(short.length + 3).trim() };
+  }
+  return null;
 }
 
 // stream-aware alias: مسار الذكاء الاصطناعي خمس دفعات، والبقية ست
