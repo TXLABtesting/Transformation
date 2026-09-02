@@ -597,7 +597,7 @@ export function ProjCommitteePage() {
   // العضو المسؤول: اختيار من الأعضاء المسجلين، أو بريد جديد يُنشأ له حساب
   // بدور أعضاء المشاريع الاستراتيجية تحت قائد المشروع — النسخة الحية فقط
   const LIVE = process.env.NEXT_PUBLIC_DATA_MODE === 'api';
-  const [regMembers, setRegMembers] = useState<{ id: string; name: string; email: string; lead: string }[]>([]);
+  const [regMembers, setRegMembers] = useState<{ id: string; name: string; email: string; lead: string; roleLabel?: string }[]>([]);
   const [memberMode, setMemberMode] = useState<'pick' | 'new'>('pick');
   const [memberSel, setMemberSel] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -708,7 +708,7 @@ export function ProjCommitteePage() {
                   style={{ ...inp, cursor: 'pointer', ...(memberMode === 'new' ? { opacity: 0.55 } : {}) }}
                 >
                   <option value="">اختر من الأعضاء المسجلين…</option>
-                  {regMembers.map((mm) => <option key={mm.id} value={mm.id}>{mm.name} — {mm.email}</option>)}
+                  {regMembers.map((mm) => <option key={mm.id} value={mm.id}>{mm.name} — {mm.roleLabel || 'بلا دور'}{mm.email ? ' (' + mm.email + ')' : ''}</option>)}
                 </select>
                 {memberMode === 'pick' && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>

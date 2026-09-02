@@ -16,16 +16,28 @@ export async function GET(req: NextRequest) {
   try {
     const u = await requireAuthUser(req);
     assertProjAdmin(u);
+    // كل مستخدمي النظام مع أدوارهم — حتى تختار اللجنة الشخص الصحيح ولا
+    // تلتبس الأسماء المتشابهة، ويُسند العضو ولو كان بدور آخر قائم
     const rows = await prisma.user.findMany({
-      where: { roles: { some: { role: { code: PROJ_MEMBER_ROLE } } } },
       orderBy: { name: 'asc' },
-      take: 500,
-      select: { id: true, name: true, email: true },
+      take: 1000,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        roles: { select: { role: { select: { code: true, nameAr: true } } } },
+      },
     });
     const leads = await prisma.projMemberLead.findMany({ take: 1000 });
     const leadOf = new Map(leads.map((l) => [l.userId, l.lead]));
     return NextResponse.json({
-      members: rows.map((r) => ({ id: r.id, name: r.name, email: r.email || '', lead: leadOf.get(r.id) || '' })),
+      members: rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        email: r.email || '',
+        lead: leadOf.get(r.id) || '',
+        roleLabel: r.roles.map((x) => x.role.nameAr).join(' / ') || 'بلا دور',
+      })),
     });
   } catch (e) {
     return handleApiError(e);
@@ -52,17 +64,26 @@ export async function POST(req: NextRequest) {
     const role = await prisma.role.findUnique({ where: { code: PROJ_MEMBER_ROLE } });
     if (!role) return jsonError('BAD_REFERENCE', messages.badReference, 400);
 
-    const existing = await prisma.user.findUnique({ where: { email }, include: { roles: { include: { role: true } } } });
+    // مطابقة البريد دون حساسية لحالة الأحرف — حسابات أنشأها المشرف ببريد
+    // بحروف كبيرة كانت تفلت من الربط فيتعثر الإسناد على قيد التفرد
+    const existing = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+      include: { roles: { include: { role: true } } },
+    });
     const result = await prisma.$transaction(async (tx) => {
       let userId: string;
       let created = false;
       let outName: string;
       if (existing) {
-        // حساب قائم بأي دور: يُستخدم كما هو دون المساس بدوره أو جهته —
-        // ويُستكمل هاتفه إن كان فارغاً وورد في الطلب
+        // حساب قائم بأي دور: يُستخدم كما هو دون المساس بدوره الأساسي أو
+        // جهته — ويُستكمل هاتفه إن كان فارغاً، ويُضاف له دور عضو المشاريع
+        // الاستراتيجية إن لم يكن لديه حتى يفتح صفحة مشاريعه من مبدّل الأدوار
         userId = existing.id;
         outName = existing.name;
         if (phone && !existing.phone) await tx.user.update({ where: { id: existing.id }, data: { phone } });
+        if (!existing.roles.some((rr) => rr.role.code === PROJ_MEMBER_ROLE)) {
+          await tx.userRole.create({ data: { userId: existing.id, roleId: role.id } });
+        }
       } else {
         const nu = await tx.user.create({
           data: { name, email, phone: phone || null, role: 'proj', status: 'active', accessEnabled: true },
@@ -91,7 +112,7 @@ export async function POST(req: NextRequest) {
       return { userId, created, name: outName };
     });
     return NextResponse.json(
-      { member: { id: result.userId, name: result.name, email, lead }, created: result.created },
+      { member: { id: result.userId, name: result.name, email: existing?.email || email, lead }, created: result.created },
       { status: result.created ? 201 : 200 }
     );
   } catch (e) {

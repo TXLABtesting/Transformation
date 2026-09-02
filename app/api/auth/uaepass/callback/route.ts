@@ -33,7 +33,9 @@ export async function GET(req: NextRequest) {
     const email = String(profile.email || '').trim();
     const name = String(profile.fullnameAR || profile.fullnameEN || profile.name || email || '');
     const sub = String(profile.sub || profile.idn || email || '');
-    const user = await ensureUserFromIdentity({ provider: 'uaepass', externalSub: sub, email, name });
+    // رقم الهاتف من الهوية الرقمية — يُثبت على السجل ليُعبَّأ به نموذج التواصل
+    const phone = String(profile.mobile || profile.phone || '').trim();
+    const user = await ensureUserFromIdentity({ provider: 'uaepass', externalSub: sub, email, name, phone });
 
     const res = NextResponse.redirect(appUrl);
     res.cookies.delete('uaepass_state');

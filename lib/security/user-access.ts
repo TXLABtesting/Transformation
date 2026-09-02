@@ -8,6 +8,8 @@ type Identity = {
   externalSub?: string;
   email?: string;
   name?: string;
+  /** رقم الهاتف من الهوية الرقمية — يُثبت على السجل ويُحدَّث معها */
+  phone?: string;
 };
 
 /**
@@ -151,6 +153,7 @@ export async function ensureUserFromIdentity(identity: Identity) {
           data: {
             name: identity.name || existing.name,
             email: email || existing.email,
+            ...(identity.phone ? { phone: identity.phone } : {}),
             authProvider: identity.provider,
             externalSub: identity.externalSub || existing.externalSub,
             ...(isBootstrap ? { status: 'active', accessEnabled: true, isActive: true, role: 'ai' } : {}),
@@ -162,6 +165,7 @@ export async function ensureUserFromIdentity(identity: Identity) {
             role: isBootstrap ? 'ai' : 'entity',
             name: identity.name || email || 'مستخدم جديد',
             email: email || null,
+            phone: identity.phone || null,
             authProvider: identity.provider,
             externalSub: identity.externalSub || null,
             status: isBootstrap ? 'active' : 'pending',
