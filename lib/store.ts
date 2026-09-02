@@ -51,7 +51,7 @@ import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, OPS_SPEC
 import { DEFAULT_SITE, type SiteContent } from './site';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
-import { seedItems, seedLaunchPlans } from './seed';
+import { seedItems, seedLaunchPlans, seedProjDefs, seedProjForms, seedChangeLog } from './seed';
 import type { LaunchPlan, ExpectedResult } from './domain';
 import { type ReviewResult } from './ai';
 
@@ -566,8 +566,8 @@ function initialState(): State {
     entityName: DEFAULT_ENTITY,
     setupDone: false,
     items: seedItems(),
-    projDefs: [],
-    projForms: [],
+    projDefs: seedProjDefs(),
+    projForms: seedProjForms(),
     launchPlans: recalcPlanBudgets(seedItems(), seedLaunchPlans()),
     expectedResults: seedExpectedResults(),
     contactEmails: { ...DEFAULT_CONTACT_EMAILS },
@@ -588,7 +588,7 @@ function initialState(): State {
     },
     setup: defaultSetup(),
     me: EMPTY_IDENTITY,
-    changeLog: [],
+    changeLog: seedChangeLog(),
     ui: defaultUi(),
     _tick: 0,
     _hydrated: false,
@@ -795,12 +795,12 @@ export const useStore = create<Store>((set, get) => {
             ? (saved!.users as UserRec[]).map((u) => ({ ...u, role: migrateRole(u.role) }))
             : seedUsers(DEFAULT_ENTITY),
           items,
-          projDefs: !fresh && Array.isArray(saved!.projDefs) ? (saved!.projDefs as ProjDef[]) : [],
-          projForms: !fresh && Array.isArray(saved!.projForms) ? (saved!.projForms as ProjForm[]) : [],
+          projDefs: !fresh && Array.isArray(saved!.projDefs) ? (saved!.projDefs as ProjDef[]) : seedProjDefs(),
+          projForms: !fresh && Array.isArray(saved!.projForms) ? (saved!.projForms as ProjForm[]) : seedProjForms(),
           phase: (saved!.phase as State['phase']) || s.phase,
           setup: (saved!.setup as Setup) || s.setup,
           readNotifs: (saved!.readNotifs as string[]) || [],
-          changeLog: !fresh && Array.isArray(saved!.changeLog) ? (saved!.changeLog as ChangeLogEntry[]) : [],
+          changeLog: !fresh && Array.isArray(saved!.changeLog) ? (saved!.changeLog as ChangeLogEntry[]) : seedChangeLog(),
           programStep: (saved!.programStep as number) || 1,
           // programPhases config always reloads fresh (labels editable via code)
           programPhases: DEFAULT_PROGRAM_PHASES.map((p) => ({ ...p })),

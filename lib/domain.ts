@@ -1428,6 +1428,9 @@ export function seedExpectedResults(): ExpectedResult[] {
   return [
     { id: 'er-1', text: 'رفع نسبة إنجاز المعاملات الحكومية آلياً دون تدخل بشري إلى 80%.', itemIds: [], path: 'services' },
     { id: 'er-2', text: 'تقليص زمن دورة العمليات المؤسسية بمقدار النصف عبر مساعدي الذكاء الاصطناعي.', itemIds: [], path: 'ops' },
+    { id: 'er-3', text: 'تحويل 50% من المهام الاستراتيجية الدورية إلى نماذج مدعومة بالذكاء الاصطناعي المساعد.', itemIds: [], path: 'strategy' },
+    { id: 'er-4', text: 'تأهيل 10,000 موظف حكومي على توظيف المساعدين الذكيين في أعمالهم اليومية.', itemIds: [], path: 'capacity' },
+    { id: 'er-5', text: 'تشغيل منصة وطنية موحّدة تستضيف مساعدي الجهات الاتحادية ببنية بيانات محوكمة.', itemIds: [], path: 'tech' },
   ];
 }
 
@@ -1632,7 +1635,7 @@ export function formatMoney(n: number): string {
   return n.toLocaleString('en-US') + ' درهم';
 }
 
-export const SEED_V = process.env.NEXT_PUBLIC_DEMO_DATA === '1' ? 'demo7' : 'v6';
+export const SEED_V = process.env.NEXT_PUBLIC_DEMO_DATA === '1' ? 'demo8' : 'v6';
 export const DEFAULT_ENTITY = 'وزارة شؤون مجلس الوزراء';
 export const ALT_ENTITY = 'هيئة الإمارات للهوية والجنسية';
 

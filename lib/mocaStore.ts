@@ -20,11 +20,12 @@ import {
   type MocaWf,
   type MocaUseCase,
 } from './moca';
+import { seedMocaEntries, seedMocaUseCases } from './seed';
 
 const KEY = 'aigp_moca_state';
 // نسخة البيانات: رفع الرقم يعيد ضبط بيانات الوزارة المخزنة في المتصفحات
 // (تنظيف بيانات العرض) — الإدخالات الجديدة بعدها تُحفظ طبيعياً
-const MOCA_DATA_V = 3;
+const MOCA_DATA_V = 4;
 
 export type MocaConfirm = {
   title: string;
@@ -179,8 +180,8 @@ export const useMoca = create<MocaState>((set, get) => {
         role: (saved?.role as MocaRole) || 'coord',
         unitId: (saved?.unitId as string) || MOCA_UNITS[0].id,
         unitSector: (saved?.unitSector as string) || '',
-        entries: !freshData && Array.isArray(saved?.entries) ? (saved!.entries as MocaEntry[]) : [],
-        useCases: !freshData && Array.isArray(saved?.useCases) ? (saved!.useCases as MocaUseCase[]) : [],
+        entries: !freshData && Array.isArray(saved?.entries) ? (saved!.entries as MocaEntry[]) : seedMocaEntries(),
+        useCases: !freshData && Array.isArray(saved?.useCases) ? (saved!.useCases as MocaUseCase[]) : seedMocaUseCases(),
       });
     },
 

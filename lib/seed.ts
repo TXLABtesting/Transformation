@@ -13,8 +13,11 @@
 //    format, so the launch-batch pages fill up through auto-placement
 //  - services follow the manual placement cycle via launch plans
 // ============================================================================
-import type { Item } from './domain';
-import type { LaunchPlan } from './domain';
+import type { Item, LaunchPlan, ProjDef, ProjForm } from './domain';
+import type { MocaEntry, MocaUseCase } from './moca';
+
+// mirrors ChangeLogEntry in store.ts (declared there, not exported)
+export type SeedChangeLogEntry = { at: number; by: string; role: string; action: string; target?: string; note?: string };
 
 export const DEMO_DATA = process.env.NEXT_PUBLIC_DEMO_DATA === '1';
 
@@ -762,6 +765,301 @@ function demoLaunchPlans(): LaunchPlan[] {
       scope: 'إطلاق مساعد الاستعلام الموحّد عبر القنوات.',
       budget: '1,500,000 درهم',
       launchBudget: '120,000 درهم',
+    },
+  ];
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// المشاريع الاستراتيجية — مشاريع معرّفة من اللجنة الوطنية ونماذج أعضائها
+// ════════════════════════════════════════════════════════════════════════════
+export function seedProjDefs(): ProjDef[] {
+  if (!DEMO_DATA) return [];
+  return [
+    { id: 'pj1', name: 'المنصة الوطنية للمساعدين الحكوميين', lead: 'معالي عمر العلماء', member: 'سارة عبدالله الحوسني', start: '2026-06-01', end: '2027-05-31' },
+    { id: 'pj2', name: 'مساعد المتعاملين الحكومي الموحّد', lead: 'سعادة محمد بن طليعة', member: 'خالد سالم النعيمي', start: '2026-08-01', end: '2027-02-28' },
+    { id: 'pj3', name: 'منظومة البيانات الحكومية للذكاء الاصطناعي', lead: 'سعادة هيثم الريس', member: '', start: '2026-09-01', end: '2027-08-31' },
+  ];
+}
+
+export function seedProjForms(): ProjForm[] {
+  if (!DEMO_DATA) return [];
+  return [
+    // نموذج معتمد من اللجنة الوطنية — يعرض دورة الاعتماد كاملة
+    {
+      id: 'pf1',
+      projId: 'pj1',
+      owner: 'سارة عبدالله الحوسني',
+      entityResp: 'وزارة شؤون مجلس الوزراء',
+      desc: 'بناء منصة موحّدة لاستضافة المساعدين الحكوميين وربطها بأنظمة الجهات الاتحادية، مع ضوابط الحوكمة والاستخدام المعتمدة.',
+      outputs: ['منصة تشغيل موحّدة للمساعدين', 'دليل ربط الجهات الاتحادية', 'إطار حوكمة الاستخدام'],
+      phases: [
+        { name: 'التأسيس والتصميم', start: '2026-06-01', end: '2026-08-31' },
+        { name: 'التطوير والربط التجريبي', start: '2026-09-01', end: '2027-01-31' },
+        { name: 'الإطلاق والتوسع', start: '2027-02-01', end: '2027-05-31' },
+      ],
+      team: [
+        { name: 'سارة عبدالله الحوسني', title: 'رئيسة فريق المشروع', entity: 'وزارة شؤون مجلس الوزراء', email: 'sara.alhosani@moca.gov.ae', phone: '0501000001' },
+        { name: 'محمد راشد الشحي', title: 'مهندس الحلول', entity: 'هيئة تنظيم الاتصالات والحكومة الرقمية', email: 'mohammed.alshehhi@tdra.gov.ae', phone: '0501000002' },
+        { name: 'موزة أحمد الظاهري', title: 'مسؤولة الحوكمة', entity: 'وزارة شؤون مجلس الوزراء', email: 'moza.aldhaheri@moca.gov.ae', phone: '0501000003' },
+      ],
+      wf: 'approved',
+      ret: null,
+      log: [
+        { action: 'submit', by: 'سارة عبدالله الحوسني', role: 'أعضاء المشاريع الاستراتيجية', at: T('2026-07-02T10:00:00'), note: 'أُرسل لاعتماد اللجنة الوطنية' },
+        { action: 'approve', by: 'اللجنة الوطنية', role: 'اللجنة الوطنية للذكاء الاصطناعي المساعد', at: T('2026-07-09T13:00:00'), note: '' },
+      ],
+    },
+    // نموذج مُرسل بانتظار اعتماد اللجنة الوطنية
+    {
+      id: 'pf2',
+      projId: 'pj2',
+      owner: 'خالد سالم النعيمي',
+      entityResp: 'هيئة تنظيم الاتصالات والحكومة الرقمية',
+      desc: 'مساعد محادثة موحّد للمتعاملين يغطي الخدمات الاتحادية الأكثر استخداماً ويحوّل الطلبات للجهات المعنية.',
+      outputs: ['مساعد محادثة موحّد عبر القنوات', 'لوحة متابعة رضا المتعاملين'],
+      phases: [
+        { name: 'تحديد الخدمات ذات الأولوية', start: '2026-08-01', end: '2026-09-30' },
+        { name: 'البناء والتجربة', start: '2026-10-01', end: '2026-12-31' },
+        { name: 'الإطلاق التدريجي', start: '2027-01-01', end: '2027-02-28' },
+      ],
+      team: [
+        { name: 'خالد سالم النعيمي', title: 'رئيس فريق المشروع', entity: 'هيئة تنظيم الاتصالات والحكومة الرقمية', email: 'khaled.alnuaimi@tdra.gov.ae', phone: '0501000004' },
+        { name: 'فاطمة علي المرزوقي', title: 'مصممة تجربة المتعامل', entity: 'وزارة شؤون مجلس الوزراء', email: 'fatima.almarzooqi@moca.gov.ae', phone: '0501000005' },
+      ],
+      wf: 'sent',
+      ret: null,
+      log: [
+        { action: 'submit', by: 'خالد سالم النعيمي', role: 'أعضاء المشاريع الاستراتيجية', at: T('2026-08-28T09:30:00'), note: 'أُرسل لاعتماد اللجنة الوطنية' },
+      ],
+    },
+  ];
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// سجل التغييرات — أثر النشاط الأخير على المدخلات المزروعة
+// ════════════════════════════════════════════════════════════════════════════
+export function seedChangeLog(): SeedChangeLogEntry[] {
+  if (!DEMO_DATA) return [];
+  return [
+    { at: T('2026-08-30T11:40:00'), by: 'اللجنة الوطنية', role: 'اللجنة الوطنية للذكاء الاصطناعي المساعد', action: 'اعتماد نموذج مشروع استراتيجي', target: 'المنصة الوطنية للمساعدين الحكوميين', note: '' },
+    { at: T('2026-08-31T09:15:00'), by: 'فريق عمل المسار في المشروع', role: 'فريق عمل المسار في المشروع', action: 'اعتماد مدخل', target: 'معالجة طلبات الدعم الفني', note: 'إلى مرحلة التنفيذ' },
+    { at: T('2026-08-31T09:20:00'), by: 'فريق عمل المسار في المشروع', role: 'فريق عمل المسار في المشروع', action: 'إعادة بملاحظات', target: 'تدقيق طلبات الإجازات والبدلات', note: 'يرجى تحديد الأنظمة المرتبطة' },
+    { at: T('2026-09-01T10:05:00'), by: 'منسق المسار في الجهة الاتحادية', role: 'منسق المسار في الجهة الاتحادية', action: 'إرسال مدخل للاعتماد', target: 'التصنيف الآلي للمعاملات الواردة', note: 'وزارة الطاقة والبنية التحتية' },
+    { at: T('2026-09-01T14:30:00'), by: 'فريق عمل المسار في المشروع', role: 'فريق عمل المسار في المشروع', action: 'اعتماد مدخل', target: 'المنصة الوطنية للنماذج اللغوية الحكومية', note: 'إلى مرحلة التنفيذ' },
+    { at: T('2026-09-02T08:45:00'), by: 'منسق المسار في الجهة الاتحادية', role: 'منسق المسار في الجهة الاتحادية', action: 'إرسال مدخل للاعتماد', target: 'تأهيل منسقي الجهات على أدوات المساعدين', note: 'وزارة الموارد البشرية والتوطين' },
+  ];
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// نسخة وزارة شؤون مجلس الوزراء — مدخلات الوحدات وحالات الاستخدام
+// ════════════════════════════════════════════════════════════════════════════
+export function seedMocaEntries(): MocaEntry[] {
+  if (!DEMO_DATA) return [];
+  const base = {
+    outputs: '',
+    beneficiary: '',
+    specialization: 'تخصصية',
+    dept: '',
+    section: '',
+    automationPct: '0',
+    automationSystem: '',
+    usageIntensity: 'متوسطة',
+    frequency: 'شهرياً',
+    duration: 'يومان',
+    transformability: 'قابل كلياً',
+    readiness: 'الجاهزية للتحول بنسبة بين 50% إلى 80%',
+    priority: 'نعم',
+    impact: 'عالي',
+    complexity: 'متوسط',
+    notes: '',
+  };
+  return [
+    // معتمد وموزّع على الدفعة الأولى (توزيع معتمد)
+    {
+      ...base,
+      id: 'mc1',
+      unitId: 'sg',
+      unitSector: '',
+      wf: 'approved',
+      ret: null,
+      createdAt: '2026-07-20T09:00:00.000Z',
+      submittedAt: '2026-07-22T10:00:00.000Z',
+      decidedAt: '2026-07-28T12:00:00.000Z',
+      mainProcess: 'إعداد جدول أعمال مجلس الوزراء',
+      subProcess: 'تجهيز ملفات العرض والملخصات التنفيذية',
+      outputs: 'ملخصات تنفيذية جاهزة للعرض على المجلس',
+      beneficiary: 'أعضاء مجلس الوزراء',
+      sector: 'الأمانة العامة لمجلس الوزراء',
+      dept: 'إدارة شؤون المجلس',
+      section: 'قسم جدول الأعمال',
+      automationPct: '45',
+      automationSystem: 'نظام إدارة الاجتماعات',
+      usageIntensity: 'عالية',
+      frequency: 'أسبوعياً',
+      duration: '3 أيام',
+      execBatch: 'إطلاق الدفعة الأولى',
+      startDate: '2026-09-01',
+      endDate: '2026-11-15',
+      batchWf: 'approved',
+    },
+    // قيد اعتماد اللجنة الوطنية
+    {
+      ...base,
+      id: 'mc2',
+      unitId: 'sg',
+      unitSector: '',
+      wf: 'pending',
+      ret: null,
+      createdAt: '2026-08-18T09:00:00.000Z',
+      submittedAt: '2026-08-25T11:00:00.000Z',
+      mainProcess: 'متابعة تنفيذ قرارات المجلس',
+      subProcess: 'إعداد تقارير حالة التنفيذ للجهات',
+      outputs: 'تقرير دوري بحالة تنفيذ القرارات',
+      beneficiary: 'الأمانة العامة والجهات الاتحادية',
+      sector: 'الأمانة العامة لمجلس الوزراء',
+      dept: 'إدارة المتابعة',
+      section: 'قسم التقارير',
+      automationPct: '30',
+      automationSystem: 'نظام متابعة القرارات',
+      transformability: 'قابل جزئياً',
+      impact: 'متوسط',
+    },
+    // معتمد — توزيعه على الدفعة الثانية قيد اعتماد اللجنة
+    {
+      ...base,
+      id: 'mc3',
+      unitId: 'pmo',
+      unitSector: 'قطاع الأداء والتميز الحكومي',
+      wf: 'approved',
+      ret: null,
+      createdAt: '2026-07-25T09:00:00.000Z',
+      submittedAt: '2026-08-01T10:00:00.000Z',
+      decidedAt: '2026-08-06T13:00:00.000Z',
+      mainProcess: 'إدارة منظومة الأداء الحكومي',
+      subProcess: 'تحليل نتائج مؤشرات الأداء الاستراتيجية',
+      outputs: 'تحليلات وتوصيات تحسين الأداء',
+      beneficiary: 'قيادات الجهات الاتحادية',
+      sector: 'قطاع الأداء والتميز الحكومي',
+      dept: 'إدارة الأداء الحكومي',
+      section: 'قسم التحليل',
+      automationPct: '55',
+      automationSystem: 'نظام أداء',
+      usageIntensity: 'عالية',
+      frequency: 'ربع سنوي',
+      duration: 'أسبوع',
+      execBatch: 'إطلاق الدفعة الثانية',
+      startDate: '2026-12-05',
+      endDate: '2027-02-20',
+      batchWf: 'pending',
+    },
+    // مسودة لدى منسق المكتب الإعلامي
+    {
+      ...base,
+      id: 'mc4',
+      unitId: 'media',
+      unitSector: '',
+      wf: 'draft',
+      ret: null,
+      createdAt: '2026-08-30T09:00:00.000Z',
+      mainProcess: 'إدارة المحتوى الإعلامي الحكومي',
+      subProcess: 'إعداد الملخصات الإخبارية اليومية',
+      outputs: 'ملخص إخباري يومي للقيادات',
+      beneficiary: 'القيادات الحكومية',
+      sector: 'المكتب الإعلامي لحكومة دولة الإمارات',
+      dept: 'إدارة الرصد الإعلامي',
+      section: 'قسم التحرير',
+      automationPct: '20',
+      usageIntensity: 'عالية',
+      frequency: 'يومياً',
+      duration: '4 ساعات',
+    },
+    // معتمد بانتظار التوزيع على دفعة
+    {
+      ...base,
+      id: 'mc5',
+      unitId: 'fcsc',
+      unitSector: '',
+      wf: 'approved',
+      ret: null,
+      createdAt: '2026-08-05T09:00:00.000Z',
+      submittedAt: '2026-08-10T10:00:00.000Z',
+      decidedAt: '2026-08-17T09:30:00.000Z',
+      mainProcess: 'إصدار الإحصاءات الوطنية',
+      subProcess: 'تدقيق جداول البيانات قبل النشر',
+      outputs: 'جداول إحصائية مدققة وجاهزة للنشر',
+      beneficiary: 'الجهات الحكومية والباحثون',
+      sector: 'المركز الاتحادي للتنافسية والإحصاء',
+      dept: 'إدارة الإحصاءات',
+      section: 'قسم ضبط الجودة',
+      automationPct: '60',
+      automationSystem: 'المنصة الإحصائية الوطنية',
+      usageIntensity: 'عالية',
+      frequency: 'شهرياً',
+      duration: 'يومان',
+    },
+    // مسودة مُعادة بملاحظات اللجنة (للتعديل)
+    {
+      ...base,
+      id: 'mc6',
+      unitId: 'knowledge',
+      unitSector: '',
+      wf: 'draft',
+      ret: { type: 'info', note: 'يرجى توضيح حجم الطلبات السنوي والأنظمة المرتبطة.', at: '2026-08-27T12:00:00.000Z' },
+      createdAt: '2026-08-12T09:00:00.000Z',
+      submittedAt: '2026-08-20T10:00:00.000Z',
+      mainProcess: 'إدارة برامج التبادل المعرفي',
+      subProcess: 'مطابقة طلبات الحكومات الشريكة مع الخبرات',
+      outputs: 'خطة تبادل معرفي لكل شراكة',
+      beneficiary: 'الحكومات الشريكة',
+      sector: 'مكتب التبادل المعرفي الحكومي',
+      dept: 'إدارة الشراكات',
+      section: 'قسم البرامج',
+      automationPct: '10',
+      transformability: 'قابل جزئياً',
+      impact: 'متوسط',
+      complexity: 'منخفض',
+    },
+  ];
+}
+
+export function seedMocaUseCases(): MocaUseCase[] {
+  if (!DEMO_DATA) return [];
+  return [
+    {
+      id: 'muc1',
+      unitId: 'sg',
+      entryId: 'mc1',
+      mainProcess: 'إعداد جدول أعمال مجلس الوزراء',
+      subProcess: 'تجهيز ملفات العرض والملخصات التنفيذية',
+      status: 'قيد التنفيذ',
+      createdAt: '2026-09-05T09:00:00.000Z',
+      updates: [
+        { text: 'اكتمال تحليل المتطلبات وتحديد مصادر البيانات', vendor: 'الفريق التقني الداخلي', at: '2026-09-20T10:00:00.000Z' },
+        { text: 'نموذج أولي للملخصات التنفيذية قيد المراجعة', vendor: 'شريك التطوير', at: '2026-10-14T09:30:00.000Z' },
+      ],
+    },
+    {
+      id: 'muc2',
+      unitId: 'pmo',
+      unitSector: 'قطاع الأداء والتميز الحكومي',
+      entryId: 'mc3',
+      mainProcess: 'إدارة منظومة الأداء الحكومي',
+      subProcess: 'تحليل نتائج مؤشرات الأداء الاستراتيجية',
+      status: 'لم تبدأ بعد',
+      createdAt: '2026-09-10T09:00:00.000Z',
+      updates: [],
+    },
+    {
+      id: 'muc3',
+      unitId: 'fcsc',
+      entryId: 'mc5',
+      mainProcess: 'إصدار الإحصاءات الوطنية',
+      subProcess: 'تدقيق جداول البيانات قبل النشر',
+      status: 'مكتملة',
+      createdAt: '2026-08-20T09:00:00.000Z',
+      updates: [
+        { text: 'تشغيل مساعد التدقيق على إصدارات شهر أغسطس بنجاح', vendor: 'الفريق التقني الداخلي', at: '2026-08-31T11:00:00.000Z' },
+      ],
     },
   ];
 }
