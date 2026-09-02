@@ -19,21 +19,17 @@ export function SiteFooter() {
             'linear-gradient(180deg,rgba(8,31,84,1) 0%,rgba(8,31,84,.85) 20%,rgba(8,31,84,.55) 42%,rgba(8,31,84,.28) 62%,rgba(8,31,84,.1) 80%,rgba(8,31,84,0) 100%)',
         }}
       />
+      {/* صف واحد مختصر: الشعار يميناً وسطر الحقوق يساراً — بلا شريط سفلي */}
       <div
         className="relative z-[4] mx-auto w-full max-w-[1220px] px-5"
-        style={{ paddingTop: 'clamp(70px,9vw,110px)' }}
+        style={{ paddingTop: 'clamp(40px,5vw,64px)', paddingBottom: 'clamp(24px,3.2vw,40px)' }}
       >
-        <div className="flex flex-wrap items-center justify-between gap-12">
+        <div className="flex flex-wrap items-center justify-between gap-8">
           <div className="flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={asset(SITE_BRAND.logoMono)} alt={SITE_NAME} className="h-[58px] object-contain" />
           </div>
-          <div className="flex max-w-[380px] items-center">
-            <div className="text-[13.5px] font-semibold leading-[2.1] text-white/60">{SITE_NAME}</div>
-          </div>
-        </div>
-        <div className="mt-14 flex flex-wrap items-center justify-between gap-6 border-t border-white/10 pt-[26px] pb-[30px]">
-          <div className="text-[12.5px] font-semibold text-white/50">{SITE_COPYRIGHT}</div>
+          <div className="text-[12.5px] font-semibold text-white/60">{SITE_COPYRIGHT}</div>
         </div>
       </div>
     </footer>
