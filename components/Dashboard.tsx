@@ -2443,7 +2443,7 @@ export function Dashboard({ vm }: { vm: VM }) {
           {/* navigation */}
           <div data-r="navlist" style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
           {vm.navItems.map((n) => n.sep ? (
-            <div key={n.key} style={{ height: 1, background: '#F0F3F8', margin: '8px 2px' }} />
+            <div key={n.key} style={{ height: 1, minHeight: 1, flex: 'none', background: '#F0F3F8', margin: '8px 2px' }} />
           ) : n.heading ? (
             <div key={n.key} style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD', display: 'flex', alignItems: 'center', gap: 6 }}>
               {n.icon ? <Icon d={n.icon} size={12} color="#8A97AD" /> : null}
