@@ -203,7 +203,7 @@ function demoItems(): Item[] {
         },
       ],
       execChecklist: [
-        { key: 'agents', label: 'بناء النظام الوكيلي', status: 'مكتمل', newDate: '', reason: '' },
+        { key: 'agents', label: 'بناء النظام المساعد', status: 'مكتمل', newDate: '', reason: '' },
         { key: 'testing', label: 'الاختبار وضمان الجودة', status: 'لم تبدأ', newDate: '', reason: '' },
         { key: 'pilot', label: 'الإطلاق', status: 'لم تبدأ', newDate: '', reason: '' },
       ],
@@ -289,7 +289,7 @@ function demoItems(): Item[] {
         },
       ],
       execChecklist: [
-        { key: 'agents', label: 'بناء النظام الوكيلي', status: 'مكتمل', newDate: '', reason: '' },
+        { key: 'agents', label: 'بناء النظام المساعد', status: 'مكتمل', newDate: '', reason: '' },
         { key: 'testing', label: 'الاختبار وضمان الجودة', status: 'مكتمل', newDate: '', reason: '' },
         { key: 'pilot', label: 'الإطلاق', status: 'مكتمل', newDate: '', reason: '' },
       ],
@@ -302,7 +302,7 @@ function demoItems(): Item[] {
       wf: 'exec',
       type: 'operation',
       title: 'معالجة طلبات الدعم الفني',
-      desc: 'استقبال وتشخيص وتوجيه طلبات الدعم الفني آلياً عبر وكيل ذكي.',
+      desc: 'استقبال وتشخيص وتوجيه طلبات الدعم الفني آلياً عبر مساعد ذكي.',
       path: 'ops',
       approval: 'معتمد',
       status: 'قيد التنفيذ',
