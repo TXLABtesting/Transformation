@@ -8,9 +8,17 @@
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
+// نسخة الوسائط المضمّنة (صور وفيديو الموقع العام): رفع الرقم يجبر المتصفحات
+// على تحميل الملفات المحدّثة بدل النسخ المخزّنة مؤقتاً بالمسار نفسه
+const MEDIA_V = '3';
+
 /** مسار أصل عام مع احترام basePath — الروابط المطلقة تمر كما هي */
-export const asset = (path: string) =>
-  /^[a-z][a-z0-9+.-]*:/i.test(path) ? path : `${BASE}/${path.replace(/^\//, '')}`;
+export const asset = (path: string) => {
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path;
+  const clean = path.replace(/^\//, '');
+  const bust = /^assets\/web\/.+\.(mp4|jpe?g|png|webp)$/i.test(clean) ? `?v=${MEDIA_V}` : '';
+  return `${BASE}/${clean}${bust}`;
+};
 
 export const SITE_BRAND = {
   logoNav: 'assets/web/logo-nav-z.png',
