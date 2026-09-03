@@ -197,9 +197,12 @@ const Chip = ({ t, c, bg }: { t: string; c: string; bg: string }) => (
 export function MocaWorkspace() {
   const s = useMoca();
   const list = useMemo(() => mocaVisibleEntries(s), [s]);
+  // الجوال: الشريط الجانبي يطوى خلف زر القائمة كلوحة المنصة (globals.css ≤900px)
+  const [mobileNav, setMobileNav] = useState(false);
 
   return (
     <div
+      data-r="root"
       style={{
         minHeight: '100vh',
         background: 'linear-gradient(180deg,#F7F9FD,#EEF2F9)',
@@ -208,9 +211,9 @@ export function MocaWorkspace() {
         paddingRight: RAIL,
       }}
     >
-      <Header />
-      <div style={{ display: 'flex', gap: 16, padding: '16px 24px 44px', alignItems: 'flex-start' }}>
-        <Rail list={list} />
+      <Header onMenu={() => setMobileNav((o) => !o)} />
+      <div data-r="work" style={{ display: 'flex', gap: 16, padding: '16px 24px 44px', alignItems: 'flex-start' }}>
+        <Rail list={list} open={mobileNav} onClose={() => setMobileNav(false)} />
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {s.view === 'batches' ? (
             <BatchesView />
@@ -259,7 +262,7 @@ export function MocaWorkspace() {
 }
 
 // ---- الترويسة ---------------------------------------------------------------
-function Header() {
+function Header({ onMenu }: { onMenu: () => void }) {
   const s = useMoca();
   const unit = mocaUnitById(s.unitId);
   const role = MOCA_ROLES.find((r) => r.key === s.role)!;
@@ -281,9 +284,20 @@ function Header() {
         top: 0,
         zIndex: 20,
         gap: 14,
+        // الشاشات الضيقة: المجموعتان تنزلان سطرين بدل قصّ العناصر عند الحافة
+        flexWrap: 'wrap',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', minWidth: 0, maxWidth: '100%' }}>
+        {/* زر القائمة — الجوال فقط (يظهر عبر globals.css ≤900px) */}
+        <button
+          data-r="hamburger"
+          onClick={onMenu}
+          aria-label="القائمة"
+          style={{ display: 'none', width: 42, height: 42, flex: 'none', borderRadius: 11, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', background: '#fff', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#13213C" strokeWidth="2.2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
         {demo ? (
           /* مبدّل الدور — نسخة العرض: قائمة منسدلة موحّدة كالمنصة؛ المنسق
              يبقى في نسخة الوزارة وبقية الأدوار تعود بلوحاتها في المنصة */
@@ -318,7 +332,7 @@ function Header() {
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0, maxWidth: '100%' }}>
         {/* مبدّل الجهات (تجريبي): وزارة شؤون مجلس الوزراء محددة — اختيار جهة
             أخرى يعود بالمنسق إلى لوحة الجهات الاتحادية القياسية */}
         {demo && (
@@ -446,13 +460,13 @@ function Header() {
 }
 
 // ---- الشريط الجانبي ---------------------------------------------------------
-function Rail({ list }: { list: MocaEntry[] }) {
+function Rail({ list, open, onClose }: { list: MocaEntry[]; open: boolean; onClose: () => void }) {
   const s = useMoca();
   const isCoord = s.role === 'coord';
   const item = (label: string, icon: string, active: boolean, count?: number, onClick?: () => void) => (
     <button
       key={label}
-      onClick={onClick}
+      onClick={onClick ? () => { onClick(); onClose(); } : undefined}
       style={{
         position: 'relative',
         display: 'flex',
@@ -496,6 +510,8 @@ function Rail({ list }: { list: MocaEntry[] }) {
   );
   return (
     <aside
+      data-r="rail"
+      className={open ? '' : 'mnav-closed'}
       style={{
         width: RAIL,
         position: 'fixed',
@@ -516,12 +532,22 @@ function Rail({ list }: { list: MocaEntry[] }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          position: 'relative',
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={BASE + '/assets/logo.png'} alt="logo" style={{ height: 46, minWidth: 0, objectFit: 'contain' }} />
+        {/* زر الإغلاق — يظهر داخل قائمة الجوال فقط */}
+        <button
+          data-r="railclose"
+          onClick={onClose}
+          aria-label="إغلاق"
+          style={{ display: 'none', position: 'absolute', left: 12, top: 14, width: 40, height: 40, borderRadius: 11, border: '1px solid #E7ECF4', background: '#fff', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#13213C" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div data-r="navlist" style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD' }}>قوائم الحصر</div>
         {item('حصر المهام والعمليات', IC.list, s.view !== 'batches' && s.view !== 'usecases', list.length, () => s.closeBatches())}
         <div style={{ padding: '14px 13px 2px', fontSize: 11.5, fontWeight: 800, color: '#8A97AD' }}>المتابعة</div>

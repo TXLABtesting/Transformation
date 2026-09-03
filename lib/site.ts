@@ -29,20 +29,20 @@ export const SITE_BRAND = {
 };
 
 export const SITE_MEDIA = {
-  heroVideo: 'assets/web/hero-bg.mp4',
-  heroPoster: 'assets/web/hero-poster.jpg',
-  introCabinet: 'assets/web/intro-cabinet-m-c.jpg',
-  hhLaunch: 'assets/web/hh-launch-v3-c.jpg',
-  mgQuote: 'assets/web/mg-quote-m-c.jpg',
-  histIntro: 'assets/web/hist-intro-c.jpg',
-  hist2001: 'assets/web/hist-2001-s-c.jpg',
-  hist2013: 'assets/web/hist-2013-m.jpg',
-  hist2017: 'assets/web/hist-2017-v3-c.jpg',
-  hist2019: 'assets/web/hist-2019-s-c.jpg',
-  hist2026: 'assets/web/hist-2026-v2-c.jpg',
-  news0: 'assets/web/news-0-crop.jpg',
-  news1: 'assets/web/news-1.jpg',
-  news2: 'assets/web/news-2.jpg',
+  heroVideo: 'assets/web/hero-bg-hq.mp4',
+  heroPoster: 'assets/web/hero-poster-hq.jpg',
+  introCabinet: 'assets/web/intro-cabinet-hq.jpg',
+  hhLaunch: 'assets/web/hh-launch-hq.jpg',
+  mgQuote: 'assets/web/mg-quote-hq.jpg',
+  histIntro: 'assets/web/hist-intro-hq.jpg',
+  hist2001: 'assets/web/hist-2001-hq.jpg',
+  hist2013: 'assets/web/hist-2013-hq.jpg',
+  hist2017: 'assets/web/hist-2017-hq.jpg',
+  hist2019: 'assets/web/hist-2019-hq.jpg',
+  hist2026: 'assets/web/hist-2026-hq.jpg',
+  news0: 'assets/web/news-0-hq.jpg',
+  news1: 'assets/web/news-1-hq.jpg',
+  news2: 'assets/web/news-2-hq.jpg',
 };
 
 export const SITE_NAME = 'مشروع الذكاء الاصطناعي المساعد';
