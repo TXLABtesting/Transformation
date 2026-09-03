@@ -71,7 +71,7 @@ function demoItems(): Item[] {
       phases: [],
       launches: [],
       execChecklist: [
-        { key: 'agents', label: 'بناء النظام الوكيلي', status: 'مكتمل', newDate: '', reason: '' },
+        { key: 'agents', label: 'بناء النظام المساعد', status: 'مكتمل', newDate: '', reason: '' },
         { key: 'testing', label: 'الاختبار وضمان الجودة', status: 'قيد التنفيذ', newDate: '', reason: '' },
         { key: 'pilot', label: 'الإطلاق', status: 'لم تبدأ', newDate: '', reason: '' },
       ],
@@ -225,7 +225,7 @@ function demoItems(): Item[] {
       phases: [],
       launches: [],
       execChecklist: [
-        { key: 'agents', label: 'بناء النظام الوكيلي', status: 'مكتمل', newDate: '', reason: '' },
+        { key: 'agents', label: 'بناء النظام المساعد', status: 'مكتمل', newDate: '', reason: '' },
         { key: 'testing', label: 'الاختبار وضمان الجودة', status: 'قيد التنفيذ', newDate: '', reason: '' },
         { key: 'pilot', label: 'الإطلاق', status: 'لم تبدأ', newDate: '', reason: '' },
       ],
@@ -413,7 +413,7 @@ function demoItems(): Item[] {
         },
       ],
       execChecklist: [
-        { key: 'agents', label: 'بناء النظام الوكيلي', status: 'مكتمل', newDate: '', reason: '' },
+        { key: 'agents', label: 'بناء النظام المساعد', status: 'مكتمل', newDate: '', reason: '' },
         { key: 'testing', label: 'الاختبار وضمان الجودة', status: 'لم تبدأ', newDate: '', reason: '' },
         { key: 'pilot', label: 'الإطلاق', status: 'لم تبدأ', newDate: '', reason: '' },
       ],
@@ -494,7 +494,7 @@ function demoItems(): Item[] {
         },
       ],
       execChecklist: [
-        { key: 'agents', label: 'بناء النظام الوكيلي', status: 'مكتمل', newDate: '', reason: '' },
+        { key: 'agents', label: 'بناء النظام المساعد', status: 'مكتمل', newDate: '', reason: '' },
         { key: 'testing', label: 'الاختبار وضمان الجودة', status: 'مكتمل', newDate: '', reason: '' },
         { key: 'pilot', label: 'الإطلاق', status: 'مكتمل', newDate: '', reason: '' },
       ],

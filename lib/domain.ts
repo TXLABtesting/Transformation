@@ -1297,7 +1297,7 @@ export const DEFAULT_PROGRAM_PHASES: ProgramPhase[] = [
   },
   {
     n: 'تنفيذ واختبار التحول والإطلاق',
-    d: 'تنفيذ المراحل، إكمال بناء الوكلاء والاختبار وقوائم الإطلاق ومتابعة التقدّم',
+    d: 'تنفيذ المراحل، إكمال بناء المساعدين والاختبار وقوائم الإطلاق ومتابعة التقدّم',
     deadline: '2026-12-20',
   },
 ];
@@ -1554,7 +1554,7 @@ export function blankItem(type: ItemType, path: string): Item {
     targetPct: 0,
     rank: 0,
     execChecklist: [
-      { key: 'agents', label: 'بناء النظام الوكيلي', status: 'لم تبدأ', newDate: '', reason: '' },
+      { key: 'agents', label: 'بناء النظام المساعد', status: 'لم تبدأ', newDate: '', reason: '' },
       { key: 'testing', label: 'الاختبار وضمان الجودة', status: 'لم تبدأ', newDate: '', reason: '' },
       { key: 'pilot', label: 'الإطلاق', status: 'لم تبدأ', newDate: '', reason: '' },
     ],
