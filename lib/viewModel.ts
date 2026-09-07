@@ -63,6 +63,7 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   type Item,
   type RoleKey,
   itemActivities, itemAssistantNames, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload,
+  streamPeriodOptions,
   isAutoPlacedStream, periodBatchOf as periodBatchFor, OPS_TRANSFORM_OPTIONS, OPS_PRIORITY_OPTIONS, STG_TRANSFORM_OPTIONS } from './domain';
 import { stripHtml } from './richtext';
 import { useMoca } from './mocaStore';
@@ -1644,6 +1645,27 @@ function build(s: Store) {
               : bPath === 'strategy'
                 ? ['المحور', 'المهمة', 'النشاط']
                 : ['تصنيف العملية', 'العملية الرئيسية', 'العملية الفرعية'],
+          // المسارات ذات التوزيع الآلي: عمليات فرعية بلا فترة تحويل — تُحدَّد من هنا
+          unplaced: autoPlaced
+            ? roleBase
+                .filter((i) => i.path === bPath)
+                .flatMap((i) => itemActivities(i).map((a, ai) => ({ i, a, ai })))
+                .filter(({ i, a }) => !periodBatchOf(a.transformPeriod) && !activityBatch(i, a))
+                .map(({ i, a, ai }) => ({
+                  id: i.id + '::' + ai,
+                  itemId: i.id,
+                  actIdx: ai,
+                  lead: bPath === 'services' ? [i.title || '—', a.name || '—'] : bPath === 'strategy' ? [i.axis || '—', i.title || '—', a.name || '—'] : [i.opType || '—', i.title || '—', a.name || '—'],
+                  entity: ent(i),
+                  status: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : wfMeta(i).label,
+                  notes: stripHtml(a.notes || i.notes || '') || '—',
+                  canSetPeriod: rawRole === 'coord',
+                  period: a.transformPeriod || '',
+                  periodOptions: streamPeriodOptions(bPath),
+                  onSetPeriod: (v: string) => s.setActivityPeriod(i.id, ai, v),
+                  onOpen: () => s.openDetail(i.id),
+                }))
+            : [],
           batches: streamLaunchBatches(bPath).map((b) => {
             // flatten the stream's entries into (entry, نشاط) pairs once
             const pairs = roleBase
@@ -1676,6 +1698,11 @@ function build(s: Store) {
                       : [i.opType || '—', i.title || '—', a.name || '—'],
                 entity: ent(i),
                 month: autoPlaced ? periodBatchOf(a.transformPeriod)?.month || '' : '',
+                // المسارات ذات التوزيع الآلي: المنسق يعدّل الفترة (= الدفعة) من هنا بلا دورة اعتماد
+                canSetPeriod: autoPlaced && rawRole === 'coord',
+                period: a.transformPeriod || '',
+                periodOptions: autoPlaced ? streamPeriodOptions(bPath) : [],
+                onSetPeriod: (v: string) => s.setActivityPeriod(i.id, ai, v),
                 start: a.startDate ?? i.startDate ?? '',
                 end: a.endDate ?? i.endDate ?? '',
                 prio: actPrioCellOf(i, a),
@@ -1975,6 +2002,7 @@ function build(s: Store) {
         })),
         anyMissing: sel.some((i) => missingFieldsOf(i as unknown as Record<string, unknown>).length > 0),
         onSend: () => s.submitDrafts(sel.map((i) => i.id)),
+        onConfirm: () => s.confirmTeamDrafts(sel.map((i) => i.id)),
         onApproveSel: () => s.openApproveAll(sel.map((i) => i.id)),
         onDelete: () => s.openDeleteDrafts(sel.map((i) => i.id)),
         // multi-select: opens the first entry that still has missing fields
@@ -2198,7 +2226,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfBg = '#EAF7F0';
   } else if (w === 'draft' && isTeamUpload(i)) {
     // مسودة رفعها فريق المسار بالنيابة: بانتظار تأكيد منسق الجهة وإرسالها
-    wfLabel = rawRole === 'coord' ? 'مرفوعة بالنيابة — بانتظار تأكيدك' : 'بانتظار تأكيد منسق الجهة';
+    wfLabel = rawRole === 'coord' ? 'مرفوعة بالنيابة — بانتظار تأكيدكم' : 'بانتظار تأكيد منسق الجهة';
     wfChip = '#B45309';
     wfBg = '#FFF7EB';
   }
@@ -2530,7 +2558,7 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
     } else if (rawRole === 'coord') {
       // مدخلات رفعها فريق المسار بالنيابة عن الجهة: بانتظار تأكيد المنسق
       if (w === 'draft' && isTeamUpload(i))
-        push('tu-' + i.id, 'info', 'inbox', 'مدخل رُفع بالنيابة عن جهتك — بانتظار تأكيدك وإرساله للاعتماد', tl + ' · ' + i.title, i.id);
+        push('tu-' + i.id, 'info', 'inbox', 'مدخل رُفع بالنيابة عن جهتكم — بانتظار تأكيدكم', tl + ' · ' + i.title, i.id);
       // coordinator: returns / info requests from the stream head, and approvals
       if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تم الرفض من ') + (i.ret.from || 'فريق عمل المسار في المشروع'), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
       if (w === 'exec' || w === 'launch') {
@@ -2733,7 +2761,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     typeColor: t.color,
     typeBg: t.bg,
     // same status override as the list cards: returned → للتعديل، approved → معتمد
-    wfLabel: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : ['exec', 'launch', 'done'].includes(w) ? 'معتمد' : w === 'draft' && isTeamUpload(i) ? (rawRole === 'coord' ? 'مرفوعة بالنيابة — بانتظار تأكيدك' : 'بانتظار تأكيد منسق الجهة') : wm.label,
+    wfLabel: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : ['exec', 'launch', 'done'].includes(w) ? 'معتمد' : w === 'draft' && isTeamUpload(i) ? (rawRole === 'coord' ? 'مرفوعة بالنيابة — بانتظار تأكيدكم' : 'بانتظار تأكيد منسق الجهة') : wm.label,
     wfChip: i.ret ? (isRejected(i) ? '#C0303B' : '#B45309') : ['exec', 'launch', 'done'].includes(w) ? '#0B8A4B' : wm.chip,
     wfBg: i.ret ? (isRejected(i) ? '#FDECEE' : '#FFF3DE') : ['exec', 'launch', 'done'].includes(w) ? '#EAF7F0' : wm.bg,
     priority: i.priority,

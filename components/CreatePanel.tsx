@@ -1298,6 +1298,19 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
       bad
     );
   };
+  // قائمة اختيارية (بلا علامة إلزام ولا تمييز نقص) — فترة التحويل
+  const selAOpt = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail, opts: string[]) =>
+    field(
+      label,
+      <select value={String(a[key] ?? '')} onChange={(e) => upd(i, { [key]: e.target.value } as Partial<ActivityDetail>)} style={inputStyle}>
+        <option value="">اختر… (اختياري)</option>
+        {opts.map((o) => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </select>,
+      false,
+      false
+    );
   const yesNoA = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail) =>
     field(
       label,
@@ -1443,7 +1456,7 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
                       </div>,
                       false
                     )
-                  : selA(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', opsPeriodOptions())}
+                  : selAOpt(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', opsPeriodOptions())}
               </div>
             </>
           )}
@@ -1518,7 +1531,7 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
                           </div>,
                           false
                         )
-                      : selA(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', streamPeriodOptions('strategy'))}
+                      : selAOpt(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', streamPeriodOptions('strategy'))}
                   </div>
                 );
               })()}
@@ -1543,7 +1556,7 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
               {/* فترة التحويل = التوزيع الآلي على دفعات الإطلاق (كالعمليات
                   والاستراتيجية): اعتماد واحد للخدمة يثبّت دفعتها */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-                {selA(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', streamPeriodOptions('services'))}
+                {selAOpt(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', streamPeriodOptions('services'))}
               </div>
             </>
           )}

@@ -167,10 +167,11 @@ export function DraftBar({ vm }: { vm: VM }) {
                 </button>
               )}
               <button
-                onClick={() => (db.anyMissing ? setPopup(true) : db.onSend())}
+                onClick={() => (db.anyMissing ? setPopup(true) : db.teamMode ? db.onConfirm() : db.onSend())}
+                title={db.teamMode ? 'كما رُفعت → تُعتمد مباشرة؛ المعدَّلة → لاعتماد فريق المسار' : undefined}
                 style={{ ...btn, background: '#fff', color: '#0F1F3D' }}
               >
-                {db.teamMode ? 'تأكيد وإرسال للاعتماد' : 'إرسال للاعتماد'}
+                {db.teamMode ? 'تأكيد' : 'إرسال للاعتماد'}
               </button>
             </>
           )}
@@ -204,11 +205,12 @@ export function DraftBar({ vm }: { vm: VM }) {
               <button
                 onClick={() => {
                   setPopup(false);
-                  db.onSend();
+                  if (db.teamMode) db.onConfirm();
+                  else db.onSend();
                 }}
                 style={{ background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 11, padding: '11px 20px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                إرسال المدخلات المكتملة فقط
+                {db.teamMode ? 'تأكيد المدخلات المكتملة فقط' : 'إرسال المدخلات المكتملة فقط'}
               </button>
               <button onClick={() => setPopup(false)} style={{ background: '#fff', border: '1px solid #DCE3EE', color: '#54627B', borderRadius: 11, padding: '11px 20px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
                 إغلاق واستكمال البيانات
