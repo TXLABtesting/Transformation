@@ -47,7 +47,10 @@ import {
 } from './domain';
 import type { LibraryDoc, ContactInquiry } from './domain';
 import { migrateRole } from './domain';
-import { STREAM_FIELDS, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
+import { STREAM_FIELDS,
+  IMPORT_HEADER_ALIASES,
+  normalizeHeader,
+  normalizeImportValue, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
 import { DEFAULT_SITE, type SiteContent } from './site';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
@@ -159,13 +162,14 @@ export type UiState = {
   batchFilter: string | null; // drill-down from a مرحلة card into its items
   // services-stream list filters: الخدمة / القطاع / الأولوية
   svcServiceF: string;
-  svcTransformF: string; // قابلية التحول: all | نعم | لا
+  svcTransformF: string; // أولوية التحول (مشتقة): all | نعم | لا
   svcSectorF: string;
   svcPrioF: string;
   // strategy-stream list filters: المهمة / القطاع / الأولوية
   stgTaskF: string;
   stgAxisF: string;
-  stgTransformF: string; // قابلية التحول: all | نعم | لا
+  stgTransformF: string; // قابلية التحول: all | قابل كلياً | قابل جزئياً | غير قابل
+  stgWillF: string; // أولوية التحول (مشتقة): all | نعم | لا
   stgSectorF: string;
   stgPrioF: string;
   // >0 → highlight the empty required fields in the entry form (bumped on
@@ -173,7 +177,9 @@ export type UiState = {
   reqHighlight: number;
   opsCatF: string; // تصنيف العملية
   opsSectorF: string;
-  opsTransformF: string; // قابلية التحول: all | نعم | لا
+  opsTransformF: string; // قابلية التحول: all | قابل كلياً | قابل جزئياً | غير قابل للتحول
+  opsWillF: string; // هل سيتم تحويل العملية؟: all | نعم | لا
+  opsPrioF: string; // أولوية التحول: all | منخفضة | متوسطة | مرتفعة | ليست ذات أولوية
   opsSupportF: string; // نوع عملية الدعم المؤسسي
   // inline add-manually form (rendered under the table, not a popup)
   inlineCreate: boolean;
@@ -302,8 +308,8 @@ type Actions = {
   setExecStream: (v: string) => void;
   resetFilters: () => void;
   setSvcFilter: (k: 'svcServiceF' | 'svcSectorF' | 'svcPrioF' | 'svcTransformF', v: string) => void;
-  setStgFilter: (k: 'stgTaskF' | 'stgAxisF' | 'stgSectorF' | 'stgPrioF' | 'stgTransformF', v: string) => void;
-  setOpsFilter: (k: 'opsCatF' | 'opsSectorF' | 'opsTransformF' | 'opsSupportF', v: string) => void;
+  setStgFilter: (k: 'stgTaskF' | 'stgAxisF' | 'stgSectorF' | 'stgPrioF' | 'stgTransformF' | 'stgWillF', v: string) => void;
+  setOpsFilter: (k: 'opsCatF' | 'opsSectorF' | 'opsTransformF' | 'opsSupportF' | 'opsWillF' | 'opsPrioF', v: string) => void;
   setItemDate: (id: string, k: 'startDate' | 'endDate', v: string) => void;
   assignItemBatch: (id: string, batch: string) => void;
   // per-نشاط دفعة الإطلاق + dates (the batches page works at نشاط level)
@@ -524,12 +530,15 @@ function defaultUi(): UiState {
     stgTaskF: 'all',
     stgAxisF: 'all',
     stgTransformF: 'all',
+    stgWillF: 'all',
     stgSectorF: 'all',
     stgPrioF: 'all',
     reqHighlight: 0,
     opsCatF: 'all',
     opsSectorF: 'all',
     opsTransformF: 'all',
+    opsWillF: 'all',
+    opsPrioF: 'all',
     opsSupportF: 'all',
     inlineCreate: false,
     confirmAdd: false,
@@ -1106,7 +1115,7 @@ export const useStore = create<Store>((set, get) => {
     // viewer isn't stranded on a now-empty detail view
     setExecEnt: (v) => setUi({ execEnt: v, detailId: null }),
     setExecStream: (v) => setUi({ execStream: v, detailId: null }),
-    resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null, batchFilter: null, svcServiceF: 'all', svcTransformF: 'all', svcSectorF: 'all', svcPrioF: 'all', stgTaskF: 'all', stgAxisF: 'all', stgTransformF: 'all', stgSectorF: 'all', stgPrioF: 'all', opsCatF: 'all', opsSectorF: 'all', opsTransformF: 'all', opsSupportF: 'all' }),
+    resetFilters: () => setUi({ activePath: 'all', filter: 'all', statusFilter: 'all', fundFilter: 'all', entFilter: 'all', search: '', stepFilter: null, batchFilter: null, svcServiceF: 'all', svcTransformF: 'all', svcSectorF: 'all', svcPrioF: 'all', stgTaskF: 'all', stgAxisF: 'all', stgTransformF: 'all', stgWillF: 'all', stgSectorF: 'all', stgPrioF: 'all', opsCatF: 'all', opsSectorF: 'all', opsTransformF: 'all', opsWillF: 'all', opsPrioF: 'all', opsSupportF: 'all' }),
     setSvcFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     setStgFilter: (k, v) => setUi({ [k]: v } as Partial<UiState>),
     setOpsFilter: (k, v) =>
@@ -1831,20 +1840,27 @@ export const useStore = create<Store>((set, get) => {
             });
             const map: Record<number, string> = {};
             const claimed = new Set<string>();
+            const claim = (col: number, key: string) => { map[col] = key; claimed.add(key); };
+            // 1) تطابق حرفي
             for (const { col, h } of headers) {
               const f = spec.find((sf) => sf.label === h);
-              if (f && !claimed.has(f.key)) {
-                map[col] = f.key;
-                claimed.add(f.key);
-              }
+              if (f && !claimed.has(f.key)) claim(col, f.key);
             }
+            // 2) تطابق بعد التطبيع (همزات/مسافات/«المساعد»/«العمليات»/ترقيم)
+            for (const { col, h } of headers) {
+              if (map[col]) continue;
+              const nh = normalizeHeader(h);
+              const f = spec.find((sf) => !claimed.has(sf.key) && normalizeHeader(sf.label) === nh);
+              if (f) claim(col, f.key);
+            }
+            // 3) تطابق تقريبي: احتواء، ثم العناوين البديلة المعروفة لكل حقل
             for (const { col, h } of headers) {
               if (map[col] || h.length <= 3) continue;
-              const f = spec.find((sf) => !claimed.has(sf.key) && (h.includes(sf.label) || sf.label.includes(h)));
-              if (f) {
-                map[col] = f.key;
-                claimed.add(f.key);
-              }
+              const nh = normalizeHeader(h);
+              const f =
+                spec.find((sf) => !claimed.has(sf.key) && (nh.includes(normalizeHeader(sf.label)) || normalizeHeader(sf.label).includes(nh))) ||
+                spec.find((sf) => !claimed.has(sf.key) && (IMPORT_HEADER_ALIASES[sf.key] || []).some((al) => nh.includes(normalizeHeader(al))));
+              if (f) claim(col, f.key);
             }
             const hits = claimed.size;
             if (hits >= Math.min(3, spec.length) && (!bestRow || hits > Object.keys(bestRow.map).length)) bestRow = { row: r, map };
@@ -1881,7 +1897,7 @@ export const useStore = create<Store>((set, get) => {
             const fields: Record<string, string> = {};
             b.ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
               const key = b.map[col];
-              if (key) fields[key] = norm(cellText(cell));
+              if (key) fields[key] = normalizeImportValue(key, norm(cellText(cell)));
             });
             if (!Object.values(fields).some((v) => v)) continue;
             if (path === 'ops' && !fields.opType && b.opType) fields.opType = b.opType;
@@ -1915,6 +1931,7 @@ export const useStore = create<Store>((set, get) => {
             a.impactScore = f.impactScore;
             a.complexity = f.complexity;
             a.transformScore = f.transformScore;
+            a.willTransform = f.willTransform;
             a.transformPeriod = f.transformPeriod;
             a.transformPriority = f.transformPriority;
             a.riskLevel = f.riskLevel;
@@ -1934,10 +1951,12 @@ export const useStore = create<Store>((set, get) => {
             a.transformScore = f.transformScore;
             a.outputClarity = f.outputClarity;
             a.riskLevel = f.riskLevel;
+            a.transformPeriod = f.transformPeriod;
           } else {
             a.usageIntensity = f.usageIntensity;
             a.complexity = f.complexity;
             a.readinessLevel = f.readinessLevel;
+            a.transformPeriod = f.transformPeriod;
           }
           a.transformYes = activityTransformYes(path, a) || a.transformYes;
           return a;
@@ -2024,7 +2043,9 @@ export const useStore = create<Store>((set, get) => {
           // every imported row is saved as a DRAFT — including complete ones.
           // Nothing reaches رئيس المسار until the coordinator selects the
           // drafts and confirms «إرسال للاعتماد».
-          const submitted = teamUpload && r._v === 'جاهز';
+          // رفع الفريق بالنيابة: كل الصفوف مسودات لدى الجهة حتى يؤكدها منسقها
+          // ويرسلها للاعتماد (تحديد الكل ثم «تأكيد وإرسال للاعتماد»)
+          const submitted = false;
           return {
             ...blankItem((r.type as ItemType) || 'operation', r.path || path),
             ...(r.extra || {}),
@@ -2068,7 +2089,7 @@ export const useStore = create<Store>((set, get) => {
       persist();
       setUi({ mStep: 'done', bulkLaunches: [] });
       if (teamUpload)
-        toast('تم رفع ' + toAdd.length + ' من المدخلات بالنيابة عن ' + s.ui.bulkEntity + ' — المكتمل منها في قائمة المراجعة والناقص مسودات لدى الجهة');
+        toast('تم رفع ' + toAdd.length + ' من المدخلات بالنيابة عن ' + s.ui.bulkEntity + ' — بانتظار تأكيد منسق الجهة ثم إرسالها للاعتماد');
       else toast('تم حفظ ' + toAdd.length + ' من المدخلات كمسودات — راجعها ثم أرسلها للاعتماد');
     },
 
@@ -2210,7 +2231,7 @@ export const useStore = create<Store>((set, get) => {
       const w = wfOf(it);
       // فريق عمل المسار يعتمد المُرسَل، وكذلك مسودات ملفاته المرفوعة بالنيابة
       // فقط — مسودات المنسق الخاصة لا تُعتمد قبل إرسالها
-      if (w === 'ent1' || (w === 'draft' && s.role === 'path' && isTeamUpload(it))) {
+      if (w === 'ent1') {
         patchItem(id, (i) => ({ wf: 'exec', approval: 'تم الإرسال', ret: null, log: withLog(s, i, 'approve') }));
         toast('تم اعتماد ' + typeLabelDefFor(it.type, it.path) + ' — إلى مرحلة التنفيذ');
       } else if (w === 'pm1') {
@@ -2333,7 +2354,7 @@ export const useStore = create<Store>((set, get) => {
         if (!idset.has(i.id)) return false;
         const w = wfOf(i);
         // المسودات تُعتمد جماعياً فقط إن كانت من رفع الفريق بالنيابة
-        return w === 'ent1' || (w === 'draft' && isTeamUpload(i));
+        return w === 'ent1';
       });
       if (!targets.length) return;
       const tset = new Set(targets.map((i) => i.id));

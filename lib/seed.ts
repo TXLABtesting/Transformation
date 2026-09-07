@@ -11,7 +11,7 @@
 //    (مسودة، بانتظار ممثل الجهة، بانتظار فريق المسار، معتمد قيد التنفيذ، مكتمل)
 //  - ops/strategy items carry «فترة التحويل» in the current «الدفعة - الشهر»
 //    format, so the launch-batch pages fill up through auto-placement
-//  - services follow the manual placement cycle via launch plans
+//  - services carry «فترة التحويل» too (auto-placement, one approval)
 // ============================================================================
 import type { Item, LaunchPlan, ProjDef, ProjForm } from './domain';
 import type { MocaEntry, MocaUseCase } from './moca';
@@ -60,6 +60,7 @@ function demoItems(): Item[] {
       readinessLevel: 'جاهزة للتحول بنسبة 80% فأكثر',
       impactScore: 'عالي',
       complexity: 'منخفض',
+      willTransform: 'نعم',
       transformScore: 'قابل كلياً',
       transformPeriod: 'الدفعة الأولى - أكتوبر',
       transformPriority: 'مرتفعة',
@@ -101,6 +102,7 @@ function demoItems(): Item[] {
       readinessLevel: 'جاهزة للتحول بنسبة بين 50% إلى 80%',
       impactScore: 'عالي',
       complexity: 'متوسط',
+      willTransform: 'نعم',
       transformScore: 'قابل كلياً',
       transformPeriod: 'الدفعة الثانية - يناير',
       transformPriority: 'مرتفعة',
@@ -143,6 +145,7 @@ function demoItems(): Item[] {
       readinessLevel: 'جاهزة للتحول بنسبة بين 30% إلى 50%',
       impactScore: 'متوسط',
       complexity: 'متوسط',
+      willTransform: 'نعم',
       transformScore: 'قابل جزئياً',
       transformPriority: 'منخفضة',
       riskLevel: 'متوسطة',
@@ -178,6 +181,7 @@ function demoItems(): Item[] {
       readinessLevel: 'جاهزة للتحول بنسبة بين 50% إلى 80%',
       impactScore: 'عالي',
       complexity: 'متوسط',
+      willTransform: 'نعم',
       transformScore: 'قابل كلياً',
       transformPeriod: 'الدفعة الثانية - ديسمبر',
       transformPriority: 'متوسطة',
@@ -214,6 +218,7 @@ function demoItems(): Item[] {
       readinessLevel: 'جاهزة للتحول بنسبة 80% فأكثر',
       impactScore: 'عالي',
       complexity: 'متوسط',
+      willTransform: 'نعم',
       transformScore: 'قابل كلياً',
       transformPeriod: 'الدفعة الأولى - سبتمبر',
       transformPriority: 'مرتفعة',
@@ -390,6 +395,7 @@ function demoItems(): Item[] {
       status: 'قيد التنفيذ',
       complexity: 'منخفض',
       subService: 'تجديد رخصة تجارية فورية',
+      transformPeriod: 'الدفعة الأولى - نوفمبر',
       usageIntensity: 'مرتفعة',
       readinessLevel: 'مرتفع',
       transformYes: 'نعم',
@@ -433,6 +439,7 @@ function demoItems(): Item[] {
       status: 'قيد التنفيذ',
       complexity: 'منخفض',
       subService: 'إشعارات استباقية لأحداث الحياة',
+      transformPeriod: 'الدفعة الأولى - أكتوبر',
       usageIntensity: 'مرتفعة',
       readinessLevel: 'مرتفع',
       transformYes: 'نعم',
@@ -462,6 +469,7 @@ function demoItems(): Item[] {
       status: 'مكتمل',
       complexity: 'متوسط',
       subService: 'الاستعلام عن حالة الطلب',
+      transformPeriod: 'الدفعة الأولى - سبتمبر',
       usageIntensity: 'مرتفعة',
       readinessLevel: 'مرتفع',
       transformYes: 'نعم',
@@ -514,6 +522,7 @@ function demoItems(): Item[] {
       status: 'لم يبدأ بعد',
       complexity: 'متوسط',
       subService: 'إصدار شهادة حسن السيرة والسلوك',
+      transformPeriod: 'الدفعة الثانية - يناير',
       usageIntensity: 'مرتفعة',
       readinessLevel: 'متوسط',
       transformYes: 'نعم',
@@ -546,6 +555,7 @@ function demoItems(): Item[] {
       status: 'لم يبدأ بعد',
       complexity: 'مرتفع',
       subService: 'معادلة شهادة دراسية',
+      transformPeriod: 'الدفعة الثالثة - أبريل',
       usageIntensity: 'متوسطة',
       readinessLevel: 'متوسط',
       transformYes: 'نعم',

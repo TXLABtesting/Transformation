@@ -62,8 +62,8 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   TWO_STEP_PHASES,
   type Item,
   type RoleKey,
-  itemActivities, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload,
-  isAutoPlacedStream, periodBatchOf as periodBatchFor } from './domain';
+  itemActivities, itemAssistantNames, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload,
+  isAutoPlacedStream, periodBatchOf as periodBatchFor, OPS_TRANSFORM_OPTIONS, OPS_PRIORITY_OPTIONS, STG_TRANSFORM_OPTIONS } from './domain';
 import { stripHtml } from './richtext';
 import { useMoca } from './mocaStore';
 import { FEDERAL_ENTITIES } from './entities';
@@ -163,8 +163,12 @@ function build(s: Store) {
   // strategy-stream filters: المهمة / القطاع / الأولوية
   if (filterStream === 'strategy') {
     if (ui.stgAxisF !== 'all') visible = visible.filter((i) => (i.axis || '') === ui.stgAxisF);
+    // قابلية التحول = خيارات نموذج الإدخال نفسها (قابل كلياً/جزئياً/غير قابل)
     if (ui.stgTransformF !== 'all')
-      visible = visible.filter((i) => itemActivities(i).some((a) => activityTransformYes('strategy', a) === ui.stgTransformF));
+      visible = visible.filter((i) => itemActivities(i).some((a) => String(a.transformScore || '') === ui.stgTransformF));
+    // أولوية التحول (مشتقة من المصفوفة): نعم/لا
+    if (ui.stgWillF !== 'all')
+      visible = visible.filter((i) => itemActivities(i).some((a) => activityTransformYes('strategy', a) === ui.stgWillF));
     if (ui.stgPrioF !== 'all')
       // an entry matches if ANY of its activities carries that priority
       visible = visible.filter((i) => itemActivities(i).some((a) => (stgPriority(a)?.cat || '') === ui.stgPrioF));
@@ -172,9 +176,15 @@ function build(s: Store) {
   // operations-stream filters: تصنيف العملية / القطاع / نوع عملية الدعم
   if (filterStream === 'ops') {
     if (ui.opsCatF !== 'all') visible = visible.filter((i) => (i.opType || '') === ui.opsCatF);
-    // قابلية التحول — matches when ANY نشاط carries that value
+    // قابلية التحول = خيارات نموذج الإدخال نفسها — matches when ANY نشاط carries that value
     if (ui.opsTransformF !== 'all')
-      visible = visible.filter((i) => itemActivities(i).some((a) => activityTransformYes('ops', a) === ui.opsTransformF));
+      visible = visible.filter((i) => itemActivities(i).some((a) => String(a.transformScore || '') === ui.opsTransformF));
+    // هل سيتم تحويل العملية؟ (نعم/لا — يُشتق للقديم من أولوية التحول)
+    if (ui.opsWillF !== 'all')
+      visible = visible.filter((i) => itemActivities(i).some((a) => (String(a.willTransform || '') || activityTransformYes('ops', a)) === ui.opsWillF));
+    // أولوية التحول = خيارات النموذج نفسها
+    if (ui.opsPrioF !== 'all')
+      visible = visible.filter((i) => itemActivities(i).some((a) => String(a.transformPriority || '') === ui.opsPrioF));
     if (ui.opsSupportF !== 'all') visible = visible.filter((i) => (i.supportFn || '') === ui.opsSupportF);
   }
   // status filter
@@ -757,9 +767,9 @@ function build(s: Store) {
             { v: '4', label: 'الأولوية 4' },
           ],
           serviceValue: ui.svcServiceF,
-          // قابلية التحول — the derived نعم/لا of the entry's خدمات فرعية
+          // أولوية التحول — the derived نعم/لا of the entry's خدمات فرعية (كما في النموذج)
           transformOptions: [
-            { v: 'all', label: 'قابلية التحول: الكل' },
+            { v: 'all', label: 'أولوية التحول: الكل' },
             { v: 'نعم', label: 'نعم' },
             { v: 'لا', label: 'لا' },
           ],
@@ -781,12 +791,17 @@ function build(s: Store) {
             { v: 'العمليات التخصصية', label: 'العمليات التخصصية' },
             { v: SUPPORT_OPTYPE, label: SUPPORT_OPTYPE },
           ],
-          // قابلية التحول instead of القطاع (approved filter set)
-          transformOptions: [
-            { v: 'all', label: 'قابلية التحول: الكل' },
+          // قابلية التحول = خيارات نموذج الإدخال نفسها
+          transformOptions: [{ v: 'all', label: 'قابلية التحول: الكل' }, ...OPS_TRANSFORM_OPTIONS.map((o) => ({ v: o, label: o }))],
+          // هل سيتم تحويل العملية؟ + أولوية التحول — كما في النموذج
+          willOptions: [
+            { v: 'all', label: 'هل سيتم تحويل العملية: الكل' },
             { v: 'نعم', label: 'نعم' },
             { v: 'لا', label: 'لا' },
           ],
+          willValue: ui.opsWillF,
+          prioOptions: [{ v: 'all', label: 'أولوية التحول: الكل' }, ...OPS_PRIORITY_OPTIONS.map((o) => ({ v: o, label: o }))],
+          prioValue: ui.opsPrioF,
           supportOptions: [
             { v: 'all', label: 'نوع عملية الدعم: الكل' },
             ...SUPPORT_FUNCTIONS.map((t) => ({ v: t, label: t })),
@@ -806,13 +821,16 @@ function build(s: Store) {
             ...Array.from(new Set(stgScope.map((i) => i.axis || ''))).filter(Boolean).map((t) => ({ v: t, label: t })),
           ],
           axisValue: ui.stgAxisF,
-          // قابلية التحول — the derived نعم/لا of the entry's أنشطة
-          transformOptions: [
-            { v: 'all', label: 'قابلية التحول: الكل' },
+          // قابلية التحول = خيارات نموذج الإدخال نفسها
+          transformOptions: [{ v: 'all', label: 'قابلية التحول: الكل' }, ...STG_TRANSFORM_OPTIONS.map((o) => ({ v: o, label: o }))],
+          transformValue: ui.stgTransformF,
+          // أولوية التحول — the derived نعم/لا of the entry's أنشطة (كما في النموذج)
+          willOptions: [
+            { v: 'all', label: 'أولوية التحول: الكل' },
             { v: 'نعم', label: 'نعم' },
             { v: 'لا', label: 'لا' },
           ],
-          transformValue: ui.stgTransformF,
+          willValue: ui.stgWillF,
           prioOptions: [
             { v: 'all', label: 'الأولوية: الكل' },
             { v: 'أولوية عالية', label: 'أولوية عالية' },
@@ -824,7 +842,7 @@ function build(s: Store) {
       : null;
 
   // is any filter currently active (drives the reset button + count)
-  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim() || ui.svcServiceF !== 'all' || ui.svcTransformF !== 'all' || ui.svcPrioF !== 'all' || ui.stgAxisF !== 'all' || ui.stgTransformF !== 'all' || ui.stgPrioF !== 'all' || ui.opsCatF !== 'all' || ui.opsTransformF !== 'all' || ui.opsSupportF !== 'all';
+  const anyFilterActive = ui.activePath !== 'all' || ui.filter !== 'all' || ui.statusFilter !== 'all' || ui.fundFilter !== 'all' || (ui.entFilter && ui.entFilter !== 'all') || !!ui.batchFilter || !!(ui.search || '').trim() || ui.svcServiceF !== 'all' || ui.svcTransformF !== 'all' || ui.svcPrioF !== 'all' || ui.stgAxisF !== 'all' || ui.stgTransformF !== 'all' || ui.stgWillF !== 'all' || ui.stgPrioF !== 'all' || ui.opsWillF !== 'all' || ui.opsPrioF !== 'all' || ui.opsCatF !== 'all' || ui.opsTransformF !== 'all' || ui.opsSupportF !== 'all';
 
   // ---- cards ----
   // ---- sidebar navigation (§redesign v2) ----
@@ -1107,16 +1125,15 @@ function build(s: Store) {
     }
     if (filterStream === 'strategy') {
       if (ui.stgAxisF !== 'all' && (i.axis || '') !== ui.stgAxisF) return false;
-      if (ui.stgTransformF !== 'all' && !itemActivities(i).some((a) => activityTransformYes('strategy', a) === ui.stgTransformF)) return false;
+      if (ui.stgTransformF !== 'all' && !itemActivities(i).some((a) => String(a.transformScore || '') === ui.stgTransformF)) return false;
+      if (ui.stgWillF !== 'all' && !itemActivities(i).some((a) => activityTransformYes('strategy', a) === ui.stgWillF)) return false;
       if (ui.stgPrioF !== 'all' && !itemActivities(i).some((a) => (stgPriority(a)?.cat || '') === ui.stgPrioF)) return false;
     }
     if (filterStream === 'ops') {
       if (ui.opsCatF !== 'all' && (i.opType || '') !== ui.opsCatF) return false;
-      if (
-        ui.opsTransformF !== 'all' &&
-        !itemActivities(i).some((a) => activityTransformYes('ops', a) === ui.opsTransformF)
-      )
-        return false;
+      if (ui.opsTransformF !== 'all' && !itemActivities(i).some((a) => String(a.transformScore || '') === ui.opsTransformF)) return false;
+      if (ui.opsWillF !== 'all' && !itemActivities(i).some((a) => (String(a.willTransform || '') || activityTransformYes('ops', a)) === ui.opsWillF)) return false;
+      if (ui.opsPrioF !== 'all' && !itemActivities(i).some((a) => String(a.transformPriority || '') === ui.opsPrioF)) return false;
       if (ui.opsSupportF !== 'all' && (i.supportFn || '') !== ui.opsSupportF) return false;
     }
     return true;
@@ -1186,7 +1203,7 @@ function build(s: Store) {
       ? visible
           .filter((i) => {
             const w = wfOf(i);
-            return w === 'ent1' || (w === 'draft' && isTeamUpload(i));
+            return w === 'ent1';
           })
           .map((i) => i.id)
       : [];
@@ -1879,6 +1896,8 @@ function build(s: Store) {
         show: (rawRole === 'coord' || rawRole === 'path') && sel.length > 0,
         // فريق المسار: أزرار اعتماد/حذف بدل إرسال المنسق
         pathMode: rawRole === 'path',
+        // كل المحدد مرفوع بالنيابة: زر الإرسال يصبح «تأكيد وإرسال للاعتماد»
+        teamMode: rawRole === 'coord' && sel.some((i) => isTeamUpload(i)),
         count: sel.length,
         items: sel.map((i) => ({
           id: i.id,
@@ -1932,6 +1951,7 @@ function build(s: Store) {
             typeLabel: typeLabelFor(i.type, i.path),
             catLabel: i.path === 'ops' && i.opType ? i.opType : typeLabelFor(i.type, i.path),
             supportFn: i.supportFn || '',
+            assistantNames: itemAssistantNames(i),
             checked: (i.launchPlanIds || []).includes(p.id),
             otherBatch: !!i.execBatch && i.execBatch !== p.batch,
             launched: devStatusOfItem(i) === 'launched',
@@ -2088,9 +2108,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
   const step = stepIndexOf(i);
   // approval is فريق عمل المسار's responsibility — the team can also approve
   // its own on-behalf uploaded drafts directly (even when incomplete)
-  const canApprove =
-    ((rawRole === 'path' || rawRole === 'entity') && w === 'ent1') ||
-    (rawRole === 'path' && w === 'draft' && isTeamUpload(i));
+  // مسودات رفع الفريق بالنيابة لا تُعتمد مباشرة: يؤكدها منسق الجهة أولاً
+  const canApprove = (rawRole === 'path' || rawRole === 'entity') && w === 'ent1';
   const isFunded = !!i.funded;
   // status chip mirrors the real lifecycle exactly:
   // مسودة → بحاجة إلى تعديل → بانتظار اعتماد ممثل الجهة → مخطط · المرحلة N → مكتمل
@@ -2108,6 +2127,11 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     wfLabel = 'معتمد';
     wfChip = '#0B8A4B';
     wfBg = '#EAF7F0';
+  } else if (w === 'draft' && isTeamUpload(i)) {
+    // مسودة رفعها فريق المسار بالنيابة: بانتظار تأكيد منسق الجهة وإرسالها
+    wfLabel = rawRole === 'coord' ? 'مرفوعة بالنيابة — بانتظار تأكيدك' : 'بانتظار تأكيد منسق الجهة';
+    wfChip = '#B45309';
+    wfBg = '#FFF7EB';
   }
   // nomination/selection checkbox removed for stream heads & committee
   const showSelectCheck = false;
@@ -2205,10 +2229,10 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     }
   } else if (rawRole === 'path') {
     if (w === 'draft') {
-      // مسودة لدى الجهة (غالباً من رفع بالنيابة) — الفريق يعتمدها أو يعيدها
+      // مسودة رفعها الفريق بالنيابة — بانتظار تأكيد منسق الجهة وإرسالها
       cardStatus = 'draft';
-      cardCaption = 'مسودة لدى الجهة — يمكن اعتمادها أو إعادتها';
-      cardAction = 'approveInfoReject';
+      cardCaption = 'مرفوعة بالنيابة — بانتظار تأكيد منسق الجهة وإرسالها للاعتماد';
+      cardAction = 'viewDetails';
     } else if (w === 'ent1') {
       // pending review: the head/deputy approves or requests more information
       cardStatus = 'pendFund';
@@ -2257,6 +2281,7 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     // ops entries classify by opType; the support function gets its own column
     catLabel: i.path === 'ops' && i.opType ? i.opType : typeLabelFor(i.type, i.path),
     supportFn: i.supportFn || '',
+    assistantNames: itemAssistantNames(i),
     axis: i.axis || '',
     subService: i.subService || '',
     // computed أولوية الاختيار — distinct values across the entry's activities
@@ -2434,6 +2459,9 @@ function buildNotifs(s: Store, base: Item[], ctx: Ctx) {
       if (i.stageMove && i.stageMove.from)
         push('sm-' + i.id, 'info', 'rotate', 'نُقل بين دفعات الإطلاق: من ' + i.stageMove.from + ' إلى ' + i.stageMove.to, tl + ' · ' + i.title + ' · بواسطة ' + i.stageMove.by, i.id);
     } else if (rawRole === 'coord') {
+      // مدخلات رفعها فريق المسار بالنيابة عن الجهة: بانتظار تأكيد المنسق
+      if (w === 'draft' && isTeamUpload(i))
+        push('tu-' + i.id, 'info', 'inbox', 'مدخل رُفع بالنيابة عن جهتك — بانتظار تأكيدك وإرساله للاعتماد', tl + ' · ' + i.title, i.id);
       // coordinator: returns / info requests from the stream head, and approvals
       if (i.ret) push('r-' + i.id, 'alert', 'rotate', (i.ret.type === 'info' ? 'طلب تفاصيل إضافية من ' : 'تم الرفض من ') + (i.ret.from || 'فريق عمل المسار في المشروع'), tl + ' · ' + i.title + (i.ret.note ? ' · ' + i.ret.note : ''), i.id);
       if (w === 'exec' || w === 'launch') {
@@ -2636,7 +2664,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     typeColor: t.color,
     typeBg: t.bg,
     // same status override as the list cards: returned → للتعديل، approved → معتمد
-    wfLabel: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : ['exec', 'launch', 'done'].includes(w) ? 'معتمد' : wm.label,
+    wfLabel: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : ['exec', 'launch', 'done'].includes(w) ? 'معتمد' : w === 'draft' && isTeamUpload(i) ? (rawRole === 'coord' ? 'مرفوعة بالنيابة — بانتظار تأكيدك' : 'بانتظار تأكيد منسق الجهة') : wm.label,
     wfChip: i.ret ? (isRejected(i) ? '#C0303B' : '#B45309') : ['exec', 'launch', 'done'].includes(w) ? '#0B8A4B' : wm.chip,
     wfBg: i.ret ? (isRejected(i) ? '#FDECEE' : '#FFF3DE') : ['exec', 'launch', 'done'].includes(w) ? '#EAF7F0' : wm.bg,
     priority: i.priority,
@@ -2667,6 +2695,7 @@ function buildDetail(s: Store, id: string, ctx: { rawRole: RoleKey; role: RoleKe
     // op fields
     opType: i.opType,
     supportFn: i.supportFn || '',
+    assistantNames: itemAssistantNames(i),
     opWordDef: typeLabelDefFor('operation', i.path),
     linkedToService: i.linkedToService,
     linkedServiceName: i.linkedServiceName,

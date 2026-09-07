@@ -156,10 +156,9 @@ export function DraftBar({ vm }: { vm: VM }) {
             حذف
           </button>
           {db.pathMode ? (
-            // فريق عمل المسار: اعتماد المحدد مباشرة (بعد تأكيد) بدل دورة الإرسال
-            <button onClick={db.onApproveSel} style={{ ...btn, background: '#fff', color: '#0F1F3D' }}>
-              اعتماد
-            </button>
+            // فريق عمل المسار: مسودات رفعه بالنيابة يؤكدها منسق الجهة ويرسلها —
+            // لا اعتماد مباشر هنا؛ يبقى الحذف فقط
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontWeight: 700 }}>بانتظار تأكيد منسق الجهة</span>
           ) : (
             <>
               {db.onComplete && (
@@ -171,7 +170,7 @@ export function DraftBar({ vm }: { vm: VM }) {
                 onClick={() => (db.anyMissing ? setPopup(true) : db.onSend())}
                 style={{ ...btn, background: '#fff', color: '#0F1F3D' }}
               >
-                إرسال للاعتماد
+                {db.teamMode ? 'تأكيد وإرسال للاعتماد' : 'إرسال للاعتماد'}
               </button>
             </>
           )}

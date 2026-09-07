@@ -2981,6 +2981,7 @@ export function Dashboard({ vm }: { vm: VM }) {
                   <>
                     <FilterSelect value={vm.stgFilterBar.axisValue} options={vm.stgFilterBar.axisOptions} minWidth={150} onChange={(v) => s.setStgFilter('stgAxisF', v)} />
                     <FilterSelect value={vm.stgFilterBar.transformValue} options={vm.stgFilterBar.transformOptions} minWidth={150} onChange={(v) => s.setStgFilter('stgTransformF', v)} />
+                    <FilterSelect value={vm.stgFilterBar.willValue} options={vm.stgFilterBar.willOptions} minWidth={150} onChange={(v) => s.setStgFilter('stgWillF', v)} />
                     <FilterSelect value={vm.stgFilterBar.prioValue} options={vm.stgFilterBar.prioOptions} minWidth={140} onChange={(v) => s.setStgFilter('stgPrioF', v)} />
                     <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
                   </>
@@ -2991,6 +2992,8 @@ export function Dashboard({ vm }: { vm: VM }) {
                       <FilterSelect value={vm.opsFilterBar.supportValue} options={vm.opsFilterBar.supportOptions} minWidth={160} onChange={(v) => s.setOpsFilter('opsSupportF', v)} />
                     )}
                     <FilterSelect value={vm.opsFilterBar.transformValue} options={vm.opsFilterBar.transformOptions} minWidth={150} onChange={(v) => s.setOpsFilter('opsTransformF', v)} />
+                    <FilterSelect value={vm.opsFilterBar.willValue} options={vm.opsFilterBar.willOptions} minWidth={170} onChange={(v) => s.setOpsFilter('opsWillF', v)} />
+                    <FilterSelect value={vm.opsFilterBar.prioValue} options={vm.opsFilterBar.prioOptions} minWidth={150} onChange={(v) => s.setOpsFilter('opsPrioF', v)} />
                     <FilterSelect value={vm.statusFilterValue} options={vm.statusOptions} onChange={(v) => s.setStatusFilter(v)} />
                   </>
                 ) : (
@@ -3737,7 +3740,7 @@ function ListView({ cards, stream, showEntity, onSetSelection }: { cards: CardVM
             {stream === 'ops' ? (
               <>
                 <th style={th}>التصنيف</th>
-                <th style={th}>نوع عملية الدعم المؤسسي</th>
+                <th style={th}>اسم مساعد الذكاء الاصطناعي</th>
               </>
             ) : stream === 'strategy' ? (
               <>
@@ -3784,7 +3787,7 @@ function ListView({ cards, stream, showEntity, onSetSelection }: { cards: CardVM
               {stream === 'ops' ? (
                 <>
                   <td style={{ ...td, whiteSpace: 'nowrap' }}>{c.catLabel}</td>
-                  <td style={td}>{c.supportFn || '—'}</td>
+                  <td style={td}>{c.assistantNames && c.assistantNames.length ? c.assistantNames.join('، ') : '—'}</td>
                 </>
               ) : stream === 'strategy' ? (
                 <>
