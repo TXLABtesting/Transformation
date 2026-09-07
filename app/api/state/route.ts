@@ -62,8 +62,9 @@ function scopeOf(user: AuthUser): Scope {
 function readable(scope: Scope, i: BlobItem): boolean {
   if (scope.kind === 'all') return true;
   if (scope.kind === 'stream')
-    // مسودات الجهات خاصة بها — رئيس المسار يرى المُرسل فما بعده
-    return scope.streams.includes(i.path || '') && i.wf !== 'draft';
+    // مسودات الجهات خاصة بها — رئيس المسار يرى المُرسل فما بعده، ومسودات
+    // رفعه هو بالنيابة (تبقى ظاهرة له «بانتظار تأكيد منسق الجهة»)
+    return scope.streams.includes(i.path || '') && (i.wf !== 'draft' || i.teamUp === true);
   if (scope.kind === 'entity')
     return (
       (i.entity || '') === scope.entityName &&

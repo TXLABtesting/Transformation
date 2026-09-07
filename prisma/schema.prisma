@@ -243,6 +243,7 @@ model Item {
   stream Stream @relation(fields: [streamId], references: [id])
 
   checklist     ExecChecklistItem[]
+  assistantLinks ItemActivityAssistant[]
   subMilestones SubMilestone[]
   launches      ItemLaunch[]
   logs          LogEntry[]
@@ -748,4 +749,45 @@ model ProjMemberLead {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("proj_member_leads")
+}
+
+/// مساعدو الذكاء الاصطناعي — السجل المرجعي للمساعدين المبنيين على العمليات
+/// الفرعية المعتمدة. يُعرض اسم المساعد في قوائم الحصر (عمود «اسم مساعد
+/// الذكاء الاصطناعي») ويُدار من الخادم لاحقاً.
+model AiAssistant {
+  id          String   @id @default(cuid())
+  name        String
+  nameEn      String?  @map("name_en")
+  desc        String   @default("")
+  vendor      String?
+  status      String   @default("لم يبدأ بعد") // لم يبدأ بعد | قيد التنفيذ | مكتمل | متوقف مؤقتاً
+  streamId    String?  @map("stream_id")
+  entityId    String?  @map("entity_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  links ItemActivityAssistant[]
+
+  @@index([streamId])
+  @@index([entityId])
+  @@map("ai_assistants")
+}
+
+/// ربط متعدد-إلى-متعدد بين العمليات الفرعية والمساعدين: للعملية الفرعية
+/// مساعد أو أكثر، وللمساعد عملية فرعية أو أكثر (ولو عبر مدخلات مختلفة).
+/// `activity_id` هو معرّف العملية الفرعية داخل `items.activities` (Json)؛
+/// فارغاً يعني ربطاً على مستوى المدخل كله.
+model ItemActivityAssistant {
+  id          String   @id @default(cuid())
+  itemId      String   @map("item_id")
+  activityId  String?  @map("activity_id")
+  assistantId String   @map("assistant_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  item      Item        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  assistant AiAssistant @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, activityId, assistantId])
+  @@index([assistantId])
+  @@map("item_activity_assistants")
 }

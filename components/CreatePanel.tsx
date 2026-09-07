@@ -1429,15 +1429,17 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
               <div style={{ fontSize: 13, fontWeight: 800, color: '#1F2D49', margin: '4px 0 12px' }}>التحول للذكاء الاصطناعي المساعد</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
                 {selA(i, a, 'القابلية للتحول للذكاء الاصطناعي المساعد', 'transformScore', OPS_TRANSFORM_OPTIONS)}
+                {selA(i, a, 'هل سيتم تحويل العملية؟', 'willTransform', ['نعم', 'لا'])}
                 {selA(i, a, 'مخاطر التحول للذكاء الاصطناعي المساعد', 'riskLevel', OPS_RISK_OPTIONS)}
                 {selA(i, a, 'أولوية التحول للذكاء الاصطناعي المساعد', 'transformPriority', OPS_PRIORITY_OPTIONS)}
                 {/* فترة التحويل تتبع الأولوية: تُفعَّل لمنخفضة/متوسطة/مرتفعة
-                    وتُعطَّل عند «ليست ذات أولوية» أو قبل اختيار الأولوية */}
-                {!a.transformPriority || a.transformPriority === OPS_NO_PRIORITY
+                    وتُعطَّل عند «ليست ذات أولوية» أو قبل اختيار الأولوية —
+                    وتُعطَّل كذلك عندما يُجاب «لا» على «هل سيتم تحويل العملية؟» */}
+                {a.willTransform === 'لا' || !a.transformPriority || a.transformPriority === OPS_NO_PRIORITY
                   ? field(
                       'فترة التحويل للذكاء الاصطناعي المساعد',
                       <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px', minHeight: 44, display: 'flex', alignItems: 'center' }}>
-                        {a.transformPriority === OPS_NO_PRIORITY ? 'لا ينطبق — ليست ذات أولوية' : 'تُفعَّل بعد اختيار أولوية التحول'}
+                        {a.willTransform === 'لا' ? 'لا ينطبق — لن تُحوَّل العملية' : a.transformPriority === OPS_NO_PRIORITY ? 'لا ينطبق — ليست ذات أولوية' : 'تُفعَّل بعد اختيار أولوية التحول'}
                       </div>,
                       false
                     )
@@ -1538,6 +1540,11 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
                   </div>
                 );
               })()}
+              {/* فترة التحويل = التوزيع الآلي على دفعات الإطلاق (كالعمليات
+                  والاستراتيجية): اعتماد واحد للخدمة يثبّت دفعتها */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+                {selA(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', streamPeriodOptions('services'))}
+              </div>
             </>
           )}
         </div>
@@ -1897,6 +1904,7 @@ function BulkStep({ vm }: { vm: VM }) {
           onClick={() => {
             const path = vm.store.ui.draft?.path || vm.store.myPath;
             const opts: Record<string, string[]> = { ...(STREAM_FIELD_OPTIONS[path] || {}) };
+            opts.transformPeriod = streamPeriodOptions(path);
             // مسار العمليات: نموذج حصر العمليات المعتمد بورقتيه — التصنيف تحدده الورقة
             if (path === 'ops') {
               return downloadOpsTemplate(

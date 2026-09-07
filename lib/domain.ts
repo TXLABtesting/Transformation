@@ -219,6 +219,8 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'usageIntensity', label: 'كثافة الاستخدام' },
     { key: 'complexity', label: 'مستوى التعقيد' },
     { key: 'readinessLevel', label: 'مستوى الجاهزية' },
+    // فترة التحويل = التوزيع الآلي على دفعات الإطلاق (تُقرأ من الملف إن وُجدت)
+    { key: 'transformPeriod', label: 'فترة التحويل للذكاء الاصطناعي المساعد' },
     // أولوية الاختيار وأولوية التحول تُشتقان من المصفوفة — ليستا عمودَي إدخال
   ],
   strategy: [
@@ -239,6 +241,8 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'readinessLevel', label: 'مستوى الجاهزية' },
     { key: 'impactScore', label: 'مستوى الأثر المتوقع من التحول' },
     { key: 'riskLevel', label: 'مستوى المخاطر' },
+    // فترة التحويل = التوزيع الآلي على دفعات الإطلاق (تُقرأ من الملف إن وُجدت)
+    { key: 'transformPeriod', label: 'فترة التحويل للذكاء الاصطناعي المساعد' },
     // أولوية الاختيار وأولوية التحول تُشتقان من المصفوفة — ليستا عمودَي إدخال
   ],
   // مسار العمليات — الأعمدة نفسها في نموذج حصر العمليات المعتمد (ورقتا
@@ -259,8 +263,13 @@ export const STREAM_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: 'impactScore', label: 'مستوى الأثر المتوقع من التحول' },
     { key: 'complexity', label: 'مستوى التعقيد' },
     { key: 'transformScore', label: 'القابلية للتحول للذكاء الاصطناعي المساعد' },
-    // النموذج الرسمي (2026-08-26) ينتهي بعمود «ملاحظات» — الأولوية والفترة
-    // والمخاطر تُستكمل داخل المنصة لا في ملف الجهة
+    // أولوية التحول وفترته ومخاطره: أعمدة في ملف الجهة (تُقرأ إن وُجدت بأي
+    // صياغة قريبة — «أولويات التحول…»، «فترة تحويل العمليات…»، «مخاطر التحول…»)
+    // وتُستكمل داخل المنصة إن غابت
+    { key: 'willTransform', label: 'هل سيتم تحويل العملية؟' },
+    { key: 'transformPriority', label: 'أولوية التحول للذكاء الاصطناعي المساعد' },
+    { key: 'transformPeriod', label: 'فترة التحويل للذكاء الاصطناعي المساعد' },
+    { key: 'riskLevel', label: 'مخاطر التحول للذكاء الاصطناعي المساعد' },
     { key: 'notes', label: 'ملاحظات' },
   ],
 };
@@ -295,8 +304,70 @@ export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
     impactScore: OPS_LEVEL_OPTIONS,
     complexity: OPS_LEVEL_OPTIONS,
     transformScore: OPS_TRANSFORM_OPTIONS,
+    willTransform: ['نعم', 'لا'],
+    transformPriority: OPS_PRIORITY_OPTIONS,
+    riskLevel: OPS_RISK_OPTIONS,
+    // transformPeriod: قائمة «الدفعة - الشهر» تُشتق عند التحميل (streamPeriodOptions)
   },
 };
+
+/** عناوين بديلة لأعمدة الملف تُقبل عند الاستيراد (بعد التطبيع) — لكل مفتاح */
+export const IMPORT_HEADER_ALIASES: Record<string, string[]> = {
+  willTransform: ['هل سيتم تحويل', 'سيتم تحويل', 'هل ستحول'],
+  transformPriority: ['أولوية التحول', 'أولويات التحول', 'أولوية تحويل', 'أولويات تحويل'],
+  transformPeriod: ['فترة التحويل', 'فترة تحويل', 'فترة التحول'],
+  riskLevel: ['مخاطر التحول', 'مخاطر تحويل', 'مستوى المخاطر', 'المخاطر'],
+  transformScore: ['القابلية للتحول', 'قابلية التحول'],
+  readinessLevel: ['الجاهزية للتحول', 'مستوى الجاهزية'],
+  impactScore: ['مستوى الأثر'],
+  usageIntensity: ['كثافة'],
+  complexity: ['مستوى التعقيد', 'التعقيد'],
+  automationSystem: ['نظام الأتمتة'],
+  automationPct: ['نسبة الأتمتة'],
+  isAutomated: ['مؤتمتة'],
+};
+
+/** تطبيع عنوان عمود للمقارنة: توحيد الهمزات والمسافات وإسقاط «المساعد»
+ *  و«العمليات» وعلامات الترقيم حتى تتطابق الصياغات القريبة */
+export const normalizeHeader = (h: string): string =>
+  String(h || '')
+    .replace(/[\u064B-\u0652\u0640]/g, '')
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/[()؟?:،,\-\\/]/g, ' ')
+    .replace(/\bالمساعد\b/g, '')
+    .replace(/\bالعمليات\b/g, '')
+    .replace(/\bاولويات\b/g, 'اولويه')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/** تطبيع قيم الاستيراد إلى خيارات المنصة (مرادفات شائعة في ملفات الجهات) */
+export function normalizeImportValue(key: string, v: string): string {
+  const t = String(v || '').replace(/\s+/g, ' ').trim();
+  if (!t) return t;
+  const syn: Record<string, Record<string, string>> = {
+    transformPriority: { 'عالية': 'مرتفعة', 'عالي': 'مرتفعة', 'مرتفع': 'مرتفعة', 'متوسط': 'متوسطة', 'منخفض': 'منخفضة', 'لا يوجد': OPS_NO_PRIORITY, 'لا': OPS_NO_PRIORITY, 'غير ذات أولوية': OPS_NO_PRIORITY },
+    riskLevel: { 'عالي': 'عالية', 'مرتفعة': 'عالية', 'مرتفع': 'عالية', 'متوسط': 'متوسطة', 'منخفض': 'منخفضة' },
+    willTransform: { yes: 'نعم', Yes: 'نعم', YES: 'نعم', no: 'لا', No: 'لا', NO: 'لا', 'كلا': 'لا' },
+    isAutomated: { 'مؤتمتة': 'نعم', 'مؤتمتة كلياً': 'نعم', 'مؤتمتة جزئياً': 'جزئياً', 'جزئيا': 'جزئياً', 'غير مؤتمتة': 'لا' },
+    impactScore: { 'عالية': 'عالي', 'مرتفع': 'عالي', 'مرتفعة': 'عالي', 'متوسطة': 'متوسط', 'منخفضة': 'منخفض' },
+    complexity: { 'عالية': 'عالي', 'مرتفع': 'عالي', 'مرتفعة': 'عالي', 'متوسطة': 'متوسط', 'منخفضة': 'منخفض' },
+    transformScore: { 'قابل': 'قابل كلياً', 'قابلة كلياً': 'قابل كلياً', 'قابلة جزئياً': 'قابل جزئياً', 'غير قابل': OPS_NOT_TRANSFORMABLE, 'غير قابلة': OPS_NOT_TRANSFORMABLE, 'غير قابلة للتحول': OPS_NOT_TRANSFORMABLE },
+  };
+  const m = syn[key];
+  if (m && m[t] !== undefined) return m[t];
+  if (key === 'transformPeriod') {
+    // «الدفعة الأولى - سبتمبر» بأي صياغة قريبة (مع «إطلاق»، بشرطة أخرى، بلا مسافات)
+    const nh = normalizeHeader(t).replace(/^اطلاق /, '').replace(/ ?[–—-] ?/g, ' ');
+    for (const sid of ['ops', 'strategy', 'services']) {
+      for (const o of streamPeriodOptions(sid)) {
+        if (normalizeHeader(o).replace(/ ?[–—-] ?/g, ' ') === nh) return o;
+      }
+    }
+  }
+  return t;
+}
 // sample row shown (in gray italics) under the header to guide filling
 export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
   services: {
@@ -343,6 +414,7 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
     complexity: 'متوسط',
     transformScore: 'قابل جزئياً',
     transformPeriod: 'الربع الأول 2027',
+    willTransform: 'نعم',
     transformPriority: 'متوسطة',
     riskLevel: 'متوسطة',
   },
@@ -378,7 +450,7 @@ export function missingFieldsOf(i: Record<string, unknown> & { path?: string }):
     // الملاحظات حقل اختياري
     .filter((f) => f.key !== 'notes')
     // فترة التحويل غير مطلوبة لعملية غير قابلة للتحول
-    .filter((f) => (f.key === 'transformPeriod' && i.path === 'ops' ? plainOf(i.transformPriority) !== OPS_NO_PRIORITY : true))
+    .filter((f) => (f.key === 'transformPeriod' && i.path === 'ops' ? plainOf(i.transformPriority) !== OPS_NO_PRIORITY && plainOf(i.willTransform) !== 'لا' : true))
     // نظام/نسبة الأتمتة مطلوبان فقط للعمليات المؤتمتة (كلياً أو جزئياً)
     .filter((f) => (automationKey(f.key) && i.path === 'ops' ? ['نعم', 'جزئياً'].includes(plainOf(i.isAutomated)) : true))
     .filter((f) => (automationKey(f.key) && i.path === 'strategy' ? plainOf(i.automationLevel) !== 'غير مؤتمتة' : true))
@@ -408,12 +480,14 @@ export function activityMissing(path: string, a: ActivityDetail): string[] {
     need(a.impactScore, 'مستوى الأثر المتوقع من التحول');
     need(a.complexity, 'مستوى التعقيد');
     need(a.transformScore, 'القابلية للتحول للذكاء الاصطناعي المساعد');
+    need(a.willTransform, 'هل سيتم تحويل العملية؟');
     need(a.transformPriority, 'أولوية التحول للذكاء الاصطناعي المساعد');
     // فترة التحويل تتبع الأولوية: مطلوبة لمنخفضة/متوسطة/مرتفعة، ومعطّلة
-    // تماماً عند «ليست ذات أولوية» (والقيم القديمة غير القابلة للتحول)
+    // تماماً عند «ليست ذات أولوية» (والقيم القديمة غير القابلة للتحول)،
+    // وكذلك عندما يُجاب «لا» على «هل سيتم تحويل العملية؟»
     {
       const pr = plainOf(a.transformPriority);
-      if (pr && pr !== OPS_NO_PRIORITY && pr !== OPS_NOT_TRANSFORMABLE && pr !== 'أولوية 4')
+      if (plainOf(a.willTransform) !== 'لا' && pr && pr !== OPS_NO_PRIORITY && pr !== OPS_NOT_TRANSFORMABLE && pr !== 'أولوية 4')
         need(a.transformPeriod, 'فترة التحويل للذكاء الاصطناعي المساعد');
     }
     need(a.riskLevel, 'مخاطر التحول للذكاء الاصطناعي المساعد');
@@ -439,6 +513,9 @@ export function activityMissing(path: string, a: ActivityDetail): string[] {
     need(a.usageIntensity, 'كثافة الاستخدام');
     need(a.complexity, 'مستوى التعقيد');
     need(a.readinessLevel, 'مستوى الجاهزية');
+    // فترة التحويل = التوزيع الآلي على دفعات الإطلاق (كالعمليات والاستراتيجية):
+    // اعتماد واحد للخدمة يثبّت دفعتها
+    need(a.transformPeriod, 'فترة التحويل للذكاء الاصطناعي المساعد');
   }
   return out;
 }
@@ -455,6 +532,7 @@ export function activityTransformYes(path: string, a: ActivityDetail): string {
   }
   // ops: مشتقة من «أولوية التحول» — منخفضة/متوسطة/مرتفعة نعم،
   // «ليست ذات أولوية» لا (والقيم القديمة أولوية 4/غير قابل تبقى لا)
+  if (plainOf(a.willTransform) === 'لا') return 'لا';
   const pr = plainOf(a.transformPriority);
   if (pr) return pr === OPS_NO_PRIORITY || pr === 'أولوية 4' || pr === OPS_NOT_TRANSFORMABLE ? 'لا' : 'نعم';
   return plainOf(a.transformYes);
@@ -474,6 +552,7 @@ export function itemActivities(i: Item): ActivityDetail[] {
           .filter(Boolean);
   if (!names.length) return [];
   return names.map((name, idx) => ({
+    id: i.id + '-a' + idx,
     name,
     sector: i.sector,
     dept: i.dept,
@@ -491,10 +570,18 @@ export function itemActivities(i: Item): ActivityDetail[] {
     riskLevel: i.riskLevel,
     complexity: i.complexity,
     transformYes: i.transformYes,
+    willTransform: i.willTransform,
     transformPeriod: i.transformPeriod,
     transformPriority: i.transformPriority,
     notes: idx === 0 ? i.notes : undefined,
   }));
+}
+
+/** أسماء مساعدي الذكاء الاصطناعي المرتبطين بعمليات المدخل الفرعية (بلا تكرار) */
+export function itemAssistantNames(i: Item): string[] {
+  const out: string[] = [];
+  for (const a of itemActivities(i)) for (const x of a.assistants || []) if (x.name && !out.includes(x.name)) out.push(x.name);
+  return out;
 }
 
 // mirror the activities back onto the legacy flat fields (first entry wins)
@@ -503,7 +590,12 @@ export function mirrorActivities<T extends Partial<Item> & { path?: string }>(d:
   const acts = d.activities;
   if (!Array.isArray(acts) || !acts.length) return d;
   const path = d.path || '';
-  const withDerived = acts.map((a) => ({ ...a, transformYes: activityTransformYes(path, a) || a.transformYes }));
+  const withDerived = acts.map((a, idx) => ({
+    ...a,
+    // معرّف ثابت لكل عملية فرعية حتى يمكن ربطها بالمساعدين من الخادم
+    id: a.id || (d.id ? d.id + '-a' + idx : 'a-' + Math.random().toString(36).slice(2, 10)),
+    transformYes: activityTransformYes(path, a) || a.transformYes,
+  }));
   const first = withDerived[0];
   const out: T = { ...d, activities: withDerived };
   if (path === 'services') out.subService = withDerived.map((a) => a.name).filter(Boolean).join('، ');
@@ -523,6 +615,7 @@ export function mirrorActivities<T extends Partial<Item> & { path?: string }>(d:
   out.outputClarity = first.outputClarity;
   out.riskLevel = first.riskLevel;
   out.complexity = first.complexity;
+  out.willTransform = first.willTransform;
   out.transformPeriod = first.transformPeriod;
   out.transformPriority = first.transformPriority ?? d.transformPriority;
   out.transformYes = withDerived.some((a) => a.transformYes === 'نعم') ? 'نعم' : first.transformYes;
@@ -964,8 +1057,17 @@ export type Funded = { by: string; at: number; direct?: boolean };
 export type FundCancel = { by: string; at: number; reason: string };
 // one نشاط (ops/strategy) or one خدمة فرعية (services) with its OWN details —
 // the repeatable unit of every entry form
+/** مساعد ذكاء اصطناعي مرتبط بعملية فرعية — يُقرأ من جدول ai_assistants عبر
+ *  جدول الربط item_activity_assistants (علاقة متعددة-إلى-متعددة: للعملية
+ *  الفرعية مساعد أو أكثر، وللمساعد عملية فرعية أو أكثر). يُملأ من الخادم لاحقاً. */
+export type AiAssistantRef = { id: string; name: string };
+
 export type ActivityDetail = {
+  /** معرّف ثابت للعملية الفرعية داخل المدخل — مرجع الربط بالمساعدين */
+  id?: string;
   name: string;
+  /** المساعدون المرتبطون بهذه العملية الفرعية (فارغ حتى يُربطوا من الخادم) */
+  assistants?: AiAssistantRef[];
   sector?: string;
   dept?: string;
   section?: string;
@@ -987,6 +1089,8 @@ export type ActivityDetail = {
   complexity?: string;
   // أولوية التحول — manual yes/no in ops, derived from the matrix in stg/svc
   transformYes?: string;
+  // مسار العمليات: «هل سيتم تحويل العملية؟» نعم/لا — «لا» تُلغي فترة التحويل
+  willTransform?: string;
   // نموذج حصر العمليات: فترة التحويل، أولويات التحول (قائمة يدوية مؤقتاً)
   transformPeriod?: string;
   transformPriority?: string;
@@ -1065,6 +1169,7 @@ export type Item = {
   readiness?: string | number;
   usageIntensity?: string;
   transformPriority?: string;
+  willTransform?: string; // مسار العمليات: هل سيتم تحويل العملية؟
   transformPeriod?: string;
   automationPct?: number;
   automationLevel?: string;
@@ -1383,7 +1488,7 @@ export function opsPeriodOptions(): string[] {
 
 // المسارات ذات التوزيع الآلي: «فترة التحويل» المختارة عند الإدخال هي التوزيع
 // نفسه — صفحات الدفعات عرض فقط ولا دورة اعتماد ثانية (العمليات والاستراتيجية)
-export const AUTO_PLACED_STREAMS = ['ops', 'strategy'];
+export const AUTO_PLACED_STREAMS = ['ops', 'strategy', 'services'];
 export const isAutoPlacedStream = (id?: string | null): boolean => AUTO_PLACED_STREAMS.includes(String(id || ''));
 
 // «الدفعة X - شهر» → دفعة الإطلاق المطابقة + الشهر (للعرض والتوزيع الآلي)

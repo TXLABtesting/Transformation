@@ -402,7 +402,8 @@ export function DetailPanel({ vm }: { vm: VM }) {
                       <DetailCell label="مستوى الأثر المتوقع من التحول">{a.impactScore || '—'}</DetailCell>
                       <DetailCell label="مستوى التعقيد">{a.complexity || '—'}</DetailCell>
                       <DetailCell label="القابلية للتحول للذكاء الاصطناعي المساعد">{a.transformScore || '—'}</DetailCell>
-                      <DetailCell label="فترة التحويل للذكاء الاصطناعي المساعد">{a.transformPeriod || '—'}</DetailCell>
+                      <DetailCell label="هل سيتم تحويل العملية؟">{a.willTransform || '—'}</DetailCell>
+                      <DetailCell label="فترة التحويل للذكاء الاصطناعي المساعد">{a.willTransform === 'لا' ? 'لا ينطبق' : a.transformPeriod || '—'}</DetailCell>
                       <DetailCell label="أولوية التحول للذكاء الاصطناعي المساعد">{a.transformPriority || '—'}</DetailCell>
                       <DetailCell label="مخاطر التحول للذكاء الاصطناعي المساعد">{a.riskLevel || '—'}</DetailCell>
                     </DetailGrid>
@@ -452,6 +453,9 @@ export function DetailPanel({ vm }: { vm: VM }) {
                         })()}
                       </DetailCell>
                       <DetailCell label="أولوية التحول">{activityTransformYes('services', a) || '—'}</DetailCell>
+                    </DetailGrid>
+                    <DetailGrid cols={1}>
+                      <DetailCell label="فترة التحويل للذكاء الاصطناعي المساعد">{a.transformPeriod || '—'}</DetailCell>
                     </DetailGrid>
                   </React.Fragment>
                 ))}
