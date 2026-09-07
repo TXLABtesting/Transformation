@@ -763,6 +763,48 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
           </div>
         )}
       </div>
+      {auto && bt.unplaced.filter((r) => entMatch(r.entity)).length > 0 && (
+        <div style={{ background: '#fff', border: '1px dashed #D8DFEB', borderRadius: 18, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 22px 12px', borderBottom: '1px solid #EEF1F7', flexWrap: 'wrap' }}>
+            <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>بلا فترة تحويل — للتحديد</div>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#B45309', background: '#FFF7EB', borderRadius: 999, padding: '3px 10px' }}>{bt.unplaced.filter((r) => entMatch(r.entity)).length} {bt.unitLabel}</span>
+            {bt.unplaced.some((r) => r.canSetPeriod) && (
+              <span style={{ fontSize: 11.5, color: '#6B7A93' }}>اختيار الفترة يضع {bt.unitSingular} في دفعتها مباشرة — بلا دورة اعتماد</span>
+            )}
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+              <thead>
+                <tr>
+                  {bt.cols.map((c) => (<th key={c} style={th}>{c}</th>))}
+                  {bt.showEntity && <th style={th}>الجهة</th>}
+                  <th style={th}>حالة المدخل</th>
+                  <th style={th}>فترة التحويل</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bt.unplaced.filter((r) => entMatch(r.entity)).map((r) => (
+                  <tr key={r.id}>
+                    {r.lead.map((v, ci) => (
+                      <td key={ci} style={{ ...td, cursor: 'pointer', fontWeight: ci === 0 ? 800 : 400, color: ci === 0 ? '#13213C' : '#33415C', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v} onClick={r.onOpen}>{v}</td>
+                    ))}
+                    {bt.showEntity && <td style={{ ...td, whiteSpace: 'nowrap' }}>{r.entity || '—'}</td>}
+                    <td style={td}><span style={{ fontSize: 11, fontWeight: 800, color: '#42506B', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.status}</span></td>
+                    <td style={td}>
+                      {r.canSetPeriod ? (
+                        <select value={r.period} onChange={(e) => r.onSetPeriod(e.target.value)} style={{ border: '1px solid #DCE3EE', borderRadius: 8, padding: '7px 10px', paddingLeft: 26, fontSize: 11.5, fontFamily: 'inherit', color: '#33415C', backgroundColor: '#fff', cursor: 'pointer' }}>
+                          <option value="">اختر الفترة…</option>
+                          {r.periodOptions.map((o) => (<option key={o} value={o}>{o}</option>))}
+                        </select>
+                      ) : ('—')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       {bt.batches.map((b) => {
         return (
           <div key={b.name} style={{ background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 18, overflow: 'hidden' }}>
@@ -880,6 +922,20 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                         {(bt.canEditDates || bt.canReview || auto) && (
                           <td style={{ ...td, whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              {/* المسارات ذات التوزيع الآلي: المنسق يغيّر فترة التحويل (= الدفعة) مباشرة */}
+                              {r.canSetPeriod && (
+                                <select
+                                  value={r.period}
+                                  onChange={(e) => r.onSetPeriod(e.target.value)}
+                                  title="تغيير فترة التحويل — بلا دورة اعتماد"
+                                  style={{ border: '1px solid #DCE3EE', borderRadius: 8, padding: '7px 10px', paddingLeft: 26, fontSize: 11.5, fontFamily: 'inherit', color: '#33415C', backgroundColor: '#fff', cursor: 'pointer' }}
+                                >
+                                  <option value="">بدون فترة</option>
+                                  {r.periodOptions.map((o) => (
+                                    <option key={o} value={o}>{o}</option>
+                                  ))}
+                                </select>
+                              )}
                               {/* coordinator: swap the نشاط to another دفعة, or take it out */}
                               {bt.canArrange && !r.locked && (
                                 <>

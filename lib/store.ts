@@ -333,6 +333,10 @@ type Actions = {
   setDraftSel: (ids: string[]) => void;
   clearDraftSel: () => void;
   submitDrafts: (ids: string[]) => void;
+  /** تأكيد المنسق لمدخلات رفعها الفريق بالنيابة: كما رُفعت → معتمدة مباشرة؛ المعدَّلة أو الناقصة → لاعتماد الفريق */
+  confirmTeamDrafts: (ids: string[]) => void;
+  /** المنسق يحدد/يعدّل فترة التحويل (= الدفعة) لعملية فرعية من صفحة الدفعات — بلا دورة اعتماد */
+  setActivityPeriod: (id: string, actIdx: number, period: string) => void;
   // create wizard
   openCreate: () => void;
   closeModal: () => void;
@@ -1277,6 +1281,44 @@ export const useStore = create<Store>((set, get) => {
     clearDraftSel: () => setUi({ draftSel: [] }),
     setDraftSel: (ids) => setUi({ draftSel: ids }),
     // group send-for-approval: only complete drafts move to رئيس المسار
+    confirmTeamDrafts: (ids) => {
+      const s = get();
+      const idset = new Set(ids);
+      let approved = 0;
+      let sent = 0;
+      set((st) => ({
+        items: st.items.map((i) => {
+          if (!idset.has(i.id) || wfOf(i) !== 'draft' || !isTeamUpload(i)) return i;
+          const incomplete = missingFieldsOf(i as unknown as Record<string, unknown>).length > 0;
+          if (i.teamEdited || incomplete) {
+            if (incomplete) return i; // يُستكمل أولاً (الاستكمال تعديل → يمرّ بفريق المسار)
+            sent++;
+            return { ...i, wf: 'ent1' as WfState, approval: 'تم الإرسال', ret: null, log: withLog(s, i, 'submit', 'تأكيد منسق الجهة بعد التعديل — لاعتماد فريق عمل المسار') };
+          }
+          approved++;
+          return { ...i, wf: 'exec' as WfState, approval: 'معتمد', ret: null, log: withLog(s, i, 'approve', 'تأكيد منسق الجهة كما رُفع بالنيابة — معتمد') };
+        }),
+        ui: { ...st.ui, draftSel: [] },
+      }));
+      if (approved) logChange('تأكيد مدخلات مرفوعة بالنيابة', undefined, approved + ' معتمدة كما رُفعت');
+      if (sent) logChange('إرسال مدخلات معدَّلة للاعتماد', undefined, sent + ' لاعتماد فريق المسار');
+      persist();
+      toast(
+        (approved ? 'تم تأكيد ' + approved + ' من المدخلات — معتمدة' : '') +
+          (approved && sent ? '، و' : '') +
+          (sent ? 'أُرسل ' + sent + ' من المدخلات المعدَّلة لاعتماد فريق المسار' : '') || 'لا مدخلات مؤكدة'
+      );
+    },
+    setActivityPeriod: (id, actIdx, period) => {
+      const it = findItem(id);
+      if (!it) return;
+      const acts = materializeActs(it);
+      if (!acts[actIdx]) return;
+      const next = acts.map((x, j) => (j === actIdx ? { ...x, transformPeriod: period } : x));
+      patchItem(id, (i) => ({ ...mirrorActivities({ ...i, activities: next }), log: withLog(get(), i, 'edit', period ? 'تحديث فترة التحويل: ' + period : 'إزالة فترة التحويل') }));
+      persist();
+      toast(period ? 'تم تحديث فترة التحويل — ' + period : 'أُزيلت فترة التحويل');
+    },
     submitDrafts: (ids) => {
       const st = get();
       const ok: string[] = [];
@@ -1853,14 +1895,28 @@ export const useStore = create<Store>((set, get) => {
               const f = spec.find((sf) => !claimed.has(sf.key) && normalizeHeader(sf.label) === nh);
               if (f) claim(col, f.key);
             }
-            // 3) تطابق تقريبي: احتواء، ثم العناوين البديلة المعروفة لكل حقل
+            // 3) تطابق تقريبي منضبط: الحقل الذي يطابق أطول جزء من العنوان يفوز،
+            //    والعنوان الغامض (تعادل بين حقلين) لا يُنسب لأي حقل — حتى لا تُكتب
+            //    قيمة في خانة غير خانتها
             for (const { col, h } of headers) {
               if (map[col] || h.length <= 3) continue;
               const nh = normalizeHeader(h);
-              const f =
-                spec.find((sf) => !claimed.has(sf.key) && (nh.includes(normalizeHeader(sf.label)) || normalizeHeader(sf.label).includes(nh))) ||
-                spec.find((sf) => !claimed.has(sf.key) && (IMPORT_HEADER_ALIASES[sf.key] || []).some((al) => nh.includes(normalizeHeader(al))));
-              if (f) claim(col, f.key);
+              const scored = spec
+                .filter((sf) => !claimed.has(sf.key))
+                .map((sf) => {
+                  const nl = normalizeHeader(sf.label);
+                  let score = 0;
+                  if (nl.length >= 6 && nh.includes(nl)) score = nl.length;
+                  else if (nh.length >= 6 && nl.includes(nh)) score = nh.length;
+                  for (const al of IMPORT_HEADER_ALIASES[sf.key] || []) {
+                    const na = normalizeHeader(al);
+                    if (na.length >= 5 && nh.includes(na)) score = Math.max(score, na.length + 1);
+                  }
+                  return { sf, score };
+                })
+                .filter((x) => x.score > 0)
+                .sort((a, b) => b.score - a.score);
+              if (scored.length && (scored.length === 1 || scored[0].score > scored[1].score)) claim(col, scored[0].sf.key);
             }
             const hits = claimed.size;
             if (hits >= Math.min(3, spec.length) && (!bestRow || hits > Object.keys(bestRow.map).length)) bestRow = { row: r, map };
@@ -1897,7 +1953,7 @@ export const useStore = create<Store>((set, get) => {
             const fields: Record<string, string> = {};
             b.ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
               const key = b.map[col];
-              if (key) fields[key] = normalizeImportValue(key, norm(cellText(cell)));
+              if (key) fields[key] = normalizeImportValue(key, norm(cellText(cell)), path);
             });
             if (!Object.values(fields).some((v) => v)) continue;
             if (path === 'ops' && !fields.opType && b.opType) fields.opType = b.opType;
@@ -2826,8 +2882,12 @@ function commitDraft(
     ? draft.activities.filter((a) => Object.values(a).some((v) => String(v ?? '').trim()))
     : undefined;
   const mirrored = mirrorActivities({ ...draft, activities: cleaned && cleaned.length ? cleaned : undefined });
+  // تعديل المنسق على مدخل رفعه الفريق بالنيابة: تأكيده لاحقاً يمرّ بفريق المسار
+  const prevItem = editing ? s.items.find((i) => i.id === editing) : undefined;
+  const teamEdited = !!prevItem && isTeamUpload(prevItem) && s.role === 'coord' ? true : (mirrored as Item).teamEdited;
   const finalItem: Item = {
     ...(mirrored as Item),
+    teamEdited,
     entity: (mirrored as Item).entity || s.entityName || undefined,
     approval: asDraft ? 'مسودة' : approval || 'تم الإرسال',
     wf,

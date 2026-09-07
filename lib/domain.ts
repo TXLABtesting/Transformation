@@ -351,7 +351,7 @@ export const normalizeHeader = (h: string): string =>
     .trim();
 
 /** تطبيع قيم الاستيراد إلى خيارات المنصة (مرادفات شائعة في ملفات الجهات) */
-export function normalizeImportValue(key: string, v: string): string {
+export function normalizeImportValue(key: string, v: string, streamId?: string | null): string {
   const t = String(v || '').replace(/\s+/g, ' ').trim();
   if (!t) return t;
   const syn: Record<string, Record<string, string>> = {
@@ -368,13 +368,56 @@ export function normalizeImportValue(key: string, v: string): string {
   if (key === 'transformPeriod') {
     // «الدفعة الأولى - سبتمبر» بأي صياغة قريبة (مع «إطلاق»، بشرطة أخرى، بلا مسافات)
     const nh = normalizeHeader(t).replace(/^اطلاق /, '').replace(/ ?[–—-] ?/g, ' ');
-    for (const sid of ['ops', 'strategy', 'services']) {
+    const sids = streamId ? [streamId] : ['ops', 'strategy', 'services'];
+    for (const sid of sids) {
       for (const o of streamPeriodOptions(sid)) {
         if (normalizeHeader(o).replace(/ ?[–—-] ?/g, ' ') === nh) return o;
       }
     }
+    // فترة «من – إلى» في ملف الجهة (مثل «سبتمبر – نوفمبر 2026» أو «من أكتوبر 2026 إلى يناير 2027»):
+    // تُؤخذ بداية الفترة (أول شهر) وتُسند إلى دفعتها — وتُعدَّل لاحقاً عند الحاجة
+    const fm = firstMonthOf(t);
+    if (fm) {
+      for (const b of launchBatches(sids[0])) {
+        const bs = new Date(b.start + 'T00:00:00');
+        const be = new Date(b.end + 'T00:00:00');
+        const short = b.name.replace('إطلاق ', '');
+        if (fm.year) {
+          const d = new Date(fm.year, fm.month, 1);
+          if (d >= new Date(bs.getFullYear(), bs.getMonth(), 1) && d <= be) return short + ' - ' + PERIOD_MONTHS[fm.month];
+        } else {
+          for (let d = new Date(bs); d <= be; d.setMonth(d.getMonth() + 1)) if (d.getMonth() === fm.month) return short + ' - ' + PERIOD_MONTHS[fm.month];
+        }
+      }
+    }
   }
   return t;
+}
+
+/** أول شهر مذكور في نص فترة (عربي/إنجليزي/رقمي) مع سنته إن وُجدت */
+export function firstMonthOf(text: string): { month: number; year?: number } | null {
+  const t = normalizeHeader(text).replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+  const AR: Record<string, number> = { يناير: 0, فبراير: 1, مارس: 2, ابريل: 3, مايو: 4, يونيو: 5, يوليو: 6, اغسطس: 7, سبتمبر: 8, اكتوبر: 9, نوفمبر: 10, ديسمبر: 11,
+    'كانون الثاني': 0, شباط: 1, اذار: 2, نيسان: 3, ايار: 4, حزيران: 5, تموز: 6, اب: 7, ايلول: 8, 'تشرين الاول': 9, 'تشرين الثاني': 10, 'كانون الاول': 11 };
+  const EN = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  let best: { idx: number; month: number } | null = null;
+  for (const [name, m] of Object.entries(AR)) {
+    const i = t.indexOf(name);
+    if (i >= 0 && (!best || i < best.idx)) best = { idx: i, month: m };
+  }
+  const low = t.toLowerCase();
+  EN.forEach((name, m) => {
+    const i = low.indexOf(name);
+    if (i >= 0 && (!best || i < best.idx)) best = { idx: i, month: m };
+  });
+  const y = t.match(/\b(20\d{2})\b/);
+  if (best) return { month: best.month, year: y ? Number(y[1]) : undefined };
+  // صيغ رقمية: 9/2026 أو 2026-09
+  const n1 = t.match(/\b(1[0-2]|0?[1-9])\s*[\/-]\s*(20\d{2})\b/);
+  if (n1) return { month: Number(n1[1]) - 1, year: Number(n1[2]) };
+  const n2 = t.match(/\b(20\d{2})\s*[\/-]\s*(1[0-2]|0?[1-9])\b/);
+  if (n2) return { month: Number(n2[2]) - 1, year: Number(n2[1]) };
+  return null;
 }
 // sample row shown (in gray italics) under the header to guide filling
 export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
@@ -458,7 +501,8 @@ export function missingFieldsOf(i: Record<string, unknown> & { path?: string }):
     // الملاحظات حقل اختياري
     .filter((f) => f.key !== 'notes')
     // فترة التحويل غير مطلوبة لعملية غير قابلة للتحول
-    .filter((f) => (f.key === 'transformPeriod' && i.path === 'ops' ? plainOf(i.transformPriority) !== OPS_NO_PRIORITY && plainOf(i.willTransform) !== 'لا' : true))
+    // فترة التحويل اختيارية في كل المسارات
+    .filter((f) => f.key !== 'transformPeriod')
     // نظام/نسبة الأتمتة مطلوبان فقط للعمليات المؤتمتة (كلياً أو جزئياً)
     .filter((f) => (automationKey(f.key) && i.path === 'ops' ? ['نعم', 'جزئياً'].includes(plainOf(i.isAutomated)) : true))
     .filter((f) => (automationKey(f.key) && i.path === 'strategy' ? plainOf(i.automationLevel) !== 'غير مؤتمتة' : true))
@@ -490,14 +534,7 @@ export function activityMissing(path: string, a: ActivityDetail): string[] {
     need(a.transformScore, 'القابلية للتحول للذكاء الاصطناعي المساعد');
     need(a.willTransform, 'هل سيتم تحويل العملية؟');
     need(a.transformPriority, 'أولوية التحول للذكاء الاصطناعي المساعد');
-    // فترة التحويل تتبع الأولوية: مطلوبة لمنخفضة/متوسطة/مرتفعة، ومعطّلة
-    // تماماً عند «ليست ذات أولوية» (والقيم القديمة غير القابلة للتحول)،
-    // وكذلك عندما يُجاب «لا» على «هل سيتم تحويل العملية؟»
-    {
-      const pr = plainOf(a.transformPriority);
-      if (plainOf(a.willTransform) !== 'لا' && pr && pr !== OPS_NO_PRIORITY && pr !== OPS_NOT_TRANSFORMABLE && pr !== 'أولوية 4')
-        need(a.transformPeriod, 'فترة التحويل للذكاء الاصطناعي المساعد');
-    }
+    // فترة التحويل اختيارية (تُحدَّد أو تُعدَّل لاحقاً من صفحة دفعات الإطلاق)
     need(a.riskLevel, 'مخاطر التحول للذكاء الاصطناعي المساعد');
   } else if (path === 'strategy') {
     need(a.automationLevel, 'مستوى الأتمتة');
@@ -514,16 +551,14 @@ export function activityMissing(path: string, a: ActivityDetail): string[] {
     if (!isStgBlocked(a.transformScore)) {
       need(a.readinessLevel, 'مستوى الجاهزية');
       need(a.impactScore, 'مستوى الأثر المتوقع من التحول');
-      need(a.transformPeriod, 'فترة التحويل للذكاء الاصطناعي المساعد');
+      // فترة التحويل اختيارية (تُحدَّد أو تُعدَّل لاحقاً من صفحة دفعات الإطلاق)
     }
     need(a.riskLevel, 'مستوى المخاطر');
   } else if (path === 'services') {
     need(a.usageIntensity, 'كثافة الاستخدام');
     need(a.complexity, 'مستوى التعقيد');
     need(a.readinessLevel, 'مستوى الجاهزية');
-    // فترة التحويل = التوزيع الآلي على دفعات الإطلاق (كالعمليات والاستراتيجية):
-    // اعتماد واحد للخدمة يثبّت دفعتها
-    need(a.transformPeriod, 'فترة التحويل للذكاء الاصطناعي المساعد');
+    // فترة التحويل اختيارية (تُحدَّد أو تُعدَّل لاحقاً من صفحة دفعات الإطلاق)
   }
   return out;
 }
@@ -1148,6 +1183,8 @@ export type Item = {
   approval: string;
   // مدخل رفعه فريق عمل المسار بالنيابة عن الجهة (يبقى مرئياً للفريق حتى وهو مسودة)
   teamUp?: boolean;
+  // عدّله منسق الجهة بعد الرفع بالنيابة — تأكيده يمرّ حينها بفريق المسار
+  teamEdited?: boolean;
   priority?: string;
   rank?: number;
   complexity?: string;
