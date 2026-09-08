@@ -3,7 +3,7 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, PATHS, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail, opsPeriodOptions, streamPeriodOptions, OPS_NO_PRIORITY } from '@/lib/domain';
+import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, PATHS, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail, opsPeriodOptions, streamPeriodOptions, streamPeriodRangeOptions, OPS_NO_PRIORITY } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate, downloadOpsTemplate } from '@/lib/export';
 import { useSvcCatalog, svcCatalogFor, svcCatalogEntities } from '@/lib/svcCatalog';
@@ -1917,7 +1917,8 @@ function BulkStep({ vm }: { vm: VM }) {
           onClick={() => {
             const path = vm.store.ui.draft?.path || vm.store.myPath;
             const opts: Record<string, string[]> = { ...(STREAM_FIELD_OPTIONS[path] || {}) };
-            opts.transformPeriod = streamPeriodOptions(path);
+            // قالب الملف: فترات الدفعات كما هي في المنصة (تُسند لأول شهر عند الاستيراد)
+            opts.transformPeriod = streamPeriodRangeOptions(path);
             // مسار العمليات: نموذج حصر العمليات المعتمد بورقتيه — التصنيف تحدده الورقة
             if (path === 'ops') {
               return downloadOpsTemplate(

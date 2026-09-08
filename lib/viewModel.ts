@@ -1659,7 +1659,8 @@ function build(s: Store) {
                   entity: ent(i),
                   status: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : wfMeta(i).label,
                   notes: stripHtml(a.notes || i.notes || '') || '—',
-                  canSetPeriod: rawRole === 'coord',
+                  // قبل اعتماد المدخل فقط — بعد الاعتماد تُقفل الدفعة
+                  canSetPeriod: rawRole === 'coord' && !['exec', 'launch', 'done'].includes(wfOf(i)),
                   period: a.transformPeriod || '',
                   periodOptions: streamPeriodOptions(bPath),
                   onSetPeriod: (v: string) => s.setActivityPeriod(i.id, ai, v),
@@ -1698,8 +1699,9 @@ function build(s: Store) {
                       : [i.opType || '—', i.title || '—', a.name || '—'],
                 entity: ent(i),
                 month: autoPlaced ? periodBatchOf(a.transformPeriod)?.month || '' : '',
-                // المسارات ذات التوزيع الآلي: المنسق يعدّل الفترة (= الدفعة) من هنا بلا دورة اعتماد
-                canSetPeriod: autoPlaced && rawRole === 'coord',
+                // المسارات ذات التوزيع الآلي: المنسق يعدّل الفترة (= الدفعة) من هنا بلا دورة
+                // اعتماد — قبل اعتماد المدخل فقط؛ بعد الاعتماد تُقفل الدفعة
+                canSetPeriod: autoPlaced && rawRole === 'coord' && !['exec', 'launch', 'done'].includes(wfOf(i)),
                 period: a.transformPeriod || '',
                 periodOptions: autoPlaced ? streamPeriodOptions(bPath) : [],
                 onSetPeriod: (v: string) => s.setActivityPeriod(i.id, ai, v),

@@ -769,7 +769,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
             <div className="hd" style={{ fontSize: 15, fontWeight: 800, color: '#13213C' }}>بلا فترة تحويل — للتحديد</div>
             <span style={{ fontSize: 11, fontWeight: 800, color: '#B45309', background: '#FFF7EB', borderRadius: 999, padding: '3px 10px' }}>{bt.unplaced.filter((r) => entMatch(r.entity)).length} {bt.unitLabel}</span>
             {bt.unplaced.some((r) => r.canSetPeriod) && (
-              <span style={{ fontSize: 11.5, color: '#6B7A93' }}>اختيار الفترة يضع {bt.unitSingular} في دفعتها مباشرة — بلا دورة اعتماد</span>
+              <span style={{ fontSize: 11.5, color: '#6B7A93' }}>اختيار الفترة يضع {bt.unitSingular} في دفعتها مباشرة — بلا دورة اعتماد، وتُقفل الدفعة بعد اعتماد المدخل</span>
             )}
           </div>
           <div style={{ overflowX: 'auto' }}>

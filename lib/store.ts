@@ -1562,6 +1562,8 @@ export const useStore = create<Store>((set, get) => {
     setActivityPeriod: (id, actIdx, period) => {
       const it = findItem(id);
       if (!it) return;
+      // بعد اعتماد المدخل تُقفل دفعته — لا تغيير لفترة التحويل
+      if (['exec', 'launch', 'done'].includes(wfOf(it))) return toast('الدفعة مقفلة بعد الاعتماد — لا يمكن تغيير فترة التحويل');
       const acts = materializeActs(it);
       if (!acts[actIdx]) return;
       const next = acts.map((x, j) => (j === actIdx ? { ...x, transformPeriod: period } : x));
