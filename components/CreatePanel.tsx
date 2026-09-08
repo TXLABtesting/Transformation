@@ -1284,8 +1284,15 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
       bad
     );
   };
-  const selA = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail, opts: string[]) => {
+  // قيمة جاءت من ملف الجهة بصياغة خارج قائمة المنصة تبقى ظاهرة ومختارة
+  // (لا تُمحى صامتةً) حتى يراها المنسق ويبدّلها إن شاء
+  const withCur = (opts: string[], cur: unknown) => {
+    const v = String(cur ?? '');
+    return v && !opts.includes(v) ? [v, ...opts] : opts;
+  };
+  const selA = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail, opts0: string[]) => {
     const bad = reqOn && isEmptyVal(a[key]);
+    const opts = withCur(opts0, a[key]);
     return field(
       label,
       <select value={String(a[key] ?? '')} onChange={(e) => upd(i, { [key]: e.target.value } as Partial<ActivityDetail>)} style={{ ...inputStyle, ...(bad ? INVALID_STYLE : {}) }}>
@@ -1300,8 +1307,9 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
   };
   // قائمة اختيارية (بلا علامة إلزام ولا تمييز نقص) — فترة التحويل
   // اختياري لكنه يُعلَّم كغير محدد عند المراجعة (إطار متقطع) دون أن يمنع الإرسال
-  const selAOpt = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail, opts: string[]) => {
+  const selAOpt = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail, opts0: string[]) => {
     const soft = reqOn && isEmptyVal(a[key]);
+    const opts = withCur(opts0, a[key]);
     return field(
       label,
       <div>

@@ -805,7 +805,18 @@ function build(s: Store) {
             { v: 'لا', label: 'لا' },
           ],
           willValue: ui.opsWillF,
-          prioOptions: [{ v: 'all', label: 'أولوية التحول: الكل' }, ...OPS_PRIORITY_OPTIONS.map((o) => ({ v: o, label: o }))],
+          // خيارات المنصة + أي صياغة أخرى وردت في ملفات الجهات («أولوية 1…4»)
+          prioOptions: [
+            { v: 'all', label: 'أولوية التحول: الكل' },
+            ...Array.from(
+              new Set([
+                ...OPS_PRIORITY_OPTIONS,
+                ...opsScope.flatMap((i) => itemActivities(i).map((a) => String(a.transformPriority || '').trim())),
+              ])
+            )
+              .filter(Boolean)
+              .map((o) => ({ v: o, label: o })),
+          ],
           prioValue: ui.opsPrioF,
           supportOptions: [
             { v: 'all', label: 'نوع عملية الدعم: الكل' },

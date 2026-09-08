@@ -51,7 +51,7 @@ import { STREAM_FIELDS,
   IMPORT_HEADER_ALIASES,
   IMPORT_IDENTITY_KEYS,
   normalizeHeader,
-  normalizeImportValue, streamPeriodOptions, missingFieldsOf, softMissingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
+  normalizeImportValue, streamPeriodOptions, missingFieldsOf, softMissingFieldsOf, OPS_NOT_TRANSFORMABLE, OPS_NO_PRIORITY, DEFAULT_ABOUT, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
 import { DEFAULT_SITE, type SiteContent } from './site';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
@@ -2225,12 +2225,33 @@ export const useStore = create<Store>((set, get) => {
         for (const b of used) {
           for (let r = b.row + 1; r <= b.ws.rowCount; r++) {
             const fields: Record<string, string> = {};
+            let periodRaw = '';
             b.ws.getRow(r).eachCell({ includeEmpty: false }, (cell, col) => {
               const key = b.map[col];
-              if (key) fields[key] = normalizeImportValue(key, norm(cellText(cell)), path);
+              if (!key) return;
+              let raw = norm(cellText(cell));
+              // خلية بتنسيق نسبة مئوية في Excel تُخزَّن كسراً (0.95 = 95%)
+              if (/pct|Pct/.test(key)) {
+                const v = cell.value;
+                if (typeof v === 'number' && v <= 1 && /%/.test(String(cell.numFmt || ''))) raw = String(Math.round(v * 1000) / 10);
+              }
+              const val = normalizeImportValue(key, raw, path);
+              if (key === 'transformPeriod' && raw && !val) periodRaw = raw;
+              fields[key] = val;
             });
             if (!Object.values(fields).some((v) => v)) continue;
             if (path === 'ops' && !fields.opType && b.opType) fields.opType = b.opType;
+            // «هل سيتم تحويل العملية؟» عمود جديد لا يوجد في ملفات الجهات الحالية:
+            // يُشتق من القابلية والأولوية حين تكونان قاطعتين، ولا يُخمَّن فيما عداهما
+            if (path === 'ops' && !fields.willTransform) {
+              const ts = fields.transformScore || '';
+              const pr = fields.transformPriority || '';
+              if (ts === OPS_NOT_TRANSFORMABLE || pr === OPS_NOT_TRANSFORMABLE || pr === OPS_NO_PRIORITY) fields.willTransform = 'لا';
+              else if (ts === 'قابل كلياً' || ts === 'قابل جزئياً') fields.willTransform = 'نعم';
+            }
+            // فترة في الملف لا تقابل أي دفعة (ربع خارج نافذة الإطلاق مثلاً):
+            // تُحفظ نصّاً في الملاحظات ويبقى الحقل غير محدد ليُضبط من صفحة الدفعات
+            if (periodRaw) fields.notes = [fields.notes, 'فترة التحويل في الملف: ' + periodRaw + ' — خارج دفعات الإطلاق المعتمدة'].filter(Boolean).join(' — ');
             rawRows.push(fields);
           }
         }
