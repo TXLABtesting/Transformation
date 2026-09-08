@@ -1299,18 +1299,24 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
     );
   };
   // قائمة اختيارية (بلا علامة إلزام ولا تمييز نقص) — فترة التحويل
-  const selAOpt = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail, opts: string[]) =>
-    field(
+  // اختياري لكنه يُعلَّم كغير محدد عند المراجعة (إطار متقطع) دون أن يمنع الإرسال
+  const selAOpt = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail, opts: string[]) => {
+    const soft = reqOn && isEmptyVal(a[key]);
+    return field(
       label,
-      <select value={String(a[key] ?? '')} onChange={(e) => upd(i, { [key]: e.target.value } as Partial<ActivityDetail>)} style={inputStyle}>
-        <option value="">اختر… (اختياري)</option>
-        {opts.map((o) => (
-          <option key={o} value={o}>{o}</option>
-        ))}
-      </select>,
+      <div>
+        <select value={String(a[key] ?? '')} onChange={(e) => upd(i, { [key]: e.target.value } as Partial<ActivityDetail>)} style={{ ...inputStyle, ...(soft ? { border: '1.5px dashed rgba(180,83,9,.55)', background: '#FFFBF3' } : {}) }}>
+          <option value="">اختر… (اختياري)</option>
+          {opts.map((o) => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+        </select>
+        {soft && <div style={{ fontSize: 11, color: '#B45309', fontWeight: 700, marginTop: 4 }}>غير محدد — اختياري، يمكن الإرسال وتحديده لاحقاً من صفحة الدفعات</div>}
+      </div>,
       false,
       false
     );
+  };
   const yesNoA = (i: number, a: ActivityDetail, label: string, key: keyof ActivityDetail) =>
     field(
       label,
@@ -2087,6 +2093,12 @@ function BulkReviewStep({ vm }: { vm: VM }) {
                     ) : (
                       b._note && <div style={{ fontSize: 11.5, color: '#9AA6BC', marginTop: 2 }}>{b._note}</div>
                     )}
+                    {b.softMissing?.length ? (
+                      /* اختياري غير محدد — يُعلَّم ولا يمنع الحفظ أو الإرسال */
+                      <div style={{ marginTop: 4, fontSize: 11.5, color: '#B45309', lineHeight: 1.8 }}>
+                        <span style={{ fontWeight: 800 }}>غير محدد (اختياري):</span> {b.softMissing.map((m) => m.replace(' — اختياري', '')).join('، ')}
+                      </div>
+                    ) : null}
                   </div>
                   <span
                     style={{

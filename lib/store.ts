@@ -50,7 +50,7 @@ import { migrateRole } from './domain';
 import { STREAM_FIELDS,
   IMPORT_HEADER_ALIASES,
   normalizeHeader,
-  normalizeImportValue, missingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
+  normalizeImportValue, missingFieldsOf, softMissingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
 import { DEFAULT_SITE, type SiteContent } from './site';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
@@ -64,6 +64,7 @@ const plainVerdict = (r: BulkRow): BulkRow => {
   if (!(r.title || '').trim()) return { ...r, _v: 'يوجد خطأ', _note: 'اسم المدخل مفقود — لن يُستورد هذا الصف' };
   const miss = r.missing || [];
   if (miss.length) return { ...r, _v: 'بيانات ناقصة', _note: 'الحقول الناقصة: ' + miss.join('، ') };
+  if ((r.softMissing || []).length) return { ...r, _v: 'جاهز', _note: 'جاهز — فترة التحويل غير محددة (اختياري، تُحدَّد لاحقاً من صفحة الدفعات)' };
   return { ...r, _v: 'جاهز', _note: 'مكتمل — سيُرسل لاعتماد فريق عمل المسار بعد التأكيد' };
 };
 
@@ -87,6 +88,8 @@ export type BulkRow = {
   desc: string;
   extra?: Partial<Item>;
   missing?: string[];
+  /** اختياري غير محدد (فترة التحويل) — يُعرض ولا يمنع الإرسال */
+  softMissing?: string[];
   _v?: string;
   _note?: string;
 };
@@ -2291,6 +2294,7 @@ export const useStore = create<Store>((set, get) => {
           }
           const mirrored = mirrorActivities(base as Partial<Item>);
           const missing = missingFieldsOf({ ...(mirrored as Record<string, unknown>), path });
+          const softMissing = softMissingFieldsOf({ ...(mirrored as Item), path } as Item);
           rows.push({
             type: path === 'services' ? 'service' : 'operation',
             path,
@@ -2298,6 +2302,7 @@ export const useStore = create<Store>((set, get) => {
             desc: '',
             extra: mirrored as Partial<Item>,
             missing,
+            softMissing,
           });
         };
         for (const f of rawRows) {

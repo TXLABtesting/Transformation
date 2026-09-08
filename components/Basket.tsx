@@ -198,6 +198,9 @@ export function DraftBar({ vm }: { vm: VM }) {
                   ) : (
                     <div style={{ fontSize: 12, color: '#0B8A4B', fontWeight: 700, marginTop: 5 }}>مكتمل — جاهز للإرسال</div>
                   )}
+                  {it.soft && it.soft.length ? (
+                    <div style={{ fontSize: 11.5, color: '#B45309', fontWeight: 700, marginTop: 4, lineHeight: 1.8 }}>غير محدد (اختياري — لا يمنع الإرسال): {it.soft.join('، ')}</div>
+                  ) : null}
                 </div>
               ))}
             </div>

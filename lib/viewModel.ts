@@ -62,7 +62,7 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   TWO_STEP_PHASES,
   type Item,
   type RoleKey,
-  itemActivities, itemAssistantNames, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload,
+  itemActivities, itemAssistantNames, softMissingFieldsOf, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload,
   streamPeriodOptions,
   isAutoPlacedStream, periodBatchOf as periodBatchFor, OPS_TRANSFORM_OPTIONS, OPS_PRIORITY_OPTIONS, STG_TRANSFORM_OPTIONS } from './domain';
 import { stripHtml } from './richtext';
@@ -2001,6 +2001,7 @@ function build(s: Store) {
           id: i.id,
           title: i.title || 'بدون عنوان',
           missing: missingFieldsOf(i as unknown as Record<string, unknown>),
+          soft: softMissingFieldsOf(i),
         })),
         anyMissing: sel.some((i) => missingFieldsOf(i as unknown as Record<string, unknown>).length > 0),
         onSend: () => s.submitDrafts(sel.map((i) => i.id)),
@@ -2466,6 +2467,8 @@ function mkCard(i: Item, s: Store, ctx: Ctx) {
     draftChecked: s.ui.draftSel.includes(i.id),
     onToggleDraftSel: () => s.toggleDraftSel(i.id),
     missingCount: wfOf(i) === 'draft' ? missingFieldsOf(i as unknown as Record<string, unknown>).length : 0,
+    // اختياري غير محدد (فترة التحويل): يُعلَّم دون أن يمنع الإرسال
+    softMissingCount: ['draft', 'ent1'].includes(wfOf(i)) ? softMissingFieldsOf(i).length : 0,
     assignChecked: s.ui.assignSel.includes(i.id),
     onToggleAssignSel: () => s.toggleAssignSel(i.id),
     nomBy: i.nom?.by || '',

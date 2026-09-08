@@ -3886,6 +3886,11 @@ function ListView({ cards, stream, showEntity, onSetSelection }: { cards: CardVM
                     بيانات ناقصة
                   </span>
                 )}
+                {c.missingCount === 0 && c.softMissingCount > 0 && (
+                  <span title="فترة التحويل غير محددة — اختياري، لا يمنع الإرسال" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginRight: 6, fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 999, background: '#FFF7EB', color: '#B45309', border: '1px dashed #F1DCBA' }}>
+                    فترة التحويل غير محددة
+                  </span>
+                )}
               </td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
                 {/* صف إجراءات ثابت الاتجاه: يبدأ من يمين العمود في كل الصفوف */}
