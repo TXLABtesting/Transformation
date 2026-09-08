@@ -374,8 +374,18 @@ export function normalizeImportValue(key: string, v: string, streamId?: string |
         if (normalizeHeader(o).replace(/ ?[–—-] ?/g, ' ') === nh) return o;
       }
     }
-    // فترة «من – إلى» في ملف الجهة (مثل «سبتمبر – نوفمبر 2026» أو «من أكتوبر 2026 إلى يناير 2027»):
-    // تُؤخذ بداية الفترة (أول شهر) وتُسند إلى دفعتها — وتُعدَّل لاحقاً عند الحاجة
+    // فترة الدفعة نفسها كما هي معرّفة في المنصة («سبتمبر – نوفمبر 2026» = الدفعة الأولى):
+    // تُسند إلى الدفعة وأول شهر فيها — هذه خيارات قائمة «فترة التحويل» في قالب الملف
+    const nt = normalizeHeader(t).replace(/^من /, '').replace(/ (الي|حتي) /g, ' ').replace(/ ?[–—-] ?/g, ' ');
+    for (const b of launchBatches(sids[0])) {
+      const np = normalizeHeader(b.period || '').replace(/ ?[–—-] ?/g, ' ');
+      if (np && np === nt) {
+        const bs = new Date(b.start + 'T00:00:00');
+        return b.name.replace('إطلاق ', '') + ' - ' + PERIOD_MONTHS[bs.getMonth()];
+      }
+    }
+    // فترة «من – إلى» أخرى (مثل «من أكتوبر 2026 إلى يناير 2027»): تُؤخذ بداية الفترة
+    // (أول شهر) وتُسند إلى دفعتها — وتُعدَّل لاحقاً عند الحاجة
     const fm = firstMonthOf(t);
     if (fm) {
       for (const b of launchBatches(sids[0])) {
@@ -1510,6 +1520,11 @@ export function streamPeriodOptions(streamId?: string | null): string[] {
 }
 export function opsPeriodOptions(): string[] {
   return streamPeriodOptions();
+}
+/** خيارات «فترة التحويل» في قالب الملف: فترات دفعاتنا نفسها («سبتمبر – نوفمبر 2026»…)
+ *  — تُسند عند الاستيراد إلى الدفعة وأول شهر فيها */
+export function streamPeriodRangeOptions(streamId?: string | null): string[] {
+  return launchBatches(streamId).map((b) => b.period || '').filter(Boolean);
 }
 
 // المسارات ذات التوزيع الآلي: «فترة التحويل» المختارة عند الإدخال هي التوزيع
