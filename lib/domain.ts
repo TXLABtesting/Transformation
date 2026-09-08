@@ -313,18 +313,23 @@ export const STREAM_FIELD_OPTIONS: Record<string, Record<string, string[]>> = {
 
 /** عناوين بديلة لأعمدة الملف تُقبل عند الاستيراد (بعد التطبيع) — لكل مفتاح */
 export const IMPORT_HEADER_ALIASES: Record<string, string[]> = {
+  // مفاتيح الهوية: صياغات معروفة فقط (لا احتواء تقريبي — انظر IMPORT_IDENTITY_KEYS)
+  title: ['اسم الخدمة', 'اسم العملية', 'اسم المهمة', 'العملية الرئيسية', 'العمليات الرئيسية', 'المهمة الرئيسية', 'الخدمة الرئيسية'],
+  axis: ['المحور الاستراتيجي', 'المحور الإستراتيجي', 'اسم المحور'],
+  subService: ['الخدمة الفرعية', 'الخدمات الفرعية', 'اسم الخدمة الفرعية'],
+  subActivities: ['الأنشطة الفرعية', 'النشاط الفرعي', 'اسم النشاط', 'العملية الفرعية', 'اسم العملية الفرعية'],
   willTransform: ['هل سيتم تحويل', 'سيتم تحويل', 'هل ستحول'],
   transformPriority: ['أولوية التحول', 'أولويات التحول', 'أولوية تحويل', 'أولويات تحويل'],
   transformPeriod: ['فترة التحويل', 'فترة تحويل', 'فترة التحول'],
-  riskLevel: ['مخاطر التحول', 'مخاطر تحويل', 'مستوى المخاطر', 'المخاطر'],
+  riskLevel: ['مخاطر التحول', 'مخاطر تحويل', 'مستوى المخاطر', 'المخاطر', 'درجة المخاطر'],
   transformScore: ['القابلية للتحول', 'قابلية التحول'],
   readinessLevel: ['الجاهزية للتحول', 'مستوى الجاهزية'],
   impactScore: ['مستوى الأثر'],
-  usageIntensity: ['كثافة'],
+  usageIntensity: ['كثافة الاستخدام', 'كثافة النشاط', 'كثافة العملية', 'كثافة'],
   complexity: ['مستوى التعقيد', 'التعقيد'],
   automationSystem: ['نظام الأتمتة'],
   automationPct: ['نسبة الأتمتة'],
-  isAutomated: ['مؤتمتة'],
+  isAutomated: ['هل مؤتمتة', 'العملية مؤتمتة', 'النشاط مؤتمت', 'مؤتمتة'],
 };
 
 /** تطبيع عنوان عمود للمقارنة: توحيد الهمزات والمسافات وإسقاط «المساعد»
@@ -336,27 +341,96 @@ export const normalizeHeader = (h: string): string =>
     .replace(/ة/g, 'ه')
     .replace(/ى/g, 'ي')
     .replace(/[()؟?:،,\-\\/]/g, ' ')
-    .replace(/\bالمساعد\b/g, '')
-    .replace(/\bالعمليات\b/g, '')
-    .replace(/\bاولويات\b/g, 'اولويه')
+    .replace(/\s+/g, ' ')
+    // كلمات كاملة فقط (حدود الكلمات في JS لا تعمل مع الحروف العربية)
+    .replace(/(^|\s)(المساعد|العمليات)(?=\s|$)/g, ' ')
+    .replace(/(^|\s)اولويات(?=\s|$)/g, ' اولويه')
     .replace(/\s+/g, ' ')
     .trim();
 
+/** الأرقام العربية-الهندية والفارسية → لاتينية (للفترات والنسب في ملفات الجهات) */
+export const toLatinDigits = (s: string): string =>
+  String(s || '')
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+
+/** مفاتيح الهوية (اسم المدخل/النشاط): لا تُطابق تقريبياً بالاحتواء — إما تطابق
+ *  كامل أو عنوان بديل معروف، حتى لا يسرق عمود «وصف المهمة» خانة «المهمة» */
+export const IMPORT_IDENTITY_KEYS = new Set(['title', 'axis', 'subService', 'subActivities']);
+/** حقول نصية حرة تُحفظ كما كُتبت (بلا تطبيع للقيمة أو للأرقام) */
+export const IMPORT_FREE_TEXT_KEYS = new Set(['title', 'axis', 'subService', 'subActivities', 'sector', 'dept', 'section', 'automationSystem', 'notes', 'opType']);
+
+// مجموعات المرادفات لكل حقل: القيمة المستوردة تُسند إلى العضو المتاح في خيارات
+// الحقل في المسار نفسه (فلا تُكتب قيمة مسار في خانة مسار آخر)
+const LEVEL_GROUPS = [
+  ['عالي', 'عالية', 'مرتفع', 'مرتفعة', 'high'],
+  ['متوسط', 'متوسطة', 'medium'],
+  ['منخفض', 'منخفضة', 'low'],
+];
+const IMPORT_VALUE_GROUPS: Record<string, string[][]> = {
+  riskLevel: LEVEL_GROUPS,
+  impactScore: LEVEL_GROUPS,
+  complexity: LEVEL_GROUPS,
+  usageIntensity: LEVEL_GROUPS,
+  readinessLevel: LEVEL_GROUPS,
+  transformPriority: [
+    ...LEVEL_GROUPS,
+    [OPS_NO_PRIORITY, 'لا يوجد', 'لا', 'غير ذات أولوية', 'بلا أولوية', 'none'],
+  ],
+  willTransform: [
+    ['نعم', 'yes', 'y', 'true'],
+    ['لا', 'كلا', 'no', 'n', 'false'],
+  ],
+  isAutomated: [
+    ['نعم', 'مؤتمتة', 'مؤتمتة كلياً', 'مؤتمت', 'كلياً', 'yes'],
+    ['جزئياً', 'مؤتمتة جزئياً', 'جزئي', 'partial'],
+    ['لا', 'غير مؤتمتة', 'غير مؤتمت', 'no'],
+  ],
+  automationLevel: [
+    ['مؤتمتة كلياً', 'نعم', 'مؤتمتة', 'مؤتمت', 'كلياً', 'yes'],
+    ['مؤتمتة جزئياً', 'جزئياً', 'جزئي', 'partial'],
+    ['غير مؤتمتة', 'لا', 'غير مؤتمت', 'no'],
+  ],
+  transformScore: [
+    ['قابل كلياً', 'قابلة كلياً', 'قابل', 'قابلة', 'كلياً', 'قابل للتحول', 'قابلة للتحول'],
+    ['قابل جزئياً', 'قابلة جزئياً', 'جزئياً', 'قابل جزئياً للتحول'],
+    ['غير قابل', 'غير قابلة', 'غير قابل للتحول', 'غير قابلة للتحول', 'لا'],
+  ],
+};
+
 /** تطبيع قيم الاستيراد إلى خيارات المنصة (مرادفات شائعة في ملفات الجهات) */
 export function normalizeImportValue(key: string, v: string, streamId?: string | null): string {
-  const t = String(v || '').replace(/\s+/g, ' ').trim();
+  const raw = String(v || '').replace(/\s+/g, ' ').trim();
+  // الأرقام العربية-الهندية تُوحَّد في القيم المصنّفة والرقمية فقط — لا في الأسماء والنصوص الحرة
+  const t = IMPORT_FREE_TEXT_KEYS.has(key) ? raw : toLatinDigits(raw);
   if (!t) return t;
-  const syn: Record<string, Record<string, string>> = {
-    transformPriority: { 'عالية': 'مرتفعة', 'عالي': 'مرتفعة', 'مرتفع': 'مرتفعة', 'متوسط': 'متوسطة', 'منخفض': 'منخفضة', 'لا يوجد': OPS_NO_PRIORITY, 'لا': OPS_NO_PRIORITY, 'غير ذات أولوية': OPS_NO_PRIORITY },
-    riskLevel: { 'عالي': 'عالية', 'مرتفعة': 'عالية', 'مرتفع': 'عالية', 'متوسط': 'متوسطة', 'منخفض': 'منخفضة' },
-    willTransform: { yes: 'نعم', Yes: 'نعم', YES: 'نعم', no: 'لا', No: 'لا', NO: 'لا', 'كلا': 'لا' },
-    isAutomated: { 'مؤتمتة': 'نعم', 'مؤتمتة كلياً': 'نعم', 'مؤتمتة جزئياً': 'جزئياً', 'جزئيا': 'جزئياً', 'غير مؤتمتة': 'لا' },
-    impactScore: { 'عالية': 'عالي', 'مرتفع': 'عالي', 'مرتفعة': 'عالي', 'متوسطة': 'متوسط', 'منخفضة': 'منخفض' },
-    complexity: { 'عالية': 'عالي', 'مرتفع': 'عالي', 'مرتفعة': 'عالي', 'متوسطة': 'متوسط', 'منخفضة': 'منخفض' },
-    transformScore: { 'قابل': 'قابل كلياً', 'قابلة كلياً': 'قابل كلياً', 'قابلة جزئياً': 'قابل جزئياً', 'غير قابل': OPS_NOT_TRANSFORMABLE, 'غير قابلة': OPS_NOT_TRANSFORMABLE, 'غير قابلة للتحول': OPS_NOT_TRANSFORMABLE },
-  };
-  const m = syn[key];
-  if (m && m[t] !== undefined) return m[t];
+  // مقارنة مطبَّعة (همزات/تاء مربوطة/تنوين/حالة الأحرف) — «عاليه» = «عالية»
+  const nk = normalizeHeader(t).toLowerCase();
+  const same = (a: string) => normalizeHeader(a).toLowerCase() === nk;
+  const opts = streamId ? STREAM_FIELD_OPTIONS[streamId]?.[key] : undefined;
+  if (opts) {
+    // قيمة صحيحة أصلاً (ولو بصياغة إملائية قريبة) تبقى كما هي
+    const exact = opts.find(same);
+    if (exact) return exact;
+    // مرادف معروف → العضو المتاح في خيارات هذا المسار تحديداً
+    const group = (IMPORT_VALUE_GROUPS[key] || []).find((g) => g.some(same));
+    if (group) {
+      const target = opts.find((o) => group.some((g) => normalizeHeader(g).toLowerCase() === normalizeHeader(o).toLowerCase()));
+      if (target) return target;
+    }
+    // «غير قابل للتحول» ↔ «غير قابل»: أحدهما بادئة الآخر
+    const pref = opts.find((o) => {
+      const no = normalizeHeader(o).toLowerCase();
+      return no.length >= 6 && (nk.startsWith(no + ' ') || no.startsWith(nk + ' '));
+    });
+    if (pref) return pref;
+    return t;
+  }
+  if (key === 'willTransform' || key === 'isAutomated') {
+    // بلا قائمة خيارات في المسار: المرادفات الأساسية فقط
+    const group = (IMPORT_VALUE_GROUPS[key] || []).find((g) => g.some(same));
+    if (group) return group[0];
+  }
   if (key === 'transformPeriod') {
     // «الدفعة الأولى - سبتمبر» بأي صياغة قريبة (مع «إطلاق»، بشرطة أخرى، بلا مسافات)
     const nh = normalizeHeader(t).replace(/^اطلاق /, '').replace(/ ?[–—-] ?/g, ' ');
@@ -364,6 +438,13 @@ export function normalizeImportValue(key: string, v: string, streamId?: string |
     for (const sid of sids) {
       for (const o of streamPeriodOptions(sid)) {
         if (normalizeHeader(o).replace(/ ?[–—-] ?/g, ' ') === nh) return o;
+      }
+    }
+    // اسم الدفعة وحده («الدفعة الأولى» / «إطلاق الدفعة الثانية») → أول شهر فيها
+    for (const b of launchBatches(sids[0])) {
+      if (normalizeHeader(b.name.replace('إطلاق ', '')) === nh) {
+        const bs = new Date(b.start + 'T00:00:00');
+        return b.name.replace('إطلاق ', '') + ' - ' + PERIOD_MONTHS[bs.getMonth()];
       }
     }
     // فترة الدفعة نفسها كما هي معرّفة في المنصة («سبتمبر – نوفمبر 2026» = الدفعة الأولى):
@@ -392,24 +473,32 @@ export function normalizeImportValue(key: string, v: string, streamId?: string |
         }
       }
     }
+    // نص لا يقابل أي دفعة (شهر خارج نافذة الإطلاق أو صياغة غير مفهومة): يُترك
+    // فارغاً ليُعلَّم «فترة التحويل غير محددة» ويُحدَّد من صفحة الدفعات
+    return '';
   }
   return t;
 }
 
 /** أول شهر مذكور في نص فترة (عربي/إنجليزي/رقمي) مع سنته إن وُجدت */
 export function firstMonthOf(text: string): { month: number; year?: number } | null {
-  const t = normalizeHeader(text).replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+  const t = normalizeHeader(toLatinDigits(text));
   const AR: Record<string, number> = { يناير: 0, فبراير: 1, مارس: 2, ابريل: 3, مايو: 4, يونيو: 5, يوليو: 6, اغسطس: 7, سبتمبر: 8, اكتوبر: 9, نوفمبر: 10, ديسمبر: 11,
     'كانون الثاني': 0, شباط: 1, اذار: 2, نيسان: 3, ايار: 4, حزيران: 5, تموز: 6, اب: 7, ايلول: 8, 'تشرين الاول': 9, 'تشرين الثاني': 10, 'كانون الاول': 11 };
   const EN = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
   let best: { idx: number; month: number } | null = null;
+  // أسماء الأشهر ككلمات كاملة فقط («اب» لا تُلتقط من «ابتداءً»)
+  const tokenAt = (hay: string, name: string, prefix = false): number => {
+    const m = hay.match(new RegExp('(^|\\s)' + name.replace(/\s+/g, '\\s+') + (prefix ? '' : '(?=\\s|$)')));
+    return m ? (m.index ?? 0) + m[1].length : -1;
+  };
   for (const [name, m] of Object.entries(AR)) {
-    const i = t.indexOf(name);
+    const i = tokenAt(t, name);
     if (i >= 0 && (!best || i < best.idx)) best = { idx: i, month: m };
   }
   const low = t.toLowerCase();
   EN.forEach((name, m) => {
-    const i = low.indexOf(name);
+    const i = tokenAt(low, name, true);
     if (i >= 0 && (!best || i < best.idx)) best = { idx: i, month: m };
   });
   const y = t.match(/\b(20\d{2})\b/);
@@ -466,7 +555,7 @@ export const STREAM_FIELD_SAMPLE: Record<string, Record<string, string>> = {
     impactScore: 'عالي',
     complexity: 'متوسط',
     transformScore: 'قابل جزئياً',
-    transformPeriod: 'الربع الأول 2027',
+    transformPeriod: 'سبتمبر – نوفمبر 2026',
     willTransform: 'نعم',
     transformPriority: 'متوسطة',
     riskLevel: 'متوسطة',
@@ -535,9 +624,12 @@ export function activityMissing(path: string, a: ActivityDetail): string[] {
     need(a.complexity, 'مستوى التعقيد');
     need(a.transformScore, 'القابلية للتحول للذكاء الاصطناعي المساعد');
     need(a.willTransform, 'هل سيتم تحويل العملية؟');
-    need(a.transformPriority, 'أولوية التحول للذكاء الاصطناعي المساعد');
-    // فترة التحويل اختيارية (تُحدَّد أو تُعدَّل لاحقاً من صفحة دفعات الإطلاق)
-    need(a.riskLevel, 'مخاطر التحول للذكاء الاصطناعي المساعد');
+    // «لن تُحوَّل» يغلق أولوية التحول ومخاطره وفترته — لا أولوية ولا مخاطر لما لن يُحوَّل
+    if (plainOf(a.willTransform) !== 'لا') {
+      need(a.transformPriority, 'أولوية التحول للذكاء الاصطناعي المساعد');
+      // فترة التحويل اختيارية (تُحدَّد أو تُعدَّل لاحقاً من صفحة دفعات الإطلاق)
+      need(a.riskLevel, 'مخاطر التحول للذكاء الاصطناعي المساعد');
+    }
   } else if (path === 'strategy') {
     need(a.automationLevel, 'مستوى الأتمتة');
     if (plainOf(a.automationLevel) && plainOf(a.automationLevel) !== 'غير مؤتمتة') {
@@ -622,19 +714,27 @@ export function itemActivities(i: Item): ActivityDetail[] {
   }));
 }
 
+/** هل تنطبق «فترة التحويل» على هذه العملية الفرعية؟ — القاعدة الواحدة التي تتبعها
+ *  النماذج والتفاصيل وصفحة الدفعات والتنبيهات: العمليات: ليست «لا» في سؤال التحويل
+ *  ولا «ليست ذات أولوية»؛ الاستراتيجية: ليست «غير قابل»؛ الخدمات: ليست الأولوية 4 */
+export function periodApplies(path: string | undefined, a: ActivityDetail): boolean {
+  if (path === 'ops') {
+    const pr = plainOf(a.transformPriority);
+    return plainOf(a.willTransform) !== 'لا' && pr !== OPS_NO_PRIORITY && pr !== OPS_NOT_TRANSFORMABLE && pr !== 'أولوية 4';
+  }
+  if (path === 'strategy') return !isStgBlocked(a.transformScore);
+  if (path === 'services') return svcPriority(a.usageIntensity, a.complexity, a.readinessLevel) !== 4;
+  return false;
+}
+
 /** حقول اختيارية غير محددة تُعرض كناقصة دون أن تمنع الإرسال — فترة التحويل
- *  (حين تنطبق: ليست «لا» في سؤال التحويل ولا «ليست ذات أولوية» ولا «غير قابل») */
+ *  (حين تنطبق، وحين لا تطابق قيمتها فترةً معرّفة — القيم الحرة القديمة تُعد غير محددة) */
 export function softMissingFieldsOf(i: Item): string[] {
   const out: string[] = [];
   const acts = itemActivities(i);
   acts.forEach((a, idx) => {
-    if (plainOf(a.transformPeriod)) return;
-    if (i.path === 'ops') {
-      const pr = plainOf(a.transformPriority);
-      if (plainOf(a.willTransform) === 'لا' || pr === OPS_NO_PRIORITY || pr === OPS_NOT_TRANSFORMABLE || pr === 'أولوية 4') return;
-    } else if (i.path === 'strategy') {
-      if (isStgBlocked(a.transformScore)) return;
-    } else if (i.path !== 'services') return;
+    if (!periodApplies(i.path, a)) return;
+    if (periodBatchOf(a.transformPeriod, i.path)) return;
     const nm = (a.name || '').trim() || (i.path === 'services' ? 'الخدمة الفرعية ' : 'العملية الفرعية ') + (idx + 1);
     out.push('فترة التحويل للذكاء الاصطناعي المساعد — اختياري (' + nm + ')');
   });
@@ -659,6 +759,9 @@ export function mirrorActivities<T extends Partial<Item> & { path?: string }>(d:
     // معرّف ثابت لكل عملية فرعية حتى يمكن ربطها بالمساعدين من الخادم
     id: a.id || (d.id ? d.id + '-a' + idx : 'a-' + Math.random().toString(36).slice(2, 10)),
     transformYes: activityTransformYes(path, a) || a.transformYes,
+    // فترة تحويل لم تعد تنطبق («لا» / «ليست ذات أولوية» / «غير قابل» / الأولوية 4) تُمسح
+    // حتى لا تبقى العملية موزَّعة على دفعة رغم أنها لن تُحوَّل
+    transformPeriod: periodApplies(path, a) ? a.transformPeriod : undefined,
   }));
   const first = withDerived[0];
   const out: T = { ...d, activities: withDerived };

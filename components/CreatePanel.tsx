@@ -1562,7 +1562,15 @@ function ActivitySections({ vm, stream, subOptions }: { vm: VM; stream: 'ops' | 
               {/* فترة التحويل = التوزيع الآلي على دفعات الإطلاق (كالعمليات
                   والاستراتيجية): اعتماد واحد للخدمة يثبّت دفعتها */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-                {selAOpt(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', streamPeriodOptions('services'))}
+                {svcPriority(a.usageIntensity, a.complexity, a.readinessLevel) === 4
+                  ? field(
+                      'فترة التحويل للذكاء الاصطناعي المساعد',
+                      <div style={{ fontSize: 12.5, color: '#9AA6BC', background: '#F4F7FC', border: '1px dashed #D8DFEB', borderRadius: 11, padding: '11px 13px', minHeight: 44, display: 'flex', alignItems: 'center' }}>
+                        لا ينطبق — الأولوية 4 (لن تُحوَّل)
+                      </div>,
+                      false
+                    )
+                  : selAOpt(i, a, 'فترة التحويل للذكاء الاصطناعي المساعد', 'transformPeriod', streamPeriodOptions('services'))}
               </div>
             </>
           )}

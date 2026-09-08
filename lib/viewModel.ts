@@ -64,6 +64,7 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   type RoleKey,
   itemActivities, itemAssistantNames, softMissingFieldsOf, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload,
   streamPeriodOptions,
+  periodApplies,
   isAutoPlacedStream, periodBatchOf as periodBatchFor, OPS_TRANSFORM_OPTIONS, OPS_PRIORITY_OPTIONS, STG_TRANSFORM_OPTIONS } from './domain';
 import { stripHtml } from './richtext';
 import { useMoca } from './mocaStore';
@@ -1602,6 +1603,13 @@ function build(s: Store) {
         // الإدخال — الصفحة عرض فقط لكل الأدوار ولا دورة اعتماد ثانية
         // (الاعتماد مرة واحدة على المدخل نفسه)
         const autoPlaced = isAutoPlacedStream(bPath);
+        // حالة المدخل في صفحة الدفعات — نفس تسميات البطاقات (ومنها مسودات رفع الفريق)
+        const batchStatusLabel = (i: Item): string =>
+          i.ret
+            ? isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS
+            : wfOf(i) === 'draft' && isTeamUpload(i)
+              ? rawRole === 'coord' ? 'مرفوعة بالنيابة — بانتظار تأكيدكم' : 'بانتظار تأكيد منسق الجهة'
+              : wfMeta(i).label;
         // «الدفعة X - شهر» → دفعة الإطلاق المطابقة + الشهر
         const periodBatchOf = (period?: string) => periodBatchFor(period, bPath);
         return {
@@ -1650,18 +1658,21 @@ function build(s: Store) {
             ? roleBase
                 .filter((i) => i.path === bPath)
                 .flatMap((i) => itemActivities(i).map((a, ai) => ({ i, a, ai })))
-                .filter(({ i, a }) => !periodBatchOf(a.transformPeriod) && !activityBatch(i, a))
+                // تنطبق عليها الفترة ولم تُحدَّد (أو قيمتها حرة قديمة لا تطابق دفعة) ولا دفعة قديمة لها
+                .filter(({ i, a }) => periodApplies(bPath, a) && !periodBatchOf(a.transformPeriod) && !activityBatch(i, a))
                 .map(({ i, a, ai }) => ({
                   id: i.id + '::' + ai,
                   itemId: i.id,
                   actIdx: ai,
                   lead: bPath === 'services' ? [i.title || '—', a.name || '—'] : bPath === 'strategy' ? [i.axis || '—', i.title || '—', a.name || '—'] : [i.opType || '—', i.title || '—', a.name || '—'],
                   entity: ent(i),
-                  status: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : wfMeta(i).label,
+                  status: batchStatusLabel(i),
                   notes: stripHtml(a.notes || i.notes || '') || '—',
                   // قبل اعتماد المدخل فقط — بعد الاعتماد تُقفل الدفعة
                   canSetPeriod: rawRole === 'coord' && !['exec', 'launch', 'done'].includes(wfOf(i)),
-                  period: a.transformPeriod || '',
+                  locked: ['exec', 'launch', 'done'].includes(wfOf(i)),
+                  // قيمة حرة قديمة لا تطابق دفعة تُعامل كغير محددة في القائمة
+                  period: periodBatchOf(a.transformPeriod) ? a.transformPeriod || '' : '',
                   periodOptions: streamPeriodOptions(bPath),
                   onSetPeriod: (v: string) => s.setActivityPeriod(i.id, ai, v),
                   onOpen: () => s.openDetail(i.id),
@@ -1676,7 +1687,7 @@ function build(s: Store) {
             // القديمة المحفوظة قبل التحديث ظاهرة في دفعاتها)
             const inBatch = pairs.filter(({ i, a }) =>
               autoPlaced
-                ? (periodBatchOf(a.transformPeriod)?.batch || activityBatch(i, a)) === b.name
+                ? ((periodApplies(bPath, a) ? periodBatchOf(a.transformPeriod)?.batch : undefined) || activityBatch(i, a)) === b.name
                 : activityBatch(i, a) === b.name
             );
             return {
@@ -1702,14 +1713,14 @@ function build(s: Store) {
                 // المسارات ذات التوزيع الآلي: المنسق يعدّل الفترة (= الدفعة) من هنا بلا دورة
                 // اعتماد — قبل اعتماد المدخل فقط؛ بعد الاعتماد تُقفل الدفعة
                 canSetPeriod: autoPlaced && rawRole === 'coord' && !['exec', 'launch', 'done'].includes(wfOf(i)),
-                period: a.transformPeriod || '',
+                period: periodBatchOf(a.transformPeriod) ? a.transformPeriod || '' : '',
                 periodOptions: autoPlaced ? streamPeriodOptions(bPath) : [],
                 onSetPeriod: (v: string) => s.setActivityPeriod(i.id, ai, v),
                 start: a.startDate ?? i.startDate ?? '',
                 end: a.endDate ?? i.endDate ?? '',
                 prio: actPrioCellOf(i, a),
                 // حالة محتوى المدخل نفسه (دورة الاعتماد الأولى)
-                status: i.ret ? (isRejected(i) ? REJECTED_STATUS : RETURNED_STATUS) : wfMeta(i).label,
+                status: batchStatusLabel(i),
                 // حالة التوزيع (دورة الاعتماد الثانية) — شريحة مستقلة؛
                 // لا وجود لها في مسار العمليات (التوزيع آلي بلا اعتماد ثانٍ)
                 placement: autoPlaced ? null : placementChip(i, a),
@@ -2005,7 +2016,13 @@ function build(s: Store) {
         })),
         anyMissing: sel.some((i) => missingFieldsOf(i as unknown as Record<string, unknown>).length > 0),
         onSend: () => s.submitDrafts(sel.map((i) => i.id)),
-        onConfirm: () => s.confirmTeamDrafts(sel.map((i) => i.id)),
+        // تحديد مختلط: مسودات الفريق تُؤكَّد، ومسودات المنسق نفسه تُرسل للاعتماد كالمعتاد
+        onConfirm: () => {
+          const team = sel.filter((i) => isTeamUpload(i)).map((i) => i.id);
+          const own = sel.filter((i) => !isTeamUpload(i)).map((i) => i.id);
+          if (own.length) s.submitDrafts(own);
+          if (team.length) s.confirmTeamDrafts(team);
+        },
         onApproveSel: () => s.openApproveAll(sel.map((i) => i.id)),
         onDelete: () => s.openDeleteDrafts(sel.map((i) => i.id)),
         // multi-select: opens the first entry that still has missing fields

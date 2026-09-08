@@ -49,8 +49,9 @@ import type { LibraryDoc, ContactInquiry } from './domain';
 import { migrateRole } from './domain';
 import { STREAM_FIELDS,
   IMPORT_HEADER_ALIASES,
+  IMPORT_IDENTITY_KEYS,
   normalizeHeader,
-  normalizeImportValue, missingFieldsOf, softMissingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
+  normalizeImportValue, streamPeriodOptions, missingFieldsOf, softMissingFieldsOf, DEFAULT_ABOUT, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, stgPriority, svcPriority, activityMissing, mirrorActivities, itemActivities, activityTransformYes, activityBatch, type ActivityDetail } from './domain';
 import { DEFAULT_SITE, type SiteContent } from './site';
 import type { AboutContent } from './domain';
 import { stripHtml } from './richtext';
@@ -1539,12 +1540,16 @@ export const useStore = create<Store>((set, get) => {
       const idset = new Set(ids);
       let approved = 0;
       let sent = 0;
+      let skipped = 0;
       set((st) => ({
         items: st.items.map((i) => {
           if (!idset.has(i.id) || wfOf(i) !== 'draft' || !isTeamUpload(i)) return i;
           const incomplete = missingFieldsOf(i as unknown as Record<string, unknown>).length > 0;
           if (i.teamEdited || incomplete) {
-            if (incomplete) return i; // يُستكمل أولاً (الاستكمال تعديل → يمرّ بفريق المسار)
+            if (incomplete) {
+              skipped++;
+              return i; // يُستكمل أولاً (الاستكمال تعديل → يمرّ بفريق المسار)
+            }
             sent++;
             return { ...i, wf: 'ent1' as WfState, approval: 'تم الإرسال', ret: null, log: withLog(s, i, 'submit', 'تأكيد منسق الجهة بعد التعديل — لاعتماد فريق عمل المسار') };
           }
@@ -1557,9 +1562,10 @@ export const useStore = create<Store>((set, get) => {
       if (sent) logChange('إرسال مدخلات معدَّلة للاعتماد', undefined, sent + ' لاعتماد فريق المسار');
       persist();
       toast(
-        (approved ? 'تم تأكيد ' + approved + ' من المدخلات — معتمدة' : '') +
+        ((approved ? 'تم تأكيد ' + approved + ' من المدخلات — معتمدة' : '') +
           (approved && sent ? '، و' : '') +
-          (sent ? 'أُرسل ' + sent + ' من المدخلات المعدَّلة لاعتماد فريق المسار' : '') || 'لا مدخلات مؤكدة'
+          (sent ? 'أُرسل ' + sent + ' من المدخلات المعدَّلة لاعتماد فريق المسار' : '') || 'لا مدخلات مؤكدة') +
+          (skipped ? ' — ' + skipped + ' بيانات ناقصة تُستكمل أولاً' : '')
       );
     },
     setActivityPeriod: (id, actIdx, period) => {
@@ -1569,8 +1575,11 @@ export const useStore = create<Store>((set, get) => {
       if (['exec', 'launch', 'done'].includes(wfOf(it))) return toast('الدفعة مقفلة بعد الاعتماد — لا يمكن تغيير فترة التحويل');
       const acts = materializeActs(it);
       if (!acts[actIdx]) return;
+      if (period && !streamPeriodOptions(it.path).includes(period)) return toast('فترة التحويل غير معروفة لهذا المسار');
       const next = acts.map((x, j) => (j === actIdx ? { ...x, transformPeriod: period } : x));
-      patchItem(id, (i) => ({ ...mirrorActivities({ ...i, activities: next }), log: withLog(get(), i, 'edit', period ? 'تحديث فترة التحويل: ' + period : 'إزالة فترة التحويل') }));
+      // تعديل منسق الجهة على مدخل مرفوع بالنيابة (ولو الفترة فقط) → يمرّ بفريق المسار عند التأكيد
+      const teamEdited = isTeamUpload(it) && get().role === 'coord' ? true : it.teamEdited;
+      patchItem(id, (i) => ({ ...mirrorActivities({ ...i, activities: next }), teamEdited, log: withLog(get(), i, 'edit', period ? 'تحديث فترة التحويل: ' + period : 'إزالة فترة التحويل') }));
       persist();
       toast(period ? 'تم تحديث فترة التحويل — ' + period : 'أُزيلت فترة التحويل');
     },
@@ -2156,16 +2165,26 @@ export const useStore = create<Store>((set, get) => {
             for (const { col, h } of headers) {
               if (map[col] || h.length <= 3) continue;
               const nh = normalizeHeader(h);
+              const tokenHit = (hay: string, needle: string) => new RegExp('(^|\\s)' + needle.replace(/\s+/g, '\\s+') + '(?=\\s|$)').test(hay);
+              const words = nh.split(' ').length;
               const scored = spec
                 .filter((sf) => !claimed.has(sf.key))
                 .map((sf) => {
                   const nl = normalizeHeader(sf.label);
                   let score = 0;
-                  if (nl.length >= 6 && nh.includes(nl)) score = nl.length;
-                  else if (nh.length >= 6 && nl.includes(nh)) score = nh.length;
+                  // الاحتواء لا يُطبَّق على مفاتيح الهوية («المهمة» داخل «وصف المهمة» ليست اسم المهمة)
+                  if (!IMPORT_IDENTITY_KEYS.has(sf.key)) {
+                    if (nl.length >= 6 && tokenHit(nh, nl)) score = nl.length;
+                    // العنوان جزء من التسمية: يجب أن يغطي نصفها على الأقل («التحويل» وحدها لا تكفي)
+                    else if (nh.length >= 6 && nh.length * 2 >= nl.length && tokenHit(nl, nh)) score = nh.length;
+                  }
                   for (const al of IMPORT_HEADER_ALIASES[sf.key] || []) {
                     const na = normalizeHeader(al);
-                    if (na.length >= 5 && nh.includes(na)) score = Math.max(score, na.length + 1);
+                    if (na.length < 5 || !tokenHit(nh, na)) continue;
+                    // عنوان بديل من كلمة واحدة («المخاطر»، «كثافة») لا يُطابق إلا عنواناً قصيراً —
+                    // لا «خطة معالجة المخاطر»
+                    if (!na.includes(' ') && words > 2) continue;
+                    score = Math.max(score, na.length + 1);
                   }
                   return { sf, score };
                 })

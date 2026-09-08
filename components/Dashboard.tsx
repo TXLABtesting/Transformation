@@ -716,6 +716,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
       b.rows.forEach((r) => r.entity && set.add(r.entity));
       b.addable.forEach((a) => a.entity && set.add(a.entity));
     });
+    (bt.unplaced || []).forEach((r) => r.entity && set.add(r.entity));
     return [{ v: 'all', label: 'الجهة: الكل' }, ...Array.from(set).sort((a, b) => a.localeCompare(b, 'ar')).map((e) => ({ v: e, label: e }))];
   }, [bt]);
   // عدّاد التوزيعات المعلّقة يتبع فلتر الجهة
@@ -796,6 +797,8 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                           <option value="">اختر الفترة…</option>
                           {r.periodOptions.map((o) => (<option key={o} value={o}>{o}</option>))}
                         </select>
+                      ) : r.locked ? (
+                        <span title="اعتُمد المدخل بلا فترة تحويل — الدفعة مقفلة بعد الاعتماد" style={{ fontSize: 11, fontWeight: 800, color: '#8A97AD', background: '#F1F4F9', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>مقفل — بلا فترة</span>
                       ) : ('—')}
                     </td>
                   </tr>

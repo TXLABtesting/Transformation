@@ -455,7 +455,7 @@ export function DetailPanel({ vm }: { vm: VM }) {
                       <DetailCell label="أولوية التحول">{activityTransformYes('services', a) || '—'}</DetailCell>
                     </DetailGrid>
                     <DetailGrid cols={1}>
-                      <DetailCell label="فترة التحويل للذكاء الاصطناعي المساعد">{a.transformPeriod || '—'}</DetailCell>
+                      <DetailCell label="فترة التحويل للذكاء الاصطناعي المساعد">{svcPriority(a.usageIntensity, a.complexity, a.readinessLevel) === 4 ? 'لا ينطبق' : a.transformPeriod || '—'}</DetailCell>
                     </DetailGrid>
                   </React.Fragment>
                 ))}
