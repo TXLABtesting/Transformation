@@ -630,6 +630,25 @@ export function itemActivities(i: Item): ActivityDetail[] {
   }));
 }
 
+/** حقول اختيارية غير محددة تُعرض كناقصة دون أن تمنع الإرسال — فترة التحويل
+ *  (حين تنطبق: ليست «لا» في سؤال التحويل ولا «ليست ذات أولوية» ولا «غير قابل») */
+export function softMissingFieldsOf(i: Item): string[] {
+  const out: string[] = [];
+  const acts = itemActivities(i);
+  acts.forEach((a, idx) => {
+    if (plainOf(a.transformPeriod)) return;
+    if (i.path === 'ops') {
+      const pr = plainOf(a.transformPriority);
+      if (plainOf(a.willTransform) === 'لا' || pr === OPS_NO_PRIORITY || pr === OPS_NOT_TRANSFORMABLE || pr === 'أولوية 4') return;
+    } else if (i.path === 'strategy') {
+      if (isStgBlocked(a.transformScore)) return;
+    } else if (i.path !== 'services') return;
+    const nm = (a.name || '').trim() || (i.path === 'services' ? 'الخدمة الفرعية ' : 'العملية الفرعية ') + (idx + 1);
+    out.push('فترة التحويل للذكاء الاصطناعي المساعد — اختياري (' + nm + ')');
+  });
+  return out;
+}
+
 /** أسماء مساعدي الذكاء الاصطناعي المرتبطين بعمليات المدخل الفرعية (بلا تكرار) */
 export function itemAssistantNames(i: Item): string[] {
   const out: string[] = [];
