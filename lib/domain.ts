@@ -511,6 +511,10 @@ export function firstMonthOf(text: string): { month: number; year?: number } | n
   });
   const y = t.match(/\b(20\d{2})\b/);
   if (best) return { month: best.month, year: y ? Number(y[1]) : undefined };
+  // أرباع السنة («الربع الثالث من 2028»، «الربع 3 2028») → أول شهر في الربع
+  const QN: Record<string, number> = { الاول: 0, الاولي: 0, الثاني: 1, الثالث: 2, الرابع: 3, '1': 0, '2': 1, '3': 2, '4': 3 };
+  const q = t.match(/(?:^|\s)(?:الربع|ربع)\s+(الاولي|الاول|الثاني|الثالث|الرابع|[1-4])(?=\s|$)/);
+  if (q) return { month: QN[q[1]] * 3, year: y ? Number(y[1]) : undefined };
   // صيغ رقمية: 9/2026 أو 2026-09 (التطبيع أعلاه يحوّل الفواصل إلى مسافات)
   const n1 = t.match(/(?:^|\s)(1[0-2]|0?[1-9])\s+(20\d{2})(?:\s|$)/);
   if (n1) return { month: Number(n1[1]) - 1, year: Number(n1[2]) };
