@@ -776,11 +776,13 @@ model AiAssistant {
 /// ربط متعدد-إلى-متعدد بين العمليات الفرعية والمساعدين: للعملية الفرعية
 /// مساعد أو أكثر، وللمساعد عملية فرعية أو أكثر (ولو عبر مدخلات مختلفة).
 /// `activity_id` هو معرّف العملية الفرعية داخل `items.activities` (Json)؛
-/// فارغاً يعني ربطاً على مستوى المدخل كله.
+/// القيمة الفارغة ('') تعني ربطاً على مستوى المدخل كله.
 model ItemActivityAssistant {
   id          String   @id @default(cuid())
   itemId      String   @map("item_id")
-  activityId  String?  @map("activity_id")
+  /// معرّف العملية الفرعية داخل items.activities — فارغ ('') = ربط على مستوى المدخل
+  /// (نص غير فارغ القيمة بدل NULL حتى يعمل قيد التفرد على الربط على مستوى المدخل)
+  activityId  String   @default("") @map("activity_id")
   assistantId String   @map("assistant_id")
   createdAt   DateTime @default(now()) @map("created_at")
 
