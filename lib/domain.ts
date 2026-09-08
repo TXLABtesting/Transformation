@@ -744,7 +744,10 @@ export function softMissingFieldsOf(i: Item): string[] {
 /** أسماء مساعدي الذكاء الاصطناعي المرتبطين بعمليات المدخل الفرعية (بلا تكرار) */
 export function itemAssistantNames(i: Item): string[] {
   const out: string[] = [];
-  for (const a of itemActivities(i)) for (const x of a.assistants || []) if (x.name && !out.includes(x.name)) out.push(x.name);
+  const add = (x: AiAssistantRef) => { if (x?.name && !out.includes(x.name)) out.push(x.name); };
+  // الربط على مستوى المدخل كله (activity_id فارغ) ثم ربط كل عملية فرعية
+  for (const x of i.assistants || []) add(x);
+  for (const a of itemActivities(i)) for (const x of a.assistants || []) add(x);
   return out;
 }
 
@@ -1328,6 +1331,8 @@ export type Item = {
   teamUp?: boolean;
   // عدّله منسق الجهة بعد الرفع بالنيابة — تأكيده يمرّ حينها بفريق المسار
   teamEdited?: boolean;
+  /** مساعدو الذكاء الاصطناعي المرتبطون بالمدخل كله (activity_id فارغ) — يُملؤون من الخادم */
+  assistants?: AiAssistantRef[];
   priority?: string;
   rank?: number;
   complexity?: string;

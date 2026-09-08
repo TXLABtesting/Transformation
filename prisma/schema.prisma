@@ -243,7 +243,6 @@ model Item {
   stream Stream @relation(fields: [streamId], references: [id])
 
   checklist     ExecChecklistItem[]
-  assistantLinks ItemActivityAssistant[]
   subMilestones SubMilestone[]
   launches      ItemLaunch[]
   logs          LogEntry[]
@@ -775,8 +774,9 @@ model AiAssistant {
 
 /// ربط متعدد-إلى-متعدد بين العمليات الفرعية والمساعدين: للعملية الفرعية
 /// مساعد أو أكثر، وللمساعد عملية فرعية أو أكثر (ولو عبر مدخلات مختلفة).
-/// `activity_id` هو معرّف العملية الفرعية داخل `items.activities` (Json)؛
-/// القيمة الفارغة ('') تعني ربطاً على مستوى المدخل كله.
+/// `item_id` = معرّف المدخل في كتلة الحالة (app_state.items[].id)، و`activity_id`
+/// = معرّف العملية الفرعية داخل activities للمدخل نفسه؛ القيمة الفارغة ('')
+/// تعني ربطاً على مستوى المدخل كله (كل عملياته الفرعية).
 model ItemActivityAssistant {
   id          String   @id @default(cuid())
   itemId      String   @map("item_id")
@@ -786,10 +786,12 @@ model ItemActivityAssistant {
   assistantId String   @map("assistant_id")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  item      Item        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  // item_id يشير إلى معرّف المدخل داخل كتلة الحالة (app_state.items[].id) —
+  // مدخلات المنصة تُحفظ في الكتلة لا في جدول items، فلا مفتاح أجنبي هنا
   assistant AiAssistant @relation(fields: [assistantId], references: [id], onDelete: Cascade)
 
   @@unique([itemId, activityId, assistantId])
+  @@index([itemId])
   @@index([assistantId])
   @@map("item_activity_assistants")
 }

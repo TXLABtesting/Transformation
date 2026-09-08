@@ -1,5 +1,7 @@
 # Handover — المنصة الحكومية لتخطيط ومتابعة مشروع الذكاء الاصطناعي المساعد
 
+> **Latest package: `STAGING-2026-09-08.md`** (migrations `0015` → `0019`, the AI-assistant column filled from the database via `scripts/assistants-example.sql`, and an IT acceptance checklist). Read it first.
+
 Go-live handover for the IT team. The repository ships **clean**: no demo
 items, no launch plans, an **empty users table**, no role switcher, and the
 portal opens as **ممثل الجهة** after sign-in.

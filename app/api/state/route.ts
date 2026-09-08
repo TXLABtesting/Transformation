@@ -84,15 +84,55 @@ function writeAcceptable(scope: Scope, i: BlobItem): boolean {
 
 const logKey = (e: LogEntry) => [e.at, e.by, e.action, e.target].map((v) => String(v ?? '')).join('§');
 
+type AssistantRef = { id: string; name: string };
+type BlobActivity = { id?: string; assistants?: AssistantRef[]; [k: string]: unknown };
+
+// عمود «اسم مساعد الذكاء الاصطناعي»: يُقرأ دائماً من جدولَي ai_assistants
+// و item_activity_assistants (المصدر الوحيد) ويُلصق بالمدخلات عند كل قراءة —
+// item_id = معرّف المدخل في الكتلة، activity_id = معرّف العملية الفرعية
+// ('' = المدخل كله). ما يحمله العميل من نسخ قديمة يُستبدل.
+async function attachAssistants(items: BlobItem[]): Promise<BlobItem[]> {
+  let links: { itemId: string; activityId: string; assistant: { id: string; name: string } }[] = [];
+  try {
+    links = await prisma.itemActivityAssistant.findMany({ include: { assistant: { select: { id: true, name: true } } } });
+  } catch {
+    // الجدولان غير موجودين بعد (قبل ترحيل 0017) — العمود يبقى فارغاً
+    return items;
+  }
+  const byItem = new Map<string, Map<string, AssistantRef[]>>();
+  for (const l of links) {
+    const m = byItem.get(l.itemId) ?? new Map<string, AssistantRef[]>();
+    const arr = m.get(l.activityId) ?? [];
+    if (!arr.some((x) => x.id === l.assistant.id)) arr.push({ id: l.assistant.id, name: l.assistant.name });
+    m.set(l.activityId, arr);
+    byItem.set(l.itemId, m);
+  }
+  return items.map((i) => {
+    const m = i.id ? byItem.get(i.id) : undefined;
+    const acts = Array.isArray(i.activities) ? (i.activities as BlobActivity[]) : null;
+    const next: BlobItem = { ...i };
+    delete next.assistants;
+    if (m?.get('')?.length) next.assistants = m.get('');
+    if (acts) {
+      next.activities = acts.map((a) => {
+        const { assistants: _drop, ...rest } = a;
+        const list = a.id ? m?.get(a.id) : undefined;
+        return list?.length ? { ...rest, assistants: list } : rest;
+      });
+    }
+    return next;
+  });
+}
+
 export async function GET(req: NextRequest) {
   try {
     const user = await requireAuthUser(req);
     const row = await prisma.appState.findUnique({ where: { id: 'singleton' } });
     const blob = (row?.data ?? null) as Record<string, unknown> | null;
-    if (canAccessAllEntities(user)) return NextResponse.json({ data: blob });
-    if (!blob) return NextResponse.json({ data: null, scoped: true });
+    if (!blob) return NextResponse.json(canAccessAllEntities(user) ? { data: null } : { data: null, scoped: true });
+    const items = await attachAssistants(Array.isArray(blob.items) ? (blob.items as BlobItem[]) : []);
+    if (canAccessAllEntities(user)) return NextResponse.json({ data: { ...blob, items } });
     const scope = scopeOf(user);
-    const items = Array.isArray(blob.items) ? (blob.items as BlobItem[]) : [];
     return NextResponse.json({
       scoped: true,
       data: {
