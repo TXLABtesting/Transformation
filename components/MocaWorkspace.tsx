@@ -6,6 +6,7 @@
 'use client';
 import React, { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Icon } from '@/components/Icon';
+import { RowActions } from '@/components/RowActions';
 import {
   MOCA_FIELDS,
   MOCA_GROUPS,
@@ -80,14 +81,15 @@ const cardStyle: CSSProperties = {
 };
 const th: CSSProperties = {
   textAlign: 'right',
-  padding: '10px 9px',
+  padding: '10px 7px',
   fontSize: 11.5,
   fontWeight: 700,
   color: '#8A97AD',
   borderBottom: '1px solid #EEF1F7',
-  whiteSpace: 'nowrap',
+  // العناوين الطويلة تلتف عند ضيق الشاشة بدل أن تدفع عمود الإجراءات خارج الجدول
+  whiteSpace: 'normal',
 };
-const td: CSSProperties = { padding: '11px 9px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA' };
+const td: CSSProperties = { padding: '11px 7px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA' };
 const BTN_PRIMARY: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -759,7 +761,7 @@ function EntriesTable({ list }: { list: MocaEntry[] }) {
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 980 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
             <thead>
               <tr>
                 {isCoord && <th style={{ ...th, width: 34 }} />}
@@ -812,30 +814,17 @@ function EntriesTable({ list }: { list: MocaEntry[] }) {
                     <td style={td}>{band && pr ? <Chip t={pr.band} c={band.color} bg={band.bg} /> : '—'}</td>
                     <td style={td}><Chip t={st.label} c={st.color} bg={st.bg} /></td>
                     <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'inline-flex', gap: 6 }}>
-                        <button
-                          onClick={() => s.openDetail(e.id)}
-                          style={{ background: '#EAF0FE', color: '#2563EB', border: 'none', borderRadius: 9, padding: '7px 14px', fontWeight: 800, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit' }}
-                        >
-                          عرض التفاصيل
-                        </button>
-                        {isCoord && e.wf !== 'approved' && (
-                          <>
-                            <IconBtn d={IC.pencil} title="تعديل المدخل" color="#54627B" bg="#fff" border="#E7ECF4" onClick={() => s.openForm(e.id)} />
-                            {e.wf === 'draft' && (
-                              <IconBtn d={IC.send} title="إرسال لاعتماد اللجنة الوطنية" color="#1D4ED8" bg="#EAF1FE" border="#C9DBFB" onClick={() => s.submitEntry(e.id)} />
-                            )}
-                            <IconBtn d={IC.trash} title="إزالة المدخل" color="#C0303B" bg="#FDF6F6" border="#F3D4D7" onClick={() => s.removeEntry(e.id)} />
-                          </>
-                        )}
-                        {!isCoord && e.wf === 'pending' && (
-                          <>
-                            <button onClick={() => s.approveEntry(e.id)} style={{ background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 9, padding: '7px 14px', fontWeight: 800, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit' }}>اعتماد</button>
-                            <IconBtn d={IC.rotate} title="إعادة للتعديل" color="#B45309" bg="#FFF3DE" border="#F1DCBA" onClick={() => s.openReturn(e.id, 'info')} />
-                            <IconBtn d={IC.close} title="رفض المدخل" color="#C0303B" bg="#FDF6F6" border="#F3D4D7" onClick={() => s.openReturn(e.id, 'reject')} />
-                          </>
-                        )}
-                      </div>
+                      <RowActions
+                        actions={[
+                          !isCoord && e.wf === 'pending' && { key: 'approve', label: 'اعتماد', kind: 'primary' as const, onClick: () => s.approveEntry(e.id) },
+                          isCoord && e.wf === 'draft' && { key: 'submit', label: 'إرسال للاعتماد', kind: 'brand' as const, title: 'إرسال لاعتماد اللجنة الوطنية', onClick: () => s.submitEntry(e.id) },
+                          { key: 'open', label: 'عرض التفاصيل', kind: ((!isCoord && e.wf === 'pending') || (isCoord && e.wf === 'draft') ? 'neutral' : 'brand') as 'neutral' | 'brand', onClick: () => s.openDetail(e.id) },
+                          isCoord && e.wf !== 'approved' && { key: 'edit', label: 'تعديل المدخل', kind: 'neutral' as const, icon: IC.pencil, onClick: () => s.openForm(e.id) },
+                          !isCoord && e.wf === 'pending' && { key: 'ret', label: 'إعادة للتعديل', kind: 'amber' as const, icon: IC.rotate, onClick: () => s.openReturn(e.id, 'info') },
+                          !isCoord && e.wf === 'pending' && { key: 'rej', label: 'رفض المدخل', kind: 'danger' as const, icon: IC.close, onClick: () => s.openReturn(e.id, 'reject') },
+                          isCoord && e.wf !== 'approved' && { key: 'del', label: 'إزالة المدخل', kind: 'danger' as const, icon: IC.trash, onClick: () => s.removeEntry(e.id) },
+                        ]}
+                      />
                     </td>
                   </tr>
                 );
@@ -1400,7 +1389,7 @@ function UseCasesView() {
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 960 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
             <thead>
               <tr>
                 <th style={{ ...th, width: 34 }} />

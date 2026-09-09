@@ -3,6 +3,7 @@ import { Fragment, useEffect, useState, type CSSProperties, type ReactNode, useM
 import type { VM } from '@/lib/viewModel';
 import { InlineCreateForm } from './CreatePanel';
 import { Icon } from './Icon';
+import { RowActions } from './RowActions';
 import { ProjCommitteePage, ProjMemberSection } from './StrategicProjects';
 import { MocaCommitteeView } from './MocaCommitteeView';
 import { Tour, TOUR_EVENT, type TourStep } from './Tour';
@@ -729,8 +730,9 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
   const [addSector, setAddSector] = useState('all');
   const [addPrio, setAddPrio] = useState('all');
   const auto = !!bt.autoPlaced;
-  const th: CSSProperties = { textAlign: 'right', padding: '9px 12px', fontSize: 11.5, fontWeight: 700, color: '#8A97AD', borderBottom: '1px solid #EEF1F7', whiteSpace: 'nowrap' };
-  const td: CSSProperties = { padding: '10px 12px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', verticalAlign: 'middle' };
+  // العناوين الطويلة تلتف عند ضيق الشاشة بدل أن تدفع عمود الإجراءات خارج الجدول
+  const th: CSSProperties = { textAlign: 'right', padding: '9px 10px', fontSize: 11.5, fontWeight: 700, color: '#8A97AD', borderBottom: '1px solid #EEF1F7', whiteSpace: 'normal' };
+  const td: CSSProperties = { padding: '10px 10px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', verticalAlign: 'middle' };
   const dateIn: CSSProperties = { border: '1px solid #DCE3EE', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit', color: '#33415C', background: '#fff' };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -864,7 +866,9 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                       <th style={th}>حالة المدخل</th>
                       {!auto && <th style={th}>حالة التوزيع</th>}
                       <th style={th}>ملاحظات</th>
-                      {(bt.canEditDates || bt.canReview || auto) && <th style={th}>الإجراءات</th>}
+                      {(bt.canEditDates || bt.canReview || auto) && (
+                        <th style={{ ...th, position: 'sticky', left: 0, background: '#fff', zIndex: 2 }}>الإجراءات</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -923,7 +927,7 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                         )}
                         <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.notes}>{r.notes}</td>
                         {(bt.canEditDates || bt.canReview || auto) && (
-                          <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                          <td style={{ ...td, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: '#fff', zIndex: 1 }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                               {/* المسارات ذات التوزيع الآلي: المنسق يغيّر فترة التحويل (= الدفعة) مباشرة */}
                               {r.canSetPeriod && (
@@ -952,57 +956,19 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
                                       <option key={o.v} value={o.v}>{o.label}</option>
                                     ))}
                                   </select>
-                                  <button
-                                    onClick={r.onRemove}
-                                    title={'إزالة من ' + b.name}
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#FDF6F6', border: '1px solid #F3D4D7', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#C0303B', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
-                                  >
-                                    <Icon d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" size={12} color="#C0303B" />
-                                    إزالة
-                                  </button>
                                 </>
                               )}
-                              {/* send this مدخل on its own */}
-                              {r.canSubmit && (
-                                <button
-                                  onClick={r.onSubmit}
-                                  title="إرسال هذا التوزيع لاعتماد فريق عمل المسار"
-                                  style={{ background: '#EAF1FE', border: '1px solid #C9DBFB', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#1D4ED8', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
-                                >
-                                  إرسال للاعتماد
-                                </button>
-                              )}
-                              {/* فريق عمل المسار: قرار على التوزيع المعلّق */}
-                              {r.canReview && (
-                                <>
-                                  <button
-                                    onClick={r.onApprove}
-                                    title="اعتماد التوزيع — يُقفل بعدها"
-                                    style={{ background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 11.5, color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
-                                  >
-                                    اعتماد
-                                  </button>
-                                  <button
-                                    onClick={() => setPlaceNote({ kind: 'info', onOk: r.onReturn })}
-                                    style={{ background: '#FFF3DE', border: '1px solid #F1DCBA', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#B45309', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
-                                  >
-                                    إعادة للتعديل
-                                  </button>
-                                  <button
-                                    onClick={() => setPlaceNote({ kind: 'reject', onOk: r.onReject })}
-                                    style={{ background: '#FDECEE', border: '1px solid #F3D4D7', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, color: '#C0303B', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
-                                  >
-                                    رفض
-                                  </button>
-                                </>
-                              )}
-                              <button
-                                onClick={r.onOpen}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 11.5, color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 6px -2px rgba(37,99,235,.4)' }}
-                              >
-                                <Icon d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" size={13} color="#fff" />
-                                عرض
-                              </button>
+                              {/* الإجراء الأساسي ظاهر، وبقية الإجراءات في قائمة «⋮» */}
+                              <RowActions
+                                actions={[
+                                  r.canReview && { key: 'approve', label: 'اعتماد', kind: 'primary' as const, title: 'اعتماد التوزيع — يُقفل بعدها', onClick: r.onApprove },
+                                  r.canSubmit && { key: 'submit', label: 'إرسال للاعتماد', kind: 'brand' as const, title: 'إرسال هذا التوزيع لاعتماد فريق عمل المسار', onClick: r.onSubmit },
+                                  { key: 'open', label: 'عرض', kind: (r.canReview || r.canSubmit ? 'neutral' : 'brand') as 'neutral' | 'brand', onClick: r.onOpen },
+                                  r.canReview && { key: 'ret', label: 'إعادة للتعديل', kind: 'amber' as const, onClick: () => setPlaceNote({ kind: 'info', onOk: r.onReturn }) },
+                                  r.canReview && { key: 'rej', label: 'رفض', kind: 'danger' as const, onClick: () => setPlaceNote({ kind: 'reject', onOk: r.onReject }) },
+                                  bt.canArrange && !r.locked && { key: 'rm', label: 'إزالة', kind: 'danger' as const, title: 'إزالة من ' + b.name, onClick: r.onRemove },
+                                ]}
+                              />
                             </div>
                           </td>
                         )}
@@ -3777,7 +3743,9 @@ function ListView({ cards, stream, showEntity, onSetSelection }: { cards: CardVM
         overflowX: 'auto',
       }}
     >
-      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1020 }}>
+      {/* الحد الأدنى للعرض: يكفي الأعمدة الستة بعد ضغط عمود الإجراءات في «⋮»
+          — أعرض من ذلك كان يدفع عمود الإجراء خارج حدود البطاقة على الشاشات المتوسطة */}
+      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 860 }}>
         <thead>
           <tr>
             <th style={th}>
@@ -3799,7 +3767,8 @@ function ListView({ cards, stream, showEntity, onSetSelection }: { cards: CardVM
             {stream === 'ops' ? (
               <>
                 <th style={th}>التصنيف</th>
-                <th style={th}>اسم مساعد الذكاء الاصطناعي</th>
+                {/* عنوان طويل: يُسمح بالتفافه حتى لا يدفع عمود الإجراءات خارج الجدول */}
+                <th style={{ ...th, whiteSpace: 'normal', minWidth: 96, maxWidth: 130 }}>اسم مساعد الذكاء الاصطناعي</th>
               </>
             ) : stream === 'strategy' ? (
               <>
@@ -3815,7 +3784,8 @@ function ListView({ cards, stream, showEntity, onSetSelection }: { cards: CardVM
               <th style={th}>التصنيف</th>
             )}
             <th style={th}>الحالة</th>
-            <th style={{ ...th, textAlign: 'center' }}>الإجراء</th>
+            {/* عمود الإجراءات: بعرض محتواه، ويبقى ملتصقاً بحافة الجدول عند التمرير الأفقي */}
+            <th style={{ ...th, textAlign: 'center', width: '1%', position: 'sticky', left: 0, background: '#fff', zIndex: 2 }}>الإجراء</th>
           </tr>
         </thead>
         <tbody>
@@ -3823,7 +3793,8 @@ function ListView({ cards, stream, showEntity, onSetSelection }: { cards: CardVM
             <tr
               key={c.id}
               onClick={c.onOpen}
-              style={{ cursor: 'pointer' }}
+              // خلفية صريحة ليرثها عمود الإجراءات الملتصق (وإلا ظهر المحتوى خلفه)
+              style={{ cursor: 'pointer', background: '#fff' }}
               onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = '#F7F9FD')}
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '')}
             >
@@ -3893,137 +3864,18 @@ function ListView({ cards, stream, showEntity, onSetSelection }: { cards: CardVM
                   </span>
                 )}
               </td>
-              <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                {/* صف إجراءات ثابت الاتجاه: يبدأ من يمين العمود في كل الصفوف */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
-                {c.canApprove ? (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <button
-                      onClick={(e) => {
-                        stop(e);
-                        c.onApprove();
-                      }}
-                      style={{
-                        background: 'linear-gradient(180deg,#0EA371,#0B8A4B)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 9,
-                        padding: '7px 14px',
-                        fontWeight: 800,
-                        fontSize: 11.5,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      اعتماد
-                    </button>
-                    <button
-                      title="رفض"
-                      aria-label="رفض"
-                      onClick={(e) => {
-                        stop(e);
-                        c.onReject();
-                      }}
-                      style={{
-                        width: 30,
-                        height: 30,
-                        background: '#FCEEEF',
-                        color: '#C0303B',
-                        border: '1px solid #F5D8DB',
-                        borderRadius: 9,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Icon d="M18 6L6 18M6 6l12 12" size={12} color="#C0303B" strokeWidth={2.4} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        stop(e);
-                        c.onReqInfo();
-                      }}
-                      style={{
-                        background: '#fff',
-                        color: '#33405A',
-                        border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)',
-                        borderRadius: 9,
-                        padding: '7px 12px',
-                        fontWeight: 700,
-                        fontSize: 11,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      طلب تفاصيل إضافية
-                    </button>
-                  </span>
-                ) : c.showPathCta ? (
-                  <button
-                    onClick={(e) => {
-                      stop(e);
-                      c.onPathCta();
-                    }}
-                    style={{
-                      background: '#EAF0FE',
-                      color: '#2563EB',
-                      border: 'none',
-                      borderRadius: 9,
-                      padding: '7px 14px',
-                      fontWeight: 800,
-                      fontSize: 11.5,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    {c.pathCtaLabel}
-                  </button>
-                ) : (
-                  <button
-                    onClick={(e) => {
-                      stop(e);
-                      c.onOpen();
-                    }}
-                    style={{
-                      background: '#EAF0FE',
-                      color: '#2563EB',
-                      border: 'none',
-                      borderRadius: 9,
-                      padding: '7px 14px',
-                      fontWeight: 800,
-                      fontSize: 11.5,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    عرض التفاصيل
-                  </button>
-                )}
-                {/* إزالة المدخل — متاحة ما لم يكن معتمداً */}
-                {c.canDelete && (
-                  <button
-                    onClick={(e) => {
-                      stop(e);
-                      c.onDelete();
-                    }}
-                    title="إزالة المدخل"
-                    style={{
-                      background: '#FDF6F6',
-                      color: '#C0303B',
-                      border: '1px solid #F3D4D7',
-                      borderRadius: 9,
-                      padding: '7px 12px',
-                      fontWeight: 800,
-                      fontSize: 11.5,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    إزالة
-                  </button>
-                )}
-                </div>
+              <td style={{ ...td, whiteSpace: 'nowrap', width: '1%', position: 'sticky', left: 0, background: 'inherit', zIndex: 1 }}>
+                {/* صف إجراءات ثابت الاتجاه: الإجراء الأساسي ظاهر وبقيته في «⋮» */}
+                <RowActions
+                  actions={[
+                    c.canApprove && { key: 'approve', label: 'اعتماد', kind: 'primary' as const, onClick: () => c.onApprove() },
+                    c.showPathCta && { key: 'cta', label: c.pathCtaLabel, kind: 'brand' as const, onClick: () => c.onPathCta() },
+                    !c.showPathCta && { key: 'open', label: 'عرض التفاصيل', kind: c.canApprove ? ('neutral' as const) : ('brand' as const), onClick: () => c.onOpen() },
+                    c.canApprove && { key: 'info', label: 'طلب تفاصيل إضافية', kind: 'neutral' as const, onClick: () => c.onReqInfo() },
+                    c.canApprove && { key: 'reject', label: 'رفض', kind: 'danger' as const, onClick: () => c.onReject() },
+                    c.canDelete && { key: 'del', label: 'إزالة المدخل', kind: 'danger' as const, onClick: () => c.onDelete() },
+                  ]}
+                />
               </td>
             </tr>
           ))}

@@ -12,6 +12,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { useStore } from '@/lib/store';
 import { PROJECT_LEADS, type ProjDef, type ProjForm, type ProjMember, type ProjPhase } from '@/lib/domain';
 import { Icon } from './Icon';
+import { RowActions } from './RowActions';
 
 const card: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16 };
 const label: CSSProperties = { display: 'block', fontSize: 12.5, fontWeight: 800, color: '#13213C', marginBottom: 7 };
@@ -590,7 +591,6 @@ export function ProjCommitteePage() {
               const st = f ? chipOf(f) : { t: 'لم يُعبأ بعد', c: '#8A97AD', bg: '#F1F4FA' };
               const isSent = f?.wf === 'sent';
               const isApproved = f?.wf === 'approved';
-              const smallBtn = { padding: '7px 14px', fontSize: 12 } as const;
               return (
                 <tr key={d.id}>
                   <td style={{ padding: '12px 15px', fontSize: 13, fontWeight: 800, color: '#13213C', borderBottom: '1px solid #F4F6FA' }}>{d.name}</td>
@@ -602,27 +602,15 @@ export function ProjCommitteePage() {
                   </td>
                   <td style={{ padding: '12px 15px', borderBottom: '1px solid #F4F6FA', whiteSpace: 'nowrap' }}>
                     {/* الإجراءات تتبدل بحسب حالة النموذج في الصف نفسه */}
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {f && (
-                        <button onClick={() => setViewId(f.id)} style={{ ...btnGhost, ...smallBtn }}>عرض</button>
-                      )}
-                      {isSent && (
-                        <>
-                          <button onClick={() => s.approveProjForm(f.id)} style={{ background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', ...smallBtn }}>
-                            اعتماد
-                          </button>
-                          <button onClick={() => { setRetId(f.id); setNote(''); }} style={{ background: '#FFF3DE', color: '#B45309', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', ...smallBtn }}>
-                            إعادة بملاحظات
-                          </button>
-                        </>
-                      )}
-                      {!isSent && !isApproved && (
-                        <>
-                          <button onClick={() => { setEditId(d.id); setName(d.name); setLead(d.lead); setMember(d.member || ''); setStart((d.start || '').slice(0, 7)); setEnd((d.end || '').slice(0, 7)); setFormOpen(true); scrollToForm(); }} style={{ ...btnGhost, ...smallBtn }}>تعديل</button>
-                          <button onClick={() => setDelId(d.id)} style={{ background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', ...smallBtn }}>حذف</button>
-                        </>
-                      )}
-                    </div>
+                    <RowActions
+                      actions={[
+                        isSent && f && { key: 'approve', label: 'اعتماد', kind: 'primary' as const, onClick: () => s.approveProjForm(f.id) },
+                        f && { key: 'view', label: 'عرض', kind: 'neutral' as const, onClick: () => setViewId(f.id) },
+                        isSent && f && { key: 'ret', label: 'إعادة بملاحظات', kind: 'amber' as const, onClick: () => { setRetId(f.id); setNote(''); } },
+                        !isSent && !isApproved && { key: 'edit', label: 'تعديل', kind: 'neutral' as const, onClick: () => { setEditId(d.id); setName(d.name); setLead(d.lead); setMember(d.member || ''); setStart((d.start || '').slice(0, 7)); setEnd((d.end || '').slice(0, 7)); setFormOpen(true); scrollToForm(); } },
+                        !isSent && !isApproved && { key: 'del', label: 'حذف', kind: 'danger' as const, onClick: () => setDelId(d.id) },
+                      ]}
+                    />
                   </td>
                 </tr>
               );

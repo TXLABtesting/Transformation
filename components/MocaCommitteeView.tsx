@@ -5,6 +5,7 @@
 // من اللجنة الوطنية مباشرة (منسقو الوزارة يرسلون، واللجنة تعتمد أو تعيد)
 // ===========================================================================
 import { Fragment, useEffect, useState } from 'react';
+import { RowActions } from './RowActions';
 import type { CSSProperties } from 'react';
 import { useMoca, mocaApplyReturn, mocaApplyPlaceReturn } from '@/lib/mocaStore';
 import {
@@ -19,7 +20,8 @@ import {
 } from '@/lib/moca';
 
 const card: CSSProperties = { background: '#fff', border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', borderRadius: 16 };
-const th: CSSProperties = { textAlign: 'right', padding: '11px 15px', fontSize: 11.5, fontWeight: 700, color: '#8A97AD', borderBottom: '1px solid #EEF1F7', whiteSpace: 'nowrap' };
+// العناوين الطويلة تلتف عند ضيق الشاشة بدل أن تدفع عمود الإجراءات خارج الجدول
+const th: CSSProperties = { textAlign: 'right', padding: '11px 15px', fontSize: 11.5, fontWeight: 700, color: '#8A97AD', borderBottom: '1px solid #EEF1F7', whiteSpace: 'normal' };
 const td: CSSProperties = { padding: '12px 15px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', verticalAlign: 'middle' };
 
 const unitLabel = (e: { unitId: string; unitSector?: string }) =>
@@ -43,8 +45,6 @@ function Header({ title, pending, sub }: { title: string; pending?: number; sub?
 
 // أزرار الاعتماد والإجراءات — بنمط بقية لوحات المنصة
 const btnApprove: CSSProperties = { background: 'linear-gradient(180deg,#0EA371,#0B8A4B)', color: '#fff', border: 'none', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
-const btnAmber: CSSProperties = { background: '#FFF3DE', color: '#B45309', border: 'none', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
-const btnRed: CSSProperties = { background: '#FDECEE', color: '#C0303B', border: 'none', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
 const btnView: CSSProperties = { background: '#fff', border: '1px solid #DCE3EE', color: '#54627B', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
 
 // نافذة ملاحظات الإعادة/الرفض
@@ -116,7 +116,7 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <Header title={'حصر مهام وعمليات ' + MOCA_MINISTRY} pending={pending} />
         <div style={{ ...card, overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 980 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
             <thead>
               <tr>
                 {['العملية والمهمة الرئيسية', 'العملية والمهمة الفرعية', 'الجهة أو المكتب', 'القطاع المعني', 'الحالة', 'الإجراء'].map((h) => <th key={h} style={th}>{h}</th>)}
@@ -138,16 +138,14 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
                       <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: st.bg, color: st.color }}>{st.label}</span>
                     </td>
                     <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        <button onClick={() => setOpenId(open ? null : e.id)} style={btnView}>{open ? 'إخفاء' : 'عرض'}</button>
-                        {isPending && (
-                          <>
-                            <button onClick={() => approveEntry(e.id)} style={btnApprove}>اعتماد</button>
-                            <button onClick={() => setRet({ id: e.id, kind: 'info', place: false })} style={btnAmber}>إعادة بملاحظات</button>
-                            <button onClick={() => setRet({ id: e.id, kind: 'reject', place: false })} style={btnRed}>رفض</button>
-                          </>
-                        )}
-                      </div>
+                      <RowActions
+                        actions={[
+                          isPending && { key: 'approve', label: 'اعتماد', kind: 'primary' as const, onClick: () => approveEntry(e.id) },
+                          { key: 'view', label: open ? 'إخفاء التفاصيل' : 'عرض التفاصيل', kind: 'neutral' as const, onClick: () => setOpenId(open ? null : e.id) },
+                          isPending && { key: 'info', label: 'إعادة بملاحظات', kind: 'amber' as const, onClick: () => setRet({ id: e.id, kind: 'info', place: false }) },
+                          isPending && { key: 'reject', label: 'رفض', kind: 'danger' as const, onClick: () => setRet({ id: e.id, kind: 'reject', place: false }) },
+                        ]}
+                      />
                     </td>
                   </tr>
                   {open && (
@@ -210,7 +208,7 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
               <div style={{ padding: '22px 16px', textAlign: 'center', fontSize: 12.5, color: '#9AA6BC' }}>لا مدخلات ضمن هذه الدفعة بعد</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 980 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
                   <thead>
                     <tr>
                       {['العملية والمهمة الرئيسية', 'العملية والمهمة الفرعية', 'الجهة أو المكتب', 'حالة المدخل', 'حالة التوزيع', 'الإجراءات'].map((h) => <th key={h} style={th}>{h}</th>)}
@@ -238,15 +236,13 @@ export function MocaCommitteeView({ mode }: { mode: 'inv' | 'batches' | 'usecase
                               <span title={e.ret?.note ? 'السبب: ' + e.ret.note : undefined} style={{ fontSize: 11, fontWeight: 800, padding: '4px 11px', borderRadius: 999, background: bs.bg, color: bs.c }}>{bs.t}</span>
                             </td>
                             <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                {e.batchWf === 'pending' && (
-                                  <>
-                                    <button onClick={() => approvePlacement(e.id)} style={btnApprove}>اعتماد</button>
-                                    <button onClick={() => setRet({ id: e.id, kind: 'info', place: true })} style={btnAmber}>إعادة للتعديل</button>
-                                  </>
-                                )}
-                                <button onClick={() => setOpenId(open ? null : e.id)} style={btnView}>{open ? 'إخفاء' : 'عرض'}</button>
-                              </div>
+                              <RowActions
+                                actions={[
+                                  e.batchWf === 'pending' && { key: 'approve', label: 'اعتماد', kind: 'primary' as const, onClick: () => approvePlacement(e.id) },
+                                  e.batchWf === 'pending' && { key: 'info', label: 'إعادة للتعديل', kind: 'amber' as const, onClick: () => setRet({ id: e.id, kind: 'info', place: true }) },
+                                  { key: 'view', label: open ? 'إخفاء التفاصيل' : 'عرض التفاصيل', kind: 'neutral' as const, onClick: () => setOpenId(open ? null : e.id) },
+                                ]}
+                              />
                             </td>
                           </tr>
                           {open && (
