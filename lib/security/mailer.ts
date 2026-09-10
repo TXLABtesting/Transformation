@@ -17,6 +17,12 @@ const BRAND = {
   line: '#E7ECF4',
 };
 
+// خط النصوص العربية في الرسائل: «سكل مجلة» المعتمد، وبدائله متى غاب عن جهاز
+// المستلم. عملاء البريد لا يحمّلون خطوطاً من الويب، فيُطلب الخط المثبَّت محلياً
+// (مرفق مع ويندوز وأوفيس) وتأتي البدائل بعده.
+const AR_FONT = "'Sakkal Majalla','Majalla UI',Majalla,'Simplified Arabic','Traditional Arabic',Tahoma,Arial,sans-serif";
+const EN_FONT = "'Segoe UI',Tahoma,Arial,sans-serif";
+
 export type InviteMail = {
   to: string;
   name?: string;
@@ -75,21 +81,21 @@ export function inviteHtml(m: InviteMail, logoCid?: string): string {
 <body style="margin:0;padding:0;background:#F1F4F9;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F1F4F9;padding:28px 12px;">
     <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border:1px solid ${BRAND.line};border-radius:18px;padding:34px 30px;font-family:'Segoe UI',Tahoma,Arial,sans-serif;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border:1px solid ${BRAND.line};border-radius:18px;padding:34px 30px;font-family:${AR_FONT};">
         <tr><td align="center">${logo}</td></tr>
-        <tr><td align="center" dir="ltr" style="font-size:14.5px;line-height:1.85;color:${BRAND.ink};padding-bottom:14px;">${esc(en)}</td></tr>
-        <tr><td align="center" dir="rtl" style="font-size:15px;line-height:1.95;color:${BRAND.navy};font-weight:700;padding-bottom:26px;">${esc(ar)}</td></tr>
+        <tr><td align="center" dir="ltr" style="font-family:${EN_FONT};font-size:14.5px;line-height:1.85;color:${BRAND.ink};padding-bottom:14px;">${esc(en)}</td></tr>
+        <tr><td align="center" dir="rtl" style="font-family:${AR_FONT};font-size:19px;line-height:1.9;color:${BRAND.navy};font-weight:700;padding-bottom:26px;">${esc(ar)}</td></tr>
         <tr><td align="center" style="padding-bottom:22px;">
-          <a href="${esc(m.link)}" style="display:inline-block;background:${BRAND.blue};color:#fff;text-decoration:none;font-size:14.5px;font-weight:700;padding:13px 30px;border-radius:11px;">${esc(cta)}</a>
+          <a href="${esc(m.link)}" style="display:inline-block;font-family:${AR_FONT};background:${BRAND.blue};color:#fff;text-decoration:none;font-size:18px;font-weight:700;padding:13px 30px;border-radius:11px;">${esc(cta)}</a>
         </td></tr>
-        <tr><td align="center" style="font-size:12px;color:${BRAND.muted};line-height:1.9;padding-bottom:8px;">
+        <tr><td align="center" dir="rtl" style="font-family:${AR_FONT};font-size:15px;color:${BRAND.muted};line-height:1.9;padding-bottom:8px;">
           الرابط صالح لمدة ${esc(String(m.ttlHours || 168))} ساعة ولمرة واحدة.<br />
           إن تعذّر فتح الزر، انسخ الرابط التالي إلى المتصفح:
         </td></tr>
-        <tr><td align="center" dir="ltr" style="font-size:11.5px;color:${BRAND.blue};word-break:break-all;padding-bottom:24px;">${esc(m.link)}</td></tr>
+        <tr><td align="center" dir="ltr" style="font-family:${EN_FONT};font-size:11.5px;color:${BRAND.blue};word-break:break-all;padding-bottom:24px;">${esc(m.link)}</td></tr>
         <tr><td style="border-top:1px solid ${BRAND.line};padding-top:18px;" align="center">
-          <div style="font-size:12.5px;color:${BRAND.ink};font-weight:700;">للتواصل والاستفسارات:</div>
-          <a href="mailto:${esc(CONTACT_EMAIL)}" dir="ltr" style="font-size:13px;color:${BRAND.blue};text-decoration:none;">${esc(CONTACT_EMAIL)}</a>
+          <div dir="rtl" style="font-family:${AR_FONT};font-size:16px;color:${BRAND.ink};font-weight:700;">للتواصل والاستفسارات:</div>
+          <a href="mailto:${esc(CONTACT_EMAIL)}" dir="ltr" style="font-family:${EN_FONT};font-size:13px;color:${BRAND.blue};text-decoration:none;">${esc(CONTACT_EMAIL)}</a>
         </td></tr>
       </table>
     </td></tr>

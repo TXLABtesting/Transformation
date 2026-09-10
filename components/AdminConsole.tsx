@@ -2210,7 +2210,7 @@ function EntitiesTab({ streams: allStreams, onChanged }: { streams: DbStream[]; 
                           title="إدارة منسقي مسارات الجهة"
                           style={{ height: 26, padding: '0 11px', borderRadius: 999, border: '1px solid ' + (full ? '#CBEBD9' : '#F1DCBA'), background: full ? '#E7F6EE' : '#FFF7EB', color: full ? '#0B8A4B' : '#B45309', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
                         >
-                          {have} / {all}
+                          {have} من {all}
                         </button>
                       );
                     })()}
@@ -2273,42 +2273,109 @@ function EntitiesTab({ streams: allStreams, onChanged }: { streams: DbStream[]; 
 
       {/* منسقو مسارات الجهة: منسق واحد لكل مسار */}
       {coordFor && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={() => setCoordFor(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
-          <div style={{ position: 'relative', width: 'min(560px,calc(100vw-32px))', maxHeight: '86vh', overflowY: 'auto', background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
-            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>منسقو المسارات</div>
-            <div style={{ fontSize: 12.5, color: '#6B7A93', marginBottom: 16 }}>{coordFor.nameAr}</div>
-            <div style={{ display: 'grid', gap: 10 }}>
-              {streams.map((st) => {
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={() => setCoordFor(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.55)', backdropFilter: 'blur(2px)' }} />
+          <div style={{ position: 'relative', width: 'min(600px,100%)', maxHeight: '88vh', overflowY: 'auto', background: '#fff', borderRadius: 20, boxShadow: '0 34px 80px -26px rgba(2,12,35,.6)' }}>
+            {/* الترويسة: الجهة وعدد المسارات التي لها منسق */}
+            <div style={{ padding: '20px 22px 16px', borderBottom: '1px solid #EEF1F7', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <span style={{ width: 40, height: 40, borderRadius: 12, background: '#EAF0FE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                <Icon d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8" size={19} color="#2563EB" strokeWidth={2.1} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#13213C' }}>منسقو المسارات</div>
+                <div style={{ fontSize: 12.5, color: '#6B7A93', marginTop: 3 }}>
+                  {coordFor.nameAr} · {streams.filter((st) => coordOf(coordFor.id, st.id)).length} من {streams.length} مسارات لها منسق
+                </div>
+              </div>
+              <button
+                onClick={() => setCoordFor(null)}
+                aria-label="إغلاق"
+                style={{ width: 32, height: 32, flex: 'none', border: 'none', background: '#F1F5FB', borderRadius: 9, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Icon d={IC_X} size={15} color="#54627B" />
+              </button>
+            </div>
+
+            {/* صف لكل مسار: لون المسار، ثم المنسق أو دعوة لتعيينه */}
+            <div>
+              {streams.map((st, i) => {
                 const c = coordOf(coordFor.id, st.id);
+                // شريط المسار: بلون المسار متى عُيّن منسق، ورمادي باهت متى شغر
+                const color = c ? PATHS.find((p) => p.id === st.id)?.color || '#2563EB' : '#D8E0EC';
                 return (
-                  <div key={st.id} style={{ border: '1px solid #E7ECF4', borderRadius: 12, padding: '12px 13px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <div style={{ flex: 1, minWidth: 190 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.nameAr}</div>
+                  <div
+                    key={st.id}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '14px 22px',
+                      borderTop: i ? '1px solid #F4F6FA' : 'none',
+                      background: c ? '#fff' : '#FCFDFF',
+                    }}
+                  >
+                    <span style={{ width: 8, height: 38, borderRadius: 999, background: color, flex: 'none' }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{st.nameAr}</div>
                       {c ? (
-                        <div style={{ fontSize: 11.5, color: '#54627B', marginTop: 3, lineHeight: 1.8 }}>
-                          {c.name} — <span dir="ltr">{c.email}</span>
-                          {c.pending && <span style={{ marginRight: 6, fontSize: 10.5, fontWeight: 800, color: '#B45309', background: '#FFF7EB', borderRadius: 999, padding: '2px 8px' }}>بانتظار تفعيل الحساب</span>}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 4, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#33415C' }}>{c.name}</span>
+                          <span dir="ltr" style={{ fontSize: 11.5, color: '#8A97AD' }}>{c.email}</span>
                         </div>
                       ) : (
-                        <div style={{ fontSize: 11.5, color: '#B45309', marginTop: 3, fontWeight: 700 }}>بلا منسق</div>
+                        <div style={{ fontSize: 12, color: '#9AA6BC', marginTop: 4 }}>لم يُعيَّن منسق لهذا المسار</div>
                       )}
                     </div>
-                    <RowActions
-                      actions={[
-                        { key: 'set', label: c ? 'تغيير' : 'تعيين منسق', kind: (c ? 'neutral' : 'primary') as 'neutral' | 'primary', onClick: () => setAssign({ entity: coordFor, streamId: st.id, name: '', email: '' }) },
-                        c && { key: 'rm', label: 'إلغاء التعيين', kind: 'danger' as const, onClick: async () => {
-                          await fetch('/api/admin/entities/coordinators?userId=' + encodeURIComponent(c.userId) + '&streamId=' + encodeURIComponent(st.id), { method: 'DELETE', credentials: 'include' });
-                          await load();
-                        } },
-                      ]}
-                    />
+                    {c && (
+                      <span
+                        title={c.pending ? 'لم يضبط كلمة مروره بعد' : 'الحساب مفعَّل'}
+                        style={{
+                          flex: 'none', fontSize: 10.5, fontWeight: 800, padding: '4px 10px', borderRadius: 999,
+                          background: c.pending ? '#FFF7EB' : '#E7F6EE',
+                          color: c.pending ? '#B45309' : '#0B8A4B',
+                        }}
+                      >
+                        {c.pending ? 'بانتظار التفعيل' : 'مفعَّل'}
+                      </span>
+                    )}
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flex: 'none' }}>
+                      <button
+                        onClick={() => setAssign({ entity: coordFor, streamId: st.id, name: c?.name || '', email: '' })}
+                        style={{
+                          height: 30, padding: '0 13px', borderRadius: 9, fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+                          border: c ? '1px solid #E7ECF4' : 'none',
+                          background: c ? '#fff' : 'linear-gradient(180deg,#2E74EE,#1F5FE0)',
+                          color: c ? '#33405A' : '#fff',
+                        }}
+                      >
+                        {c ? 'تغيير' : 'تعيين منسق'}
+                      </button>
+                      {c && (
+                        <button
+                          title="إلغاء تعيينه عن هذا المسار"
+                          aria-label="إلغاء التعيين"
+                          onClick={async () => {
+                            await fetch('/api/admin/entities/coordinators?userId=' + encodeURIComponent(c.userId) + '&streamId=' + encodeURIComponent(st.id), { method: 'DELETE', credentials: 'include' });
+                            await load();
+                          }}
+                          style={{ width: 30, height: 30, borderRadius: 9, border: '1px solid #F3D4D7', background: '#FDF6F6', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+                        >
+                          <Icon d={IC_X} size={13} color="#C0303B" strokeWidth={2.4} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
-              <button onClick={() => setCoordFor(null)} style={{ height: 38, padding: '0 18px', background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>إغلاق</button>
+
+            <div style={{ padding: '14px 22px 18px', borderTop: '1px solid #EEF1F7', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ flex: 1, minWidth: 200, fontSize: 11.5, color: '#8A97AD', lineHeight: 1.8 }}>
+                المنسق الجديد تصله دعوة لضبط كلمة المرور، والبريد المسجَّل مسبقاً يُسنَد بلا حساب جديد.
+              </span>
+              <button
+                onClick={() => setCoordFor(null)}
+                style={{ height: 38, padding: '0 20px', background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                إغلاق
+              </button>
             </div>
           </div>
         </div>
