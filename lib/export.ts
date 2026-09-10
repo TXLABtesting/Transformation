@@ -753,6 +753,57 @@ export async function downloadUsersTemplate(roleLabels: string[], entities: stri
   );
 }
 
+/**
+ * نموذج رفع الجهات: اسم الجهة وتصنيفها، ثم اسم منسق كل مسار وبريده.
+ * المنسق الجديد يُنشأ حسابه وتصله دعوة ضبط كلمة المرور عند الرفع.
+ */
+export async function downloadEntitiesTemplate(streams: { id: string; nameAr: string }[]) {
+  const mod = await import('exceljs');
+  const ExcelJS = (mod as { default?: typeof import('exceljs') }).default || mod;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'منصة التحول للذكاء الاصطناعي المساعد';
+  const ws = wb.addWorksheet('الجهات', { views: [{ rightToLeft: true, showGridLines: false }] });
+
+  const headers = ['اسم الجهة', 'التصنيف', ...streams.flatMap((st) => ['منسق ' + st.nameAr + ' — الاسم', 'منسق ' + st.nameAr + ' — البريد'])];
+  const widths = [36, 18, ...streams.flatMap(() => [26, 30])];
+  const cols = headers.length;
+
+  banner(ws, cols, 'نموذج رفع الجهات ومنسقي مساراتها', 'عبّئ صفًّا لكل جهة. «اسم الجهة» إلزامي، والباقي اختياري.');
+  ws.mergeCells(3, 1, 3, cols);
+  const note = ws.getCell(3, 1);
+  note.value =
+    'ملاحظة: الجهة المسجَّلة مسبقاً لا تتكرر — يُستكمل منسقوها فقط. لكل مسار منسق واحد في الجهة؛ ومن يُدخل بريده لأول مرة يُنشأ له حساب منسق وتصله دعوة لضبط كلمة المرور. احذف الصف التوضيحي قبل الرفع.';
+  note.font = { size: 10, color: { argb: 'FF1D4ED8' }, italic: true };
+  note.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+  note.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NOTE_BG } as XLColor };
+  ws.getRow(3).height = 32;
+
+  const headRow = 4;
+  headerRow(ws, headRow, headers, widths);
+
+  const ex = headRow + 1;
+  const sample = ['وزارة المالية', 'وزارة', ...streams.flatMap((_, i) => (i === 0 ? ['محمد أحمد العامري', 'm.alameri@mof.gov.ae'] : ['', '']))];
+  sample.forEach((v, c) => {
+    const cell = ws.getCell(ex, c + 1);
+    cell.value = v;
+    cell.font = { italic: true, color: { argb: 'FF9AA6BC' }, size: 10.5 };
+    cell.alignment = { horizontal: /@/.test(String(v)) ? 'left' : 'right', vertical: 'middle' };
+  });
+
+  for (let r = ex; r <= 80; r++) {
+    ws.getCell(r, 2).dataValidation = { type: 'list', allowBlank: true, formulae: ['"وزارة,هيئة اتحادية,أخرى"'] };
+    ws.getRow(r).height = 20;
+  }
+  boxAll(ws, headRow, 80, cols);
+  ws.views = [{ rightToLeft: true, showGridLines: false, state: 'frozen', ySplit: headRow }];
+
+  const buf = await wb.xlsx.writeBuffer();
+  downloadBlob(
+    new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    'نموذج_رفع_الجهات.xlsx'
+  );
+}
+
 // Read a filled .xlsx (or .csv) into rows of trimmed cell strings, skipping the
 // title/note/header/example rows heuristically (caller filters further).
 export async function readSheetRows(file: File): Promise<string[][]> {

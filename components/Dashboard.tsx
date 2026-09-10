@@ -484,7 +484,7 @@ function StreamSelect({ value, options, onChange }: { value: string; options: Fi
 function EntityFilter({ value, options, onChange }: { value: string; options: FilterOpt[]; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const label = value === 'all' ? 'كل الجهات' : value;
+  const label = value === 'all' ? options.find((o) => o.v === 'all')?.label || 'كل الجهات' : value;
   const q = query.trim();
   const filtered = options.filter((o) => !q || o.label.includes(q));
   const pick = (v: string) => { onChange(v); setOpen(false); setQuery(''); };
@@ -746,7 +746,8 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
           </span>
         )}
         {bt.showEntity && (
-          <FilterSelect value={entF} options={entOptions} minWidth={170} onChange={setEntF} />
+          /* فلتر الجهات بالبحث — القائمة تطول بطول السجل */
+          <EntityFilter value={entF} options={entOptions} onChange={setEntF} />
         )}
         {bt.canArrange && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>

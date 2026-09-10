@@ -19,10 +19,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     assertPermission(actor, 'users:update');
     const user = await prisma.user.findUnique({ where: { id: params.id }, select: { id: true, email: true } });
     if (!user?.email) return NextResponse.json({ code: 'NOT_FOUND', message: 'الحساب غير موجود أو بلا بريد' }, { status: 404 });
-    const invite = await issueInvite(user.id, { origin: appOrigin(req.url) });
+    // purpose=reset يرسل رسالة «إعادة تعيين كلمة المرور»، والافتراضي دعوة التفعيل
+    const body = (await req.json().catch(() => ({}))) as { purpose?: string };
+    const purpose = body?.purpose === 'reset' ? 'reset' : 'register';
+    const invite = await issueInvite(user.id, { purpose, origin: appOrigin(req.url) });
     if (!invite) return NextResponse.json({ code: 'FAILED', message: 'تعذّر إصدار الدعوة' }, { status: 400 });
-    await writeAuditLog({ actorUserId: actor.id, action: 'invite_resent', resourceType: 'user', resourceId: user.id });
-    return NextResponse.json({ link: invite.link, expiresAt: invite.expiresAt, emailed: invite.emailed });
+    await writeAuditLog({
+      actorUserId: actor.id,
+      action: purpose === 'reset' ? 'password_reset_sent' : 'invite_resent',
+      resourceType: 'user',
+      resourceId: user.id,
+    });
+    return NextResponse.json({ link: invite.link, expiresAt: invite.expiresAt, emailed: invite.emailed, purpose });
   } catch (e) {
     return handleApiError(e);
   }

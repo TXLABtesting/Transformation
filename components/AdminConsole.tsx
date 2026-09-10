@@ -11,7 +11,7 @@ import { mocaUnitOptions } from '@/lib/moca';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
 import type { RoleKey, UserRec } from '@/lib/domain';
-import { downloadUsersTemplate, readSheetRows } from '@/lib/export';
+import { downloadUsersTemplate, downloadEntitiesTemplate, readSheetRows } from '@/lib/export';
 import { Icon } from './Icon';
 import { RowActions } from './RowActions';
 
@@ -95,8 +95,20 @@ export function AdminConsole({ vm }: { vm: VM }) {
   const [roleFilter, setRoleFilter] = useState<RoleKey | 'all'>('all');
   const [editing, setEditing] = useState<UserDraft | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
-  // نتيجة دعوة آخر حساب أُنشئ (رابط التفعيل وهل أُرسل بالبريد)
-  const [invite, setInvite] = useState<{ email: string; link: string; expiresAt: string; emailed: boolean } | null>(null);
+  // نتيجة دعوة آخر حساب أُنشئ أو رابط إعادة تعيين أُرسل (وهل وصل بالبريد)
+  const [invite, setInvite] = useState<{ email: string; link: string; expiresAt: string; emailed: boolean; reset?: boolean } | null>(null);
+
+  /** إرسال رابط إعادة تعيين كلمة المرور إلى بريد المستخدم */
+  const sendReset = async (u: UserRec) => {
+    if (!DB_BACKED || !u.email) return;
+    const res = await fetch('/api/admin/users/' + u.id + '/invite', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ purpose: 'reset' }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) { setInvite(null); return; }
+    setInvite({ email: u.email, link: body.link, expiresAt: body.expiresAt, emailed: !!body.emailed, reset: true });
+  };
 
   // Real entities/streams/roles from the database, for the create/edit/bulk
   // forms below — the old local lists (a.entities, a.streams, a.roleInfo)
@@ -328,10 +340,10 @@ export function AdminConsole({ vm }: { vm: VM }) {
         </div>
 
         {tab === 'users' && (
-          <UsersTab a={a} filtered={filtered} roleFilter={roleFilter} setRoleFilter={setRoleFilter} onAdd={() => setEditing(blankDraft())} onBulk={() => setBulkOpen(true)} onEdit={(u) => setEditing(draftFromUser(u))} onToggle={a.toggleUser} onRemove={a.removeUser} />
+          <UsersTab a={a} filtered={filtered} roleFilter={roleFilter} setRoleFilter={setRoleFilter} onAdd={() => setEditing(blankDraft())} onBulk={() => setBulkOpen(true)} onEdit={(u) => setEditing(draftFromUser(u))} onToggle={a.toggleUser} onRemove={a.removeUser} onResetPassword={sendReset} />
         )}
         {tab === 'assign' && <AssignTab a={a} streams={dbStreams} onEdit={(u) => setEditing(draftFromUser(u))} onAdd={(seed) => setEditing(blankDraft(seed))} />}
-        {tab === 'entities' && <EntitiesTab onChanged={loadReference} />}
+        {tab === 'entities' && <EntitiesTab streams={dbStreams} onChanged={loadReference} />}
         {tab === 'roles' && <RolesTab a={a} />}
         {tab === 'site' && <SiteTab />}
         {tab === 'contact' && <ContactTab a={a} />}
@@ -356,11 +368,19 @@ export function AdminConsole({ vm }: { vm: VM }) {
           <div onClick={() => setInvite(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
           <div style={{ position: 'relative', width: 'min(520px,calc(100vw-32px))', background: '#fff', borderRadius: 18, padding: 24, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>
-              {invite.emailed ? 'أُرسلت الدعوة بالبريد' : 'الحساب أُنشئ — سلّم رابط التفعيل يدوياً'}
+              {invite.reset
+                ? invite.emailed
+                  ? 'أُرسل رابط إعادة تعيين كلمة المرور'
+                  : 'سلّم رابط إعادة التعيين يدوياً'
+                : invite.emailed
+                  ? 'أُرسلت الدعوة بالبريد'
+                  : 'الحساب أُنشئ — سلّم رابط التفعيل يدوياً'}
             </div>
             <div style={{ fontSize: 12.5, color: '#54627B', lineHeight: 1.9, marginBottom: 14 }}>
               {invite.emailed
-                ? 'وصلت رسالة تفعيل الحساب إلى ' + invite.email + ' ليضبط كلمة مروره. الرابط صالح لمرة واحدة.'
+                ? (invite.reset ? 'وصلت رسالة إعادة تعيين كلمة المرور إلى ' : 'وصلت رسالة تفعيل الحساب إلى ') +
+                  invite.email +
+                  '. الرابط صالح لمرة واحدة، وأي رابط سابق أصبح لاغياً.'
                 : 'خدمة البريد غير مهيأة على هذا الخادم (SMTP_HOST)، فلم تُرسل الرسالة. انسخ الرابط وسلّمه لصاحب الحساب:'}
             </div>
             {!invite.emailed && (
@@ -1339,7 +1359,7 @@ function SiteTab() {
 }
 
 // ---- Users table ----------------------------------------------------------
-function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onBulk, onEdit, onToggle, onRemove }: {
+function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onBulk, onEdit, onToggle, onRemove, onResetPassword }: {
   a: VM['admin'];
   filtered: VM['admin']['users'];
   roleFilter: RoleKey | 'all';
@@ -1349,6 +1369,7 @@ function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onBulk, onEdi
   onEdit: (u: UserRec) => void;
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
+  onResetPassword: (u: UserRec) => void;
 }) {
   const chips: { key: RoleKey | 'all'; label: string }[] = [
     { key: 'all', label: 'الكل' },
@@ -1410,6 +1431,14 @@ function UsersTab({ a, filtered, roleFilter, setRoleFilter, onAdd, onBulk, onEdi
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-start' }}>
                     <IconBtn title="تعديل" d={IC_EDIT} onClick={() => onEdit(u)} />
+                    {/* إرسال رابط تعيين/إعادة تعيين كلمة المرور إلى بريد المستخدم */}
+                    {!!u.email && (
+                      <IconBtn
+                        title="إرسال رابط إعادة تعيين كلمة المرور"
+                        d="M4 4v6h6M20 20v-6h-6M20 9a8 8 0 0 0-14.6-3M4 15a8 8 0 0 0 14.6 3"
+                        onClick={() => onResetPassword(u)}
+                      />
+                    )}
                     <IconBtn title={u.active ? 'إيقاف' : 'تفعيل'} d={u.active ? IC_X : IC_CHECK} onClick={() => onToggle(u.id)} />
                     {!u.system && <IconBtn title="حذف نهائي" d={IC_TRASH} danger onClick={() => setDel(u)} />}
                   </div>
@@ -1861,7 +1890,7 @@ function BulkUsers({ entities, streams, roles, onClose, onImported }: {
   const [fileName, setFileName] = useState('');
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [done, setDone] = useState<{ added: number; failed: number } | null>(null);
+  const [done, setDone] = useState<{ added: number; failed: number; skipped: number } | null>(null);
 
   const roleFromToken = (t: string): string => {
     const s = t.trim();
@@ -1914,16 +1943,23 @@ function BulkUsers({ entities, streams, roles, onClose, onImported }: {
     setProgress(0);
     let added = 0;
     let failed = 0;
+    // البريد المسجَّل مسبقاً لا يُعد فشلاً — يُتخطّى ويُبلَّغ عنه على حدة
+    let skipped = 0;
+    const seenEmails = new Set<string>();
     // Sequential on purpose — each row needs the create call's returned id
     // before it can assign the role, and this keeps the "n / total" progress
     // readout accurate rather than racing several rows at once.
     for (const row of parsed) {
       try {
+        const key = row.email.trim().toLowerCase();
+        if (seenEmails.has(key)) { skipped++; continue; }
+        seenEmails.add(key);
         const res = await fetch('/api/admin/users', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
           body: JSON.stringify({ name: row.name, email: row.email, entityId: row.entityId || undefined, streamId: row.streamId || undefined }),
         });
         const body = await res.json().catch(() => ({} as any));
+        if (res.status === 409 || body?.code === 'DUPLICATE') { skipped++; continue; }
         if (!res.ok) { failed++; continue; }
         const id = body.user.id;
         if (row.roleCode) {
@@ -1942,7 +1978,7 @@ function BulkUsers({ entities, streams, roles, onClose, onImported }: {
     }
     onImported();
     setBusy(false);
-    setDone({ added, failed });
+    setDone({ added, failed, skipped });
   };
 
   const stepNum = (n: number, active: boolean) => (
@@ -1965,7 +2001,11 @@ function BulkUsers({ entities, streams, roles, onClose, onImported }: {
             <span style={{ width: 54, height: 54, borderRadius: 16, background: '#E7F6EE', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icon d={IC_CHECK} size={26} color="#0B8A4B" strokeWidth={2.6} />
             </span>
-            <div style={{ fontSize: 15, fontWeight: 800, marginTop: 12 }}>تمت إضافة {done.added} مستخدمًا{done.failed ? ` — تعذّرت إضافة ${done.failed}` : ''}</div>
+            <div style={{ fontSize: 15, fontWeight: 800, marginTop: 12 }}>
+              تمت إضافة {done.added} مستخدمًا
+              {done.skipped ? ` — ${done.skipped} مسجَّلون مسبقاً فتُخطّوا` : ''}
+              {done.failed ? ` — تعذّرت إضافة ${done.failed}` : ''}
+            </div>
             <button onClick={onClose} style={{ marginTop: 18, border: 'none', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', borderRadius: 11, padding: '11px 26px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>تم</button>
           </div>
         ) : (
@@ -2031,13 +2071,24 @@ type RegEntity = {
 
 const ENT_CATEGORIES = ['وزارة', 'هيئة اتحادية', 'أخرى'];
 
-function EntitiesTab({ onChanged }: { onChanged?: () => void }) {
+type CoordRow = { entityId: string; streamId: string; userId: string; name: string; email: string; active: boolean; pending: boolean };
+
+function EntitiesTab({ streams: allStreams, onChanged }: { streams: DbStream[]; onChanged?: () => void }) {
+  // مسارات الجهات: التي تُدخل الجهات مدخلاتها فيها (العمليات، الاستراتيجي،
+  // الخدمات) — لكل مسار منها منسق في كل جهة
+  const streams = allStreams.filter((st) => PATHS.some((p) => p.id === st.id));
   const [rows, setRows] = useState<RegEntity[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<Partial<RegEntity> | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmDel, setConfirmDel] = useState<RegEntity | null>(null);
+  // منسقو المسارات: لكل جهة منسق لكل مسار
+  const [coords, setCoords] = useState<CoordRow[]>([]);
+  const [coordFor, setCoordFor] = useState<RegEntity | null>(null);
+  const [assign, setAssign] = useState<{ entity: RegEntity; streamId: string; name: string; email: string } | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const coordOf = (entityId: string, streamId: string) => coords.find((c) => c.entityId === entityId && c.streamId === streamId);
 
   const load = useCallback(async () => {
     if (!DB_BACKED) { setErr('إدارة الجهات متاحة في النسخة المتصلة بالخادم فقط.'); setRows([]); return; }
@@ -2046,6 +2097,8 @@ function EntitiesTab({ onChanged }: { onChanged?: () => void }) {
       if (!res.ok) { setErr('تعذّر تحميل سجل الجهات (' + res.status + ')'); setRows([]); return; }
       setErr(null);
       setRows(((await res.json()).entities || []) as RegEntity[]);
+      const cRes = await fetch('/api/admin/entities/coordinators', { credentials: 'include' });
+      setCoords(cRes.ok ? ((await cRes.json()).coordinators || []) as CoordRow[] : []);
     } catch {
       setErr('تعذّر الاتصال بالخادم');
       setRows([]);
@@ -2107,6 +2160,12 @@ function EntitiesTab({ onChanged }: { onChanged?: () => void }) {
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="بحث باسم الجهة…" style={{ ...inputSt, maxWidth: 260, height: 36 }} />
         <div style={{ flex: 1 }} />
         <button
+          onClick={() => setBulkOpen(true)}
+          style={{ height: 36, padding: '0 14px', background: '#fff', color: '#33405A', border: '1px solid #E7ECF4', borderRadius: 10, fontWeight: 800, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          رفع دفعة جهات (Excel)
+        </button>
+        <button
           onClick={() => setEditing({ nameAr: '', category: 'أخرى', isActive: true })}
           style={{ height: 36, padding: '0 14px', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
         >
@@ -2126,6 +2185,7 @@ function EntitiesTab({ onChanged }: { onChanged?: () => void }) {
               <tr>
                 <th style={th}>الجهة</th>
                 <th style={th}>الحالة</th>
+                <th style={th}>منسقو المسارات</th>
                 <th style={th}>مرتبط بها</th>
                 <th style={{ ...th, width: '1%' }}>الإجراء</th>
               </tr>
@@ -2139,6 +2199,22 @@ function EntitiesTab({ onChanged }: { onChanged?: () => void }) {
                       {r.isActive ? 'فعّالة' : 'معطّلة'}
                     </span>
                   </td>
+                  <td style={td}>
+                    {(() => {
+                      const have = streams.filter((st) => coordOf(r.id, st.id)).length;
+                      const all = streams.length || 1;
+                      const full = have === all;
+                      return (
+                        <button
+                          onClick={() => setCoordFor(r)}
+                          title="إدارة منسقي مسارات الجهة"
+                          style={{ height: 26, padding: '0 11px', borderRadius: 999, border: '1px solid ' + (full ? '#CBEBD9' : '#F1DCBA'), background: full ? '#E7F6EE' : '#FFF7EB', color: full ? '#0B8A4B' : '#B45309', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >
+                          {have} / {all}
+                        </button>
+                      );
+                    })()}
+                  </td>
                   <td style={{ ...td, color: '#6B7A93' }}>
                     {[r._count?.items ? r._count.items + ' مدخلاً' : '', r._count?.users ? r._count.users + ' مستخدماً' : '', r._count?.services ? r._count.services + ' خدمة' : '']
                       .filter(Boolean)
@@ -2147,7 +2223,8 @@ function EntitiesTab({ onChanged }: { onChanged?: () => void }) {
                   <td style={{ ...td, width: '1%' }}>
                     <RowActions
                       actions={[
-                        { key: 'edit', label: 'تعديل', kind: 'brand' as const, onClick: () => setEditing(r) },
+                        { key: 'coord', label: 'المنسقون', kind: 'brand' as const, onClick: () => setCoordFor(r) },
+                        { key: 'edit', label: 'تعديل', kind: 'neutral' as const, onClick: () => setEditing(r) },
                         r.isActive
                           ? { key: 'off', label: 'تعطيل', kind: 'amber' as const, title: 'تختفي من القوائم وتبقى بياناتها', onClick: () => setActive(r, false) }
                           : { key: 'on', label: 'تفعيل', kind: 'primary' as const, onClick: () => setActive(r, true) },
@@ -2194,6 +2271,106 @@ function EntitiesTab({ onChanged }: { onChanged?: () => void }) {
         </div>
       )}
 
+      {/* منسقو مسارات الجهة: منسق واحد لكل مسار */}
+      {coordFor && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={() => setCoordFor(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
+          <div style={{ position: 'relative', width: 'min(560px,calc(100vw-32px))', maxHeight: '86vh', overflowY: 'auto', background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>منسقو المسارات</div>
+            <div style={{ fontSize: 12.5, color: '#6B7A93', marginBottom: 16 }}>{coordFor.nameAr}</div>
+            <div style={{ display: 'grid', gap: 10 }}>
+              {streams.map((st) => {
+                const c = coordOf(coordFor.id, st.id);
+                return (
+                  <div key={st.id} style={{ border: '1px solid #E7ECF4', borderRadius: 12, padding: '12px 13px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 190 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{st.nameAr}</div>
+                      {c ? (
+                        <div style={{ fontSize: 11.5, color: '#54627B', marginTop: 3, lineHeight: 1.8 }}>
+                          {c.name} — <span dir="ltr">{c.email}</span>
+                          {c.pending && <span style={{ marginRight: 6, fontSize: 10.5, fontWeight: 800, color: '#B45309', background: '#FFF7EB', borderRadius: 999, padding: '2px 8px' }}>بانتظار تفعيل الحساب</span>}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 11.5, color: '#B45309', marginTop: 3, fontWeight: 700 }}>بلا منسق</div>
+                      )}
+                    </div>
+                    <RowActions
+                      actions={[
+                        { key: 'set', label: c ? 'تغيير' : 'تعيين منسق', kind: (c ? 'neutral' : 'primary') as 'neutral' | 'primary', onClick: () => setAssign({ entity: coordFor, streamId: st.id, name: '', email: '' }) },
+                        c && { key: 'rm', label: 'إلغاء التعيين', kind: 'danger' as const, onClick: async () => {
+                          await fetch('/api/admin/entities/coordinators?userId=' + encodeURIComponent(c.userId) + '&streamId=' + encodeURIComponent(st.id), { method: 'DELETE', credentials: 'include' });
+                          await load();
+                        } },
+                      ]}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
+              <button onClick={() => setCoordFor(null)} style={{ height: 38, padding: '0 18px', background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>إغلاق</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* تعيين منسق: بريد جديد يُنشأ له حساب وتصله دعوة، وبريد مسجَّل يُسنَد كما هو */}
+      {assign && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 70, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={() => setAssign(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
+          <div style={{ position: 'relative', width: 'min(460px,calc(100vw-32px))', background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>تعيين منسق</div>
+            <div style={{ fontSize: 12.5, color: '#6B7A93', marginBottom: 16 }}>
+              {assign.entity.nameAr} — {streams.find((x) => x.id === assign.streamId)?.nameAr || assign.streamId}
+            </div>
+            <label style={labelSt}>اسم المنسق</label>
+            <input autoFocus value={assign.name} onChange={(e) => setAssign({ ...assign, name: e.target.value })} style={inputSt} placeholder="مثال: محمد أحمد" />
+            <div style={{ height: 12 }} />
+            <label style={labelSt}>البريد الإلكتروني *</label>
+            <input value={assign.email} onChange={(e) => setAssign({ ...assign, email: e.target.value })} dir="ltr" style={{ ...inputSt, textAlign: 'right' }} placeholder="name@entity.gov.ae" />
+            <div style={{ fontSize: 11.5, color: '#8A97AD', marginTop: 8, lineHeight: 1.9 }}>
+              الحساب الجديد تصله دعوة لضبط كلمة المرور. البريد المسجَّل مسبقاً يُسنَد لهذا المسار بلا حساب جديد.
+            </div>
+            {err && <div style={{ fontSize: 12.5, fontWeight: 700, color: '#C0303B', marginTop: 8 }}>{err}</div>}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
+              <button onClick={() => setAssign(null)} style={{ height: 38, padding: '0 16px', background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+              <button
+                disabled={busy || !/^\S+@\S+\.\S+$/.test(assign.email.trim())}
+                onClick={async () => {
+                  setBusy(true);
+                  setErr(null);
+                  try {
+                    const res = await fetch('/api/admin/entities/coordinators', {
+                      method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                      body: JSON.stringify({ entityId: assign.entity.id, streamId: assign.streamId, name: assign.name.trim(), email: assign.email.trim() }),
+                    });
+                    const body = await res.json().catch(() => ({}));
+                    if (!res.ok) { setErr(body.message || 'تعذّر التعيين'); return; }
+                    setAssign(null);
+                    await load();
+                    onChanged?.();
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+                style={{ height: 38, padding: '0 18px', background: /^\S+@\S+\.\S+$/.test(assign.email.trim()) ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C8D2E4', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                حفظ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkOpen && (
+        <BulkEntities
+          streams={streams}
+          existingNames={new Set((rows || []).map((r) => r.nameAr))}
+          onClose={() => setBulkOpen(false)}
+          onDone={async () => { await load(); onChanged?.(); }}
+        />
+      )}
+
       {confirmDel && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={() => setConfirmDel(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
@@ -2209,6 +2386,136 @@ function EntitiesTab({ onChanged }: { onChanged?: () => void }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+// ============================================================================
+// رفع دفعة جهات من ملف Excel — الجهة وتصنيفها ومنسق كل مسار (اختياري)
+// ============================================================================
+function BulkEntities({ streams, existingNames, onClose, onDone }: { streams: DbStream[]; existingNames: Set<string>; onClose: () => void; onDone: () => void }) {
+  type Row = { nameAr: string; category: string; coordinators: { streamId: string; name: string; email: string }[] };
+  const [rows, setRows] = useState<Row[] | null>(null);
+  const [fileName, setFileName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState<{ created: number; existing: number; duplicate: number; invalid: number; coordinators: number; invited: number } | null>(null);
+
+  const onFile = async (file: File) => {
+    setBusy(true);
+    setErr(null);
+    setFileName(file.name);
+    try {
+      const sheet = await readSheetRows(file);
+      // صف بيانات = فيه اسم جهة في العمود الأول وليس صف العنوان/المثال
+      const parsed: Row[] = sheet
+        .filter((c) => (c[0] || '').trim().length >= 3 && !/^اسم الجهة$/.test((c[0] || '').trim()) && (c[0] || '').trim() !== 'وزارة المالية')
+        .map((c) => ({
+          nameAr: (c[0] || '').trim(),
+          category: (c[1] || '').trim(),
+          coordinators: streams.map((st, i) => ({
+            streamId: st.id,
+            name: (c[2 + i * 2] || '').trim(),
+            email: (c[3 + i * 2] || '').trim(),
+          })).filter((x) => x.email),
+        }));
+      if (!parsed.length) setErr('لم يُقرأ أي صف — تأكد من استخدام نموذج رفع الجهات.');
+      setRows(parsed);
+    } catch {
+      setErr('تعذّرت قراءة الملف');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const run = async () => {
+    if (!rows?.length) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch('/api/admin/entities/bulk', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ rows }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) { setErr(body.message || 'تعذّر الرفع'); return; }
+      setDone(body.summary);
+      onDone();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 70, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
+      <div style={{ position: 'relative', width: 'min(560px,calc(100vw-32px))', maxHeight: '86vh', overflowY: 'auto', background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
+        <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>رفع دفعة جهات</div>
+        <div style={{ fontSize: 12.5, color: '#6B7A93', lineHeight: 1.9, marginBottom: 16 }}>
+          نزّل النموذج، وعبّئ صفًّا لكل جهة مع منسق كل مسار إن وُجد، ثم ارفعه. الجهة المسجَّلة مسبقاً لا تتكرر.
+        </div>
+
+        {done ? (
+          <div style={{ display: 'grid', gap: 8, fontSize: 13, fontWeight: 700, color: '#33415C' }}>
+            <div>الجهات المضافة: <b>{done.created}</b></div>
+            <div>كانت مسجَّلة مسبقاً فتُخطّت: <b>{done.existing}</b></div>
+            {!!done.duplicate && <div>صفوف مكررة داخل الملف فتُخطّت: <b>{done.duplicate}</b></div>}
+            {!!done.invalid && <div style={{ color: '#C0303B' }}>صفوف غير صالحة: <b>{done.invalid}</b></div>}
+            <div>منسقون أُسندوا: <b>{done.coordinators}</b> — دعوات أُرسلت: <b>{done.invited}</b></div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+              <button onClick={onClose} style={{ height: 38, padding: '0 18px', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>تم</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+              <button
+                onClick={() => downloadEntitiesTemplate(streams.map((s) => ({ id: s.id, nameAr: s.nameAr })))}
+                style={{ height: 38, padding: '0 14px', background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                تنزيل النموذج
+              </button>
+              <label style={{ height: 38, padding: '0 14px', background: '#EAF0FE', color: '#2563EB', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center' }}>
+                اختيار ملف
+                <input type="file" accept=".xlsx,.csv" style={{ display: 'none' }} onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+              </label>
+              {fileName && <span style={{ alignSelf: 'center', fontSize: 12, color: '#6B7A93' }}>{fileName}</span>}
+            </div>
+
+            {err && <div style={{ fontSize: 12.5, fontWeight: 700, color: '#C0303B', marginBottom: 10 }}>{err}</div>}
+
+            {rows && !!rows.length && (
+              <div style={{ border: '1px solid #E7ECF4', borderRadius: 12, maxHeight: 260, overflowY: 'auto', marginBottom: 14 }}>
+                {rows.map((r, i) => {
+                  // المكرر (في الملف أو المسجَّل مسبقاً) يُعلَّم هنا ويُتخطّى عند الرفع
+                  const dupInFile = rows.findIndex((x) => x.nameAr === r.nameAr) !== i;
+                  const known = existingNames.has(r.nameAr);
+                  return (
+                    <div key={i} style={{ padding: '9px 12px', borderBottom: '1px solid #F4F6FA', fontSize: 12.5, display: 'flex', gap: 8, justifyContent: 'space-between' }}>
+                      <span style={{ fontWeight: 800, color: dupInFile || known ? '#9AA6BC' : '#13213C' }}>{r.nameAr}</span>
+                      <span style={{ color: dupInFile || known ? '#B45309' : '#6B7A93' }}>
+                        {dupInFile ? 'مكررة في الملف — تُتخطّى' : known ? 'مسجَّلة مسبقاً — تُتخطّى' : (r.category || 'أخرى') + ' · ' + r.coordinators.length + ' منسق'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={onClose} style={{ height: 38, padding: '0 16px', background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+              <button
+                disabled={busy || !rows?.length}
+                onClick={run}
+                style={{ height: 38, padding: '0 18px', background: !rows?.length || busy ? '#C8D2E4' : 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                {busy ? 'جارٍ الرفع…' : 'رفع ' + (rows?.length || 0) + ' جهة'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
