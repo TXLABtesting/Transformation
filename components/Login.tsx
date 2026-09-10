@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { VM } from '@/lib/viewModel';
 import { useStore } from '@/lib/store';
 
@@ -164,13 +164,79 @@ function InteractiveNumberBackground() {
   );
 }
 
+const lblSt: CSSProperties = { display: 'block', fontSize: 12.5, fontWeight: 700, color: '#BBD4F5', marginBottom: 6 };
+const fldSt: CSSProperties = {
+  width: '100%',
+  height: 46,
+  borderRadius: 12,
+  border: '1.5px solid rgba(255,255,255,.35)',
+  background: 'rgba(255,255,255,.10)',
+  color: '#fff',
+  padding: '0 14px',
+  fontSize: 14,
+  fontWeight: 600,
+  fontFamily: 'inherit',
+  outline: 'none',
+};
+
 export function Login({ vm }: { vm: VM }) {
   const loginUaePass = useStore((s) => s.loginUaePass);
   const [hover, setHover] = useState(false);
+  const [email, setEmail] = useState('');
+  const [pw, setPw] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  const submit = async () => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(base + '/api/auth/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action: 'login', email: email.trim(), password: pw }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMsg({ ok: false, text: body.message || 'تعذّر تسجيل الدخول' });
+        return;
+      }
+      window.location.href = base + '/dashboard';
+    } catch {
+      setMsg({ ok: false, text: 'تعذّر الاتصال بالخادم' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const forgot = async () => {
+    if (!email.trim()) {
+      setMsg({ ok: false, text: 'اكتب بريدك الإلكتروني أولاً ثم اضغط «نسيت كلمة المرور؟»' });
+      return;
+    }
+    setBusy(true);
+    try {
+      await fetch(base + '/api/auth/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action: 'forgot', email: email.trim() }),
+      });
+      setMsg({ ok: true, text: 'إن كان البريد مسجَّلاً فستصلكم رسالة لتعيين كلمة مرور جديدة.' });
+    } catch {
+      setMsg({ ok: false, text: 'تعذّر الاتصال بالخادم' });
+    } finally {
+      setBusy(false);
+    }
+  };
   // صفحات الموقع العام أصبحت مسارات مستقلة (/ و/about و/library و/contact)
   // بشريط التنقل العائم الخاص بها — هذه الصفحة لتسجيل الدخول فقط.
   void vm;
 
+  // الدخول بالهوية الرقمية (UAE PASS) — مخفي من الواجهة حالياً بقرار الجهة،
+  // ومساره في الخادم كما هو: يكفي إظهار الزر لإعادة تفعيله.
   // Presentation default is a MOCK login that jumps straight into the flow.
   // Set NEXT_PUBLIC_UAEPASS_MODE=live to start the real UAE PASS OIDC flow.
   const onLogin = () => {
@@ -181,6 +247,7 @@ export function Login({ vm }: { vm: VM }) {
     }
     loginUaePass();
   };
+  void onLogin;
 
   // ---- the blue login page (existing platform design) ----
   return (
@@ -229,41 +296,73 @@ export function Login({ vm }: { vm: VM }) {
             <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 22px', color: '#fff' }}>
               تسجيل الدخول
             </h1>
-            <button
-              onClick={onLogin}
-              onMouseEnter={() => setHover(true)}
-              onMouseLeave={() => setHover(false)}
-              style={{
-                direction: 'rtl',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 11,
-                width: '100%',
-                background: '#fff',
-                border: '1.5px solid #DCE0E6',
-                borderRadius: 14,
-                padding: '13px 20px',
-                cursor: 'pointer',
-                transition: 'transform .15s,box-shadow .15s',
-                transform: hover ? 'scale(1.015)' : 'none',
-                boxShadow: hover
-                  ? '0 14px 32px -14px rgba(0,0,0,.5)'
-                  : '0 10px 28px -16px rgba(0,0,0,.45)',
+            {/* الدخول بالبريد وكلمة المرور — الهوية الرقمية مخفية حالياً
+                (تبقى مسارها في الخادم لتفعيلها متى اعتُمدت) */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                submit();
               }}
+              style={{ display: 'grid', gap: 12, textAlign: 'right' }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={(process.env.NEXT_PUBLIC_BASE_PATH || '') + '/assets/uaepass-finger.png'}
-                alt=""
-                style={{ height: 26, maxHeight: 26, width: 'auto', display: 'block' }}
-              />
-              <span style={{ fontSize: 16.5, fontWeight: 800, color: '#1A1A1A', whiteSpace: 'nowrap' }}>
-                تسجيل الدخول بالهوية الرقمية
-              </span>
+              <div>
+                <label style={lblSt}>البريد الإلكتروني</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="username"
+                  dir="ltr"
+                  placeholder="name@entity.gov.ae"
+                  style={fldSt}
+                />
+              </div>
+              <div>
+                <label style={lblSt}>كلمة المرور</label>
+                <input
+                  type="password"
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                  autoComplete="current-password"
+                  dir="ltr"
+                  style={fldSt}
+                />
+              </div>
+              {msg && (
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: msg.ok ? '#9BE7C4' : '#FFC9CE', lineHeight: 1.8 }}>{msg.text}</div>
+              )}
+              <button
+                type="submit"
+                disabled={busy || !email.trim() || !pw}
+                onMouseEnter={() => setHover(true)}
+                onMouseLeave={() => setHover(false)}
+                style={{
+                  width: '100%',
+                  background: busy || !email.trim() || !pw ? 'rgba(255,255,255,.55)' : '#fff',
+                  border: '1.5px solid #DCE0E6',
+                  borderRadius: 14,
+                  padding: '13px 20px',
+                  cursor: busy || !email.trim() || !pw ? 'default' : 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: 16.5,
+                  fontWeight: 800,
+                  color: '#1A1A1A',
+                  transition: 'transform .15s,box-shadow .15s',
+                  transform: hover && !busy ? 'scale(1.015)' : 'none',
+                  boxShadow: '0 10px 28px -16px rgba(0,0,0,.45)',
+                }}
+              >
+                {busy ? 'جارٍ الدخول…' : 'تسجيل الدخول'}
+              </button>
+            </form>
+            <button
+              onClick={forgot}
+              style={{ marginTop: 14, width: '100%', background: 'transparent', border: 'none', color: '#9FC4F2', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              نسيت كلمة المرور؟
             </button>
-            <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, fontWeight: 600, color: '#9FC4F2', lineHeight: 1.8 }}>
-              هوية رقمية واحدة موثوقة لجميع المواطنين والمقيمين والزوار
+            <div style={{ marginTop: 10, textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#7FA6D8', lineHeight: 1.9 }}>
+              الحسابات يُنشئها مشرف النظام وتصل دعوتها بالبريد الرسمي
             </div>
           </div>
           </div>

@@ -5,6 +5,7 @@ import { assertEntity, assertPermission, canAccessAllEntities } from '@/lib/secu
 import { handleApiError, getIp } from '@/lib/security/http';
 import { jsonError, messages } from '@/lib/security/errors';
 import { writeAuditLog } from '@/lib/security/audit';
+import { issueInvite, appOrigin } from '@/lib/security/invite';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -63,6 +64,12 @@ export async function POST(req: NextRequest) {
       await writeAuditLog({ actorUserId: actor.id, action: 'user_created', resourceType: 'user', resourceId: u.id, entityId, ipAddress: getIp(req), userAgent: req.headers.get('user-agent') }, tx);
       return u;
     });
-    return NextResponse.json({ user: created }, { status: 201 });
+    // دعوة الحساب: رابط لمرة واحدة يُرسل إلى بريده الرسمي ليضبط كلمة مروره.
+    // تعذّر الإرسال (بلا SMTP مثلاً) لا يُفشل الإنشاء — يعود الرابط للمشرف لنسخه.
+    const invite = await issueInvite(created.id, { origin: appOrigin(req.url) });
+    return NextResponse.json(
+      { user: created, invite: invite ? { link: invite.link, expiresAt: invite.expiresAt, emailed: invite.emailed } : null },
+      { status: 201 }
+    );
   } catch (e) { return handleApiError(e); }
 }

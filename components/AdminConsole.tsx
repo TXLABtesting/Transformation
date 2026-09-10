@@ -95,6 +95,8 @@ export function AdminConsole({ vm }: { vm: VM }) {
   const [roleFilter, setRoleFilter] = useState<RoleKey | 'all'>('all');
   const [editing, setEditing] = useState<UserDraft | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
+  // نتيجة دعوة آخر حساب أُنشئ (رابط التفعيل وهل أُرسل بالبريد)
+  const [invite, setInvite] = useState<{ email: string; link: string; expiresAt: string; emailed: boolean } | null>(null);
 
   // Real entities/streams/roles from the database, for the create/edit/bulk
   // forms below — the old local lists (a.entities, a.streams, a.roleInfo)
@@ -178,6 +180,8 @@ export function AdminConsole({ vm }: { vm: VM }) {
         const body = await res.json().catch(() => ({} as any));
         if (!res.ok) return body.message || body.error || 'فشل إنشاء المستخدم';
         id = body.user.id;
+        // دعوة الحساب: تصل بالبريد، وإن تعذّر الإرسال يُعرض الرابط للمشرف
+        setInvite(body.invite ? { email: d.email, ...body.invite } : null);
       } else {
         const res = await fetch(`/api/admin/users/${id}`, {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -345,6 +349,43 @@ export function AdminConsole({ vm }: { vm: VM }) {
           onClose={() => setEditing(null)}
           onSave={saveDraft}
         />
+      )}
+
+      {invite && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 70, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={() => setInvite(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
+          <div style={{ position: 'relative', width: 'min(520px,calc(100vw-32px))', background: '#fff', borderRadius: 18, padding: 24, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>
+              {invite.emailed ? 'أُرسلت الدعوة بالبريد' : 'الحساب أُنشئ — سلّم رابط التفعيل يدوياً'}
+            </div>
+            <div style={{ fontSize: 12.5, color: '#54627B', lineHeight: 1.9, marginBottom: 14 }}>
+              {invite.emailed
+                ? 'وصلت رسالة تفعيل الحساب إلى ' + invite.email + ' ليضبط كلمة مروره. الرابط صالح لمرة واحدة.'
+                : 'خدمة البريد غير مهيأة على هذا الخادم (SMTP_HOST)، فلم تُرسل الرسالة. انسخ الرابط وسلّمه لصاحب الحساب:'}
+            </div>
+            {!invite.emailed && (
+              <div dir="ltr" style={{ fontSize: 11.5, color: '#1F5FE0', background: '#F5F8FD', border: '1px solid #E1E7F0', borderRadius: 10, padding: '10px 12px', wordBreak: 'break-all', marginBottom: 14 }}>
+                {invite.link}
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              {!invite.emailed && (
+                <button
+                  onClick={() => navigator.clipboard?.writeText(invite.link)}
+                  style={{ height: 38, padding: '0 16px', background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  نسخ الرابط
+                </button>
+              )}
+              <button
+                onClick={() => setInvite(null)}
+                style={{ height: 38, padding: '0 18px', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                تم
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {bulkOpen && (

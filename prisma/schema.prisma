@@ -477,6 +477,15 @@ model User {
   @@index([entityId])
   @@index([streamId])
   @@map("users")
+  /// تسجيل الدخول بكلمة مرور: البصمة (scrypt) وتاريخ آخر ضبط لها
+  passwordHash    String?   @map("password_hash")
+  passwordSetAt   DateTime? @map("password_set_at")
+  /// محاولات الدخول الفاشلة المتتالية وقفل الحساب المؤقت
+  failedLogins    Int       @default(0) @map("failed_logins")
+  lockedUntil     DateTime? @map("locked_until")
+
+  authTokens AuthToken[]
+
 }
 
 // ---------------------------------------------------------------------------
@@ -799,4 +808,23 @@ model ItemActivityAssistant {
   @@index([itemId])
   @@index([assistantId])
   @@map("item_activity_assistants")
+}
+
+/// رمز تسجيل/استعادة يُرسل بالبريد — يُخزَّن مجزَّأً (sha256) ولا يُحفظ نصه أبداً.
+/// صالح لمرة واحدة وينتهي بانتهاء مدته، وإصدار رمز جديد يُبطل ما قبله.
+model AuthToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  /// register = دعوة أول تسجيل · reset = إعادة تعيين كلمة المرور
+  purpose   String    @default("register")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_tokens")
 }
