@@ -361,9 +361,6 @@ export function Login({ vm }: { vm: VM }) {
             >
               نسيت كلمة المرور؟
             </button>
-            <div style={{ marginTop: 10, textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#7FA6D8', lineHeight: 1.9 }}>
-              الحسابات يُنشئها مشرف النظام وتصل دعوتها بالبريد الرسمي
-            </div>
           </div>
           </div>
         </div>
