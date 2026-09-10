@@ -2296,22 +2296,18 @@ function EntitiesTab({ streams: allStreams, onChanged }: { streams: DbStream[]; 
               </button>
             </div>
 
-            {/* صف لكل مسار: لون المسار، ثم المنسق أو دعوة لتعيينه */}
+            {/* صف لكل مسار: اسم المسار، ثم المنسق أو دعوة لتعيينه */}
             <div>
               {streams.map((st, i) => {
                 const c = coordOf(coordFor.id, st.id);
-                // شريط المسار: بلون المسار متى عُيّن منسق، ورمادي باهت متى شغر
-                const color = c ? PATHS.find((p) => p.id === st.id)?.color || '#2563EB' : '#D8E0EC';
                 return (
                   <div
                     key={st.id}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 12, padding: '14px 22px',
                       borderTop: i ? '1px solid #F4F6FA' : 'none',
-                      background: c ? '#fff' : '#FCFDFF',
                     }}
                   >
-                    <span style={{ width: 8, height: 38, borderRadius: 999, background: color, flex: 'none' }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>{st.nameAr}</div>
                       {c ? (
