@@ -13,6 +13,7 @@ import { useStore } from '@/lib/store';
 import type { RoleKey, UserRec } from '@/lib/domain';
 import { downloadUsersTemplate, readSheetRows } from '@/lib/export';
 import { Icon } from './Icon';
+import { RowActions } from './RowActions';
 
 const IC_USERS = 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75';
 const IC_SHIELD = 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z';
@@ -31,7 +32,7 @@ const inputSt: CSSProperties = {
   fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#16233F', outline: 'none',
 };
 
-type Tab = 'users' | 'assign' | 'roles' | 'site' | 'contact' | 'changelog';
+type Tab = 'users' | 'assign' | 'entities' | 'roles' | 'site' | 'contact' | 'changelog';
 
 // Only the server deployment (NEXT_PUBLIC_DATA_MODE=api) has a database and
 // /api/admin/* routes behind it. The static-export/local-demo build has
@@ -240,6 +241,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'users', label: 'المستخدمون' },
     { key: 'assign', label: 'رؤساء المسارات واللجنة' },
+    { key: 'entities', label: 'الجهات' },
     { key: 'roles', label: 'الأدوار والصلاحيات' },
     { key: 'site', label: 'الموقع العام' },
     { key: 'contact', label: 'التواصل والاستفسارات' },
@@ -325,6 +327,7 @@ export function AdminConsole({ vm }: { vm: VM }) {
           <UsersTab a={a} filtered={filtered} roleFilter={roleFilter} setRoleFilter={setRoleFilter} onAdd={() => setEditing(blankDraft())} onBulk={() => setBulkOpen(true)} onEdit={(u) => setEditing(draftFromUser(u))} onToggle={a.toggleUser} onRemove={a.removeUser} />
         )}
         {tab === 'assign' && <AssignTab a={a} streams={dbStreams} onEdit={(u) => setEditing(draftFromUser(u))} onAdd={(seed) => setEditing(blankDraft(seed))} />}
+        {tab === 'entities' && <EntitiesTab onChanged={loadReference} />}
         {tab === 'roles' && <RolesTab a={a} />}
         {tab === 'site' && <SiteTab />}
         {tab === 'contact' && <ContactTab a={a} />}
@@ -1967,6 +1970,204 @@ function BulkUsers({ entities, streams, roles, onClose, onImported }: {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// سجل الجهات — إضافة/تعديل/تعطيل/حذف من لوحة المشرف مباشرة.
+// القائمة كلها من قاعدة البيانات، وكل تغيير هنا ينعكس فوراً في قوائم اختيار
+// الجهة ومرشّحاتها في كل الشاشات.
+// ============================================================================
+type RegEntity = {
+  id: string;
+  nameAr: string;
+  category: string;
+  sortOrder: number;
+  isActive: boolean;
+  _count?: { items: number; users: number; services: number };
+};
+
+const ENT_CATEGORIES = ['وزارة', 'هيئة اتحادية', 'أخرى'];
+
+function EntitiesTab({ onChanged }: { onChanged?: () => void }) {
+  const [rows, setRows] = useState<RegEntity[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [q, setQ] = useState('');
+  const [editing, setEditing] = useState<Partial<RegEntity> | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<RegEntity | null>(null);
+
+  const load = useCallback(async () => {
+    if (!DB_BACKED) { setErr('إدارة الجهات متاحة في النسخة المتصلة بالخادم فقط.'); setRows([]); return; }
+    try {
+      const res = await fetch('/api/admin/entities', { credentials: 'include' });
+      if (!res.ok) { setErr('تعذّر تحميل سجل الجهات (' + res.status + ')'); setRows([]); return; }
+      setErr(null);
+      setRows(((await res.json()).entities || []) as RegEntity[]);
+    } catch {
+      setErr('تعذّر الاتصال بالخادم');
+      setRows([]);
+    }
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const save = async (draft: Partial<RegEntity>) => {
+    setBusy(true);
+    try {
+      const res = await fetch('/api/admin/entities', {
+        method: draft.id ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: draft.id, nameAr: draft.nameAr, category: draft.category || 'أخرى', isActive: draft.isActive !== false }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) { setErr(body.message || 'تعذّر الحفظ'); return; }
+      setEditing(null);
+      await load();
+      onChanged?.();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const setActive = async (row: RegEntity, isActive: boolean) => {
+    await fetch('/api/admin/entities', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ id: row.id, isActive }),
+    });
+    await load();
+    onChanged?.();
+  };
+
+  const remove = async (row: RegEntity) => {
+    const res = await fetch(
+      '/api/admin/entities?id=' + encodeURIComponent(row.id) + (row._count?.services ? '&withServices=1' : ''),
+      { method: 'DELETE', credentials: 'include' }
+    );
+    const body = await res.json().catch(() => ({}));
+    setConfirmDel(null);
+    if (!res.ok) { setErr(body.message || 'تعذّر الحذف'); return; }
+    await load();
+    onChanged?.();
+  };
+
+  const th: CSSProperties = { textAlign: 'right', padding: '10px 12px', fontSize: 11.5, fontWeight: 700, color: '#8A97AD', borderBottom: '1px solid #EEF1F7', whiteSpace: 'normal' };
+  const td: CSSProperties = { padding: '11px 12px', fontSize: 12.5, color: '#33415C', borderBottom: '1px solid #F4F6FA', verticalAlign: 'middle' };
+  const list = (rows || []).filter((r) => !q.trim() || r.nameAr.includes(q.trim()));
+  const groups = ENT_CATEGORIES.map((c) => ({ c, items: list.filter((r) => r.category === c) })).filter((g) => g.items.length);
+
+  return (
+    <div style={{ display: 'grid', gap: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C' }}>
+          سجل الجهات {rows ? '(' + list.filter((r) => r.isActive).length + ' فعّالة من ' + list.length + ')' : ''}
+        </div>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="بحث باسم الجهة…" style={{ ...inputSt, maxWidth: 260, height: 36 }} />
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => setEditing({ nameAr: '', category: 'أخرى', isActive: true })}
+          style={{ height: 36, padding: '0 14px', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          + إضافة جهة
+        </button>
+      </div>
+
+      {err && (
+        <div style={{ padding: '11px 13px', borderRadius: 12, background: '#FFF6EC', border: '1px solid #F1DCBA', color: '#8A4B09', fontSize: 12.5, fontWeight: 700 }}>{err}</div>
+      )}
+
+      {groups.map((g) => (
+        <div key={g.c} style={{ ...card, overflowX: 'auto' }}>
+          <div style={{ padding: '13px 15px 0', fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>{g.c} <span style={{ color: '#8A97AD', fontWeight: 700 }}>({g.items.length})</span></div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+            <thead>
+              <tr>
+                <th style={th}>الجهة</th>
+                <th style={th}>الحالة</th>
+                <th style={th}>مرتبط بها</th>
+                <th style={{ ...th, width: '1%' }}>الإجراء</th>
+              </tr>
+            </thead>
+            <tbody>
+              {g.items.map((r) => (
+                <tr key={r.id} style={{ background: '#fff' }}>
+                  <td style={{ ...td, fontWeight: 800, color: r.isActive ? '#13213C' : '#9AA6BC' }}>{r.nameAr}</td>
+                  <td style={td}>
+                    <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 999, background: r.isActive ? '#E7F6EE' : '#F1F4F9', color: r.isActive ? '#0B8A4B' : '#8A97AD' }}>
+                      {r.isActive ? 'فعّالة' : 'معطّلة'}
+                    </span>
+                  </td>
+                  <td style={{ ...td, color: '#6B7A93' }}>
+                    {[r._count?.items ? r._count.items + ' مدخلاً' : '', r._count?.users ? r._count.users + ' مستخدماً' : '', r._count?.services ? r._count.services + ' خدمة' : '']
+                      .filter(Boolean)
+                      .join(' · ') || '—'}
+                  </td>
+                  <td style={{ ...td, width: '1%' }}>
+                    <RowActions
+                      actions={[
+                        { key: 'edit', label: 'تعديل', kind: 'brand' as const, onClick: () => setEditing(r) },
+                        r.isActive
+                          ? { key: 'off', label: 'تعطيل', kind: 'amber' as const, title: 'تختفي من القوائم وتبقى بياناتها', onClick: () => setActive(r, false) }
+                          : { key: 'on', label: 'تفعيل', kind: 'primary' as const, onClick: () => setActive(r, true) },
+                        { key: 'del', label: 'حذف', kind: 'danger' as const, onClick: () => setConfirmDel(r) },
+                      ]}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
+      {rows && !list.length && !err && <div style={{ ...card, padding: 18, fontSize: 12.5, color: '#8A97AD' }}>لا جهات مطابقة</div>}
+
+      {editing && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={() => setEditing(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
+          <div style={{ position: 'relative', width: 'min(460px,calc(100vw-32px))', background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 16 }}>{editing.id ? 'تعديل جهة' : 'إضافة جهة'}</div>
+            <label style={labelSt}>اسم الجهة *</label>
+            <input autoFocus value={editing.nameAr || ''} onChange={(e) => setEditing({ ...editing, nameAr: e.target.value })} style={inputSt} placeholder="مثال: وزارة المالية" />
+            <div style={{ height: 12 }} />
+            <label style={labelSt}>التصنيف</label>
+            <select value={editing.category || 'أخرى'} onChange={(e) => setEditing({ ...editing, category: e.target.value })} style={{ ...inputSt, cursor: 'pointer' }}>
+              {ENT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <div style={{ height: 12 }} />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 700, color: '#33415C' }}>
+              <input type="checkbox" checked={editing.isActive !== false} onChange={(e) => setEditing({ ...editing, isActive: e.target.checked })} style={{ width: 15, height: 15, accentColor: '#2563EB' }} />
+              جهة فعّالة (تظهر في القوائم)
+            </label>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+              <button onClick={() => setEditing(null)} style={{ height: 38, padding: '0 16px', background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+              <button
+                disabled={busy || (editing.nameAr || '').trim().length < 3}
+                onClick={() => save(editing)}
+                style={{ height: 38, padding: '0 18px', background: (editing.nameAr || '').trim().length < 3 ? '#C8D2E4' : 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                حفظ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDel && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={() => setConfirmDel(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(9,20,44,.5)' }} />
+          <div style={{ position: 'relative', width: 'min(440px,calc(100vw-32px))', background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 30px 70px -24px rgba(2,12,35,.6)' }}>
+            <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 10 }}>حذف «{confirmDel.nameAr}»؟</div>
+            <div style={{ fontSize: 12.5, color: '#54627B', lineHeight: 1.8, marginBottom: 18 }}>
+              الحذف نهائي{confirmDel._count?.services ? ' ويزيل ' + confirmDel._count.services + ' خدمة من دليل خدماتها' : ''}. الجهة المرتبطة بمدخلات أو مستخدمين لا تُحذف — عطّلها بدل ذلك فتختفي من القوائم وتبقى بياناتها.
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={() => setConfirmDel(null)} style={{ height: 38, padding: '0 16px', background: '#fff', border: '1px solid #E7ECF4', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+              <button onClick={() => remove(confirmDel)} style={{ height: 38, padding: '0 18px', background: '#C0303B', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>حذف نهائي</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

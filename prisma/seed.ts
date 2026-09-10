@@ -21,6 +21,8 @@ import {
 } from '../lib/domain';
 import { FEDERAL_ENTITIES } from '../lib/entities';
 import { ensureRbacCatalog } from '../lib/security/rbac-catalog';
+import { ensureEntityRegister } from '../lib/security/entity-register';
+import { officialEntityName } from '../lib/entitiesOfficial';
 import SVC_CATALOG_RAW from '../lib/svcCatalog.json';
 
 const SVC_CATALOG = SVC_CATALOG_RAW as Record<string, Record<string, string[]>>;
@@ -80,7 +82,10 @@ async function main() {
   // 2b) دليل الخدمات الاتحادية — main/sub services per entity (services-stream
   // dropdowns). Entities present in the catalog but not yet in the DB are
   // created so their coordinators get their scoped list immediately.
-  for (const [entName, services] of Object.entries(SVC_CATALOG)) {
+  for (const [rawName, services] of Object.entries(SVC_CATALOG)) {
+    // دليل الخدمات مسجَّل ببعض الأسماء القديمة — تُقيَّد خدماتها على الجهة
+    // المعتمدة مباشرة فلا تُنشأ صفوف بأسماء خارج السجل
+    const entName = officialEntityName(rawName);
     let entityId = entityIdByName.get(entName);
     if (!entityId) {
       const e = await prisma.entity.upsert({ where: { nameAr: entName }, update: {}, create: { nameAr: entName } });
@@ -91,6 +96,18 @@ async function main() {
       subs.map((subService) => ({ entityId: entityId!, mainService, subService }))
     );
     if (rows.length) await prisma.serviceCatalog.createMany({ data: rows, skipDuplicates: true });
+  }
+
+  // 2c) مواءمة السجل المعتمد: إعادة تسمية الأسماء القديمة ودمج المكرر وإنشاء
+  //     الناقص وتعطيل ما ليس في السجل (بيانات الجهات تنتقل مع أسمائها)
+  {
+    const rep = await ensureEntityRegister(prisma);
+    console.log('entity register:', {
+      renamed: rep.renamed.length,
+      merged: rep.merged.length,
+      created: rep.created.length,
+      deactivated: rep.deactivated.length,
+    });
   }
 
   // 3) Execution batches (المراحل الربعية الخمس)

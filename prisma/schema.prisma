@@ -22,8 +22,13 @@ datasource db {
 model Entity {
   id        String   @id @default(cuid())
   nameAr    String   @unique @map("name_ar")
+  /// تصنيف الجهة في السجل المعتمد: وزارة | هيئة اتحادية | أخرى
+  category  String   @default("أخرى")
+  /// ترتيبها في السجل المعتمد (للعرض)
+  sortOrder Int      @default(999) @map("sort_order")
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   items        Item[]
   reps         EntityRep[]

@@ -242,6 +242,9 @@ type State = {
   ui: UiState;
   _tick: number; // countdown re-render
   _hydrated: boolean;
+  /** سجل الجهات الفعّالة من قاعدة البيانات (نسخة الخادم) — تتغذى منه كل
+   *  القوائم المنسدلة، فما يضيفه المشرف أو يحذفه يظهر فوراً في كل الشاشات */
+  entityList: string[];
   /** في نسخة الخادم: هل انتهى فحص الجلسة (/api/auth/me)؟ الحراسة تنتظره */
   _authChecked: boolean;
   /** هل صاحب الجلسة مشرف نظام؟ يُثبّت من الجلسة ولا يتغير بتبديل العرض —
@@ -644,6 +647,7 @@ function initialState(): State {
     ui: defaultUi(),
     _tick: 0,
     _hydrated: false,
+    entityList: [],
     _authChecked: !BACKEND_AUTH,
     sessionAdmin: false,
     sessionRoles: [],
@@ -942,6 +946,18 @@ export const useStore = create<Store>((set, get) => {
       // Backend-auth mode: /api/auth/me is the source of truth for access,
       // legacy UI role, entity and stream selection. Frontend checks are UX
       // only; the backend APIs still enforce permission/scope.
+      if (API_MODE) {
+        // سجل الجهات الفعّالة — يغذّي كل قوائم اختيار الجهة والمرشّحات
+        fetch('/api/entities', { credentials: 'include' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((res) => {
+            const names = Array.isArray(res?.entities)
+              ? (res.entities as { nameAr?: string }[]).map((e) => String(e.nameAr || '')).filter(Boolean)
+              : [];
+            if (names.length) set({ entityList: names });
+          })
+          .catch(() => {});
+      }
       if (BACKEND_AUTH) {
         fetch('/api/auth/me', { credentials: 'include' })
           .then((r) => (r.ok ? r.json() : null))

@@ -8,6 +8,7 @@
 import federalServices from './data/federalServices.json';
 import federalSubServices from './data/federalSubServices.json';
 import servicePackages from './data/servicePackages.json';
+import { OFFICIAL_ENTITY_NAMES } from './entitiesOfficial';
 
 // entity -> [services]
 export const FEDERAL_SERVICES = federalServices as Record<string, string[]>;
@@ -19,8 +20,10 @@ export const FEDERAL_SUB_SERVICES = federalSubServices as Record<
 // entity -> package -> [services]
 export const SERVICE_PACKAGES = servicePackages as Record<string, Record<string, string[]>>;
 
-/** All participating federal entities (Arabic names). */
-export const FEDERAL_ENTITIES: string[] = Object.keys(FEDERAL_SUB_SERVICES);
+/** الجهات ضمن نطاق المشروع — السجل المعتمد (وثيقة يوليو 2026) بترتيبها فيه.
+ *  في نسخة الخادم تُقرأ القائمة الحيّة من قاعدة البيانات (store.entityList)
+ *  فيظهر ما يضيفه المشرف؛ وهذه هي قيمة التهيئة والقائمة في النسخة التجريبية. */
+export const FEDERAL_ENTITIES: string[] = OFFICIAL_ENTITY_NAMES;
 
 /** Departments (main service groups) for an entity. */
 export function departmentsOf(entity: string): string[] {

@@ -271,6 +271,8 @@ function Header({ onMenu }: { onMenu: () => void }) {
   const [prof, setProf] = useState(false);
   // تسجيل الخروج عبر جلسة المنصة نفسها (النسخة الحية تنهي جلسة الخادم أيضاً)
   const signOut = useStore((st) => st.logout);
+  // سجل الجهات الحيّ (نسخة الخادم) — مبدّل الجهات يعرضه كما هو في اللوحة
+  const entityRegister = useStore((st) => st.entityList);
   // المشرف في النسخة الحية: مبدّلا الأدوار والجهات الموحّدان في ترويسة الوزارة
   const mainAdmin = useStore((st) => st.sessionAdmin);
   const mainEntities = useStore((st) => st.sessionEntities);
@@ -386,7 +388,7 @@ function Header({ onMenu }: { onMenu: () => void }) {
             title="التنقل بين الجهات (تجريبي)"
             style={{ height: 38, maxWidth: 230, border: '1px solid #E7ECF4', boxShadow: '0 6px 20px -10px rgba(16,36,79,.12)', background: '#fff', borderRadius: 11, padding: '0 10px', fontSize: 12, fontWeight: 700, color: '#13213C', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            {Array.from(new Set([DEFAULT_ENTITY, ...svcCatalogEntities(), ...FEDERAL_ENTITIES].filter(Boolean)))
+            {Array.from(new Set([...(entityRegister.length ? entityRegister : [DEFAULT_ENTITY, ...FEDERAL_ENTITIES])].filter(Boolean)))
               .sort((a, b) => a.localeCompare(b, 'ar'))
               .map((en) => (
                 <option key={en} value={en}>{en}</option>

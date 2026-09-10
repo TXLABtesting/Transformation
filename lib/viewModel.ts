@@ -1342,7 +1342,7 @@ function build(s: Store) {
       return {
         value: entityName,
         options: Array.from(
-          new Set([DEFAULT_ENTITY, ...svcCatalogEntities(), ...FEDERAL_ENTITIES, entityName].filter(Boolean))
+          new Set([...(s.entityList.length ? s.entityList : [DEFAULT_ENTITY, ...FEDERAL_ENTITIES]), entityName].filter(Boolean))
         ).sort((a, b) => a.localeCompare(b, 'ar')),
         onChange: (v: string) => s.setEntityName(v),
       };
@@ -1496,7 +1496,7 @@ function build(s: Store) {
     // القائمة الكاملة: دليل الخدمات (47 جهة) + مجموعة الجهات الأصلية +
     // وزارة شؤون مجلس الوزراء (بنيتها المستقلة) + جهة الجلسة
     entities: Array.from(
-      new Set([DEFAULT_ENTITY, ...svcCatalogEntities(), ...FEDERAL_ENTITIES, entityName].filter(Boolean))
+      new Set([...(s.entityList.length ? s.entityList : [DEFAULT_ENTITY, ...FEDERAL_ENTITIES]), entityName].filter(Boolean))
     ).sort((a, b) => a.localeCompare(b, 'ar')),
     counts: {
       total: s.users.length,
