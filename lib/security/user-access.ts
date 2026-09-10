@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
+import { ensureRbacCatalog } from './rbac-catalog';
 import { prisma } from '@/lib/prisma';
 import { env } from './env';
 import { writeAuditLog } from './audit';
@@ -177,7 +178,14 @@ export async function ensureUserFromIdentity(identity: Identity) {
 
     // 1. Bootstrap admin (highest priority)
     if (isBootstrap) {
-      const role = await tx.role.findUnique({ where: { code: 'system_admin' } });
+      // قاعدة مُرحَّلة بلا بذر: جدول الأدوار فارغ، فكان المشرف يدخل بلا أي
+      // صلاحية (قوائم الأدوار والجهات تصل فارغة). تُنشأ الأدوار والصلاحيات هنا
+      // أولاً — عملية آمنة التكرار لا تمسّ أي صف قائم.
+      let role = await tx.role.findUnique({ where: { code: 'system_admin' } });
+      if (!role) {
+        await ensureRbacCatalog(tx);
+        role = await tx.role.findUnique({ where: { code: 'system_admin' } });
+      }
       if (role) {
         await tx.userRole.upsert({
           where: { userId_roleId: { userId: user.id, roleId: role.id } },

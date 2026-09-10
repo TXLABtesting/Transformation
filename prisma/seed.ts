@@ -20,57 +20,15 @@ import {
   type Item as MockItem,
 } from '../lib/domain';
 import { FEDERAL_ENTITIES } from '../lib/entities';
+import { ensureRbacCatalog } from '../lib/security/rbac-catalog';
 import SVC_CATALOG_RAW from '../lib/svcCatalog.json';
 
 const SVC_CATALOG = SVC_CATALOG_RAW as Record<string, Record<string, string[]>>;
 
 const prisma = new PrismaClient();
 
-// Production RBAC roles (code-based, mirrors migration 0009). UI labels stay
-// Arabic while the server APIs enforce the stable permission codes.
-const RBAC_ROLES = [
-  ['system_admin', 'مشرف النظام'],
-  ['program_admin', 'مدير البرنامج'],
-  ['entity_representative', 'ممثل الجهة'],
-  ['entity_admin', 'مسؤول الجهة'],
-  ['entity_coordinator', 'منسق المسار في الجهة الاتحادية'],
-  ['stream_owner', 'فريق عمل المسار في المشروع'],
-  ['ai_committee', 'اللجنة الوطنية للذكاء الاصطناعي المساعد'],
-  ['strategic_project_member', 'أعضاء المشاريع الاستراتيجية'],
-  ['strategic_project_lead', 'قائد المشاريع الاستراتيجية'],
-  ['viewer', 'مستعرض'],
-  ['auditor', 'مدقق'],
-] as const;
-
-const PERMISSIONS = [
-  'users:view','users:create','users:update','users:disable','roles:view','roles:assign',
-  'entities:view','entities:update','streams:view','streams:update',
-  'items:view','items:create','items:update','items:submit','items:approve','items:reject','items:export',
-  'launch_plans:view','launch_plans:create','launch_plans:update','launch_plans:approve',
-  'funding:view','funding:create','funding:approve','funding:reject','funding:cancel',
-  'nominations:view','nominations:create','nominations:update','nominations:approve','nominations:reject',
-  'reports:view','reports:export','ai_review:run','audit:view','settings:view','settings:update',
-];
-
-// Role → permission matrix.
-// NOTE: the confirmed business flow has فريق عمل المسار في المشروع
-// (stream_owner) as the sole ent1 approver — entity_representative is
-// legacy/view-level and holds no approval permissions.
-const ROLE_PERMISSION_MATRIX: Record<string, string[]> = {
-  system_admin: PERMISSIONS,
-  program_admin: PERMISSIONS.filter((p) => !p.startsWith('settings:')),
-  entity_representative: ['entities:view','streams:view','items:view','items:export','launch_plans:view','reports:view','reports:export'],
-  entity_admin: ['entities:view','entities:update','streams:view','items:view','items:create','items:update','items:submit','items:export','launch_plans:view','funding:view','nominations:view','reports:view','reports:export'],
-  entity_coordinator: ['entities:view','streams:view','items:view','items:create','items:update','items:submit','items:export','launch_plans:view','funding:view','nominations:view','reports:view'],
-  stream_owner: ['entities:view','streams:view','items:view','items:approve','items:reject','items:export','launch_plans:view','launch_plans:approve','funding:view','nominations:view','nominations:approve','nominations:reject','reports:view'],
-  ai_committee: ['entities:view','streams:view','items:view','items:approve','items:reject','items:export','launch_plans:view','funding:view','funding:approve','funding:reject','funding:cancel','nominations:view','reports:view','reports:export','ai_review:run'],
-  // أعضاء المشاريع الاستراتيجية: نماذج مشاريعهم فقط — بلا صلاحيات على مدخلات المسارات
-  strategic_project_member: ['entities:view','streams:view','reports:view'],
-  // قائد المشاريع الاستراتيجية: اطلاع على مشاريع قيادته وحالة تعبئتها فقط
-  strategic_project_lead: ['entities:view','streams:view','reports:view'],
-  viewer: ['entities:view','streams:view','items:view','launch_plans:view','funding:view','nominations:view','reports:view'],
-  auditor: ['entities:view','streams:view','items:view','items:export','launch_plans:view','funding:view','nominations:view','reports:view','reports:export','audit:view'],
-};
+// الأدوار والصلاحيات ومصفوفتها في lib/security/rbac-catalog.ts — مصدر واحد
+// يستخدمه البذر وأول دخول لمشرف النظام على السواء.
 
 // Legacy UI role key (users.role) → backend RBAC role code.
 const LEGACY_TO_RBAC: Record<string, string> = {
@@ -84,23 +42,7 @@ const LEGACY_TO_RBAC: Record<string, string> = {
 
 async function main() {
   // 0) RBAC roles, permissions and the role→permission matrix
-  for (const [code, nameAr] of RBAC_ROLES) {
-    await prisma.role.upsert({ where: { code }, update: { nameAr }, create: { code, nameAr } });
-  }
-  for (const code of PERMISSIONS) {
-    await prisma.permission.upsert({ where: { code }, update: {}, create: { code } });
-  }
-  for (const [roleCode, permissionCodes] of Object.entries(ROLE_PERMISSION_MATRIX)) {
-    const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } });
-    for (const permissionCode of permissionCodes) {
-      const permission = await prisma.permission.findUniqueOrThrow({ where: { code: permissionCode } });
-      await prisma.rolePermission.upsert({
-        where: { roleId_permissionId: { roleId: role.id, permissionId: permission.id } },
-        update: {},
-        create: { roleId: role.id, permissionId: permission.id },
-      });
-    }
-  }
+  await ensureRbacCatalog(prisma);
 
   // 1) Streams (المسارات) + heads (رؤساء المسارات)
   for (const [i, p] of PATHS.entries()) {

@@ -476,9 +476,12 @@ export function AdminPanel({ onClose, fullPage = false }: { onClose: () => void;
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
   // Add-user modal
   const [addUserOpen, setAddUserOpen] = useState(false);
+  // سبب تعذّر التحميل يُعرض للمشرف بدل ترك القوائم فارغة بلا تفسير
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadTab = useCallback(async (t: Tab) => {
     setLoading(true);
+    setLoadError(null);
     try {
       switch (t) {
         case 'users': {
@@ -532,7 +535,14 @@ export function AdminPanel({ onClose, fullPage = false }: { onClose: () => void;
         }
       }
     } catch (e) {
+      const msg = (e as Error).message || '';
       console.error('Admin load error:', e);
+      setLoadError(
+        /403/.test(msg) || /صلاحية/.test(msg)
+          ? 'تعذّر تحميل بيانات اللوحة — الحساب لا يملك الصلاحية المطلوبة (roles:view / entities:view).'
+          : 'تعذّر تحميل بيانات اللوحة من قاعدة البيانات' + (msg ? ' — ' + msg : '') +
+            '. إن كانت القاعدة جديدة فشغّل «npm run db:seed» لتهيئة الأدوار والجهات.'
+      );
     } finally {
       setLoading(false);
     }
@@ -635,6 +645,16 @@ export function AdminPanel({ onClose, fullPage = false }: { onClose: () => void;
             <Icon d="M18 6L6 18M6 6l12 12" />
           </button>
         </div>
+
+        {/* سبب تعذّر تحميل البيانات المرجعية — بدلاً من قوائم فارغة بلا تفسير */}
+        {loadError && (
+          <div style={{ margin: '14px 24px 0', padding: '11px 13px', borderRadius: 12, background: '#FFF6EC', border: '1px solid #F1DCBA', color: '#8A4B09', fontSize: 12.5, fontWeight: 700, lineHeight: 1.7, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <span style={{ flex: 1 }}>{loadError}</span>
+            <button onClick={() => loadTab(tab)} style={{ flex: 'none', background: '#fff', border: '1px solid #E7ECF4', borderRadius: 9, padding: '6px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', color: '#33405A' }}>
+              إعادة المحاولة
+            </button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div style={tabBar}>

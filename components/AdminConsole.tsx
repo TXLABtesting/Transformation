@@ -5,7 +5,7 @@
 // committee (اللجنة الوطنية). Coordinators are provisioned by the entity rep
 // in team setup, so they appear here read-only for oversight.
 // ---------------------------------------------------------------------------
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { DOC_CATS, type DocCat, CONTACT_STREAMS, PATHS, PROJECT_LEADS, OPS_SUBSCOPES } from '@/lib/domain';
 import { mocaUnitOptions } from '@/lib/moca';
 import type { VM } from '@/lib/viewModel';
@@ -101,27 +101,58 @@ export function AdminConsole({ vm }: { vm: VM }) {
   const [dbEntities, setDbEntities] = useState<DbEntity[]>([]);
   const [dbStreams, setDbStreams] = useState<DbStream[]>([]);
   const [dbRoles, setDbRoles] = useState<DbRole[]>([]);
+  // حالة تحميل البيانات المرجعية: القائمة الفارغة بلا تفسير كانت تُوقف المشرف
+  // بلا سبب ظاهر — تُعرض الآن رسالة صريحة بسببها مع إعادة المحاولة
+  const [refState, setRefState] = useState<{ loading: boolean; error: string | null }>({ loading: DB_BACKED, error: null });
+
+  const loadReference = useCallback(async () => {
+    if (!DB_BACKED) return;
+    setRefState({ loading: true, error: null });
+    try {
+      const [eRes, sRes, rRes] = await Promise.all([
+        fetch('/api/admin/entities', { credentials: 'include' }),
+        fetch('/api/admin/streams', { credentials: 'include' }),
+        fetch('/api/admin/roles', { credentials: 'include' }),
+      ]);
+      const ents: DbEntity[] = eRes.ok ? (await eRes.json()).entities || [] : [];
+      const strs: DbStream[] = sRes.ok ? (await sRes.json()).streams || [] : [];
+      const rls: DbRole[] = rRes.ok ? (await rRes.json()).roles || [] : [];
+      setDbEntities(ents);
+      setDbStreams(strs);
+      setDbRoles(rls);
+      const failed = [
+        !eRes.ok && 'الجهات (' + eRes.status + ')',
+        !sRes.ok && 'المسارات (' + sRes.status + ')',
+        !rRes.ok && 'الأدوار (' + rRes.status + ')',
+      ].filter(Boolean) as string[];
+      if (failed.length) {
+        const denied = [eRes.status, sRes.status, rRes.status].includes(403);
+        setRefState({
+          loading: false,
+          error:
+            'تعذّر تحميل ' + failed.join('، ') + ' من قاعدة البيانات' +
+            (denied ? ' — الحساب لا يملك صلاحية الاطلاع عليها (roles:view / entities:view).' : '.'),
+        });
+        return;
+      }
+      const empty = [!rls.length && 'الأدوار', !ents.length && 'الجهات'].filter(Boolean) as string[];
+      setRefState({
+        loading: false,
+        error: empty.length
+          ? 'جداول ' + empty.join(' و') + ' في قاعدة البيانات فارغة — شغّل «npm run db:seed» لتهيئة البيانات المرجعية.'
+          : null,
+      });
+    } catch {
+      setRefState({ loading: false, error: 'تعذّر الاتصال بالخادم لتحميل الأدوار والجهات.' });
+    }
+  }, []);
 
   // Pull the real user list + reference data from the database the moment
   // this console opens, instead of showing whatever demo/local rows happen
   // to be sitting in browser storage. No-ops in the static/local demo build.
   useEffect(() => {
     s.adminLoadUsers();
-    if (!DB_BACKED) return;
-    (async () => {
-      try {
-        const [eRes, sRes, rRes] = await Promise.all([
-          fetch('/api/admin/entities', { credentials: 'include' }),
-          fetch('/api/admin/streams', { credentials: 'include' }),
-          fetch('/api/admin/roles', { credentials: 'include' }),
-        ]);
-        if (eRes.ok) setDbEntities((await eRes.json()).entities || []);
-        if (sRes.ok) setDbStreams((await sRes.json()).streams || []);
-        if (rRes.ok) setDbRoles((await rRes.json()).roles || []);
-      } catch {
-        // reference data unavailable — the forms below just show empty lists
-      }
-    })();
+    loadReference();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -306,6 +337,8 @@ export function AdminConsole({ vm }: { vm: VM }) {
           entities={dbEntities}
           streams={dbStreams}
           roles={dbRoles}
+          refState={refState}
+          onRetryRef={loadReference}
           onClose={() => setEditing(null)}
           onSave={saveDraft}
         />
@@ -1547,11 +1580,13 @@ function PickCount({ value, total }: { value: string[]; total: number }) {
 }
 
 // ---- User editor modal ----------------------------------------------------
-function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
+function UserEditor({ draft, entities, streams, roles, refState, onRetryRef, onClose, onSave }: {
   draft: UserDraft;
   entities: DbEntity[];
   streams: DbStream[];
   roles: DbRole[];
+  refState?: { loading: boolean; error: string | null };
+  onRetryRef?: () => void;
   onClose: () => void;
   onSave: (d: UserDraft) => Promise<string | null>;
 }) {
@@ -1607,6 +1642,29 @@ function UserEditor({ draft, entities, streams, roles, onClose, onSave }: {
             <Icon d={IC_X} size={16} color="#54627B" />
           </button>
         </div>
+
+        {/* البيانات المرجعية (الأدوار والجهات) تأتي من قاعدة البيانات — إن تعذّر
+            تحميلها تُعرض القوائم فارغة، فيُشرح السبب هنا بدل تركها بلا تفسير */}
+        {refState && (refState.loading || refState.error) && (
+          <div
+            style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14, padding: '11px 13px', borderRadius: 12,
+              background: refState.error ? '#FFF6EC' : '#F3F6FC',
+              border: '1px solid ' + (refState.error ? '#F1DCBA' : '#E4EAF5'),
+              color: refState.error ? '#8A4B09' : '#54627B', fontSize: 12, fontWeight: 700, lineHeight: 1.7,
+            }}
+          >
+            <span style={{ flex: 1 }}>{refState.loading ? 'جارٍ تحميل الأدوار والجهات…' : refState.error}</span>
+            {!refState.loading && onRetryRef && (
+              <button
+                onClick={onRetryRef}
+                style={{ flex: 'none', background: '#fff', border: '1px solid #E7ECF4', borderRadius: 9, padding: '6px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', color: '#33405A' }}
+              >
+                إعادة المحاولة
+              </button>
+            )}
+          </div>
+        )}
 
         <div style={{ display: 'grid', gap: 14 }}>
           <div>
