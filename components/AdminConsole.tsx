@@ -1470,10 +1470,24 @@ function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
     }
   };
 
+  // المكرر لا يُضاف ثانية: بريد مسجَّل مسبقاً أو مكرر داخل الملف نفسه يُتخطى
+  const emailKey = (v: string) => v.trim().toLowerCase();
+  const known = useMemo(() => new Set(a.users.map((u) => emailKey(u.email || ''))), [a.users]);
+  const fresh = useMemo(() => {
+    if (!parsed) return [];
+    const seen = new Set<string>();
+    return parsed.filter((p) => {
+      const k = emailKey(p.rec.email);
+      if (known.has(k) || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }, [parsed, known]);
+
   const doImport = () => {
     if (!parsed) return;
-    parsed.forEach((p, i) => a.saveUser({ ...p.rec, id: 'u-b' + Math.abs(hashStr(p.rec.email + p.rec.name + i)).toString(36) }));
-    setDone({ added: parsed.length, skipped: 0 });
+    fresh.forEach((p, i) => a.saveUser({ ...p.rec, id: 'u-b' + Math.abs(hashStr(p.rec.email + p.rec.name + i)).toString(36) }));
+    setDone({ added: fresh.length, skipped: parsed.length - fresh.length });
   };
 
   const stepNum = (n: number, active: boolean) => (
@@ -1497,6 +1511,11 @@ function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
               <Icon d={IC_CHECK} size={26} color="#0B8A4B" strokeWidth={2.6} />
             </span>
             <div style={{ fontSize: 15, fontWeight: 800, marginTop: 12 }}>تمت إضافة {done.added} مستخدمًا</div>
+            {done.skipped > 0 && (
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#8A97AD', marginTop: 6, lineHeight: 1.8 }}>
+                تم تخطّي {done.skipped} مكرراً — بريده مسجَّل مسبقاً أو متكرر داخل الملف.
+              </div>
+            )}
             <button onClick={onClose} style={{ marginTop: 18, border: 'none', background: 'linear-gradient(180deg,#2E74EE,#1F5FE0)', color: '#fff', borderRadius: 11, padding: '11px 26px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>تم</button>
           </div>
         ) : (
@@ -1524,15 +1543,20 @@ function BulkUsers({ a, onClose }: { a: VM['admin']; onClose: () => void }) {
                   <input type="file" accept=".xlsx,.csv" style={{ display: 'none' }} onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
                 </label>
                 {parsed && (
-                  <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: parsed.length ? '#0B8A4B' : '#C0392B' }}>
-                    {parsed.length ? `تم التعرف على ${parsed.length} مستخدمًا جاهزًا للإضافة` : 'لم يتم العثور على صفوف صالحة — تحقق من الملف'}
+                  <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: fresh.length ? '#0B8A4B' : '#C0392B' }}>
+                    {parsed.length ? `تم التعرف على ${fresh.length} مستخدمًا جاهزًا للإضافة` : 'لم يتم العثور على صفوف صالحة — تحقق من الملف'}
+                    {parsed.length > fresh.length && (
+                      <span style={{ color: '#8A97AD', fontWeight: 700 }}>
+                        {' '}· {parsed.length - fresh.length} مكرراً يُتخطّى
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, marginTop: 4 }}>
-              <button disabled={!parsed || !parsed.length || busy} onClick={doImport} style={{ border: 'none', background: parsed && parsed.length ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', borderRadius: 11, padding: '11px 24px', fontWeight: 800, fontSize: 13, cursor: parsed && parsed.length ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>استيراد</button>
+              <button disabled={!fresh.length || busy} onClick={doImport} style={{ border: 'none', background: fresh.length ? 'linear-gradient(180deg,#2E74EE,#1F5FE0)' : '#C7D2E4', color: '#fff', borderRadius: 11, padding: '11px 24px', fontWeight: 800, fontSize: 13, cursor: fresh.length ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>استيراد</button>
               <button onClick={onClose} style={{ border: '1px solid #E7ECF4', background: '#fff', color: '#54627B', borderRadius: 11, padding: '11px 20px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
             </div>
           </div>

@@ -3,6 +3,7 @@
 // القاعدة: منسق الجهة يرى خدمات جهته فقط — لا قائمة موحدة عبر الجهات.
 import { useEffect, useState } from 'react';
 import raw from './svcCatalog.json';
+import { officialEntityName, legacyNamesOf } from './entitiesOfficial';
 
 export type EntityCatalog = Record<string, string[]>; // الخدمة الرئيسية -> الخدمات الفرعية
 
@@ -31,19 +32,35 @@ for (const [ent, services] of Object.entries(CATALOG)) {
   }
 }
 
-/** خدمات الجهة فقط — null إذا لم تكن الجهة مدرجة في الدليل */
+/** خدمات الجهة فقط — null إذا لم تكن الجهة مدرجة في الدليل.
+ *  الجهة المعتمدة قد تكون مسجّلة في الدليل باسمها القديم، فيُبحث عنها به أيضاً
+ *  (ودليل جهة باسم قديم يُقرأ باسمها المعتمد كذلك). */
 export function svcCatalogFor(entityName: string): EntityCatalog | null {
-  return byNorm.get(norm(entityName)) || null;
+  const direct = byNorm.get(norm(entityName));
+  if (direct) return direct;
+  const official = officialEntityName(entityName);
+  const viaOfficial = official !== entityName ? byNorm.get(norm(official)) : undefined;
+  if (viaOfficial) return viaOfficial;
+  // اسم معتمد ← أسماؤه القديمة في الدليل (تُدمج إن تعددت)
+  const legacy = legacyNamesOf(official).map((n) => byNorm.get(norm(n))).filter(Boolean) as EntityCatalog[];
+  if (!legacy.length) return null;
+  if (legacy.length === 1) return legacy[0];
+  const merged: EntityCatalog = {};
+  for (const cat of legacy) for (const [m, subs] of Object.entries(cat)) merged[m] = Array.from(new Set([...(merged[m] || []), ...subs]));
+  return merged;
 }
 
-/** أسماء الجهات المدرجة في دليل الخدمات — لاختيار الجهة في النسخة التجريبية */
+/** أسماء الجهات المدرجة في دليل الخدمات بأسمائها المعتمدة (بلا تكرار) —
+ *  الدليل مخزَّن ببعض الأسماء القديمة فتُردّ إلى ما يقابلها في السجل المعتمد. */
 export function svcCatalogEntities(): string[] {
-  return Object.keys(CATALOG).sort((a, b) => a.localeCompare(b, 'ar'));
+  return Array.from(new Set(Object.keys(CATALOG).map((e) => officialEntityName(e)))).sort((a, b) =>
+    a.localeCompare(b, 'ar')
+  );
 }
 
 /** هل لجهة المستخدم خدمات مسجلة في الدليل؟ */
 export function hasSvcCatalog(entityName: string): boolean {
-  return byNorm.has(norm(entityName));
+  return !!svcCatalogFor(entityName);
 }
 
 /**

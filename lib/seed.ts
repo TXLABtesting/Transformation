@@ -809,7 +809,7 @@ export function seedProjForms(): ProjForm[] {
       ],
       team: [
         { name: 'سارة عبدالله الحوسني', title: 'رئيسة فريق المشروع', entity: 'وزارة شؤون مجلس الوزراء', email: 'sara.alhosani@moca.gov.ae', phone: '0501000001' },
-        { name: 'محمد راشد الشحي', title: 'مهندس الحلول', entity: 'هيئة تنظيم الاتصالات والحكومة الرقمية', email: 'mohammed.alshehhi@tdra.gov.ae', phone: '0501000002' },
+        { name: 'محمد راشد الشحي', title: 'مهندس الحلول', entity: 'الهيئة العامة لتنظيم قطاع الاتصالات', email: 'mohammed.alshehhi@tdra.gov.ae', phone: '0501000002' },
         { name: 'موزة أحمد الظاهري', title: 'مسؤولة الحوكمة', entity: 'وزارة شؤون مجلس الوزراء', email: 'moza.aldhaheri@moca.gov.ae', phone: '0501000003' },
       ],
       wf: 'approved',
@@ -824,7 +824,7 @@ export function seedProjForms(): ProjForm[] {
       id: 'pf2',
       projId: 'pj2',
       owner: 'خالد سالم النعيمي',
-      entityResp: 'هيئة تنظيم الاتصالات والحكومة الرقمية',
+      entityResp: 'الهيئة العامة لتنظيم قطاع الاتصالات',
       desc: 'مساعد محادثة موحّد للمتعاملين يغطي الخدمات الاتحادية الأكثر استخداماً ويحوّل الطلبات للجهات المعنية.',
       outputs: ['مساعد محادثة موحّد عبر القنوات', 'لوحة متابعة رضا المتعاملين'],
       phases: [
@@ -833,7 +833,7 @@ export function seedProjForms(): ProjForm[] {
         { name: 'الإطلاق التدريجي', start: '2027-01-01', end: '2027-02-28' },
       ],
       team: [
-        { name: 'خالد سالم النعيمي', title: 'رئيس فريق المشروع', entity: 'هيئة تنظيم الاتصالات والحكومة الرقمية', email: 'khaled.alnuaimi@tdra.gov.ae', phone: '0501000004' },
+        { name: 'خالد سالم النعيمي', title: 'رئيس فريق المشروع', entity: 'الهيئة العامة لتنظيم قطاع الاتصالات', email: 'khaled.alnuaimi@tdra.gov.ae', phone: '0501000004' },
         { name: 'فاطمة علي المرزوقي', title: 'مصممة تجربة المتعامل', entity: 'وزارة شؤون مجلس الوزراء', email: 'fatima.almarzooqi@moca.gov.ae', phone: '0501000005' },
       ],
       wf: 'sent',

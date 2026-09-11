@@ -7,6 +7,7 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OP
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate, downloadOpsTemplate } from '@/lib/export';
 import { useSvcCatalog, svcCatalogFor, svcCatalogEntities } from '@/lib/svcCatalog';
+import { FEDERAL_ENTITIES } from '@/lib/entities';
 
 
 // Repeatable single-line rows for الأنشطة — stored as one newline-joined value
@@ -1867,9 +1868,12 @@ function BulkStep({ vm }: { vm: VM }) {
               style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #DCE3EE', borderRadius: 12, padding: '12px 14px', fontSize: 13, fontFamily: 'inherit', color: '#16233F', backgroundColor: '#fff', outline: 'none' }}
             >
               <option value="">اختر الجهة…</option>
-              {svcCatalogEntities().map((o) => (
-                <option key={o} value={o}>{o}</option>
-              ))}
+              {/* كل الجهات ضمن النطاق — لا الجهات ذات دليل الخدمات وحدها */}
+              {Array.from(new Set([...FEDERAL_ENTITIES, ...svcCatalogEntities()]))
+                .sort((a, b) => a.localeCompare(b, 'ar'))
+                .map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
             </select>
             <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 6 }}>
               تُنسب مدخلات الملف لهذه الجهة

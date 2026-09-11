@@ -2190,7 +2190,8 @@ export const useStore = create<Store>((set, get) => {
         toAdd.length + ' من المدخلات'
       );
       persist();
-      setUi({ mStep: 'done', bulkLaunches: [] });
+      // الرفع بالنيابة: تُصفّى القائمة على الجهة المرفوع لها فيظهر المرفوع فوراً
+      setUi({ mStep: 'done', bulkLaunches: [], ...(teamUpload ? { entFilter: s.ui.bulkEntity } : {}) });
       if (teamUpload)
         toast('تم رفع ' + toAdd.length + ' من المدخلات بالنيابة عن ' + s.ui.bulkEntity + ' — بانتظار تأكيد منسق الجهة ثم إرسالها للاعتماد');
       else toast('تم حفظ ' + toAdd.length + ' من المدخلات كمسودات — راجعها ثم أرسلها للاعتماد');

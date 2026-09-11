@@ -8,6 +8,7 @@
 import federalServices from './data/federalServices.json';
 import federalSubServices from './data/federalSubServices.json';
 import servicePackages from './data/servicePackages.json';
+import { OFFICIAL_ENTITY_NAMES, officialEntityName, legacyNamesOf } from './entitiesOfficial';
 
 // entity -> [services]
 export const FEDERAL_SERVICES = federalServices as Record<string, string[]>;
@@ -19,8 +20,9 @@ export const FEDERAL_SUB_SERVICES = federalSubServices as Record<
 // entity -> package -> [services]
 export const SERVICE_PACKAGES = servicePackages as Record<string, Record<string, string[]>>;
 
-/** All participating federal entities (Arabic names). */
-export const FEDERAL_ENTITIES: string[] = Object.keys(FEDERAL_SUB_SERVICES);
+/** الجهات ضمن نطاق المشروع — السجل المعتمد (وثيقة يوليو 2026) بترتيبها فيه.
+ *  دليل الخدمات مخزَّن ببعض الأسماء القديمة، فتُقرأ بالمطابقة أدناه. */
+export const FEDERAL_ENTITIES: string[] = OFFICIAL_ENTITY_NAMES;
 
 /** Departments (main service groups) for an entity. */
 export function departmentsOf(entity: string): string[] {
@@ -39,10 +41,14 @@ export function entityServices(entity: string): string[] {
   return resolveEntity(entity, FEDERAL_SERVICES) || [];
 }
 
-// Tolerant lookup (handles slight name variations between datasets).
+// بحث متسامح: الاسم كما هو، ثم الاسم المعتمد، ثم أسماؤه القديمة في الدليل،
+// وأخيراً مطابقة جزئية لفروق الصياغة بين الملفات.
 function resolveEntity<T>(entity: string, source: Record<string, T>): T | undefined {
   if (!entity) return undefined;
   if (source[entity]) return source[entity];
+  const official = officialEntityName(entity);
+  if (source[official]) return source[official];
+  for (const legacy of legacyNamesOf(official)) if (source[legacy]) return source[legacy];
   const match = Object.keys(source).find(
     (k) => k.includes(entity) || entity.includes(k)
   );
