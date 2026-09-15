@@ -5,7 +5,7 @@ import { InlineCreateForm } from './CreatePanel';
 import { Icon } from './Icon';
 import { RowActions } from './RowActions';
 import { ProjCommitteePage, ProjMemberSection } from './StrategicProjects';
-import { MocaCommitteeView } from './MocaCommitteeView';
+import { MocaSections } from './MocaWorkspace';
 import { Tour, TOUR_EVENT, type TourStep } from './Tour';
 import { LAUNCH_TYPES, TBD_BATCH } from '@/lib/domain';
 
@@ -3081,10 +3081,10 @@ export function Dashboard({ vm }: { vm: VM }) {
             </>
           )}
 
-          {/* ===== وزارة شؤون مجلس الوزراء داخل لوحة اللجنة (عرض فقط) ===== */}
-          {vm.isAiRole && vm.navSection === 'mocaInv' && <MocaCommitteeView mode="inv" />}
-          {vm.isAiRole && vm.navSection === 'mocaLplan' && <MocaCommitteeView mode="batches" />}
-          {vm.isAiRole && vm.navSection === 'mocaUse' && <MocaCommitteeView mode="usecases" />}
+          {/* ===== وزارة شؤون مجلس الوزراء داخل لوحة اللجنة ===== */}
+          {vm.isAiRole && vm.navSection === 'mocaInv' && <MocaSections mode="inv" />}
+          {vm.isAiRole && vm.navSection === 'mocaLplan' && <MocaSections mode="batches" />}
+          {vm.isAiRole && vm.navSection === 'mocaUse' && <MocaSections mode="usecases" />}
 
           {/* ===== المشاريع الاستراتيجية (committee + members) ===== */}
           {vm.navSection === 'stratProjects' && vm.isAiRole && <ProjCommitteePage />}

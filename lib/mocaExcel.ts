@@ -171,6 +171,23 @@ const cellText = (v: unknown): string => {
   return String(v).trim();
 };
 
+/**
+ * نسبة الأتمتة من خلية الملف: خلية Excel بصيغة نسبة مئوية تُقرأ كسراً (0.4)
+ * فتُضرب في مئة، والنص يُقرأ بأول رقم فيه — فمدى مثل «40 – 60%» يعطي 40 لا
+ * «4060» كما كان يحدث عند حذف كل ما ليس رقماً.
+ */
+const percentOf = (raw: unknown, numFmt: string | undefined, text: string): string => {
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    const n = raw > 0 && raw <= 1 && /%/.test(String(numFmt || '')) ? raw * 100 : raw;
+    return String(Math.max(0, Math.min(100, Math.round(n * 10) / 10)));
+  }
+  const m = String(text || '').match(/\d+(?:[.,]\d+)?/);
+  if (!m) return '';
+  const n = Number(m[0].replace(',', '.'));
+  if (!Number.isFinite(n)) return '';
+  return String(Math.max(0, Math.min(100, Math.round(n * 10) / 10)));
+};
+
 const norm = (s: string) => s.replace(/\s+/g, ' ').replace(/[?؟:]/g, '').trim();
 
 /**
@@ -220,9 +237,10 @@ export async function mocaParseWorkbook(buf: ArrayBuffer): Promise<{ rows: { dat
     const data: Partial<MocaEntry> = {};
     let any = false;
     for (const [key, c] of Object.entries(colOf)) {
-      const v = cellText(ws.getCell(r, c).value);
+      const cell = ws.getCell(r, c);
+      const v = cellText(cell.value);
       if (v) any = true;
-      data[key] = key === 'automationPct' ? v.replace(/[^\d.]/g, '') : v;
+      data[key] = key === 'automationPct' ? percentOf(cell.value, cell.numFmt, v) : v;
     }
     if (!any) continue;
     rows.push({ data, missing: mocaMissing(data) });

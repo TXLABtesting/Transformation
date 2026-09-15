@@ -64,6 +64,8 @@ export type MocaState = {
   fUnit: string;
   fStatus: string;
   fTransform: string;
+  /** أولوية التحول كما في نموذج الوزارة: نعم / لا */
+  fPriority: string;
   search: string;
   // إجراءات
   hydrate: () => void;
@@ -103,7 +105,7 @@ export type MocaState = {
   closeBulk: () => void;
   setBulkRows: (rows: MocaBulkRow[], err?: string) => void;
   saveBulk: () => void;
-  setFilter: (k: 'fUnit' | 'fStatus' | 'fTransform' | 'search', v: string) => void;
+  setFilter: (k: 'fUnit' | 'fStatus' | 'fTransform' | 'fPriority' | 'search', v: string) => void;
   setConfirm: (c: MocaConfirm) => void;
   showToast: (m: string) => void;
 };
@@ -163,6 +165,7 @@ export const useMoca = create<MocaState>((set, get) => {
     fUnit: 'all',
     fStatus: 'all',
     fTransform: 'all',
+    fPriority: 'all',
     search: '',
 
     hydrate: () => {
@@ -539,6 +542,7 @@ export function mocaVisibleEntries(s: MocaState): MocaEntry[] {
       if (s.fStatus === 'rejected' && e.ret?.type !== 'reject') return false;
     }
     if (s.fTransform !== 'all' && String(e.transformability || '') !== s.fTransform) return false;
+    if (s.fPriority !== 'all' && String(e.priority || '') !== s.fPriority) return false;
     if (q && !((String(e.mainProcess || '') + ' ' + String(e.subProcess || '')).includes(q))) return false;
     return true;
   });

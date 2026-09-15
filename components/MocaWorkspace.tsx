@@ -14,6 +14,7 @@ import {
   MOCA_ROLES,
   MOCA_MINISTRY,
   MOCA_TRANSFORMABILITY,
+  MOCA_PRIORITY,
   MOCA_BAND_STYLE,
   MOCA_BATCHES,
   MOCA_UC_STATUSES,
@@ -189,6 +190,13 @@ const IconBtn = ({
   </button>
 );
 
+/** قيمة الحقل كما تُعرض — النِّسب تُلحق بعلامة % */
+const fieldText = (f: { key: string; type: string }, e: Record<string, unknown>): string => {
+  const v = String(e[f.key] ?? '').trim();
+  if (!v) return '—';
+  return f.type === 'percent' ? v + '%' : v;
+};
+
 const Chip = ({ t, c, bg }: { t: string; c: string; bg: string }) => (
   <span style={{ fontSize: 11, fontWeight: 800, color: c, background: bg, borderRadius: 999, padding: '4px 11px', whiteSpace: 'nowrap' }}>
     {t}
@@ -233,6 +241,87 @@ export function MocaWorkspace() {
       </div>
 
       {s.view === 'bulk' && <SidePanel />}
+      {s.detailId && <DetailDrawer id={s.detailId} />}
+      {s.returnTarget && <ReturnDialog />}
+      {s.placeReturnTarget && <PlaceReturnDialog />}
+      {s.confirm && <ConfirmDialog />}
+      {s.toast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 26,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 130,
+            background: '#0F1F3D',
+            color: '#fff',
+            padding: '13px 22px',
+            borderRadius: 13,
+            fontSize: 13,
+            fontWeight: 700,
+            boxShadow: '0 18px 40px -16px rgba(2,12,35,.6)',
+            maxWidth: '90vw',
+            textAlign: 'center',
+          }}
+        >
+          {s.toast}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * أقسام الوزارة داخل لوحة اللجنة الوطنية.
+ * هي مكوّنات مساحة عمل الوزارة نفسها (المؤشرات ثم الفلاتر ثم الجدول ثم لوحة
+ * التفاصيل) بلا ترويسة الوزارة وشريطها الجانبي — فبنية الصفحة واحدة في
+ * الموضعين، ومثلها بنية صفحات المسارات في لوحة المنصة.
+ */
+export function MocaSections({ mode }: { mode: 'inv' | 'batches' | 'usecases' }) {
+  const s = useMoca();
+  const list = useMemo(() => mocaVisibleEntries(s), [s]);
+  useEffect(() => {
+    s.hydrate();
+    // اللجنة الوطنية تطالع مدخلات الوزارة كافة — الدور يُثبَّت هنا لا يُبدَّل
+    s.syncSession('committee', MOCA_MINISTRY);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // عنوان الصفحة كما في بقية صفحات اللوحة، مع عدّاد ما ينتظر اعتماد اللجنة
+  const pendingCount =
+    mode === 'inv'
+      ? s.entries.filter((e) => e.wf === 'pending' && !e.ret).length
+      : mode === 'batches'
+        ? s.entries.filter((e) => e.batchWf === 'pending').length
+        : 0;
+  const title =
+    mode === 'batches'
+      ? 'دفعات إطلاق ' + MOCA_MINISTRY
+      : mode === 'usecases'
+        ? 'حالات استخدام ' + MOCA_MINISTRY
+        : 'حصر مهام وعمليات ' + MOCA_MINISTRY;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div className="hd" style={{ fontSize: 20, fontWeight: 800, color: '#13213C' }}>{title}</div>
+        {pendingCount > 0 && (
+          <span style={{ background: '#FFF3DE', color: '#B45309', borderRadius: 999, padding: '4px 12px', fontSize: 11.5, fontWeight: 800 }}>
+            بانتظار اعتماد اللجنة: {pendingCount}
+          </span>
+        )}
+      </div>
+      {mode === 'batches' ? (
+        <BatchesView />
+      ) : mode === 'usecases' ? (
+        <UseCasesView />
+      ) : (
+        <>
+          <Kpis list={list} />
+          <Filters />
+          <EntriesTable list={list} />
+        </>
+      )}
       {s.detailId && <DetailDrawer id={s.detailId} />}
       {s.returnTarget && <ReturnDialog />}
       {s.placeReturnTarget && <PlaceReturnDialog />}
@@ -696,6 +785,12 @@ function Filters() {
         options={[{ v: 'all', label: 'القابلية للتحول: الكل' }, ...MOCA_TRANSFORMABILITY.map((o) => ({ v: o, label: o }))]}
       />
       <FilterSelect
+        value={s.fPriority}
+        onChange={(v) => s.setFilter('fPriority', v)}
+        minWidth={190}
+        options={[{ v: 'all', label: 'أولوية التحول: الكل' }, ...MOCA_PRIORITY.map((o) => ({ v: o, label: 'أولوية التحول: ' + o }))]}
+      />
+      <FilterSelect
         value={s.fStatus}
         onChange={(v) => s.setFilter('fStatus', v)}
         minWidth={150}
@@ -770,7 +865,9 @@ function EntriesTable({ list }: { list: MocaEntry[] }) {
                 {!isCoord && <th style={th}>الجهة أو المكتب</th>}
                 <th style={th}>التصنيف</th>
                 <th style={th}>القابلية للتحول</th>
-                <th style={th}>أولوية التحول</th>
+                {/* الأولوية في الوزارة نعم/لا كما في نموذج الحصر — والتقييم
+                    المحسوب مؤشر ترتيبي يظهر في التفاصيل لا في العمود */}
+                <th style={th}>أولوية التحول للذكاء الاصطناعي المساعد</th>
                 <th style={th}>الحالة</th>
                 <th style={th}>الإجراء</th>
               </tr>
@@ -778,8 +875,7 @@ function EntriesTable({ list }: { list: MocaEntry[] }) {
             <tbody>
               {list.map((e) => {
                 const st = mocaStatusOf(e);
-                const pr = mocaPriorityScore(e);
-                const band = pr ? MOCA_BAND_STYLE[pr.band] : null;
+                const prio = String(e.priority || '').trim();
                 return (
                   <tr key={e.id}>
                     {isCoord && (
@@ -811,7 +907,17 @@ function EntriesTable({ list }: { list: MocaEntry[] }) {
                     {!isCoord && <td style={td}>{mocaScopeLabel(e.unitId, e.unitSector)}</td>}
                     <td style={td}>{String(e.specialization || '—')}</td>
                     <td style={td}>{String(e.transformability || '—')}</td>
-                    <td style={td}>{band && pr ? <Chip t={pr.band} c={band.color} bg={band.bg} /> : '—'}</td>
+                    <td style={td}>
+                      {prio ? (
+                        <Chip
+                          t={prio}
+                          c={prio === 'نعم' ? '#0B8A4B' : '#54627B'}
+                          bg={prio === 'نعم' ? '#EAF7F0' : '#F1F4F9'}
+                        />
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td style={td}><Chip t={st.label} c={st.color} bg={st.bg} /></td>
                     <td style={{ ...td, whiteSpace: 'nowrap' }}>
                       <RowActions
@@ -1229,8 +1335,13 @@ function DetailDrawer({ id }: { id: string }) {
             </div>
           )}
           {pr && (
-            <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px' }}>
-              <span style={{ fontSize: 12.5, fontWeight: 700, color: '#33415C', flex: 1 }}>أولوية التحول المحسوبة</span>
+            <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px' }}>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33415C' }}>التقييم المحسوب للأولوية</span>
+                <span style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#8A97AD', marginTop: 4, lineHeight: 1.7 }}>
+                  مؤشر ترتيبي من القابلية والجاهزية والأثر والتعقيد — لا يحل محل «أولوية التحول» في النموذج (نعم/لا)
+                </span>
+              </span>
               <Chip t={pr.band} c={MOCA_BAND_STYLE[pr.band].color} bg={MOCA_BAND_STYLE[pr.band].bg} />
             </div>
           )}
@@ -1244,7 +1355,9 @@ function DetailDrawer({ id }: { id: string }) {
                 <div key={f.key} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid #EFF2F7' }}>
                   <span style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400, width: 230, flex: 'none', lineHeight: 1.7 }}>{f.label}</span>
                   <span style={{ fontSize: 12.5, color: '#13213C', fontWeight: 700, lineHeight: 1.7 }}>
-                    {blockedByTransformability(f.key, e) ? '— (غير قابل للتحول)' : String(e[f.key] || '—')}
+                    {blockedByTransformability(f.key, e)
+                      ? '— (غير قابل للتحول)'
+                      : fieldText(f, e)}
                   </span>
                 </div>
               ))}
