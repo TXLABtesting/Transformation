@@ -1,6 +1,7 @@
 'use client';
 // ===========================================================================
 // شريط التنقل العائم للموقع العام — من تسليم التصميم.
+// يبقى ثابتاً ظاهراً مع التمرير صعوداً ونزولاً؛ ما يتغير بالتمرير خلفيته فقط.
 // زائر غير مسجّل: الرئيسية · من نحن · زر تسجيل الدخول.
 // بعد الدخول: تظهر المنشورات وتواصل معنا مع زر «منصة الإدخال» وقائمة الحساب.
 // «منصة الإدخال» توجّه حسب جهة المستخدم: وزارة شؤون مجلس الوزراء → لوحة
@@ -59,11 +60,9 @@ export function SiteNav({ overHero = false }: SiteNavProps) {
   const entityName = useStore((s) => s.entityName);
   const logout = useStore((s) => s.logout);
   const [scrolled, setScrolled] = useState(false);
-  const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [narrow, setNarrow] = useState(false);
-  const lastY = useRef(0);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -84,17 +83,9 @@ export function SiteNav({ overHero = false }: SiteNavProps) {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // الشريط ثابت ظاهر دائماً؛ التمرير يبدّل خلفيته فقط (شفاف فوق الـhero ثم صلب)
   useEffect(() => {
-    lastY.current = window.scrollY;
-    const onScroll = () => {
-      const y = window.scrollY;
-      setScrolled(y >= 40);
-      const delta = y - lastY.current;
-      if (Math.abs(delta) > 8) {
-        setHidden(delta > 0 && y > 120);
-        lastY.current = y;
-      }
-    };
+    const onScroll = () => setScrolled(window.scrollY >= 40);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -140,13 +131,7 @@ export function SiteNav({ overHero = false }: SiteNavProps) {
   const solid = scrolled || !overHero;
 
   return (
-    <div
-      className="pointer-events-none fixed top-[18px] right-0 left-0 z-[80] flex justify-center px-5"
-      style={{
-        transition: 'transform .38s cubic-bezier(.22,1,.36,1)',
-        transform: hidden ? 'translateY(-130%)' : 'translateY(0)',
-      }}
-    >
+    <div className="pointer-events-none fixed top-[18px] right-0 left-0 z-[80] flex justify-center px-5">
       <div
         className="pointer-events-auto flex w-full max-w-[1180px] items-center justify-between rounded-full py-2 px-[18px]"
         style={{
