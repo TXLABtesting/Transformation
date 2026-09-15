@@ -1234,8 +1234,43 @@ function BulkStep() {
   const s = useMoca();
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  // عمق السحب: الدخول على عنصر ابن يطلق dragleave للأب، فيُعدّ بدل أن يُلغى
+  const dragDepth = useRef(0);
   const ready = s.bulkRows.filter((r) => !r.missing.length).length;
   const short = s.bulkRows.length - ready;
+
+  /** قراءة الملف المختار أو المُفلَت — المصدر واحد للحالتين */
+  const readFile = async (f: File | undefined | null) => {
+    if (!f) return;
+    if (!/\.xlsx$/i.test(f.name)) {
+      s.setBulkRows([], 'صيغة الملف غير مدعومة — النموذج ملف Excel بصيغة xlsx.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const { rows, error } = await mocaParseWorkbook(await f.arrayBuffer());
+      s.setBulkRows(rows, error);
+    } catch {
+      s.setBulkRows([], 'تعذّرت قراءة الملف — تأكد أنه بصيغة xlsx.');
+    }
+    setBusy(false);
+  };
+
+  // إفلات الملف خارج المربع كان يفتحه المتصفح ويغادر الصفحة — يُمنع ما دامت
+  // لوحة الرفع مفتوحة
+  useEffect(() => {
+    const stop = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+    };
+    window.addEventListener('dragover', stop);
+    window.addEventListener('drop', stop);
+    return () => {
+      window.removeEventListener('dragover', stop);
+      window.removeEventListener('drop', stop);
+    };
+  }, []);
 
   const tile = (count: number, txt: string, color: string, bg: string) => (
     <div style={{ flex: 1, background: bg, borderRadius: 14, padding: 14, textAlign: 'center' }}>
@@ -1252,16 +1287,46 @@ function BulkStep() {
       </div>
 
       <label
+        data-r="moca-drop"
         onClick={() => fileRef.current?.click()}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragDepth.current += 1;
+          setDragOver(true);
+        }}
+        onDragOver={(e) => {
+          // بلا preventDefault هنا لا يُطلق المتصفح حدث الإفلات أصلاً
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+          if (!dragOver) setDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragDepth.current = Math.max(0, dragDepth.current - 1);
+          if (dragDepth.current === 0) setDragOver(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragDepth.current = 0;
+          setDragOver(false);
+          const dt = e.dataTransfer;
+          const f = dt?.files?.[0] || (dt?.items?.[0]?.kind === 'file' ? dt.items[0].getAsFile() : null);
+          readFile(f);
+        }}
         style={{
           display: 'block',
-          border: '2px dashed #C7D6EE',
-          background: '#fff',
+          border: `2px dashed ${dragOver ? '#2563EB' : '#C7D6EE'}`,
+          background: dragOver ? '#F2F7FF' : '#fff',
           borderRadius: 16,
           padding: '30px 18px',
           textAlign: 'center',
           cursor: 'pointer',
           marginBottom: 14,
+          transition: 'border-color .2s,background .2s',
         }}
       >
         <div
@@ -1274,14 +1339,15 @@ function BulkStep() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            pointerEvents: 'none',
           }}
         >
           <Icon d={IC.upload} size={22} color="#2563EB" strokeWidth={2.2} />
         </div>
-        <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49', marginBottom: 6 }}>
-          {busy ? 'جارٍ قراءة الملف…' : 'اضغط لاختيار الملف'}
+        <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49', marginBottom: 6, pointerEvents: 'none' }}>
+          {busy ? 'جارٍ قراءة الملف…' : dragOver ? 'أفلت الملف هنا' : 'اسحب الملف هنا أو اضغط لاختياره'}
         </div>
-        <div style={{ fontSize: 11.5, color: '#9AA6BC', lineHeight: 1.7 }}>
+        <div style={{ fontSize: 11.5, color: '#9AA6BC', lineHeight: 1.7, pointerEvents: 'none' }}>
           ملف Excel بصيغة .xlsx — نموذج حصر المهام والعمليات
         </div>
       </label>
@@ -1292,16 +1358,8 @@ function BulkStep() {
         style={{ display: 'none' }}
         onChange={async (e) => {
           const f = e.target.files?.[0];
-          if (!f) return;
           e.target.value = '';
-          setBusy(true);
-          try {
-            const { rows, error } = await mocaParseWorkbook(await f.arrayBuffer());
-            s.setBulkRows(rows, error);
-          } catch {
-            s.setBulkRows([], 'تعذّرت قراءة الملف — تأكد أنه بصيغة xlsx.');
-          }
-          setBusy(false);
+          await readFile(f);
         }}
       />
 
