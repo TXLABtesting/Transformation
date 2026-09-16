@@ -25,6 +25,7 @@ import {
   mocaStatusOf,
   mocaMissing,
   mocaPriorityScore,
+  mocaPeriodOptions,
   mocaPlacementState,
   mocaPlacementLocked,
   mocaPlacementChip,
@@ -1130,16 +1131,97 @@ function SidePanel() {
 // ---- نموذج الإدخال ----------------------------------------------------------
 function FormStep() {
   const s = useMoca();
-  const d = s.draft;
   const hi = s.reqHighlight > 0;
-  const missing = mocaMissing(d);
   const firstBad = useRef<HTMLDivElement>(null);
+  // العمليات الفرعية في النموذج: الأولى هي المسودة الأصلية، وما بعدها مضاف
+  const subs: Partial<MocaEntry>[] = [s.draft, ...s.draftMore];
+  const missing = subs.flatMap((d) => mocaMissing(d));
 
   useEffect(() => {
     if (hi) firstBad.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [s.reqHighlight, hi]);
 
-  let badSeen = false;
+  const badSeen = useRef(false);
+  badSeen.current = false;
+
+  return (
+    <div>
+      {subs.map((d, i) => (
+        <SubProcessForm
+          key={i}
+          index={i}
+          total={subs.length}
+          d={d}
+          hi={hi}
+          badSeen={badSeen}
+          firstBad={firstBad}
+          onChange={(k, v) => (i === 0 ? s.setDraft(k, v) : s.setDraftSub(i - 1, k, v))}
+          onRemove={i === 0 ? undefined : () => s.removeDraftSub(i - 1)}
+          unitId={s.unitId}
+          unitSector={s.unitSector}
+        />
+      ))}
+
+      {/* عملية فرعية أخرى تحت العملية والمهمة الرئيسية نفسها */}
+      <button
+        type="button"
+        onClick={() => s.addDraftSub()}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 7,
+          background: '#EAF0FE',
+          color: '#2563EB',
+          border: 'none',
+          borderRadius: 10,
+          padding: '10px 16px',
+          fontSize: 12.5,
+          fontWeight: 800,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          marginBottom: 16,
+        }}
+      >
+        <Icon d={IC.plus} size={14} color="#2563EB" strokeWidth={2.4} /> إضافة عملية فرعية
+      </button>
+
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', paddingTop: 4 }}>
+        <span style={{ flex: 1, minWidth: 150, fontSize: 12, color: missing.length ? '#B45309' : '#0B8A4B', fontWeight: 700 }}>
+          {missing.length ? missing.length + ' حقل مطلوب غير مكتمل' : 'جميع الحقول المطلوبة مكتملة'}
+        </span>
+        <button onClick={() => s.saveDraft(false)} style={BTN_NEUTRAL}>حفظ كمسودة</button>
+        <button onClick={() => s.saveDraft(true)} style={BTN_PRIMARY}>
+          <Icon d={IC.send} size={15} color="#fff" /> إرسال لاعتماد اللجنة الوطنية
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** نموذج عملية فرعية واحدة — يتكرر بزر «إضافة عملية فرعية» */
+function SubProcessForm({
+  index,
+  total,
+  d,
+  hi,
+  badSeen,
+  firstBad,
+  onChange,
+  onRemove,
+  unitId,
+  unitSector,
+}: {
+  index: number;
+  total: number;
+  d: Partial<MocaEntry>;
+  hi: boolean;
+  badSeen: React.MutableRefObject<boolean>;
+  firstBad: React.RefObject<HTMLDivElement>;
+  onChange: (k: string, v: string) => void;
+  onRemove?: () => void;
+  unitId: string;
+  unitSector: string;
+}) {
   const fieldNode = (f: MocaField) => {
     const blocked = blockedByTransformability(f.key, d);
     const v = String(d[f.key] ?? '');
@@ -1154,14 +1236,14 @@ function FormStep() {
     if (f.key === 'sector')
       return (
         <input
-          value={mocaAutoSector(s.unitId, s.unitSector)}
+          value={mocaAutoSector(unitId, unitSector)}
           disabled
           style={{ ...inputStyle, backgroundColor: '#F1F4F9', cursor: 'not-allowed', color: '#54627B', fontWeight: 700 }}
         />
       );
     if (f.type === 'select')
       return (
-        <select value={v} onChange={(e) => s.setDraft(f.key, e.target.value)} style={{ ...st, cursor: 'pointer' }}>
+        <select value={v} onChange={(e) => onChange(f.key, e.target.value)} style={{ ...st, cursor: 'pointer' }}>
           <option value="">اختر…</option>
           {(f.options || []).map((o) => (
             <option key={o} value={o}>{o}</option>
@@ -1169,7 +1251,7 @@ function FormStep() {
         </select>
       );
     if (f.type === 'longtext')
-      return <textarea value={v} onChange={(e) => s.setDraft(f.key, e.target.value)} style={{ ...st, minHeight: 88, resize: 'vertical' }} />;
+      return <textarea value={v} onChange={(e) => onChange(f.key, e.target.value)} style={{ ...st, minHeight: 88, resize: 'vertical' }} />;
     // النِّسب المئوية بشريط تمرير بدل الإدخال النصي
     if (f.type === 'percent') {
       const num = Math.max(0, Math.min(100, Number(String(v).replace(/[^\d.]/g, '')) || 0));
@@ -1192,54 +1274,83 @@ function FormStep() {
             max={100}
             step={5}
             value={num}
-            onChange={(e) => s.setDraft(f.key, e.target.value)}
+            onChange={(e) => onChange(f.key, e.target.value)}
             style={{ flex: 1, accentColor: '#2563EB', cursor: 'pointer' }}
           />
           <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', minWidth: 44, textAlign: 'left' }}>{num}%</span>
         </div>
       );
     }
-    return <input value={v} onChange={(e) => s.setDraft(f.key, e.target.value)} style={st} />;
+    return <input value={v} onChange={(e) => onChange(f.key, e.target.value)} style={st} />;
   };
 
   return (
-    <div>
-      {MOCA_GROUPS.map((g) => (
-        <div key={g.key} style={cardStyle}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 4, height: 16, borderRadius: 999, background: '#2563EB' }} />
-            {g.label}
-          </div>
-          {MOCA_FIELDS.filter((f) => f.group === g.key).map((f) => {
-            const blocked = blockedByTransformability(f.key, d);
-            const bad = hi && !blocked && !!f.required && !String(d[f.key] ?? '').trim();
-            const isFirstBad = bad && !badSeen;
-            if (isFirstBad) badSeen = true;
-            return (
-              <div key={f.key} ref={isFirstBad ? firstBad : undefined} style={{ marginBottom: 14 }}>
-                <label style={labelStyle}>
-                  {f.label} {f.required && <span style={{ color: '#D23B45' }}>*</span>}
-                </label>
-                {fieldNode(f)}
-                {blocked && <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 5 }}>يُحتسب صفراً في أولوية التحول</div>}
-                {!blocked && f.hint && <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 5 }}>{f.hint}</div>}
-                {bad && <div style={{ fontSize: 11.5, color: '#D23B45', fontWeight: 700, marginTop: 5 }}>هذا الحقل مطلوب</div>}
-              </div>
-            );
-          })}
+    <>
+      {index > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0 10px' }}>
+          <span style={{ fontSize: 12.5, fontWeight: 800, color: '#2563EB' }}>العملية الفرعية {index + 1} من {total}</span>
+          <span style={{ flex: 1, height: 1, background: '#E7ECF4' }} />
+          {onRemove && (
+            <button
+              type="button"
+              onClick={onRemove}
+              style={{ border: '1px solid #F3D4D7', background: '#FDF6F6', color: '#C0303B', borderRadius: 9, padding: '6px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              إزالة هذه العملية
+            </button>
+          )}
         </div>
-      ))}
-
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', paddingTop: 4 }}>
-        <span style={{ flex: 1, minWidth: 150, fontSize: 12, color: missing.length ? '#B45309' : '#0B8A4B', fontWeight: 700 }}>
-          {missing.length ? missing.length + ' حقل مطلوب غير مكتمل' : 'جميع الحقول المطلوبة مكتملة'}
-        </span>
-        <button onClick={() => s.saveDraft(false)} style={BTN_NEUTRAL}>حفظ كمسودة</button>
-        <button onClick={() => s.saveDraft(true)} style={BTN_PRIMARY}>
-          <Icon d={IC.send} size={15} color="#fff" /> إرسال لاعتماد اللجنة الوطنية
-        </button>
-      </div>
-    </div>
+      )}
+      {MOCA_GROUPS.map((g) => {
+        // «العملية والمهمة الرئيسية» تُكتب مرة واحدة وتشترك فيها كل العمليات الفرعية
+        const fields = MOCA_FIELDS.filter((f) => f.group === g.key && !(index > 0 && f.key === 'mainProcess'));
+        if (!fields.length) return null;
+        return (
+          <div key={g.key} style={cardStyle}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 4, height: 16, borderRadius: 999, background: '#2563EB' }} />
+              {g.label}
+            </div>
+            {fields.map((f) => {
+              const blocked = blockedByTransformability(f.key, d);
+              const bad = hi && !blocked && !!f.required && !String(d[f.key] ?? '').trim();
+              const isFirstBad = bad && !badSeen.current;
+              if (isFirstBad) badSeen.current = true;
+              return (
+                <div key={f.key} ref={isFirstBad ? firstBad : undefined} style={{ marginBottom: 14 }}>
+                  <label style={labelStyle}>
+                    {f.label} {f.required && <span style={{ color: '#D23B45' }}>*</span>}
+                  </label>
+                  {fieldNode(f)}
+                  {blocked && <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 5 }}>يُحتسب صفراً في أولوية التحول</div>}
+                  {!blocked && f.hint && <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 5 }}>{f.hint}</div>}
+                  {bad && <div style={{ fontSize: 11.5, color: '#D23B45', fontWeight: 700, marginTop: 5 }}>هذا الحقل مطلوب</div>}
+                </div>
+              );
+            })}
+            {/* فترة التحويل: اختيارية، تضع المدخل في دفعة الإطلاق الموافقة لها عند اعتماده */}
+            {g.key === 'transform' && (
+              <div style={{ marginBottom: 2 }}>
+                <label style={labelStyle}>فترة التحويل للذكاء الاصطناعي المساعد</label>
+                <select
+                  value={String(d.transformPeriod ?? '')}
+                  onChange={(e) => onChange('transformPeriod', e.target.value)}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                >
+                  <option value="">اختر… (اختياري)</option>
+                  {mocaPeriodOptions().map((o) => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                </select>
+                <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 5 }}>
+                  تُرشِّح المدخل لدفعة الإطلاق الموافقة لها بعد اعتماده من اللجنة الوطنية
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
   );
 }
 
@@ -1507,6 +1618,16 @@ function DetailDrawer({ id }: { id: string }) {
                   </span>
                 </div>
               ))}
+              {g.key === 'transform' && (
+                <div style={{ display: 'flex', gap: 12, padding: '8px 0' }}>
+                  <span style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400, width: 230, flex: 'none', lineHeight: 1.7 }}>
+                    فترة التحويل للذكاء الاصطناعي المساعد
+                  </span>
+                  <span style={{ fontSize: 12.5, color: '#13213C', fontWeight: 700, lineHeight: 1.7 }}>
+                    {String(e.transformPeriod || '').trim() || '— (لم تُحدَّد)'}
+                  </span>
+                </div>
+              )}
             </div>
           ))}
         </div>
