@@ -1059,19 +1059,72 @@ function FormStep() {
   const s = useMoca();
   const hi = s.reqHighlight > 0;
   const firstBad = useRef<HTMLDivElement>(null);
-  // العمليات الفرعية في النموذج: الأولى هي المسودة الأصلية، وما بعدها مضاف
-  const subs: Partial<MocaEntry>[] = [s.draft, ...s.draftMore];
-  const missing = subs.flatMap((d) => mocaMissing(d));
+  // «العملية والمهمة الرئيسية» تُكتب مرة واحدة وتشترك فيها كل العمليات الفرعية،
+  // فتُستنسخ على المضافة عند احتساب الحقول الناقصة كما يفعل الحفظ تماماً
+  const main = String(s.draft.mainProcess ?? '');
+  const subs: Partial<MocaEntry>[] = [s.draft, ...s.draftMore.map((d) => ({ ...d, mainProcess: main }))];
+  const mainField = MOCA_FIELDS.find((f) => f.key === 'mainProcess');
+  // العملية الرئيسية حقل واحد مشترك، فتُحتسب مرة واحدة لا مرة لكل عملية فرعية
+  const missing = subs.flatMap((d, i) => {
+    const m = mocaMissing(d);
+    return i === 0 ? m : m.filter((x) => x !== mainField?.label);
+  });
+  const mainBad = hi && !main.trim();
 
   useEffect(() => {
     if (hi) firstBad.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [s.reqHighlight, hi]);
 
   const badSeen = useRef(false);
-  badSeen.current = false;
+  badSeen.current = mainBad;
 
   return (
     <div>
+      {/* العملية الرئيسية: بطاقة مستقلة فوق العمليات الفرعية لأنها مشتركة بينها */}
+      {mainField && (
+        <div
+          ref={mainBad ? firstBad : undefined}
+          style={{
+            background: 'linear-gradient(180deg,#F2F7FF 0%,#FFFFFF 78%)',
+            border: '1px solid #D5E2FA',
+            borderRadius: 16,
+            padding: 18,
+            marginBottom: 18,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 14 }}>
+            <span
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: '#2563EB',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 'none',
+              }}
+            >
+              <Icon d={IC.list} size={16} color="#fff" strokeWidth={2.2} />
+            </span>
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#13213C' }}>
+                {mainField.label} <span style={{ color: '#D23B45' }}>*</span>
+              </span>
+              <span style={{ display: 'block', fontSize: 11.5, color: '#7C89A2', marginTop: 3 }}>
+                تُكتب مرة واحدة وتشترك فيها جميع العمليات الفرعية أدناه
+              </span>
+            </span>
+          </div>
+          <input
+            value={main}
+            onChange={(e) => s.setDraft('mainProcess', e.target.value)}
+            style={{ ...inputStyle, ...(mainBad ? INVALID_STYLE : {}) }}
+          />
+          {mainBad && <div style={{ fontSize: 11.5, color: '#D23B45', fontWeight: 700, marginTop: 5 }}>هذا الحقل مطلوب</div>}
+        </div>
+      )}
+
       {subs.map((d, i) => (
         <SubProcessForm
           key={i}
@@ -1211,25 +1264,51 @@ function SubProcessForm({
   };
 
   return (
-    <>
-      {index > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0 10px' }}>
-          <span style={{ fontSize: 12.5, fontWeight: 800, color: '#2563EB' }}>العملية الفرعية {index + 1} من {total}</span>
-          <span style={{ flex: 1, height: 1, background: '#E7ECF4' }} />
-          {onRemove && (
-            <button
-              type="button"
-              onClick={onRemove}
-              style={{ border: '1px solid #F3D4D7', background: '#FDF6F6', color: '#C0303B', borderRadius: 9, padding: '6px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              إزالة هذه العملية
-            </button>
-          )}
-        </div>
-      )}
+    <section
+      style={{
+        border: '1px solid #E1E8F3',
+        borderRadius: 18,
+        background: '#fff',
+        padding: '0 14px',
+        marginBottom: 16,
+        boxShadow: '0 1px 2px rgba(19,33,60,.035)',
+      }}
+    >
+      {/* ترويسة العملية الفرعية — ترقيم متسلسل يبدأ من «1 من 1» */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 4px', borderBottom: '1px solid #EFF3F9', marginBottom: 14 }}>
+        <span
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: 8,
+            background: '#EAF0FE',
+            color: '#2563EB',
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: 'none',
+          }}
+        >
+          {index + 1}
+        </span>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>
+          العملية الفرعية {index + 1} من {total}
+        </span>
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            style={{ border: '1px solid #F3D4D7', background: '#FDF6F6', color: '#C0303B', borderRadius: 9, padding: '6px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}
+          >
+            إزالة هذه العملية
+          </button>
+        )}
+      </div>
       {MOCA_GROUPS.map((g) => {
-        // «العملية والمهمة الرئيسية» تُكتب مرة واحدة وتشترك فيها كل العمليات الفرعية
-        const fields = MOCA_FIELDS.filter((f) => f.group === g.key && !(index > 0 && f.key === 'mainProcess'));
+        // العملية الرئيسية خارج هذه الكتلة — بطاقتها المستقلة فوق العمليات الفرعية
+        const fields = MOCA_FIELDS.filter((f) => f.group === g.key && f.key !== 'mainProcess');
         if (!fields.length) return null;
         return (
           <div key={g.key} style={cardStyle}>
@@ -1276,7 +1355,7 @@ function SubProcessForm({
           </div>
         );
       })}
-    </>
+    </section>
   );
 }
 
