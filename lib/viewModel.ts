@@ -69,7 +69,6 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
 import { stripHtml } from './richtext';
 import { useMoca } from './mocaStore';
 import { FEDERAL_ENTITIES } from './entities';
-import { svcCatalogEntities } from './svcCatalog';
 
 export function useViewModel() {
   const s = useStore();

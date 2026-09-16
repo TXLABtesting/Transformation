@@ -3,7 +3,7 @@ import React from 'react';
 import type { VM } from '@/lib/viewModel';
 import { RichTextEditor } from './RichText';
 import { Icon } from './Icon';
-import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, PATHS, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail, opsPeriodOptions, streamPeriodOptions, streamPeriodRangeOptions, OPS_NO_PRIORITY } from '@/lib/domain';
+import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE, OPS_SPECIAL_OPTYPE, OPS_AUTOMATED_OPTIONS, OPS_INTENSITY_OPTIONS, OPS_READINESS_OPTIONS, OPS_LEVEL_OPTIONS, OPS_TRANSFORM_OPTIONS, OPS_NOT_TRANSFORMABLE, OPS_PRIORITY_OPTIONS, OPS_RISK_OPTIONS, STREAM_FIELD_OPTIONS, STREAM_FIELD_SAMPLE, STREAM_FIELDS, LAUNCH_TYPES, PATHS, typeLabel, pathById, stgPriority, svcPriority, activityTransformYes, isStgBlocked, STG_TRANSFORM_OPTIONS, type ActivityDetail, opsPeriodOptions, streamPeriodOptions, streamPeriodRangeOptions, OPS_NO_PRIORITY, DEFAULT_ENTITY } from '@/lib/domain';
 import { BULK_VERDICT_STYLE } from '@/lib/ai';
 import { downloadItemsTemplate, downloadOpsTemplate } from '@/lib/export';
 import { useSvcCatalog, svcCatalogFor, svcCatalogEntities } from '@/lib/svcCatalog';
@@ -1773,7 +1773,12 @@ function FService({
               }}
               style={inputStyle}
             >
-              {(svcCatalogEntities().includes(vm.entityName) ? svcCatalogEntities() : [vm.entityName, ...svcCatalogEntities()]).map((o) => (
+              {/* جهات دليل الخدمات المدرجة في السجل المعتمد وحدها — الدليل يحمل
+                  تجميعات وجهات محلية خارج النطاق لا تصلح خياراً للجهة */}
+              {(() => {
+                const inScope = svcCatalogEntities().filter((e) => FEDERAL_ENTITIES.includes(e) || e === DEFAULT_ENTITY);
+                return inScope.includes(vm.entityName) ? inScope : [vm.entityName, ...inScope];
+              })().map((o) => (
                 <option key={o} value={o}>{o}</option>
               ))}
             </select>
@@ -1869,10 +1874,13 @@ function BulkStep({ vm }: { vm: VM }) {
             >
               <option value="">اختر الجهة…</option>
               {/* كل الجهات المسجَّلة — لا الجهات ذات دليل الخدمات وحدها. القائمة
-                  الحيّة من قاعدة البيانات، وعند تعذّرها سجل الجهات المعتمد. */}
+                  الحيّة من قاعدة البيانات، وعند تعذّرها سجل الجهات المعتمد
+                  وحده: دليل الخدمات يحمل تجميعات وجهات محلية خارج النطاق
+                  (الجهات الصحية، المجمع التأميني، الهيئات الإسكانية…) فلا
+                  يُشتق منه خيار جهة أبداً. */}
               {(s.entityList.length
                 ? s.entityList
-                : Array.from(new Set([...FEDERAL_ENTITIES, ...svcCatalogEntities()])).sort((a, b) => a.localeCompare(b, 'ar'))
+                : [DEFAULT_ENTITY, ...FEDERAL_ENTITIES].filter((v, i, a) => v && a.indexOf(v) === i)
               ).map((o) => (
                 <option key={o} value={o}>{o}</option>
               ))}

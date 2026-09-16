@@ -37,7 +37,6 @@ import {
 import { useMoca, mocaVisibleEntries, mocaVisibleUseCases, mocaApplyReturn, mocaApplyPlaceReturn } from '@/lib/mocaStore';
 import { DEFAULT_ENTITY, ROLE_PILLS } from '@/lib/domain';
 import { FEDERAL_ENTITIES } from '@/lib/entities';
-import { svcCatalogEntities } from '@/lib/svcCatalog';
 import { useStore } from '@/lib/store';
 import { mocaDownloadTemplate, mocaParseWorkbook } from '@/lib/mocaExcel';
 
