@@ -14,6 +14,7 @@ import {
   mocaScopeFromEntity,
   mocaPlacementLocked,
   mocaPlacementState,
+  mocaPeriodBatch,
   MOCA_UC_STATUSES,
   type MocaEntry,
   type MocaRole,
@@ -52,6 +53,8 @@ export type MocaState = {
   view: 'list' | 'form' | 'bulk' | 'batches' | 'usecases';
   editingId: string | null;
   draft: Partial<MocaEntry>;
+  /** عمليات فرعية إضافية في النموذج نفسه — تشترك في «العملية والمهمة الرئيسية» */
+  draftMore: Partial<MocaEntry>[];
   reqHighlight: number;
   detailId: string | null;
   bulkRows: MocaBulkRow[];
@@ -75,6 +78,10 @@ export type MocaState = {
   openForm: (id?: string) => void;
   closeForm: () => void;
   setDraft: (k: string, v: unknown) => void;
+  /** عمليات فرعية إضافية داخل النموذج نفسه */
+  addDraftSub: () => void;
+  setDraftSub: (i: number, k: string, v: unknown) => void;
+  removeDraftSub: (i: number) => void;
   saveDraft: (send: boolean) => void;
   openDetail: (id: string | null) => void;
   submitEntry: (id: string) => void;
@@ -154,6 +161,7 @@ export const useMoca = create<MocaState>((set, get) => {
     view: 'list',
     editingId: null,
     draft: {},
+    draftMore: [],
     reqHighlight: 0,
     detailId: null,
     bulkRows: [],
@@ -220,50 +228,74 @@ export const useMoca = create<MocaState>((set, get) => {
       if (id) {
         const e = s.entries.find((x) => x.id === id);
         if (!e) return;
-        set({ view: 'form', editingId: id, draft: { ...e }, reqHighlight: 0, detailId: null });
+        set({ view: 'form', editingId: id, draft: { ...e }, draftMore: [], reqHighlight: 0, detailId: null });
       } else {
-        set({ view: 'form', editingId: null, draft: blankDraft(s.unitId, s.unitSector), reqHighlight: 0, detailId: null });
+        set({ view: 'form', editingId: null, draft: blankDraft(s.unitId, s.unitSector), draftMore: [], reqHighlight: 0, detailId: null });
       }
     },
 
-    closeForm: () => set({ view: 'list', editingId: null, draft: {}, reqHighlight: 0 }),
+    closeForm: () => set({ view: 'list', editingId: null, draft: {}, draftMore: [], reqHighlight: 0 }),
 
     setDraft: (k, v) => set((s) => ({ draft: { ...s.draft, [k]: v } })),
 
+    // عملية فرعية جديدة ترث نطاق المنسق وتبدأ فارغة عدا ما يُشترك فيه
+    addDraftSub: () =>
+      set((s) => ({
+        draftMore: [...s.draftMore, blankDraft(s.unitId, s.unitSector)],
+      })),
+
+    setDraftSub: (i, k, v) =>
+      set((s) => ({ draftMore: s.draftMore.map((d, ix) => (ix === i ? { ...d, [k]: v } : d)) })),
+
+    removeDraftSub: (i) => set((s) => ({ draftMore: s.draftMore.filter((_, ix) => ix !== i) })),
+
     saveDraft: (send) => {
       const s = get();
-      // القطاع المعني يُفرض دائماً من نطاق المستخدم
-      const d = { ...s.draft, sector: mocaAutoSector(s.unitId, s.unitSector) };
-      const missing = mocaMissing(d);
+      const sector = mocaAutoSector(s.unitId, s.unitSector);
+      // القطاع المعني يُفرض دائماً من نطاق المستخدم، والعملية الرئيسية تُشترك
+      // بين العمليات الفرعية المضافة في النموذج نفسه
+      const main = String(s.draft.mainProcess || '');
+      const subs: Partial<MocaEntry>[] = [
+        { ...s.draft, sector },
+        ...s.draftMore.map((d) => ({ ...d, sector, mainProcess: main })),
+      ];
+      const missing = subs.flatMap((d) => mocaMissing(d));
       if (send && missing.length) {
         set({ reqHighlight: s.reqHighlight + 1 });
-        return toast('يرجى استكمال الحقول المطلوبة: ' + missing.slice(0, 3).join('، ') + (missing.length > 3 ? '…' : ''));
+        const uniq = Array.from(new Set(missing));
+        return toast('يرجى استكمال الحقول المطلوبة: ' + uniq.slice(0, 3).join('، ') + (uniq.length > 3 ? '…' : ''));
       }
       const wf: MocaWf = send ? 'pending' : 'draft';
+      const mk = (d: Partial<MocaEntry>): MocaEntry => ({
+        ...(d as MocaEntry),
+        id: uid(),
+        unitId: s.unitId,
+        unitSector: s.unitSector,
+        wf,
+        ret: null,
+        createdAt: now(),
+        submittedAt: send ? now() : undefined,
+      });
       if (s.editingId) {
+        const [first, ...rest] = subs;
         set((st) => ({
-          entries: st.entries.map((e) =>
-            e.id === s.editingId
-              ? ({ ...e, ...d, wf, ret: send ? null : e.ret, submittedAt: send ? now() : e.submittedAt } as MocaEntry)
-              : e
-          ),
+          entries: [
+            ...rest.map(mk),
+            ...st.entries.map((e) =>
+              e.id === s.editingId
+                ? ({ ...e, ...first, wf, ret: send ? null : e.ret, submittedAt: send ? now() : e.submittedAt } as MocaEntry)
+                : e
+            ),
+          ],
         }));
       } else {
-        const e: MocaEntry = {
-          ...(d as MocaEntry),
-          id: uid(),
-          unitId: s.unitId,
-          unitSector: s.unitSector,
-          wf,
-          ret: null,
-          createdAt: now(),
-          submittedAt: send ? now() : undefined,
-        };
-        set((st) => ({ entries: [e, ...st.entries] }));
+        set((st) => ({ entries: [...subs.map(mk), ...st.entries] }));
       }
-      set({ view: 'list', editingId: null, draft: {}, reqHighlight: 0 });
+      set({ view: 'list', editingId: null, draft: {}, draftMore: [], reqHighlight: 0 });
       persist();
-      toast(send ? 'تم الإرسال لاعتماد اللجنة الوطنية' : 'تم الحفظ كمسودة');
+      const n = subs.length;
+      const what = n > 1 ? n + ' عمليات فرعية' : 'المدخل';
+      toast(send ? 'تم إرسال ' + what + ' لاعتماد اللجنة الوطنية' : 'تم حفظ ' + what + ' كمسودة');
     },
 
     openDetail: (id) => set({ detailId: id }),
@@ -323,7 +355,15 @@ export const useMoca = create<MocaState>((set, get) => {
 
     approveEntry: (id) => {
       set((st) => ({
-        entries: st.entries.map((x) => (x.id === id ? { ...x, wf: 'approved', ret: null, decidedAt: now() } : x)),
+        entries: st.entries.map((x) => {
+          if (x.id !== id) return x;
+          const approved = { ...x, wf: 'approved' as MocaWf, ret: null, decidedAt: now() };
+          // «فترة التحويل» المختارة عند الإدخال تضع المدخل في دفعتها كتوزيع
+          // مسودة يرسله المنسق للاعتماد — ولا تمسّ توزيعاً قائماً
+          const batch = mocaPeriodBatch(String(x.transformPeriod || ''));
+          if (!batch || String(x.execBatch || '').trim()) return approved;
+          return { ...approved, execBatch: batch, batchWf: 'draft' };
+        }),
       }));
       persist();
       toast('تم اعتماد المدخل');
