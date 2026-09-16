@@ -65,11 +65,10 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   itemActivities, itemAssistantNames, softMissingFieldsOf, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload,
   streamPeriodOptions,
   periodApplies,
-  isAutoPlacedStream, periodBatchOf as periodBatchFor, OPS_TRANSFORM_OPTIONS, OPS_PRIORITY_OPTIONS, STG_TRANSFORM_OPTIONS } from './domain';
+  isAutoPlacedStream, periodBatchOf as periodBatchFor, OPS_TRANSFORM_OPTIONS, OPS_PRIORITY_OPTIONS, OPS_NO_PRIORITY, STG_TRANSFORM_OPTIONS } from './domain';
 import { stripHtml } from './richtext';
 import { useMoca } from './mocaStore';
 import { FEDERAL_ENTITIES } from './entities';
-import { svcCatalogEntities } from './svcCatalog';
 
 export function useViewModel() {
   const s = useStore();
@@ -1537,11 +1536,21 @@ function build(s: Store) {
   const stgTasks = roleBase.filter((i) => i.path === 'strategy' && i.type === 'operation');
   const stgActList = stgTasks.flatMap((i) => itemActivities(i));
   const stgCatOfA = (a: ActivityDetail) => stgPriority(a)?.cat || '';
+  // نشاط «قابل للتحول ذو أولوية»: أولويته المحسوبة عالية أو متوسطة —
+  // «أولوية منخفضة» أو غير المقيَّم لا يُحتسبان (القاعدة نفسها في مسار العمليات)
+  const stgPrioritized = stgActList.filter((a) => {
+    if (activityTransformYes('strategy', a) !== 'نعم') return false;
+    const cat = stgCatOfA(a);
+    return !!cat && cat !== 'أولوية منخفضة';
+  }).length;
   const stgKpis =
     filterStream === 'strategy'
       ? {
           tasks: stgTasks.length,
           acts: stgActList.length,
+          prioritized: stgPrioritized,
+          // نسبتها من إجمالي الأنشطة (0 عند غياب المدخلات)
+          prioritizedPct: stgActList.length ? Math.round((stgPrioritized / stgActList.length) * 100) : 0,
           transformable: stgActList.filter((a) => ['أولوية عالية', 'أولوية متوسطة'].includes(stgCatOfA(a))).length,
           targeted: stgActList.filter((a) => activityTransformYes('strategy', a) === 'نعم').length,
           p1: stgActList.filter((a) => stgCatOfA(a) === 'أولوية عالية').length,
@@ -1553,6 +1562,13 @@ function build(s: Store) {
   // ---- operations coordinator KPI strip (ملخص الحصر) ----
   const opsTasks = roleBase.filter((i) => i.path === 'ops' && i.type === 'operation');
   const opsActList = opsTasks.flatMap((i) => itemActivities(i));
+  // عملية فرعية «قابلة للتحول ذات أولوية»: سيتم تحويلها ولها أولوية تحول
+  // محددة (مرتفعة/متوسطة/منخفضة) — «ليست ذات أولوية» أو الفراغ لا يُحتسبان
+  const opsPrioritized = opsActList.filter((a) => {
+    if (activityTransformYes('ops', a) !== 'نعم') return false;
+    const pr = stripHtml(String(a.transformPriority || '')).trim();
+    return !!pr && pr !== OPS_NO_PRIORITY;
+  }).length;
   const opsKpis =
     filterStream === 'ops'
       ? {
@@ -1562,6 +1578,9 @@ function build(s: Store) {
           // mirrors the activities flagged for transformation
           transformable: opsActList.filter((a) => (a.transformYes || '') === 'نعم').length,
           targeted: opsActList.filter((a) => (a.transformYes || '') === 'نعم').length,
+          prioritized: opsPrioritized,
+          // نسبتها من إجمالي العمليات الفرعية (0 عند غياب المدخلات)
+          prioritizedPct: opsActList.length ? Math.round((opsPrioritized / opsActList.length) * 100) : 0,
         }
       : null;
 

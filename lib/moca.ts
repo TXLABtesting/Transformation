@@ -288,6 +288,37 @@ export const MOCA_BATCHES: MocaBatch[] = [
   { name: 'التوسع في التطبيق', period: 'مارس – مايو 2028', start: '2028-03-01', end: '2028-05-31', months: 3 },
 ];
 
+/** أشهر السنة كما تُكتب في خيارات فترة التحويل */
+const MOCA_PERIOD_MONTHS = [
+  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+];
+
+/**
+ * خيارات «فترة التحويل للذكاء الاصطناعي المساعد»: شهر من أشهر كل دفعة
+ * («الدفعة الأولى - أغسطس»…) — كما في مسارات الجهات الاتحادية.
+ */
+export function mocaPeriodOptions(): string[] {
+  const out: string[] = [];
+  for (const b of MOCA_BATCHES) {
+    const short = b.name.replace('إطلاق ', '');
+    const from = new Date(b.start + 'T00:00:00');
+    const to = new Date(b.end + 'T00:00:00');
+    for (const d = new Date(from); d <= to; d.setMonth(d.getMonth() + 1)) {
+      out.push(short + ' - ' + MOCA_PERIOD_MONTHS[d.getMonth()]);
+    }
+  }
+  return out;
+}
+
+/** الدفعة التي تقع فيها فترة التحويل المختارة — أو '' إن لم تُختر فترة */
+export function mocaPeriodBatch(period?: string): string {
+  const v = String(period || '').trim();
+  if (!v) return '';
+  const short = v.split(' - ')[0].trim();
+  return MOCA_BATCHES.find((b) => b.name.replace('إطلاق ', '') === short)?.name || '';
+}
+
 /** حالة توزيع المدخل على دفعته — دورة اعتماد مستقلة عن اعتماد المحتوى */
 export type MocaPlacementState = 'none' | 'draft' | 'pending' | 'approved';
 export function mocaPlacementState(e: MocaEntry): MocaPlacementState {

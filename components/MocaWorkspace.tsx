@@ -25,6 +25,7 @@ import {
   mocaStatusOf,
   mocaMissing,
   mocaPriorityScore,
+  mocaPeriodOptions,
   mocaPlacementState,
   mocaPlacementLocked,
   mocaPlacementChip,
@@ -36,7 +37,6 @@ import {
 import { useMoca, mocaVisibleEntries, mocaVisibleUseCases, mocaApplyReturn, mocaApplyPlaceReturn } from '@/lib/mocaStore';
 import { DEFAULT_ENTITY, ROLE_PILLS } from '@/lib/domain';
 import { FEDERAL_ENTITIES } from '@/lib/entities';
-import { svcCatalogEntities } from '@/lib/svcCatalog';
 import { useStore } from '@/lib/store';
 import { mocaDownloadTemplate, mocaParseWorkbook } from '@/lib/mocaExcel';
 
@@ -743,18 +743,32 @@ function Rail({ list, open, onClose }: { list: MocaEntry[]; open: boolean; onClo
 // ---- المؤشرات --------------------------------------------------------------
 function Kpis({ list }: { list: MocaEntry[] }) {
   const n = (f: (e: MocaEntry) => boolean) => list.filter(f).length;
-  const tiles = [
+  // القابلة للتحول ذات الأولوية: ليست «غير قابل للتحول» وأولويتها في النموذج «نعم»
+  const prioritized = n(
+    (e) => String(e.transformability || '').startsWith('قابل') && String(e.priority || '') === 'نعم'
+  );
+  const pct = list.length ? Math.round((prioritized / list.length) * 100) : 0;
+  const tiles: { v: number | string; t: string; color?: string; title?: string }[] = [
     { v: list.length, t: 'إجمالي المهام والعمليات الفرعية' },
     { v: n((e) => String(e.transformability || '').startsWith('قابل')), t: 'القابلة للتحول' },
     { v: n((e) => String(e.priority || '') === 'نعم'), t: 'ذات أولوية للتحول' },
+    {
+      v: pct + '%',
+      t: 'نسبة المهام والعمليات القابلة للتحول ذات الأولوية',
+      // خضراء عند 75% فأكثر وحمراء دونها
+      color: pct >= 75 ? '#0B8A4B' : '#C0303B',
+      title: `${prioritized} من ${list.length} مهمة وعملية فرعية`,
+    },
     { v: n((e) => e.wf === 'pending'), t: 'قيد اعتماد اللجنة الوطنية' },
     { v: n((e) => e.wf === 'approved'), t: 'معتمدة' },
   ];
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 }}>
+    // ست بطاقات: حدّ العمود 168px ليستقر الصف الواحد على الشاشات العريضة
+    // بدل بطاقة يتيمة في سطر ثانٍ، ويبقى الالتفاف طبيعياً على الأضيق
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(168px,1fr))', gap: 12 }}>
       {tiles.map((t) => (
-        <div key={t.t} style={{ ...PANEL, padding: '16px 18px' }}>
-          <div style={{ fontSize: 26, fontWeight: 800, color: '#13213C' }}>{t.v}</div>
+        <div key={t.t} style={{ ...PANEL, padding: '16px 18px' }} title={t.title}>
+          <div style={{ fontSize: 26, fontWeight: 800, color: t.color || '#13213C' }}>{t.v}</div>
           <div style={{ fontSize: 11.5, color: '#7C8AA3', fontWeight: 700, marginTop: 2, lineHeight: 1.6 }}>{t.t}</div>
         </div>
       ))}
@@ -1116,16 +1130,150 @@ function SidePanel() {
 // ---- نموذج الإدخال ----------------------------------------------------------
 function FormStep() {
   const s = useMoca();
-  const d = s.draft;
   const hi = s.reqHighlight > 0;
-  const missing = mocaMissing(d);
   const firstBad = useRef<HTMLDivElement>(null);
+  // «العملية والمهمة الرئيسية» تُكتب مرة واحدة وتشترك فيها كل العمليات الفرعية،
+  // فتُستنسخ على المضافة عند احتساب الحقول الناقصة كما يفعل الحفظ تماماً
+  const main = String(s.draft.mainProcess ?? '');
+  const subs: Partial<MocaEntry>[] = [s.draft, ...s.draftMore.map((d) => ({ ...d, mainProcess: main }))];
+  const mainField = MOCA_FIELDS.find((f) => f.key === 'mainProcess');
+  // العملية الرئيسية حقل واحد مشترك، فتُحتسب مرة واحدة لا مرة لكل عملية فرعية
+  const missing = subs.flatMap((d, i) => {
+    const m = mocaMissing(d);
+    return i === 0 ? m : m.filter((x) => x !== mainField?.label);
+  });
+  const mainBad = hi && !main.trim();
 
   useEffect(() => {
     if (hi) firstBad.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [s.reqHighlight, hi]);
 
-  let badSeen = false;
+  const badSeen = useRef(false);
+  badSeen.current = mainBad;
+
+  return (
+    <div>
+      {/* العملية الرئيسية: بطاقة مستقلة فوق العمليات الفرعية لأنها مشتركة بينها */}
+      {mainField && (
+        <div
+          ref={mainBad ? firstBad : undefined}
+          style={{
+            background: 'linear-gradient(180deg,#F2F7FF 0%,#FFFFFF 78%)',
+            border: '1px solid #D5E2FA',
+            borderRadius: 16,
+            padding: 18,
+            marginBottom: 18,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 14 }}>
+            <span
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: '#2563EB',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 'none',
+              }}
+            >
+              <Icon d={IC.list} size={16} color="#fff" strokeWidth={2.2} />
+            </span>
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#13213C' }}>
+                {mainField.label} <span style={{ color: '#D23B45' }}>*</span>
+              </span>
+              <span style={{ display: 'block', fontSize: 11.5, color: '#7C89A2', marginTop: 3 }}>
+                تُكتب مرة واحدة وتشترك فيها جميع العمليات الفرعية أدناه
+              </span>
+            </span>
+          </div>
+          <input
+            value={main}
+            onChange={(e) => s.setDraft('mainProcess', e.target.value)}
+            style={{ ...inputStyle, ...(mainBad ? INVALID_STYLE : {}) }}
+          />
+          {mainBad && <div style={{ fontSize: 11.5, color: '#D23B45', fontWeight: 700, marginTop: 5 }}>هذا الحقل مطلوب</div>}
+        </div>
+      )}
+
+      {subs.map((d, i) => (
+        <SubProcessForm
+          key={i}
+          index={i}
+          total={subs.length}
+          d={d}
+          hi={hi}
+          badSeen={badSeen}
+          firstBad={firstBad}
+          onChange={(k, v) => (i === 0 ? s.setDraft(k, v) : s.setDraftSub(i - 1, k, v))}
+          onRemove={i === 0 ? undefined : () => s.removeDraftSub(i - 1)}
+          unitId={s.unitId}
+          unitSector={s.unitSector}
+        />
+      ))}
+
+      {/* عملية فرعية أخرى تحت العملية والمهمة الرئيسية نفسها */}
+      <button
+        type="button"
+        onClick={() => s.addDraftSub()}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 7,
+          background: '#EAF0FE',
+          color: '#2563EB',
+          border: 'none',
+          borderRadius: 10,
+          padding: '10px 16px',
+          fontSize: 12.5,
+          fontWeight: 800,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          marginBottom: 16,
+        }}
+      >
+        <Icon d={IC.plus} size={14} color="#2563EB" strokeWidth={2.4} /> إضافة عملية فرعية
+      </button>
+
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', paddingTop: 4 }}>
+        <span style={{ flex: 1, minWidth: 150, fontSize: 12, color: missing.length ? '#B45309' : '#0B8A4B', fontWeight: 700 }}>
+          {missing.length ? missing.length + ' حقل مطلوب غير مكتمل' : 'جميع الحقول المطلوبة مكتملة'}
+        </span>
+        <button onClick={() => s.saveDraft(false)} style={BTN_NEUTRAL}>حفظ كمسودة</button>
+        <button onClick={() => s.saveDraft(true)} style={BTN_PRIMARY}>
+          <Icon d={IC.send} size={15} color="#fff" /> إرسال لاعتماد اللجنة الوطنية
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** نموذج عملية فرعية واحدة — يتكرر بزر «إضافة عملية فرعية» */
+function SubProcessForm({
+  index,
+  total,
+  d,
+  hi,
+  badSeen,
+  firstBad,
+  onChange,
+  onRemove,
+  unitId,
+  unitSector,
+}: {
+  index: number;
+  total: number;
+  d: Partial<MocaEntry>;
+  hi: boolean;
+  badSeen: React.MutableRefObject<boolean>;
+  firstBad: React.RefObject<HTMLDivElement>;
+  onChange: (k: string, v: string) => void;
+  onRemove?: () => void;
+  unitId: string;
+  unitSector: string;
+}) {
   const fieldNode = (f: MocaField) => {
     const blocked = blockedByTransformability(f.key, d);
     const v = String(d[f.key] ?? '');
@@ -1140,14 +1288,14 @@ function FormStep() {
     if (f.key === 'sector')
       return (
         <input
-          value={mocaAutoSector(s.unitId, s.unitSector)}
+          value={mocaAutoSector(unitId, unitSector)}
           disabled
           style={{ ...inputStyle, backgroundColor: '#F1F4F9', cursor: 'not-allowed', color: '#54627B', fontWeight: 700 }}
         />
       );
     if (f.type === 'select')
       return (
-        <select value={v} onChange={(e) => s.setDraft(f.key, e.target.value)} style={{ ...st, cursor: 'pointer' }}>
+        <select value={v} onChange={(e) => onChange(f.key, e.target.value)} style={{ ...st, cursor: 'pointer' }}>
           <option value="">اختر…</option>
           {(f.options || []).map((o) => (
             <option key={o} value={o}>{o}</option>
@@ -1155,7 +1303,7 @@ function FormStep() {
         </select>
       );
     if (f.type === 'longtext')
-      return <textarea value={v} onChange={(e) => s.setDraft(f.key, e.target.value)} style={{ ...st, minHeight: 88, resize: 'vertical' }} />;
+      return <textarea value={v} onChange={(e) => onChange(f.key, e.target.value)} style={{ ...st, minHeight: 88, resize: 'vertical' }} />;
     // النِّسب المئوية بشريط تمرير بدل الإدخال النصي
     if (f.type === 'percent') {
       const num = Math.max(0, Math.min(100, Number(String(v).replace(/[^\d.]/g, '')) || 0));
@@ -1178,54 +1326,109 @@ function FormStep() {
             max={100}
             step={5}
             value={num}
-            onChange={(e) => s.setDraft(f.key, e.target.value)}
+            onChange={(e) => onChange(f.key, e.target.value)}
             style={{ flex: 1, accentColor: '#2563EB', cursor: 'pointer' }}
           />
           <span style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', minWidth: 44, textAlign: 'left' }}>{num}%</span>
         </div>
       );
     }
-    return <input value={v} onChange={(e) => s.setDraft(f.key, e.target.value)} style={st} />;
+    return <input value={v} onChange={(e) => onChange(f.key, e.target.value)} style={st} />;
   };
 
   return (
-    <div>
-      {MOCA_GROUPS.map((g) => (
-        <div key={g.key} style={cardStyle}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 4, height: 16, borderRadius: 999, background: '#2563EB' }} />
-            {g.label}
-          </div>
-          {MOCA_FIELDS.filter((f) => f.group === g.key).map((f) => {
-            const blocked = blockedByTransformability(f.key, d);
-            const bad = hi && !blocked && !!f.required && !String(d[f.key] ?? '').trim();
-            const isFirstBad = bad && !badSeen;
-            if (isFirstBad) badSeen = true;
-            return (
-              <div key={f.key} ref={isFirstBad ? firstBad : undefined} style={{ marginBottom: 14 }}>
-                <label style={labelStyle}>
-                  {f.label} {f.required && <span style={{ color: '#D23B45' }}>*</span>}
-                </label>
-                {fieldNode(f)}
-                {blocked && <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 5 }}>يُحتسب صفراً في أولوية التحول</div>}
-                {!blocked && f.hint && <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 5 }}>{f.hint}</div>}
-                {bad && <div style={{ fontSize: 11.5, color: '#D23B45', fontWeight: 700, marginTop: 5 }}>هذا الحقل مطلوب</div>}
-              </div>
-            );
-          })}
-        </div>
-      ))}
-
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', paddingTop: 4 }}>
-        <span style={{ flex: 1, minWidth: 150, fontSize: 12, color: missing.length ? '#B45309' : '#0B8A4B', fontWeight: 700 }}>
-          {missing.length ? missing.length + ' حقل مطلوب غير مكتمل' : 'جميع الحقول المطلوبة مكتملة'}
+    <section
+      style={{
+        border: '1px solid #E1E8F3',
+        borderRadius: 18,
+        background: '#fff',
+        padding: '0 14px',
+        marginBottom: 16,
+        boxShadow: '0 1px 2px rgba(19,33,60,.035)',
+      }}
+    >
+      {/* ترويسة العملية الفرعية — ترقيم متسلسل يبدأ من «1 من 1» */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 4px', borderBottom: '1px solid #EFF3F9', marginBottom: 14 }}>
+        <span
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: 8,
+            background: '#EAF0FE',
+            color: '#2563EB',
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: 'none',
+          }}
+        >
+          {index + 1}
         </span>
-        <button onClick={() => s.saveDraft(false)} style={BTN_NEUTRAL}>حفظ كمسودة</button>
-        <button onClick={() => s.saveDraft(true)} style={BTN_PRIMARY}>
-          <Icon d={IC.send} size={15} color="#fff" /> إرسال لاعتماد اللجنة الوطنية
-        </button>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: '#13213C' }}>
+          العملية الفرعية {index + 1} من {total}
+        </span>
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            style={{ border: '1px solid #F3D4D7', background: '#FDF6F6', color: '#C0303B', borderRadius: 9, padding: '6px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}
+          >
+            إزالة هذه العملية
+          </button>
+        )}
       </div>
-    </div>
+      {MOCA_GROUPS.map((g) => {
+        // العملية الرئيسية خارج هذه الكتلة — بطاقتها المستقلة فوق العمليات الفرعية
+        const fields = MOCA_FIELDS.filter((f) => f.group === g.key && f.key !== 'mainProcess');
+        if (!fields.length) return null;
+        return (
+          <div key={g.key} style={cardStyle}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#13213C', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 4, height: 16, borderRadius: 999, background: '#2563EB' }} />
+              {g.label}
+            </div>
+            {fields.map((f) => {
+              const blocked = blockedByTransformability(f.key, d);
+              const bad = hi && !blocked && !!f.required && !String(d[f.key] ?? '').trim();
+              const isFirstBad = bad && !badSeen.current;
+              if (isFirstBad) badSeen.current = true;
+              return (
+                <div key={f.key} ref={isFirstBad ? firstBad : undefined} style={{ marginBottom: 14 }}>
+                  <label style={labelStyle}>
+                    {f.label} {f.required && <span style={{ color: '#D23B45' }}>*</span>}
+                  </label>
+                  {fieldNode(f)}
+                  {blocked && <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 5 }}>يُحتسب صفراً في أولوية التحول</div>}
+                  {!blocked && f.hint && <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 5 }}>{f.hint}</div>}
+                  {bad && <div style={{ fontSize: 11.5, color: '#D23B45', fontWeight: 700, marginTop: 5 }}>هذا الحقل مطلوب</div>}
+                </div>
+              );
+            })}
+            {/* فترة التحويل: اختيارية، تضع المدخل في دفعة الإطلاق الموافقة لها عند اعتماده */}
+            {g.key === 'transform' && (
+              <div style={{ marginBottom: 2 }}>
+                <label style={labelStyle}>فترة التحويل للذكاء الاصطناعي المساعد</label>
+                <select
+                  value={String(d.transformPeriod ?? '')}
+                  onChange={(e) => onChange('transformPeriod', e.target.value)}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                >
+                  <option value="">اختر… (اختياري)</option>
+                  {mocaPeriodOptions().map((o) => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                </select>
+                <div style={{ fontSize: 11.5, color: '#8E9AB0', marginTop: 5 }}>
+                  تُرشِّح المدخل لدفعة الإطلاق الموافقة لها بعد اعتماده من اللجنة الوطنية
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </section>
   );
 }
 
@@ -1234,8 +1437,43 @@ function BulkStep() {
   const s = useMoca();
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  // عمق السحب: الدخول على عنصر ابن يطلق dragleave للأب، فيُعدّ بدل أن يُلغى
+  const dragDepth = useRef(0);
   const ready = s.bulkRows.filter((r) => !r.missing.length).length;
   const short = s.bulkRows.length - ready;
+
+  /** قراءة الملف المختار أو المُفلَت — المصدر واحد للحالتين */
+  const readFile = async (f: File | undefined | null) => {
+    if (!f) return;
+    if (!/\.xlsx$/i.test(f.name)) {
+      s.setBulkRows([], 'صيغة الملف غير مدعومة — النموذج ملف Excel بصيغة xlsx.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const { rows, error } = await mocaParseWorkbook(await f.arrayBuffer());
+      s.setBulkRows(rows, error);
+    } catch {
+      s.setBulkRows([], 'تعذّرت قراءة الملف — تأكد أنه بصيغة xlsx.');
+    }
+    setBusy(false);
+  };
+
+  // إفلات الملف خارج المربع كان يفتحه المتصفح ويغادر الصفحة — يُمنع ما دامت
+  // لوحة الرفع مفتوحة
+  useEffect(() => {
+    const stop = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+    };
+    window.addEventListener('dragover', stop);
+    window.addEventListener('drop', stop);
+    return () => {
+      window.removeEventListener('dragover', stop);
+      window.removeEventListener('drop', stop);
+    };
+  }, []);
 
   const tile = (count: number, txt: string, color: string, bg: string) => (
     <div style={{ flex: 1, background: bg, borderRadius: 14, padding: 14, textAlign: 'center' }}>
@@ -1252,16 +1490,46 @@ function BulkStep() {
       </div>
 
       <label
+        data-r="moca-drop"
         onClick={() => fileRef.current?.click()}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragDepth.current += 1;
+          setDragOver(true);
+        }}
+        onDragOver={(e) => {
+          // بلا preventDefault هنا لا يُطلق المتصفح حدث الإفلات أصلاً
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+          if (!dragOver) setDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragDepth.current = Math.max(0, dragDepth.current - 1);
+          if (dragDepth.current === 0) setDragOver(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragDepth.current = 0;
+          setDragOver(false);
+          const dt = e.dataTransfer;
+          const f = dt?.files?.[0] || (dt?.items?.[0]?.kind === 'file' ? dt.items[0].getAsFile() : null);
+          readFile(f);
+        }}
         style={{
           display: 'block',
-          border: '2px dashed #C7D6EE',
-          background: '#fff',
+          border: `2px dashed ${dragOver ? '#2563EB' : '#C7D6EE'}`,
+          background: dragOver ? '#F2F7FF' : '#fff',
           borderRadius: 16,
           padding: '30px 18px',
           textAlign: 'center',
           cursor: 'pointer',
           marginBottom: 14,
+          transition: 'border-color .2s,background .2s',
         }}
       >
         <div
@@ -1274,14 +1542,15 @@ function BulkStep() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            pointerEvents: 'none',
           }}
         >
           <Icon d={IC.upload} size={22} color="#2563EB" strokeWidth={2.2} />
         </div>
-        <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49', marginBottom: 6 }}>
-          {busy ? 'جارٍ قراءة الملف…' : 'اضغط لاختيار الملف'}
+        <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1F2D49', marginBottom: 6, pointerEvents: 'none' }}>
+          {busy ? 'جارٍ قراءة الملف…' : dragOver ? 'أفلت الملف هنا' : 'اسحب الملف هنا أو اضغط لاختياره'}
         </div>
-        <div style={{ fontSize: 11.5, color: '#9AA6BC', lineHeight: 1.7 }}>
+        <div style={{ fontSize: 11.5, color: '#9AA6BC', lineHeight: 1.7, pointerEvents: 'none' }}>
           ملف Excel بصيغة .xlsx — نموذج حصر المهام والعمليات
         </div>
       </label>
@@ -1292,16 +1561,8 @@ function BulkStep() {
         style={{ display: 'none' }}
         onChange={async (e) => {
           const f = e.target.files?.[0];
-          if (!f) return;
           e.target.value = '';
-          setBusy(true);
-          try {
-            const { rows, error } = await mocaParseWorkbook(await f.arrayBuffer());
-            s.setBulkRows(rows, error);
-          } catch {
-            s.setBulkRows([], 'تعذّرت قراءة الملف — تأكد أنه بصيغة xlsx.');
-          }
-          setBusy(false);
+          await readFile(f);
         }}
       />
 
@@ -1435,6 +1696,16 @@ function DetailDrawer({ id }: { id: string }) {
                   </span>
                 </div>
               ))}
+              {g.key === 'transform' && (
+                <div style={{ display: 'flex', gap: 12, padding: '8px 0' }}>
+                  <span style={{ fontSize: 11.5, color: '#8A97AD', fontWeight: 400, width: 230, flex: 'none', lineHeight: 1.7 }}>
+                    فترة التحويل للذكاء الاصطناعي المساعد
+                  </span>
+                  <span style={{ fontSize: 12.5, color: '#13213C', fontWeight: 700, lineHeight: 1.7 }}>
+                    {String(e.transformPeriod || '').trim() || '— (لم تُحدَّد)'}
+                  </span>
+                </div>
+              )}
             </div>
           ))}
         </div>

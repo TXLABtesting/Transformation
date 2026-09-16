@@ -18,269 +18,186 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 /**
- * "مسيرة التحول" — the milestones scroll sideways while the page scrolls down.
- * The section is a tall scroll track with a sticky viewport; the filmstrip
- * inside translates by the scrolled fraction and the viewport background
- * cross-fades to whichever panel is centred.
+ * "مسيرة التحول" — شريط محطات يتنقل بينه الزائر بزرَّي «‹» و«›» (carousel).
+ * كان الشريط يتحرك بتمرير الصفحة نفسها (scroll hijack)؛ صار التنقل بالأزرار
+ * وبعلامات السنوات وبمفاتيح الأسهم، فالقسم بارتفاع شاشة واحدة لا أكثر.
  *
- * Below 860px the whole thing degrades to a plain vertical stack: no sticky
- * hijack, no ruler, each panel simply full width.
+ * دون 860 بكسل: العرض نفسه بلوحة واحدة بعرض الشاشة، مع الأزرار والنقاط
+ * وإمكانية السحب باللمس.
  */
 export function HistoryJourney({ milestones }: HistoryJourneyProps) {
-  const wrapRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
-  const [trackHeight, setTrackHeight] = useState<number | null>(null);
-  const [tint, setTint] = useState(milestones[0]?.bg ?? "#2563EB");
-  const [light, setLight] = useState(false);
-  const scrollLen = useRef(1);
-  const fracs = useRef<number[]>([]);
-  const smooth = useRef(0);
+  const [idx, setIdx] = useState(0);
+  const [offsets, setOffsets] = useState<number[]>([]);
+  const [span, setSpan] = useState(1);
+  const staged = useRef(new Set<number>());
+  const touchX = useRef<number | null>(null);
   const mobile = useMediaQuery("(max-width: 860px)");
+  const count = milestones.length;
+  const current = milestones[Math.min(idx, count - 1)];
+  const tint = current?.bg ?? "#2563EB";
+  const light = isLight(tint);
 
+  const go = (next: number) => setIdx((i) => clamp(next, 0, count - 1));
+  const prev = () => go(idx - 1);
+  const next = () => go(idx + 1);
+
+  // المحطة الأولى تُعرض عند تغيّر المحتوى (تحرير المشرف) بلا بقايا حالة سابقة
   useEffect(() => {
-    if (mobile) {
-      setTrackHeight(null);
-      return;
-    }
-    const wrap = wrapRef.current;
+    setIdx(0);
+    staged.current = new Set();
+  }, [milestones]);
+
+  // قياس موضع كل لوحة: الإزاحة التي تجعلها في وسط الشاشة
+  useEffect(() => {
+    if (mobile) return;
     const track = trackRef.current;
-    if (!wrap || !track) return;
-
-    let raf = 0;
-    let lastT = performance.now();
-
+    if (!track) return;
     const measure = () => {
       const W = window.innerWidth;
-      const VH = window.innerHeight;
+      const saved = track.style.transition;
+      track.style.transition = "none";
       track.style.transform = "translate3d(0,0,0)";
-      scrollLen.current = Math.max(1, track.scrollWidth - W);
-      setTrackHeight(scrollLen.current * 1.35 + VH);
-      const trackRect = track.getBoundingClientRect();
-      fracs.current = Array.from(track.children).map(child => {
+      const len = Math.max(1, track.scrollWidth - W);
+      const rect = track.getBoundingClientRect();
+      const offs = Array.from(track.children).map((child) => {
         const r = (child as HTMLElement).getBoundingClientRect();
-        const off = trackRect.right - (r.left + r.width / 2) - W / 2;
-        return clamp(off / scrollLen.current, 0, 1);
+        return clamp(rect.right - (r.left + r.width / 2) - W / 2, 0, len);
+      });
+      setSpan(len);
+      setOffsets(offs);
+      requestAnimationFrame(() => {
+        track.style.transition = saved;
       });
     };
-
-    const timer = window.setTimeout(measure, 350);
+    const timer = window.setTimeout(measure, 320);
     window.addEventListener("resize", measure);
-
-    const panelColours = milestones.map(m => hexToRgb(m.bg));
-    const staged = new Set<number>();
-
-    const loop = () => {
-      raf = requestAnimationFrame(loop);
-      const now = performance.now();
-      const dt = Math.min(50, now - lastT);
-      lastT = now;
-
-      const y = window.scrollY;
-      const target = clamp(
-        (y - wrap.offsetTop) / (scrollLen.current * 1.35),
-        0,
-        1
-      );
-      // Time-based exponential smoothing: frame-rate independent, no jitter on
-      // a fast flick.
-      const k = 1 - Math.exp(-dt / 180);
-      smooth.current += (target - smooth.current) * k;
-      if (Math.abs(target - smooth.current) < 0.00015) smooth.current = target;
-
-      const dpr = window.devicePixelRatio || 1;
-      const x = Math.round(smooth.current * scrollLen.current * dpr) / dpr;
-      track.style.transform = `translate3d(${x}px,0,0)`;
-      setProgress(smooth.current);
-
-      const W = window.innerWidth;
-
-      // Photos drift against the filmstrip and breathe from a slight zoom to
-      // rest as their panel centres — the counter-movement is what lets one
-      // image hand over to the next instead of hard-cutting at the mask edge.
-      // Year numbers and the 2026 ghost outline drift on their own rates.
-      Array.from(track.children).forEach((child, i) => {
-        const el = child as HTMLElement;
-        const rect = el.getBoundingClientRect();
-        if (rect.right < -W * 0.3 || rect.left > W * 1.3) return;
-        const t = (rect.left + rect.width / 2 - W / 2) / W;
-        const vis = clamp(1 - Math.abs(t) * 1.15, 0, 1);
-        const inner = el.querySelector<HTMLElement>("[data-inner]");
-        if (inner) {
-          // الإزاحة محدودة بـ ±1 لوحة: أبعد من ذلك كانت تتجاوز هامش الصورة
-          // الزائد فتظهر حافة الصورة خطاً عمودياً صريحاً وسط التدرج
-          const ti = clamp(t, -1, 1);
-          inner.style.transform = `translate3d(${(ti * 30).toFixed(2)}px,0,0) scale(${(1.06 - vis * 0.06).toFixed(4)})`;
-        }
-        const num = el.querySelector<HTMLElement>("[data-num]");
-        if (num) {
-          num.style.transform = `translate3d(${(t * W * 0.05).toFixed(1)}px,${(Math.abs(t) * 18).toFixed(1)}px,0)`;
-        }
-        const ghost = el.querySelector<HTMLElement>("[data-ghost]");
-        if (ghost) {
-          ghost.style.transform = `translate3d(${(t * W * 0.16).toFixed(1)}px,${(t * -34).toFixed(1)}px,0)`;
-          ghost.style.opacity = String(clamp(1 - Math.abs(t) * 1.3, 0, 1));
-        }
-        if (vis > 0.35 && !staged.has(i)) {
-          staged.add(i);
-          arrive(el);
-        }
-      });
-
-      // Blend the panel background colours weighted by how centred each one is.
-      let r = 0;
-      let g = 0;
-      let b = 0;
-      let total = 0;
-      Array.from(track.children).forEach((child, i) => {
-        const rect = (child as HTMLElement).getBoundingClientRect();
-        const t = (rect.left + rect.width / 2 - W / 2) / W;
-        const w = Math.pow(clamp(1 - Math.abs(t), 0, 1), 5);
-        if (w <= 0) return;
-        r += panelColours[i][0] * w;
-        g += panelColours[i][1] * w;
-        b += panelColours[i][2] * w;
-        total += w;
-      });
-      if (total > 0) {
-        const cr = Math.round(r / total);
-        const cg = Math.round(g / total);
-        const cb = Math.round(b / total);
-        setTint(`rgb(${cr},${cg},${cb})`);
-        setLight((0.299 * cr + 0.587 * cg + 0.114 * cb) / 255 > 0.55);
-      }
-    };
-    loop();
-
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener("resize", measure);
-      cancelAnimationFrame(raf);
     };
   }, [milestones, mobile]);
 
-  /**
-   * First time a panel reaches centre stage: its year counts up while the
-   * letter-spacing settles, and the photograph arrives bright and slightly
-   * washed before settling to its final grade — the design's cinematic cut.
-   */
-  const arrive = (panel: HTMLElement) => {
-    const num = panel.querySelector<HTMLElement>("[data-num]");
-    if (!num || num.dataset.rolled) return;
-    num.dataset.rolled = "1";
-    const target = parseInt(num.textContent ?? "", 10);
-    if (target) {
-      num.style.transition = "letter-spacing 1.1s cubic-bezier(.22,1,.36,1)";
-      num.style.letterSpacing = ".18em";
-      const from = target - 14;
-      const t0 = performance.now();
-      const tick = (t: number) => {
-        const p = Math.min(1, (t - t0) / 1100);
-        const e = 1 - Math.pow(1 - p, 4);
-        num.textContent = String(Math.round(from + (target - from) * e));
-        if (p < 1) requestAnimationFrame(tick);
-        else num.style.letterSpacing = "0";
-      };
-      requestAnimationFrame(tick);
+  // تحريك الشريط إلى اللوحة الحالية + تشغيل حركة الوصول أول مرة تظهر فيها
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    if (!mobile) {
+      const x = offsets[idx] ?? 0;
+      track.style.transform = `translate3d(${x}px,0,0)`;
     }
-    const img = panel.querySelector<HTMLImageElement>("[data-inner] img");
-    if (img) {
-      img.style.opacity = "0";
-      img.style.filter = "brightness(1.3) saturate(1.2)";
-      img.style.transition =
-        "filter 1.4s cubic-bezier(.22,1,.36,1),opacity 1.2s ease";
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          img.style.filter = "brightness(1) saturate(1)";
-          img.style.opacity = "1";
-        })
-      );
+    const panel = track.children[idx] as HTMLElement | undefined;
+    if (panel && !staged.current.has(idx)) {
+      staged.current.add(idx);
+      arrive(panel);
     }
+  }, [idx, offsets, mobile]);
+
+  // الأسهم: في الاتجاه من اليمين لليسار، السهم الأيسر يتقدم والأيمن يرجع
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") next();
+      else if (e.key === "ArrowRight") prev();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  const progress = span > 1 ? (offsets[idx] ?? 0) / span : 0;
+  const swipe = {
+    onTouchStart: (e: React.TouchEvent) => {
+      touchX.current = e.touches[0].clientX;
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      if (touchX.current == null) return;
+      const dx = e.changedTouches[0].clientX - touchX.current;
+      touchX.current = null;
+      if (Math.abs(dx) < 45) return;
+      // سحب لليسار = المحطة التالية (الشريط يسير من اليمين لليسار)
+      if (dx < 0) next();
+      else prev();
+    },
   };
 
-  const jumpTo = (year: string) => {
-    const idx = milestones.findIndex(m => m.year === year);
-    const wrap = wrapRef.current;
-    if (idx < 0 || !wrap) return;
-    if (mobile) {
-      wrap.children[0]?.children[idx]?.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
-    window.scrollTo({
-      top:
-        wrap.offsetTop + (fracs.current[idx] ?? 0) * scrollLen.current * 1.35,
-      behavior: "smooth",
-    });
-  };
+  const controls = (
+    <>
+      <NavArrow side="left" dir="next" onClick={next} disabled={idx >= count - 1} light={light} mobile={mobile} />
+      <NavArrow side="right" dir="prev" onClick={prev} disabled={idx <= 0} light={light} mobile={mobile} />
+    </>
+  );
 
   if (mobile) {
     return (
-      <section
-        ref={wrapRef}
-        data-screen-label="Our History"
-        className="relative"
-      >
-        <div className="flex flex-col">
-          {milestones.map(m => (
-            <MobilePanel key={m.year || "intro"} milestone={m} />
+      <section data-screen-label="Our History" className="relative overflow-hidden" {...swipe}>
+        <div
+          ref={trackRef}
+          className="flex"
+          style={{
+            width: `${count * 100}%`,
+            transform: `translateX(${(idx * 100) / count}%)`,
+            transition: "transform .55s cubic-bezier(.22,1,.36,1)",
+          }}
+        >
+          {milestones.map((m) => (
+            <div key={m.year || "intro"} style={{ width: `${100 / count}%`, flex: "0 0 auto" }}>
+              <MobilePanel milestone={m} />
+            </div>
           ))}
         </div>
+        {controls}
+        <Dots count={count} idx={idx} onPick={go} light={light} />
       </section>
     );
   }
 
-  const inJourney = progress > 0.001 && progress < 0.999;
-
   return (
-    <section
-      ref={wrapRef}
-      data-screen-label="Our History"
-      className="relative"
-      style={{ height: trackHeight ?? "640vh" }}
-    >
+    <section data-screen-label="Our History" className="relative" style={{ height: "100svh" }}>
       <div
-        className="sticky top-0 h-screen overflow-hidden"
+        className="relative h-full overflow-hidden"
         style={
           {
             backgroundColor: tint,
-            // Panels dissolve their edges into this, so seams track the
-            // blended backdrop instead of a fixed navy.
+            transition: "background-color .6s ease",
+            // اللوحات تذيب حوافها في هذا اللون فتتبع الخلفية لا لوناً ثابتاً
             "--tint": tint,
           } as React.CSSProperties
         }
+        {...swipe}
       >
-        {/* faint grid, masked to the centre so the edges stay clean */}
+        {/* شبكة خفيفة مقنّعة نحو الوسط فتبقى الحواف نظيفة */}
         <div
           className="absolute inset-0"
           style={{
             backgroundImage:
               "linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px)",
             backgroundSize: "64px 64px",
-            maskImage:
-              "radial-gradient(85% 70% at 50% 45%,#000,transparent 80%)",
-            WebkitMaskImage:
-              "radial-gradient(85% 70% at 50% 45%,#000,transparent 80%)",
+            maskImage: "radial-gradient(85% 70% at 50% 45%,#000,transparent 80%)",
+            WebkitMaskImage: "radial-gradient(85% 70% at 50% 45%,#000,transparent 80%)",
           }}
         />
         <div
           ref={trackRef}
           className="flex h-full w-max"
-          style={{ willChange: "transform" }}
+          style={{ willChange: "transform", transition: "transform .7s cubic-bezier(.22,1,.36,1)" }}
         >
-          {milestones.map(m => (
+          {milestones.map((m) => (
             <Panel key={m.year || "intro"} milestone={m} />
           ))}
         </div>
 
-        {/* Ruler: ticks, a travelling cursor and clickable year marks. */}
+        {/* حافتا القسم تذوبان في لون الخلفية فلا تظهر اللوحة المجاورة مقطوعة */}
         <div
-          className="absolute bottom-[22px] right-1/2 z-10 translate-x-1/2"
+          className="pointer-events-none absolute inset-y-0 left-0 right-0 z-[5]"
           style={{
-            width: "calc(100% - 56px)",
-            opacity: inJourney ? 1 : 0,
-            transition: "opacity .4s",
+            background:
+              "linear-gradient(to right,var(--tint) 0%,color-mix(in srgb, var(--tint) 65%, transparent) 4%,transparent 11%),linear-gradient(to left,var(--tint) 0%,color-mix(in srgb, var(--tint) 65%, transparent) 4%,transparent 11%)",
           }}
-        >
+        />
+
+        {controls}
+
+        {/* المسطرة: علامات السنوات قابلة للنقر ومؤشر يتحرك مع المحطة الحالية */}
+        <div className="absolute bottom-[22px] right-1/2 z-10 translate-x-1/2" style={{ width: "calc(100% - 160px)" }}>
           <div className="relative h-[46px]">
             <div className="absolute inset-x-0 bottom-0 flex h-[14px] items-end justify-between">
               {Array.from({ length: 70 }, (_, i) => {
@@ -301,51 +218,38 @@ export function HistoryJourney({ milestones }: HistoryJourneyProps) {
             </div>
             <div
               className="absolute inset-x-0 bottom-0 h-px"
-              style={{
-                background: light
-                  ? "rgba(15,31,61,.25)"
-                  : "rgba(255,255,255,.2)",
-              }}
+              style={{ background: light ? "rgba(15,31,61,.25)" : "rgba(255,255,255,.2)" }}
             />
             <div
               className="absolute -bottom-[3px] h-[22px] w-[2.5px] rounded-sm"
               style={{
                 right: `calc(${progress * 100}% - 1px)`,
                 background: light ? "#2563EB" : "#fff",
-                boxShadow: light
-                  ? "0 0 10px rgba(37,99,235,.7)"
-                  : "0 0 10px rgba(255,255,255,.8)",
+                boxShadow: light ? "0 0 10px rgba(37,99,235,.7)" : "0 0 10px rgba(255,255,255,.8)",
+                transition: "right .7s cubic-bezier(.22,1,.36,1),background .4s",
               }}
             />
-            {/* علامات السنوات على المسطرة تُشتق من المحطات (تتبع تحرير المشرف) */}
-            {milestones.filter(m => m.year).map(m => m.year).map(year => {
-              const idx = milestones.findIndex(m => m.year === year);
-              const f = fracs.current[idx] ?? 0;
-              const on = Math.abs(f - progress) < 0.06;
+            {milestones.map((m, i) => {
+              if (!m.year) return null;
+              const f = span > 1 ? (offsets[i] ?? 0) / span : 0;
+              const on = i === idx;
               return (
                 <button
-                  key={year}
+                  key={m.year}
                   type="button"
-                  onClick={() => jumpTo(year)}
+                  onClick={() => go(i)}
+                  aria-label={`الانتقال إلى ${m.year}`}
                   className="absolute bottom-5 cursor-pointer border-none bg-transparent px-[6px] py-1 text-xs font-extrabold"
                   style={{
                     right: `${f * 100}%`,
                     direction: "ltr",
                     transform: `translateX(50%) scale(${on ? 1.35 : 1})`,
-                    color: on
-                      ? light
-                        ? "#2563EB"
-                        : "#fff"
-                      : light
-                        ? "rgba(15,31,61,.55)"
-                        : "rgba(255,255,255,.6)",
-                    textShadow:
-                      on && !light ? "0 0 12px rgba(255,255,255,.7)" : "none",
-                    transition:
-                      "color .4s,transform .5s cubic-bezier(.22,1,.36,1),text-shadow .4s",
+                    color: on ? (light ? "#2563EB" : "#fff") : light ? "rgba(15,31,61,.55)" : "rgba(255,255,255,.6)",
+                    textShadow: on && !light ? "0 0 12px rgba(255,255,255,.7)" : "none",
+                    transition: "color .4s,transform .5s cubic-bezier(.22,1,.36,1),text-shadow .4s,right .7s cubic-bezier(.22,1,.36,1)",
                   }}
                 >
-                  {year}
+                  {m.year}
                 </button>
               );
             })}
@@ -354,6 +258,132 @@ export function HistoryJourney({ milestones }: HistoryJourneyProps) {
       </div>
     </section>
   );
+}
+
+/** لون فاتح؟ (لاختيار لون الأزرار والمسطرة فوقه) */
+function isLight(colour: string): boolean {
+  if (!colour.startsWith("#") || colour.length < 7) return false;
+  const [r, g, b] = hexToRgb(colour);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55;
+}
+
+/** زر التنقل — دائرة زجاجية على حافة القسم */
+function NavArrow({
+  side,
+  dir,
+  onClick,
+  disabled,
+  light,
+  mobile,
+}: {
+  side: "left" | "right";
+  dir: "prev" | "next";
+  onClick: () => void;
+  disabled: boolean;
+  light: boolean;
+  mobile: boolean;
+}) {
+  const size = mobile ? 40 : 52;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={dir === "next" ? "المحطة التالية" : "المحطة السابقة"}
+      data-carousel={dir}
+      className="absolute z-20 flex items-center justify-center rounded-full"
+      style={{
+        [side]: mobile ? 10 : 22,
+        top: mobile ? "38%" : "50%",
+        transform: "translateY(-50%)",
+        width: size,
+        height: size,
+        border: `1px solid ${light ? "rgba(15,31,61,.18)" : "rgba(255,255,255,.45)"}`,
+        background: light ? "rgba(255,255,255,.75)" : "rgba(255,255,255,.16)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        color: light ? "#0F1F3D" : "#fff",
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.35 : 1,
+        transition: "opacity .3s,background .3s,border-color .3s",
+      }}
+    >
+      <svg
+        width={mobile ? 18 : 22}
+        height={mobile ? 18 : 22}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d={side === "left" ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6"} />
+      </svg>
+    </button>
+  );
+}
+
+/** نقاط المحطات — للجوال */
+function Dots({ count, idx, onPick, light }: { count: number; idx: number; onPick: (i: number) => void; light: boolean }) {
+  return (
+    <div className="absolute bottom-[18px] left-0 right-0 z-20 flex items-center justify-center gap-[7px]">
+      {Array.from({ length: count }, (_, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onPick(i)}
+          aria-label={`المحطة ${i + 1}`}
+          className="cursor-pointer rounded-full border-none p-0"
+          style={{
+            width: i === idx ? 20 : 7,
+            height: 7,
+            background: i === idx ? (light ? "#2563EB" : "#fff") : light ? "rgba(15,31,61,.3)" : "rgba(255,255,255,.45)",
+            transition: "width .35s cubic-bezier(.22,1,.36,1),background .3s",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * أول ظهور للوحة: السنة تُعدّ تصاعدياً مع استقرار تباعد الحروف، والصورة
+ * تصل ساطعة قليلاً ثم تستقر — القطع السينمائي في التصميم.
+ */
+function arrive(panel: HTMLElement) {
+  const num = panel.querySelector<HTMLElement>("[data-num]");
+  if (num && !num.dataset.rolled) {
+    num.dataset.rolled = "1";
+    const target = parseInt(num.textContent ?? "", 10);
+    if (target) {
+      num.style.transition = "letter-spacing 1.1s cubic-bezier(.22,1,.36,1)";
+      num.style.letterSpacing = ".18em";
+      const from = target - 14;
+      const t0 = performance.now();
+      const tick = (t: number) => {
+        const p = Math.min(1, (t - t0) / 1100);
+        const e = 1 - Math.pow(1 - p, 4);
+        num.textContent = String(Math.round(from + (target - from) * e));
+        if (p < 1) requestAnimationFrame(tick);
+        else num.style.letterSpacing = "0";
+      };
+      requestAnimationFrame(tick);
+    }
+  }
+  const img = panel.querySelector<HTMLImageElement>("[data-inner] img");
+  if (img) {
+    img.style.opacity = "0";
+    img.style.filter = "brightness(1.3) saturate(1.2)";
+    img.style.transition = "filter 1.4s cubic-bezier(.22,1,.36,1),opacity 1.2s ease";
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        img.style.filter = "brightness(1) saturate(1)";
+        img.style.opacity = "1";
+      })
+    );
+  }
 }
 
 /* -------------------------------------------------------------------------- */
