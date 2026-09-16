@@ -743,18 +743,32 @@ function Rail({ list, open, onClose }: { list: MocaEntry[]; open: boolean; onClo
 // ---- المؤشرات --------------------------------------------------------------
 function Kpis({ list }: { list: MocaEntry[] }) {
   const n = (f: (e: MocaEntry) => boolean) => list.filter(f).length;
-  const tiles = [
+  // القابلة للتحول ذات الأولوية: ليست «غير قابل للتحول» وأولويتها في النموذج «نعم»
+  const prioritized = n(
+    (e) => String(e.transformability || '').startsWith('قابل') && String(e.priority || '') === 'نعم'
+  );
+  const pct = list.length ? Math.round((prioritized / list.length) * 100) : 0;
+  const tiles: { v: number | string; t: string; color?: string; title?: string }[] = [
     { v: list.length, t: 'إجمالي المهام والعمليات الفرعية' },
     { v: n((e) => String(e.transformability || '').startsWith('قابل')), t: 'القابلة للتحول' },
     { v: n((e) => String(e.priority || '') === 'نعم'), t: 'ذات أولوية للتحول' },
+    {
+      v: pct + '%',
+      t: 'نسبة القابلة للتحول ذات الأولوية',
+      // خضراء عند 75% فأكثر وحمراء دونها
+      color: pct >= 75 ? '#0B8A4B' : '#C0303B',
+      title: `${prioritized} من ${list.length} مهمة وعملية فرعية`,
+    },
     { v: n((e) => e.wf === 'pending'), t: 'قيد اعتماد اللجنة الوطنية' },
     { v: n((e) => e.wf === 'approved'), t: 'معتمدة' },
   ];
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 }}>
+    // ست بطاقات: حدّ العمود 168px ليستقر الصف الواحد على الشاشات العريضة
+    // بدل بطاقة يتيمة في سطر ثانٍ، ويبقى الالتفاف طبيعياً على الأضيق
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(168px,1fr))', gap: 12 }}>
       {tiles.map((t) => (
-        <div key={t.t} style={{ ...PANEL, padding: '16px 18px' }}>
-          <div style={{ fontSize: 26, fontWeight: 800, color: '#13213C' }}>{t.v}</div>
+        <div key={t.t} style={{ ...PANEL, padding: '16px 18px' }} title={t.title}>
+          <div style={{ fontSize: 26, fontWeight: 800, color: t.color || '#13213C' }}>{t.v}</div>
           <div style={{ fontSize: 11.5, color: '#7C8AA3', fontWeight: 700, marginTop: 2, lineHeight: 1.6 }}>{t.t}</div>
         </div>
       ))}
