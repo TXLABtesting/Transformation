@@ -1537,11 +1537,21 @@ function build(s: Store) {
   const stgTasks = roleBase.filter((i) => i.path === 'strategy' && i.type === 'operation');
   const stgActList = stgTasks.flatMap((i) => itemActivities(i));
   const stgCatOfA = (a: ActivityDetail) => stgPriority(a)?.cat || '';
+  // نشاط «قابل للتحول ذو أولوية»: أولويته المحسوبة عالية أو متوسطة —
+  // «أولوية منخفضة» أو غير المقيَّم لا يُحتسبان (القاعدة نفسها في مسار العمليات)
+  const stgPrioritized = stgActList.filter((a) => {
+    if (activityTransformYes('strategy', a) !== 'نعم') return false;
+    const cat = stgCatOfA(a);
+    return !!cat && cat !== 'أولوية منخفضة';
+  }).length;
   const stgKpis =
     filterStream === 'strategy'
       ? {
           tasks: stgTasks.length,
           acts: stgActList.length,
+          prioritized: stgPrioritized,
+          // نسبتها من إجمالي الأنشطة (0 عند غياب المدخلات)
+          prioritizedPct: stgActList.length ? Math.round((stgPrioritized / stgActList.length) * 100) : 0,
           transformable: stgActList.filter((a) => ['أولوية عالية', 'أولوية متوسطة'].includes(stgCatOfA(a))).length,
           targeted: stgActList.filter((a) => activityTransformYes('strategy', a) === 'نعم').length,
           p1: stgActList.filter((a) => stgCatOfA(a) === 'أولوية عالية').length,

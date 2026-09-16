@@ -1139,6 +1139,9 @@ function OpsKpiStrip({ k }: { k: NonNullable<VM['opsKpis']> }) {
 }
 
 function StgKpiStrip({ k }: { k: NonNullable<VM['stgKpis']> }) {
+  // نسبة الأنشطة القابلة للتحول ذات الأولوية من إجمالي الأنشطة:
+  // خضراء عند 50% فأكثر وحمراء دونها
+  const pctColour = k.prioritizedPct >= 50 ? '#0B8A4B' : '#C0303B';
   return (
     <SegKpiStrip
       acts={[
@@ -1146,6 +1149,12 @@ function StgKpiStrip({ k }: { k: NonNullable<VM['stgKpis']> }) {
         { label: 'إجمالي عدد الأنشطة', v: k.acts },
         { label: 'إجمالي عدد الأنشطة القابلة للتحول', v: k.transformable },
         { label: 'إجمالي عدد الأنشطة المستهدف تحويلها', v: k.targeted },
+        {
+          label: 'نسبة الأنشطة القابلة للتحول ذات الأولوية',
+          v: k.prioritizedPct + '%',
+          color: pctColour,
+          title: `${k.prioritized} من ${k.acts} نشاطاً`,
+        },
       ]}
       prios={[
         { label: 'أولوية عالية', v: k.p1 },
