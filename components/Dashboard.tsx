@@ -624,15 +624,24 @@ function StageCard({ b, showStream, onManage }: { b: VM['batchSummary'][number];
 }
 
 // ===== one segmented KPI strip card: activity group + recessed priority group =====
-function SegKpiStrip({ acts, prios, notes }: { acts: { label: string; v: number | string }[]; prios: { label: string; v: number | string }[]; notes: string[] }) {
+function SegKpiStrip({
+  acts,
+  prios,
+  notes,
+}: {
+  // color: لون القيمة متى كان المؤشر يحمل دلالة (نسبة تحت/فوق الحد)
+  acts: { label: string; v: number | string; color?: string; title?: string }[];
+  prios: { label: string; v: number | string }[];
+  notes: string[];
+}) {
   return (
     <div data-tour="kpis">
       {/* totals on one row, priorities always on their own row below */}
       <div className="segkpi">
         {acts.map((c) => (
-          <div key={c.label} className="segbox">
+          <div key={c.label} className="segbox" title={c.title}>
             <span className="hd seglbl">{c.label}</span>
-            <span className="segval">{c.v}</span>
+            <span className="segval" style={c.color ? { color: c.color } : undefined}>{c.v}</span>
           </div>
         ))}
       </div>
@@ -1106,6 +1115,9 @@ function BatchesTablesPage({ vm }: { vm: VM }) {
 }
 
 function OpsKpiStrip({ k }: { k: NonNullable<VM['opsKpis']> }) {
+  // نسبة العمليات الفرعية القابلة للتحول ذات الأولوية من إجمالي الفرعية:
+  // خضراء عند 50% فأكثر وحمراء دونها
+  const pctColour = k.prioritizedPct >= 50 ? '#0B8A4B' : '#C0303B';
   return (
     <SegKpiStrip
       acts={[
@@ -1113,6 +1125,12 @@ function OpsKpiStrip({ k }: { k: NonNullable<VM['opsKpis']> }) {
         { label: 'إجمالي عدد العمليات الفرعية', v: k.acts },
         { label: 'إجمالي عدد العمليات الفرعية القابلة للتحول', v: k.transformable },
         { label: 'إجمالي عدد العمليات الفرعية المستهدف تحويلها', v: k.targeted },
+        {
+          label: 'نسبة العمليات الفرعية القابلة للتحول ذات الأولوية',
+          v: k.prioritizedPct + '%',
+          color: pctColour,
+          title: `${k.prioritized} من ${k.acts} عملية فرعية`,
+        },
       ]}
       prios={[]}
       notes={[]}

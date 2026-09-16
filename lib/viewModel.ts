@@ -65,7 +65,7 @@ import { SUPPORT_FUNCTIONS, SUPPORT_OPTYPE,
   itemActivities, itemAssistantNames, softMissingFieldsOf, activityBatch, activityTransformYes, type ActivityDetail, DEFAULT_ENTITY, isTeamUpload,
   streamPeriodOptions,
   periodApplies,
-  isAutoPlacedStream, periodBatchOf as periodBatchFor, OPS_TRANSFORM_OPTIONS, OPS_PRIORITY_OPTIONS, STG_TRANSFORM_OPTIONS } from './domain';
+  isAutoPlacedStream, periodBatchOf as periodBatchFor, OPS_TRANSFORM_OPTIONS, OPS_PRIORITY_OPTIONS, OPS_NO_PRIORITY, STG_TRANSFORM_OPTIONS } from './domain';
 import { stripHtml } from './richtext';
 import { useMoca } from './mocaStore';
 import { FEDERAL_ENTITIES } from './entities';
@@ -1553,6 +1553,13 @@ function build(s: Store) {
   // ---- operations coordinator KPI strip (ملخص الحصر) ----
   const opsTasks = roleBase.filter((i) => i.path === 'ops' && i.type === 'operation');
   const opsActList = opsTasks.flatMap((i) => itemActivities(i));
+  // عملية فرعية «قابلة للتحول ذات أولوية»: سيتم تحويلها ولها أولوية تحول
+  // محددة (مرتفعة/متوسطة/منخفضة) — «ليست ذات أولوية» أو الفراغ لا يُحتسبان
+  const opsPrioritized = opsActList.filter((a) => {
+    if (activityTransformYes('ops', a) !== 'نعم') return false;
+    const pr = stripHtml(String(a.transformPriority || '')).trim();
+    return !!pr && pr !== OPS_NO_PRIORITY;
+  }).length;
   const opsKpis =
     filterStream === 'ops'
       ? {
@@ -1562,6 +1569,9 @@ function build(s: Store) {
           // mirrors the activities flagged for transformation
           transformable: opsActList.filter((a) => (a.transformYes || '') === 'نعم').length,
           targeted: opsActList.filter((a) => (a.transformYes || '') === 'نعم').length,
+          prioritized: opsPrioritized,
+          // نسبتها من إجمالي العمليات الفرعية (0 عند غياب المدخلات)
+          prioritizedPct: opsActList.length ? Math.round((opsPrioritized / opsActList.length) * 100) : 0,
         }
       : null;
 
