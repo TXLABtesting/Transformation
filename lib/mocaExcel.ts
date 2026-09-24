@@ -16,6 +16,7 @@ import {
   MOCA_IMPACT,
   MOCA_COMPLEXITY,
   mocaMissing,
+  mocaPeriodOptions,
   type MocaEntry,
 } from './moca';
 
@@ -26,6 +27,10 @@ const FIRST_DATA_ROW = 4;
 
 // عمود لكل حقل بالترتيب نفسه الذي في الملف
 const FIELD_ORDER = MOCA_FIELDS.map((f) => f.key);
+
+// «فترة التحويل» اختيارية وليست من أعمدة الملف المعتمد الـ19 — تُضاف عموداً
+// أخيراً في القالب، وتُقرأ عند الرفع فتوضع المدخلات في دفعاتها بعد اعتمادها
+const PERIOD_HEADER = 'فترة التحويل للذكاء الاصطناعي المساعد';
 
 const colLetter = (n: number): string => {
   let s = '';
@@ -75,7 +80,8 @@ export async function mocaDownloadTemplate(unitLabel: string, entries?: MocaEntr
   });
 
   // ---- الصف 1: اسم الجهة أو المكتب ----
-  const last = colLetter(MOCA_EXCEL_HEADERS.length);
+  const periodCol = MOCA_EXCEL_HEADERS.length + 1;
+  const last = colLetter(periodCol);
   ws.mergeCells(`A1:${last}1`);
   const c1 = ws.getCell('A1');
   c1.value = 'اسم الجهة أو المكتب: ' + unitLabel;
@@ -86,21 +92,23 @@ export async function mocaDownloadTemplate(unitLabel: string, entries?: MocaEntr
 
   // ---- الصف 2: مجموعات الأعمدة ----
   let start = 1;
-  for (const g of MOCA_EXCEL_GROUPS) {
+  MOCA_EXCEL_GROUPS.forEach((g, gi) => {
+    // المجموعة الأخيرة تشمل عمود فترة التحويل
+    const span = gi === MOCA_EXCEL_GROUPS.length - 1 ? g.span + 1 : g.span;
     const from = colLetter(start);
-    const to = colLetter(start + g.span - 1);
+    const to = colLetter(start + span - 1);
     ws.mergeCells(`${from}2:${to}2`);
     const cell = ws.getCell(`${from}2`);
     cell.value = g.label;
     cell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F5FE0' } };
-    start += g.span;
-  }
+    start += span;
+  });
   ws.getRow(2).height = 24;
 
   // ---- الصف 3: عناوين الأعمدة ----
-  MOCA_EXCEL_HEADERS.forEach((h, i) => {
+  [...MOCA_EXCEL_HEADERS, PERIOD_HEADER].forEach((h, i) => {
     const cell = ws.getCell(HEADER_ROW, i + 1);
     cell.value = h;
     cell.font = { bold: true, size: 10.5, color: { argb: 'FF13213C' } };
@@ -115,6 +123,7 @@ export async function mocaDownloadTemplate(unitLabel: string, entries?: MocaEntr
   });
   ws.getRow(HEADER_ROW).height = 52;
   COL_WIDTHS.forEach((w, i) => (ws.getColumn(i + 1).width = w));
+  ws.getColumn(periodCol).width = 22;
 
   // ---- البيانات (عند التصدير) ----
   const rows = entries || [];
@@ -122,6 +131,7 @@ export async function mocaDownloadTemplate(unitLabel: string, entries?: MocaEntr
     FIELD_ORDER.forEach((k, ci) => {
       ws.getCell(FIRST_DATA_ROW + ri, ci + 1).value = (e[k] as string | number | undefined) ?? '';
     });
+    ws.getCell(FIRST_DATA_ROW + ri, periodCol).value = String(e.transformPeriod ?? '');
   });
 
   // ---- القوائم المنسدلة على أعمدة الخيارات ----
@@ -148,6 +158,22 @@ export async function mocaDownloadTemplate(unitLabel: string, entries?: MocaEntr
         error: 'اختر قيمة من القائمة المنسدلة',
       };
     }
+  }
+
+  // خيارات فترة التحويل في ورقة المعادلات (العمود G) وقائمة منسدلة عليها
+  const periods = mocaPeriodOptions();
+  lk.getCell(1, 7).value = PERIOD_HEADER;
+  lk.getCell(1, 7).font = { bold: true, size: 11 };
+  periods.forEach((v, i) => (lk.getCell(2 + i, 7).value = v));
+  for (let r = FIRST_DATA_ROW; r <= dvEnd; r++) {
+    ws.getCell(r, periodCol).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: [`'${LOOKUP}'!$G$2:$G$${1 + periods.length}`],
+      showErrorMessage: true,
+      errorTitle: 'قيمة غير مقبولة',
+      error: 'اختر الدفعة والشهر من القائمة المنسدلة',
+    };
   }
 
   const buf = await wb.xlsx.writeBuffer();
@@ -229,6 +255,13 @@ export async function mocaParseWorkbook(buf: ArrayBuffer): Promise<{ rows: { dat
     const idx = MOCA_EXCEL_HEADERS.findIndex((x) => norm(x) === h);
     if (idx >= 0 && colOf[FIELD_ORDER[idx]] === undefined) colOf[FIELD_ORDER[idx]] = c;
   }
+  let periodCol = 0;
+  for (let c = 1; c <= Math.min(ws.columnCount, 60); c++) {
+    if (norm(cellText(ws.getCell(headerRow, c).value)) === norm(PERIOD_HEADER)) { periodCol = c; break; }
+  }
+  // «الدفعة الأولى-أكتوبر» أو بشرطة طويلة تُطابَق على الخيار المعتمد
+  const periodKey = (v: string) => v.replace(/\s*[-–—]\s*/g, ' - ').replace(/\s+/g, ' ').trim();
+  const periodByKey = new Map(mocaPeriodOptions().map((p) => [periodKey(p), p]));
   if (colOf.mainProcess === undefined || colOf.subProcess === undefined)
     return { rows: [], error: 'أعمدة النموذج غير مكتملة — نزّل النموذج من الصفحة وأعد المحاولة' };
 
@@ -241,6 +274,16 @@ export async function mocaParseWorkbook(buf: ArrayBuffer): Promise<{ rows: { dat
       const v = cellText(cell.value);
       if (v) any = true;
       data[key] = key === 'automationPct' ? percentOf(cell.value, cell.numFmt, v) : v;
+    }
+    if (periodCol) {
+      const raw = cellText(ws.getCell(r, periodCol).value);
+      if (raw) {
+        any = true;
+        const hit = periodByKey.get(periodKey(raw));
+        if (hit) data.transformPeriod = hit;
+        // قيمة خارج خيارات الدفعات لا تُسقط: تُحفظ في الملاحظات لتُختار يدوياً
+        else data.notes = [String(data.notes || ''), 'فترة التحويل في الملف: ' + raw].filter(Boolean).join('\n');
+      }
     }
     if (!any) continue;
     rows.push({ data, missing: mocaMissing(data) });
