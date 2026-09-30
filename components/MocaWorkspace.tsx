@@ -744,20 +744,22 @@ function Rail({ list, open, onClose }: { list: MocaEntry[]; open: boolean; onClo
 function Kpis({ list }: { list: MocaEntry[] }) {
   const n = (f: (e: MocaEntry) => boolean) => list.filter(f).length;
   // القابلة للتحول ذات الأولوية: ليست «غير قابل للتحول» وأولويتها في النموذج «نعم»
+  const transformable = n((e) => String(e.transformability || '').startsWith('قابل'));
   const prioritized = n(
     (e) => String(e.transformability || '').startsWith('قابل') && String(e.priority || '') === 'نعم'
   );
-  const pct = list.length ? Math.round((prioritized / list.length) * 100) : 0;
+  // النسبة من القابلة للتحول لا من الإجمالي — غير القابل للتحول خارج المقام
+  const pct = transformable ? Math.round((prioritized / transformable) * 100) : 0;
   const tiles: { v: number | string; t: string; color?: string; title?: string }[] = [
     { v: list.length, t: 'إجمالي المهام والعمليات الفرعية' },
-    { v: n((e) => String(e.transformability || '').startsWith('قابل')), t: 'القابلة للتحول' },
+    { v: transformable, t: 'القابلة للتحول' },
     { v: n((e) => String(e.priority || '') === 'نعم'), t: 'ذات أولوية للتحول' },
     {
       v: pct + '%',
       t: 'نسبة المهام والعمليات القابلة للتحول ذات الأولوية',
       // خضراء عند 75% فأكثر وحمراء دونها
       color: pct >= 75 ? '#0B8A4B' : '#C0303B',
-      title: `${prioritized} من ${list.length} مهمة وعملية فرعية`,
+      title: `${prioritized} من ${transformable} مهمة وعملية فرعية قابلة للتحول`,
     },
     { v: n((e) => e.wf === 'pending'), t: 'قيد اعتماد اللجنة الوطنية' },
     { v: n((e) => e.wf === 'approved'), t: 'معتمدة' },
